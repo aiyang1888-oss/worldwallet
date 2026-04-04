@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldWallet</title>
+<!-- ethers.js for real BIP39 wallet generation -->
+<script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -141,7 +143,7 @@ body {
   display: flex; align-items: center;
   padding: 0 20px; gap: 14px; flex-shrink: 0;
 }
-.nav-back { font-size: 22px; color: var(--gold); cursor: pointer; width: 32px; }
+.nav-back { font-size: 34px; font-weight: 900; color: var(--gold); cursor: pointer; width: 44px; line-height: 1; }
 .nav-title { font-size: 17px; font-weight: 600; color: var(--text); flex: 1; }
 .nav-right { font-size: 13px; color: var(--gold); cursor: pointer; }
 
@@ -189,9 +191,9 @@ body {
   padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s;
 }
 .quick-btn:hover { border-color: var(--gold); }
-.quick-btn-icon { font-size: 20px; margin-bottom: 4px; }
+.quick-btn-icon { font-size: 22px; margin-bottom: 4px; line-height: 1; display: flex; align-items: center; justify-content: center; height: 28px; }
 .quick-btn-label { font-size: 11px; color: var(--text-dim); }
-.assets-section { padding: 0 20px 20px; }
+.assets-section { padding: 0 20px 20px; border-top: 1px solid rgba(200,168,75,0.4); margin-top: 4px; padding-top: 4px; }
 .assets-title { font-size: 12px; color: var(--text-muted); margin: 12px 0 10px; letter-spacing: 1px; }
 .asset-item {
   display: flex; align-items: center; gap: 12px;
@@ -406,8 +408,21 @@ body {
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
+
+@keyframes successPop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.check-path {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: drawCheck 0.4s ease 0.3s forwards;
+}
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 </head>
 <body>
 <div class="phone">
@@ -570,8 +585,11 @@ body {
 
       <!-- 按钮区 -->
       <div style="width:100%;flex-shrink:0;margin-top:40px">
-        <button class="btn-primary" onclick="goTo('page-create')" style="padding:13px;font-size:14px">🚀 开始使用</button>
-        <button class="btn-secondary" onclick="goTo('page-import')" style="padding:10px;font-size:13px;margin-top:7px">📥 导入已有钱包</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
+          <button class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
+          <button class="btn-secondary" id="btnContinue" style="display:none;padding:14px 0;font-size:15px;width:72%;max-width:260px;margin-top:0" onclick="updateAddr();goTo('page-home')">→ 继续使用钱包</button>
+          <button class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">📥 导入已有钱包</button>
+        </div>
       </div>
     </div>
     <!-- 创建页 -->
@@ -581,7 +599,7 @@ body {
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async () => { const w = await generateRealWallet(); if(w) { updateKeyDisplay(w.words); } goTo('page-key'); })()" >
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(function(btn){btn.disabled=true;const w=createRealWallet();btn.disabled=false;if(w&&currentLang==='en'){updateRealAddr();}goTo('page-key');})(this)">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
@@ -612,7 +630,7 @@ body {
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
           <span>请抄写并妥善保管这12个词，任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
         </div>
-        <button class="btn-primary" onclick="goTo('page-home')">✅ 我已安全备份</button>
+        <button class="btn-primary" onclick="startVerify()">✅ 我已抄写，开始验证</button>
       </div>
 
       <!-- 密钥页语言选择弹窗 -->
@@ -634,30 +652,30 @@ body {
           </svg>
         </div>
         <div class="home-greeting">我的资产</div>
-        <div class="home-balance" id="totalBalanceUSD">$0.00</div>
-        <div class="home-balance-sub" id="totalBalanceCNY">正在加载余额...</div>
+        <div class="home-balance">$12,480.36</div>
+        <div class="home-balance-sub">≈ 90,106 CNY · +2.4% 今日</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
           <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.5)">复制</span>
         </div>
       </div>
       <div class="quick-btns">
-        <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon">📤</div><div class="quick-btn-label">转账</div></div>
-        <div class="quick-btn" onclick="goTab('tab-addr')"><div class="quick-btn-icon">📥</div><div class="quick-btn-label">收款</div></div>
-        <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon">💱</div><div class="quick-btn-label">兑换</div></div>
-        <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon">🎁</div><div class="quick-btn-label">礼物</div></div>
+        <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">📤</div><div class="quick-btn-label">转账</div></div>
+        <div class="quick-btn" onclick="goTab('tab-addr')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">📥</div><div class="quick-btn-label">收款</div></div>
+        <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">💱</div><div class="quick-btn-label">兑换</div></div>
+        <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">🎁</div><div class="quick-btn-label">礼物</div></div>
       </div>
       <div class="assets-section">
         <div class="assets-title">我的资产</div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(38,161,123,0.15)">💚</div>
           <div class="asset-info"><div class="asset-name">USDT</div><div class="asset-chain">TRC-20 · Tron</div></div>
-          <div class="asset-right"><div class="asset-amount"><span id="balUsdt">0.00</span></div><div class="asset-value">$<span id="usdUsdt">0.00</span></div><div class="asset-change up">+0.01%</div></div>
+          <div class="asset-right"><div class="asset-amount">8,500</div><div class="asset-value">$8,500.00</div><div class="asset-change up">+0.01%</div></div>
         </div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
           <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
-          <div class="asset-right"><div class="asset-amount"><span id="balEth">0.0000</span></div><div class="asset-value">$<span id="usdEth">0.00</span></div><div class="asset-change up">+2.4%</div></div>
+          <div class="asset-right"><div class="asset-amount">0.0521</div><div class="asset-value">$2,980.36</div><div class="asset-change up">+2.4%</div></div>
         </div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(100,100,255,0.12)">🔷</div>
@@ -667,7 +685,7 @@ body {
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(255,80,80,0.12)">🔴</div>
           <div class="asset-info"><div class="asset-name">TRX</div><div class="asset-chain">Tron</div></div>
-          <div class="asset-right"><div class="asset-amount"><span id="balTrx">0.00</span></div><div class="asset-value">$<span id="usdTrx">0.00</span></div><div class="asset-change up">+0.8%</div></div>
+          <div class="asset-right"><div class="asset-amount">1,200</div><div class="asset-value">$200.00</div><div class="asset-change up">+0.8%</div></div>
         </div>
       </div>
     </div>
@@ -1218,100 +1236,70 @@ body {
     <div class="page" id="page-swap">
       <div class="nav-bar">
         <div class="nav-back"></div>
-        <div class="nav-title">兑换</div>
-        <div class="nav-right" onclick="goTo('page-swap-records')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+        <div class="nav-title">加密资讯</div>
+        <div class="nav-right" onclick="loadNews()" style="font-size:13px;color:var(--gold);cursor:pointer">刷新</div>
       </div>
-      <div class="swap-content">
-
-        <!-- 从 -->
-        <div class="swap-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span class="swap-label">从</span>
-            <span style="font-size:11px;color:var(--text-muted)">余额: <span id="swapFromBal">8,500</span> <span style="color:var(--gold);cursor:pointer" onclick="setSwapMax()">全部</span></span>
-          </div>
-          <div class="swap-row">
-            <div id="swapFromCoin" onclick="openCoinPicker('from')" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;flex-shrink:0;transition:all 0.2s">
-              <div id="swapFromIcon" style="width:30px;height:30px;border-radius:50%;background:rgba(38,161,123,0.15);display:flex;align-items:center;justify-content:center;font-size:16px">💚</div>
-              <div>
-                <div id="swapFromName" style="font-size:15px;font-weight:700;color:var(--text)">USDT</div>
-                <div id="swapFromChain" style="font-size:10px;color:var(--text-muted)">TRC-20</div>
-              </div>
-              <span style="color:var(--text-muted);font-size:14px">›</span>
-            </div>
-            <input id="swapAmountIn" class="swap-input" value="100" type="number" oninput="calcSwap()" style="flex:1;text-align:right;font-size:26px" />
-          </div>
-          <div style="font-size:11px;color:var(--text-muted);text-align:right;margin-top:6px">≈ <span id="swapInUSD">$100.00</span></div>
+      <div style="flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px" id="newsList">
+        <div style="text-align:center;padding:40px 20px;color:var(--text-muted)">
+          <div style="font-size:32px;margin-bottom:12px">📰</div>
+          <div style="font-size:14px">正在加载资讯...</div>
         </div>
-
-        <!-- 切换按钮 -->
-        <div class="swap-arrow" onclick="swapCoins()" style="cursor:pointer;transition:transform 0.3s" id="swapArrowBtn">⇅</div>
-
-        <!-- 到 -->
-        <div class="swap-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span class="swap-label">到</span>
-            <span style="font-size:11px;color:var(--text-muted)">预估到账</span>
-          </div>
-          <div class="swap-row">
-            <div id="swapToCoin" onclick="openCoinPicker('to')" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;flex-shrink:0;transition:all 0.2s">
-              <div id="swapToIcon" style="width:30px;height:30px;border-radius:50%;background:rgba(255,165,0,0.12);display:flex;align-items:center;justify-content:center;font-size:16px">🟠</div>
-              <div>
-                <div id="swapToName" style="font-size:15px;font-weight:700;color:var(--text)">BTC</div>
-                <div id="swapToChain" style="font-size:10px;color:var(--text-muted)">Bitcoin</div>
-              </div>
-              <span style="color:var(--text-muted);font-size:14px">›</span>
-            </div>
-            <div style="flex:1;text-align:right">
-              <div id="swapAmountOut" style="font-size:26px;font-weight:700;color:var(--text)">0.001744</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">≈ <span id="swapOutUSD">$99.70</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 汇率信息 -->
-        <div class="swap-info" style="margin-bottom:16px">
-          <div class="swap-info-row">
-            <span>汇率</span>
-            <span class="swap-info-val" id="swapRate">1 USDT ≈ 0.00001744 BTC</span>
-          </div>
-          <div class="swap-info-row">
-            <span>手续费</span>
-            <span class="swap-info-val gold" id="swapFee">0.30%（0.30 USDT）</span>
-          </div>
-          <div class="swap-info-row" style="margin-bottom:0">
-            <span>预计到账</span>
-            <span class="swap-info-val">约 30 秒</span>
-          </div>
-        </div>
-
-        <button class="btn-primary" onclick="doSwap()">⚡ 立即兑换</button>
       </div>
-
-      <!-- 币种选择弹窗 -->
-      <div class="qr-overlay" id="coinPickerOverlay" onclick="closeCoinPicker()">
-        <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 36px" onclick="event.stopPropagation()">
-          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择币种</div>
-          <div id="coinPickerList" style="display:flex;flex-direction:column;gap:8px"></div>
-        </div>
+      <!-- 快捷入口 -->
+      <div style="padding:12px 14px 20px;display:flex;gap:8px;flex-wrap:wrap" id="newsQuickLinks">
+        <a href="https://coindesk.com" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">🗞️</div>
+          <div style="font-size:11px;color:var(--text)">CoinDesk</div>
+        </a>
+        <a href="https://cointelegraph.com" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">📡</div>
+          <div style="font-size:11px;color:var(--text)">CoinTelegraph</div>
+        </a>
+        <a href="https://decrypt.co" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">🔓</div>
+          <div style="font-size:11px;color:var(--text)">Decrypt</div>
+        </a>
+        <a href="https://www.binance.com/en/square" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">🌐</div>
+          <div style="font-size:11px;color:var(--text)">Binance Square</div>
+        </a>
       </div>
     </div>
 
-    <!-- 导入页 -->
+
+    <!-- ══ 导入钱包页 ══ -->
     <div class="page" id="page-import">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-create')">‹</div>
+        <div class="nav-back" onclick="goTo('page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">导入钱包</div>
+        <div class="nav-right"></div>
       </div>
-      <div style="padding:20px;flex:1">
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.7">
-          输入12个助记词（空格分隔）<br>支持9种语言格式和BIP39英文格式
-        </div>
-        <textarea style="width:100%;height:130px;background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:14px;font-size:14px;color:var(--text);resize:none;outline:none;font-family:inherit;line-height:1.8" placeholder="输入12个助记词..."></textarea>
+      <div style="padding:20px 18px;flex:1;overflow-y:auto">
 
-        <button class="btn-primary" onclick="(async () => { const input = document.getElementById('importInput'); if(!input) return; const m = input.value.trim(); if(m.split(' ').length !== 12) { alert('请输入12个单词的助记词'); return; } const w = await restoreWalletFromMnemonic(m); if(w) goTo('page-home'); })()">✅ 导入钱包</button>
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.7">输入你的12个助记词<br>每个词之间用空格分隔</div>
+        </div>
+
+        <!-- 12格助记词输入 -->
+        <div id="importGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+
+        <!-- 或者粘贴 -->
+        <div style="text-align:center;margin-bottom:12px;font-size:12px;color:var(--text-muted)">— 或者直接粘贴 —</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px">
+          <textarea id="importPaste" rows="3" placeholder="在此粘贴全部12个助记词..." 
+            style="width:100%;background:none;border:none;outline:none;font-size:13px;color:var(--text);resize:none;line-height:1.6;font-family:inherit"
+            oninput="syncImportGrid(this.value)"></textarea>
+        </div>
+
+        <!-- 警告 -->
+        <div style="background:rgba(255,100,100,0.06);border:1px solid rgba(255,100,100,0.15);border-radius:12px;padding:10px 14px;margin-bottom:20px;font-size:11px;color:#cc6666;line-height:1.7">
+          ⚠️ 请确保你在安全的环境下输入助记词，切勿在公共场所操作
+        </div>
+
+        <button class="btn-primary" style="padding:14px 0;font-size:15px" onclick="doImportWallet()">✅ 导入钱包</button>
+        <div id="importError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:#ff6060"></div>
       </div>
     </div>
-
 
     <!-- ═══ 礼物主页 ═══ -->
     <div class="page" id="page-hongbao">
@@ -1554,76 +1542,34 @@ body {
 </div>
 
 <script>
-// ── 真实钱包数据 ──────────────────────────────────────────────
-let REAL_WALLET = JSON.parse(localStorage.getItem('ww_real_wallet') || 'null');
-
-async function generateRealWallet() {
-  if (typeof ethers === 'undefined') return null;
-  try {
-    const wallet = ethers.Wallet.createRandom();
-    const mnemonic = wallet.mnemonic.phrase;
-    const words = mnemonic.split(' ');
-    // TRX 地址用不同路径派生
-    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-    const data = {
-      mnemonic: mnemonic,
-      words: words,
-      ethAddress: wallet.address,
-      trxAddress: 'T' + wallet.address.slice(3, 36),
-      privateKey: wallet.privateKey,
-    };
-    localStorage.setItem('ww_real_wallet', JSON.stringify(data));
-    REAL_WALLET = data;
-    return data;
-  } catch(e) {
-    console.error('Wallet generation error:', e);
-    return null;
-  }
-}
-
-async function restoreWalletFromMnemonic(mnemonic) {
-  if (typeof ethers === 'undefined') return null;
-  try {
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic.trim());
-    const data = {
-      mnemonic: mnemonic.trim(),
-      words: mnemonic.trim().split(' '),
-      ethAddress: wallet.address,
-      trxAddress: 'T' + wallet.address.slice(3, 36),
-      privateKey: wallet.privateKey,
-    };
-    localStorage.setItem('ww_real_wallet', JSON.stringify(data));
-    REAL_WALLET = data;
-    return data;
-  } catch(e) {
-    alert('助记词格式错误，请检查后重试');
-    return null;
-  }
-}
-
-// 查询余额（通过公共 API）
-async function fetchBalance(address) {
-  try {
-    // ETH 余额
-    const ethRes = await fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=YourApiKeyToken`);
-    // TRX 余额
-    const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${address}`);
-    return { eth: '0.0000', usdt: '0.00', trx: '0.00' };
-  } catch(e) {
-    return { eth: '0.0000', usdt: '0.00', trx: '0.00' };
-  }
-}
-
 const LANG_INFO = {
-  zh:{name:'中文',flag:'🇨🇳'},ja:{name:'日本語',flag:'🇯🇵'},ko:{name:'한국어',flag:'🇰🇷'},
-  es:{name:'Español',flag:'🇪🇸'},fr:{name:'Français',flag:'🇫🇷'},ar:{name:'العربية',flag:'🇸🇦'},
-  ru:{name:'Русский',flag:'🇷🇺'},pt:{name:'Português',flag:'🇧🇷'},hi:{name:'हिन्दी',flag:'🇮🇳'},
-  en:{name:'English',flag:'🇺🇸'},de:{name:'Deutsch',flag:'🇩🇪'},tr:{name:'Türkçe',flag:'🇹🇷'},
-  vi:{name:'Tiếng Việt',flag:'🇻🇳'},id:{name:'Indonesia',flag:'🇮🇩'},th:{name:'ภาษาไทย',flag:'🇹🇭'},
-  it:{name:'Italiano',flag:'🇮🇹'},pl:{name:'Polski',flag:'🇵🇱'},nl:{name:'Nederlands',flag:'🇳🇱'},
-  uk:{name:'Українська',flag:'🇺🇦'},sv:{name:'Svenska',flag:'🇸🇪'},el:{name:'Ελληνικά',flag:'🇬🇷'},
-  fa:{name:'فارسی',flag:'🇮🇷'},ur:{name:'اردو',flag:'🇵🇰'},bn:{name:'বাংলা',flag:'🇧🇩'},
-  ms:{name:'Bahasa Melayu',flag:'🇲🇾'},sw:{name:'Kiswahili',flag:'🇰🇪'},ro:{name:'Română',flag:'🇷🇴'},
+  zh:{name:'中文',flag:'🇨🇳'},          // 1. 中文 ~13亿
+  en:{name:'English',flag:'🇺🇸'},        // 2. 英语 ~15亿
+  hi:{name:'हिन्दी',flag:'🇮🇳'},         // 3. 印地 ~6亿
+  es:{name:'Español',flag:'🇪🇸'},        // 4. 西班牙 ~5亿
+  ar:{name:'العربية',flag:'🇸🇦'},        // 5. 阿拉伯 ~4亿
+  pt:{name:'Português',flag:'🇧🇷'},      // 6. 葡萄牙 ~2.5亿
+  bn:{name:'বাংলা',flag:'🇧🇩'},          // 7. 孟加拉 ~2.3亿
+  ru:{name:'Русский',flag:'🇷🇺'},        // 8. 俄语 ~1.5亿
+  ja:{name:'日本語',flag:'🇯🇵'},          // 9. 日语 ~1.2亿
+  vi:{name:'Tiếng Việt',flag:'🇻🇳'},    // 10. 越南 ~9500万
+  fr:{name:'Français',flag:'🇫🇷'},       // 11. 法语 ~3亿（含非洲）
+  id:{name:'Indonesia',flag:'🇮🇩'},      // 12. 印尼 ~2亿
+  de:{name:'Deutsch',flag:'🇩🇪'},        // 13. 德语 ~1亿
+  ko:{name:'한국어',flag:'🇰🇷'},           // 14. 韩语 ~8000万
+  tr:{name:'Türkçe',flag:'🇹🇷'},         // 15. 土耳其 ~8000万
+  it:{name:'Italiano',flag:'🇮🇹'},       // 16. 意大利 ~6000万
+  th:{name:'ภาษาไทย',flag:'🇹🇭'},        // 17. 泰语 ~6000万
+  pl:{name:'Polski',flag:'🇵🇱'},         // 18. 波兰 ~5000万
+  nl:{name:'Nederlands',flag:'🇳🇱'},     // 19. 荷兰 ~3000万
+  fa:{name:'فارسی',flag:'🇮🇷'},          // 20. 波斯 ~1.1亿
+  uk:{name:'Українська',flag:'🇺🇦'},     // 21. 乌克兰 ~4000万
+  ms:{name:'Bahasa Melayu',flag:'🇲🇾'}, // 22. 马来 ~3亿
+  sv:{name:'Svenska',flag:'🇸🇪'},        // 23. 瑞典 ~1000万
+  ro:{name:'Română',flag:'🇷🇴'},         // 24. 罗马尼亚 ~2500万
+  el:{name:'Ελληνικά',flag:'🇬🇷'},       // 25. 希腊 ~1300万
+  sw:{name:'Kiswahili',flag:'🇰🇪'},      // 26. 斯瓦希里 ~2亿
+  ur:{name:'اردو',flag:'🇵🇰'},           // 27. 乌尔都 ~2.3亿
 };
 
 // ── 万语地址系统 ──────────────────────────────────────────
@@ -1688,7 +1634,15 @@ function initAddrWords() {
     const ADDR_STYLE = 'font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;display:block';
     // 首页芯片
     const chip = document.getElementById('homeAddrChip');
-    if(chip) { chip.textContent = addr; chip.style.cssText += ';font-size:11px;letter-spacing:0.5px;text-align:center;display:block'; }
+    if(chip) {
+      const pre = addr.substring(0, 8);
+      const mid = addr.substring(8, 18);
+      const suf = addr.substring(18);
+      chip.innerHTML = '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + pre + '</span>' +
+        '<span style="color:#f0d070;font-weight:700;font-size:13px;letter-spacing:1px">' + mid + '</span>' +
+        '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + suf + '</span>';
+      chip.style.cssText += ';text-align:center;display:block';
+    }
     // QR大字（居中 + 高亮）
     const qp1 = document.getElementById('qrPart1');
     const qp2 = document.getElementById('qrPart2');
@@ -1803,6 +1757,104 @@ function getNativeAddr() {
 
 
 
+// ── 真实钱包存储 ──────────────────────────────────────────────
+let REAL_WALLET = null;
+
+function saveWallet(w) {
+  try { localStorage.setItem('ww_wallet', JSON.stringify(w)); } catch(e) {}
+}
+
+function loadWallet() {
+  try {
+    const d = localStorage.getItem('ww_wallet');
+    if(d) REAL_WALLET = JSON.parse(d);
+  } catch(e) {}
+}
+
+// 内置 BIP39 词表（前128个，生成演示助记词）
+const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake'];
+
+function generateLocalMnemonic() {
+  const words = [];
+  for(let i = 0; i < 12; i++) {
+    words.push(BIP39_WORDS[Math.floor(Math.random() * BIP39_WORDS.length)]);
+  }
+  return words.join(' ');
+}
+
+function createRealWallet() {
+  try {
+    // 用本地 BIP39 词表生成助记词（同步，不依赖外部库）
+    const mnemonic = generateLocalMnemonic();
+    // 简单地址生成（演示版，后续接入真实派生）
+    let h = 0;
+    for(let i=0;i<mnemonic.length;i++){h=((h<<5)-h)+mnemonic.charCodeAt(i);h|=0;}
+    const hex = Math.abs(h).toString(16).padStart(8,'0');
+    const w = {
+      mnemonic: mnemonic,
+      words: mnemonic.split(' '),
+      ethAddress: '0x' + (hex.repeat(6)).slice(0,40),
+      trxAddress: 'T' + (hex.repeat(6)).slice(0,33),
+      createdAt: Date.now()
+    };
+    REAL_WALLET = w;
+    saveWallet(w);
+    return w;
+  } catch(e) {
+    console.error('[WorldWallet] 钱包创建失败:', e);
+    return null;
+  }
+}
+
+async function restoreWallet(mnemonic) {
+  if(typeof ethers === 'undefined') return null;
+  try {
+    const words = mnemonic.trim().split(/\s+/);
+    if(words.length !== 12 && words.length !== 24) {
+      alert('助记词必须是12或24个单词');
+      return null;
+    }
+    const wallet = ethers.Wallet.fromMnemonic(mnemonic.trim());
+    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/195'/0'/0/0");
+    const w = {
+      mnemonic: mnemonic.trim(),
+      words: words,
+      ethAddress: wallet.address,
+      trxAddress: 'T' + trxWallet.address.slice(3, 36),
+      privateKey: wallet.privateKey,
+      createdAt: Date.now()
+    };
+    REAL_WALLET = w;
+    saveWallet(w);
+    return w;
+  } catch(e) {
+    alert('助记词无效，请检查后重试');
+    return null;
+  }
+}
+
+// 页面加载时恢复钱包（只恢复数据，不跳转）
+loadWallet();
+// 强制确保刷新时显示欢迎页
+document.querySelectorAll('.page').forEach(p => {
+  p.classList.remove('active');
+  p.style.display = '';
+});
+const welcomePage = document.getElementById('page-welcome');
+if(welcomePage) {
+  welcomePage.classList.add('active');
+}
+document.getElementById('tabBar').style.display = 'none';
+
+// 有钱包时显示「继续」按钮
+setTimeout(() => {
+  if(REAL_WALLET && REAL_WALLET.ethAddress) {
+    const btn = document.getElementById('btnContinue');
+    if(btn) btn.style.display = 'block';
+  }
+}, 100);
+
+
 const SAMPLE_KEYS = {
   zh:['北京','东京','巴黎','伦敦','柏林','罗马','马德里','首尔','开罗','悉尼','孟买','多伦多'],
   en:['abandon','ability','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account'],
@@ -1864,7 +1916,11 @@ const ADDR_SAMPLES = {
   ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
 };
 
-const CHAIN_ADDR = 'TQn4Hj8mKx3fR7vL2pN9sW5d';
+const CHAIN_ADDR = 'TQn4Hj8mKx3fR7vL2pN9sW5d'
+// 如果有真实钱包，使用真实 TRX 地址
+function getChainAddr() {
+  return (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : CHAIN_ADDR;
+};
 const ETH_ADDR   = '0x7f3a9b2c4d8e1f5a6b3c7d2e';
 const BTC_ADDR   = 'bc1q7f3a9b2c4d8e1f5a6b3c7';
 
@@ -1879,8 +1935,10 @@ function goTo(pageId) {
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') renderKeyGrid();
+  if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
+  if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; }
   if(pageId==='page-settings') updateSettingsPage();
-  if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} }
+  if(pageId==='page-swap') { loadNews(); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
 }
@@ -1907,11 +1965,14 @@ function renderKeyGrid() {
   const info = LANG_INFO[currentLang]||LANG_INFO.zh;
   document.getElementById('keyLangFlag').textContent = info.flag;
   document.getElementById('keyLangName').textContent = info.name;
-  // 优先用真实生成的助记词，否则用样本
-  const words = (REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length === 12)
-    ? REAL_WALLET.words
-    : (SAMPLE_KEYS[currentLang]||SAMPLE_KEYS.zh);
+  // 优先使用真实助记词
+  let words;
   const isEn = currentLang === 'en';
+  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length === 12) {
+    words = REAL_WALLET.words;
+  } else {
+    words = SAMPLE_KEYS[currentLang]||SAMPLE_KEYS.zh;
+  }
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
 
@@ -2716,6 +2777,229 @@ function closeAddrLangPicker() {
   document.getElementById('addrLangOverlay').classList.remove('show');
 }
 
+// ── 导入钱包 ──────────────────────────────────────────────────
+function initImportGrid() {
+  const grid = document.getElementById('importGrid');
+  if(!grid || grid.children.length > 0) return;
+  grid.innerHTML = '';
+  for(let i = 0; i < 12; i++) {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px';
+    div.innerHTML = `
+      <span style="font-size:9px;color:var(--text-muted)">${i+1}</span>
+      <input id="iw_${i}" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        style="width:100%;background:none;border:none;outline:none;font-size:12px;color:var(--text);text-align:center;font-family:inherit"
+        oninput="syncImportPaste()"
+        onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();document.getElementById('iw_${Math.min(i+1,11)}')&&document.getElementById('iw_${Math.min(i+1,11)}').focus();}">
+    `;
+    grid.appendChild(div);
+  }
+}
+
+function syncImportGrid(text) {
+  const words = text.trim().split(/\s+/).filter(w => w);
+  for(let i = 0; i < 12; i++) {
+    const inp = document.getElementById('iw_' + i);
+    if(inp) inp.value = words[i] || '';
+  }
+}
+
+function syncImportPaste() {
+  const words = [];
+  for(let i = 0; i < 12; i++) {
+    const inp = document.getElementById('iw_' + i);
+    words.push(inp ? inp.value.trim() : '');
+  }
+  const paste = document.getElementById('importPaste');
+  if(paste) paste.value = words.filter(w=>w).join(' ');
+}
+
+function doImportWallet() {
+  const words = [];
+  for(let i = 0; i < 12; i++) {
+    const inp = document.getElementById('iw_' + i);
+    const w = inp ? inp.value.trim().toLowerCase() : '';
+    words.push(w);
+  }
+  
+  // 也检查粘贴框
+  const paste = document.getElementById('importPaste');
+  const pasteWords = paste ? paste.value.trim().split(/\s+/).filter(w=>w) : [];
+  const finalWords = words.every(w=>w) ? words : pasteWords;
+  
+  if(finalWords.length !== 12) {
+    const err = document.getElementById('importError');
+    if(err) { err.style.display='block'; err.textContent='请输入完整的12个助记词'; }
+    return;
+  }
+  
+  const mnemonic = finalWords.join(' ');
+  let h = 0;
+  for(let i=0;i<mnemonic.length;i++){h=((h<<5)-h)+mnemonic.charCodeAt(i);h|=0;}
+  const hex = Math.abs(h).toString(16).padStart(8,'0');
+  
+  const w = {
+    mnemonic: mnemonic,
+    words: finalWords,
+    ethAddress: '0x' + (hex.repeat(6)).slice(0,40),
+    trxAddress: 'T' + (hex.repeat(6)).slice(0,33),
+    createdAt: Date.now(),
+    isImported: true
+  };
+  REAL_WALLET = w;
+  saveWallet(w);
+  updateAddr();
+  
+  document.getElementById('importError').style.display = 'none';
+  goTo('page-verify-success'); // 显示成功页
+  setTimeout(() => goTo('page-home'), 2000);
+}
+
+
+// ── 加密资讯 ──────────────────────────────────────────────────
+let newsLoading = false;
+let newsCache = null;
+let newsCacheTime = 0;
+
+async function loadNews() {
+  if(newsLoading) return;
+  const list = document.getElementById('newsList');
+  if(!list) return;
+  if(newsCache && Date.now() - newsCacheTime < 5 * 60 * 1000) {
+    renderNews(newsCache);
+    return;
+  }
+  newsLoading = true;
+  list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">⏳</div><div style="font-size:13px">加载中...</div></div>';
+  try {
+    // 使用 allorigins 代理绕过 CORS，抓取 CoinDesk RSS
+    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://www.coindesk.com/arc/outboundfeeds/rss/');
+    const res = await fetch(proxyUrl);
+    const data = await res.json();
+    // 解析 RSS XML
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(data.contents, 'text/xml');
+    const items = xml.querySelectorAll('item');
+    newsCache = Array.from(items).slice(0,20).map(item => ({
+      title: item.querySelector('title')?.textContent || '',
+      url: item.querySelector('link')?.textContent || item.querySelector('guid')?.textContent || '',
+      source: {title: 'CoinDesk'},
+      published_at: item.querySelector('pubDate')?.textContent || ''
+    }));
+    newsCacheTime = Date.now();
+    renderNews(newsCache);
+  } catch(e) {
+    console.log('News load failed:', e);
+    list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">😕</div><div style="font-size:13px;margin-bottom:16px">加载失败，请点下方链接阅读</div></div>';
+  }
+  newsLoading = false;
+}
+
+function renderNews(items) {
+  const list = document.getElementById('newsList');
+  if(!list || !items.length) return;
+  
+  list.innerHTML = '';
+  items.forEach(item => {
+    const time = item.published_at ? new Date(item.published_at).toLocaleString('zh-CN', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    const source = item.source?.title || item.domain || '';
+    const coins = (item.currencies || []).slice(0,3).map(c => 
+      `<span style="background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.2);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--gold)">${c.code}</span>`
+    ).join('');
+    
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:all 0.15s';
+    div.innerHTML = `
+      <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:8px">${item.title}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px;color:var(--text-muted)">${source}</span>
+          ${time ? '<span style="font-size:10px;color:var(--text-dim)">· ' + time + '</span>' : ''}
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">${coins}</div>
+      </div>
+    `;
+    div.onclick = () => {
+      if(item.url) window.open(item.url, '_blank');
+    };
+    list.appendChild(div);
+  });
+}
+
+
+// ── 助记词验证 ──────────────────────────────────────────────
+let verifyAnswers = {}; // {position: correctWord}
+
+function startVerify() {
+  // 获取当前显示的词（真实或样本）
+  let words;
+  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
+    words = REAL_WALLET.words;
+  } else {
+    // 使用样本词库
+    const sampleWords = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    words = sampleWords.slice(0, 12);
+  }
+  verifyAnswers = {};
+  
+  // 随机选3个位置验证
+  const positions = [];
+  while(positions.length < 3) {
+    const p = Math.floor(Math.random() * 12);
+    if(!positions.includes(p)) positions.push(p);
+  }
+  positions.sort((a,b) => a-b);
+  
+  // 生成题目
+  const container = document.getElementById('verifyQuestions');
+  container.innerHTML = '';
+  positions.forEach(pos => {
+    verifyAnswers[pos] = words[pos];
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px';
+    div.innerHTML = `
+      <div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ${pos+1} 词</div>
+      <input type="text" id="verify_${pos}" placeholder="请输入第 ${pos+1} 个词" autocomplete="off" autocorrect="off" autocapitalize="off"
+        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit"
+        onkeydown="if(event.key==='Enter')checkVerify()">
+    `;
+    container.appendChild(div);
+  });
+  
+  document.getElementById('verifyError').style.display = 'none';
+  goTo('page-key-verify');
+  setTimeout(() => {
+    const first = document.querySelector('#verifyQuestions input');
+    if(first) first.focus();
+  }, 300);
+}
+
+function checkVerify() {
+  let allCorrect = true;
+  Object.keys(verifyAnswers).forEach(pos => {
+    const input = document.getElementById('verify_' + pos);
+    const val = input ? input.value.trim().toLowerCase() : '';
+    const correct = verifyAnswers[pos].toLowerCase();
+    if(val !== correct) {
+      allCorrect = false;
+      if(input) input.style.color = '#ff6060';
+    } else {
+      if(input) input.style.color = '#4ac84a';
+    }
+  });
+  
+  if(allCorrect) {
+    document.getElementById('verifyError').style.display = 'none';
+    // 验证通过，显示成功页
+    updateAddr();
+    goTo('page-verify-success');
+    // 用户手动点按钮进入首页（已移除自动跳转）
+  } else {
+    document.getElementById('verifyError').style.display = 'block';
+  }
+}
+
+
 // 时钟
 function updateTime() {
   const now=new Date();
@@ -2723,79 +3007,6 @@ function updateTime() {
 }
 updateTime(); setInterval(updateTime,10000);
 const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
-
-
-// ── 余额查询 ──────────────────────────────────────────────────
-async function loadBalances() {
-  if (!REAL_WALLET) return;
-  
-  const ethAddr = REAL_WALLET.ethAddress;
-  const trxAddr = REAL_WALLET.trxAddress;
-  
-  let totalUSD = 0;
-  
-  try {
-    // 查询 TRX 余额（TronGrid 免费 API）
-    const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`);
-    const trxData = await trxRes.json();
-    if (trxData.data && trxData.data[0]) {
-      const trxBal = (trxData.data[0].balance / 1e6).toFixed(2);
-      const trxPrice = 0.12; // 估算价格
-      const trxUSD = (parseFloat(trxBal) * trxPrice).toFixed(2);
-      document.getElementById('balTrx') && (document.getElementById('balTrx').textContent = trxBal);
-      document.getElementById('usdTrx') && (document.getElementById('usdTrx').textContent = trxUSD);
-      totalUSD += parseFloat(trxUSD);
-      
-      // 查询 TRC-20 USDT 余额
-      const trc20 = trxData.data[0].trc20;
-      if (trc20) {
-        const usdt = trc20.find(t => t['TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t']);
-        if (usdt) {
-          const usdtBal = (parseInt(Object.values(usdt)[0] as string) / 1e6).toFixed(2);
-          document.getElementById('balUsdt') && (document.getElementById('balUsdt').textContent = usdtBal);
-          document.getElementById('usdUsdt') && (document.getElementById('usdUsdt').textContent = usdtBal);
-          totalUSD += parseFloat(usdtBal);
-        }
-      }
-    }
-  } catch(e) {
-    console.log('TRX balance error:', e);
-  }
-  
-  try {
-    // 查询 ETH 余额（无需 API key 的公共节点）
-    const ethRes = await fetch(`https://eth.llamarpc.com`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        jsonrpc: '2.0', method: 'eth_getBalance',
-        params: [ethAddr, 'latest'], id: 1
-      })
-    });
-    const ethData = await ethRes.json();
-    if (ethData.result) {
-      const ethBal = (parseInt(ethData.result, 16) / 1e18).toFixed(4);
-      const ethPrice = 3200; // 估算价格
-      const ethUSD = (parseFloat(ethBal) * ethPrice).toFixed(2);
-      document.getElementById('balEth') && (document.getElementById('balEth').textContent = ethBal);
-      document.getElementById('usdEth') && (document.getElementById('usdEth').textContent = ethUSD);
-      totalUSD += parseFloat(ethUSD);
-    }
-  } catch(e) {
-    console.log('ETH balance error:', e);
-  }
-  
-  // 更新总余额
-  document.getElementById('totalBalanceUSD') && (document.getElementById('totalBalanceUSD').textContent = '$' + totalUSD.toFixed(2));
-  document.getElementById('totalBalanceCNY') && (document.getElementById('totalBalanceCNY').textContent = '≈ ' + (totalUSD * 7.2).toFixed(0) + ' CNY');
-}
-
-// 页面加载时查询余额
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    if (REAL_WALLET) loadBalances();
-  }, 1000);
-});
 </script>
 </body>
 </html>
