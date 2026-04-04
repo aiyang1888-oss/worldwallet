@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldWallet</title>
+<!-- QR Code Generator -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <!-- ethers.js for real BIP39 wallet generation -->
 <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
 <style>
@@ -754,62 +756,17 @@ body {
             <span style="font-size:13px;color:var(--gold)">📱</span>
             <span style="font-size:11px;color:var(--text-muted);letter-spacing:1px">扫码收款</span>
             <div style="flex:1;height:1px;background:var(--border)"></div>
-            <span style="font-size:10px;color:var(--text-muted)" id="qrLangTag">🌍 万语地址</span>
+            <select id="qrChainSelect" onchange="updateQRCode()"
+              style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:10px;padding:2px 6px;cursor:pointer;outline:none">
+              <option value="trx">TRX</option>
+              <option value="eth">ETH</option>
+            </select>
           </div>
 
           <!-- 二维码居中 -->
           <div style="display:flex;justify-content:center;margin-bottom:18px">
-            <div style="width:140px;height:140px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
-              <svg width="120" height="120" viewBox="0 0 109 109" xmlns="http://www.w3.org/2000/svg">
-<rect width="109" height="109" fill="white"/>
-<rect x="5" y="5" width="11" height="11" fill="black" rx="1"/>
-<rect x="16" y="5" width="11" height="11" fill="black" rx="1"/>
-<rect x="27" y="5" width="11" height="11" fill="black" rx="1"/>
-<rect x="71" y="5" width="11" height="11" fill="black" rx="1"/>
-<rect x="82" y="5" width="11" height="11" fill="black" rx="1"/>
-<rect x="93" y="5" width="11" height="11" fill="black" rx="1"/>
-<rect x="5" y="16" width="11" height="11" fill="black" rx="1"/>
-<rect x="16" y="16" width="11" height="11" fill="black" rx="1"/>
-<rect x="27" y="16" width="11" height="11" fill="black" rx="1"/>
-<rect x="71" y="16" width="11" height="11" fill="black" rx="1"/>
-<rect x="82" y="16" width="11" height="11" fill="black" rx="1"/>
-<rect x="93" y="16" width="11" height="11" fill="black" rx="1"/>
-<rect x="5" y="27" width="11" height="11" fill="black" rx="1"/>
-<rect x="16" y="27" width="11" height="11" fill="black" rx="1"/>
-<rect x="27" y="27" width="11" height="11" fill="black" rx="1"/>
-<rect x="49" y="27" width="11" height="11" fill="black" rx="1"/>
-<rect x="71" y="27" width="11" height="11" fill="black" rx="1"/>
-<rect x="82" y="27" width="11" height="11" fill="black" rx="1"/>
-<rect x="93" y="27" width="11" height="11" fill="black" rx="1"/>
-<rect x="38" y="38" width="11" height="11" fill="black" rx="1"/>
-<rect x="60" y="38" width="11" height="11" fill="black" rx="1"/>
-<rect x="27" y="49" width="11" height="11" fill="black" rx="1"/>
-<rect x="49" y="49" width="11" height="11" fill="black" rx="1"/>
-<rect x="71" y="49" width="11" height="11" fill="black" rx="1"/>
-<rect x="38" y="60" width="11" height="11" fill="black" rx="1"/>
-<rect x="60" y="60" width="11" height="11" fill="black" rx="1"/>
-<rect x="5" y="71" width="11" height="11" fill="black" rx="1"/>
-<rect x="16" y="71" width="11" height="11" fill="black" rx="1"/>
-<rect x="27" y="71" width="11" height="11" fill="black" rx="1"/>
-<rect x="49" y="71" width="11" height="11" fill="black" rx="1"/>
-<rect x="71" y="71" width="11" height="11" fill="black" rx="1"/>
-<rect x="82" y="71" width="11" height="11" fill="black" rx="1"/>
-<rect x="93" y="71" width="11" height="11" fill="black" rx="1"/>
-<rect x="5" y="82" width="11" height="11" fill="black" rx="1"/>
-<rect x="16" y="82" width="11" height="11" fill="black" rx="1"/>
-<rect x="27" y="82" width="11" height="11" fill="black" rx="1"/>
-<rect x="71" y="82" width="11" height="11" fill="black" rx="1"/>
-<rect x="82" y="82" width="11" height="11" fill="black" rx="1"/>
-<rect x="93" y="82" width="11" height="11" fill="black" rx="1"/>
-<rect x="5" y="93" width="11" height="11" fill="black" rx="1"/>
-<rect x="16" y="93" width="11" height="11" fill="black" rx="1"/>
-<rect x="27" y="93" width="11" height="11" fill="black" rx="1"/>
-<rect x="71" y="93" width="11" height="11" fill="black" rx="1"/>
-<rect x="82" y="93" width="11" height="11" fill="black" rx="1"/>
-<rect x="93" y="93" width="11" height="11" fill="black" rx="1"/>
-<rect x="47" y="47" width="14" height="14" fill="white" rx="2"/>
-<text x="54" y="59" font-size="10" text-anchor="middle" fill="#c8a84b" font-weight="bold">W</text>
-</svg>
+            <div id="qrCodeContainer" style="width:140px;height:140px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.3);overflow:hidden">
+              <canvas id="qrCanvas" width="130" height="130"></canvas>
             </div>
           </div>
 
@@ -1971,6 +1928,7 @@ function goTo(pageId) {
   if(pageId==='page-swap') { loadNews(); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
+  if(pageId==='page-addr') setTimeout(updateQRCode, 100);
   if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
     setTimeout(loadBalances, 500);
   }
@@ -2920,6 +2878,41 @@ function doImportWallet() {
   document.getElementById('importError').style.display = 'none';
   goTo('page-verify-success'); // 显示成功页
   setTimeout(() => goTo('page-home'), 2000);
+}
+
+
+// ── 二维码生成 ──────────────────────────────────────────────────
+function generateQRCode(text, canvasId) {
+  const canvas = document.getElementById(canvasId || 'qrCanvas');
+  if(!canvas) return;
+  
+  if(typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+    // qrcode.js
+    QRCode.toCanvas(canvas, text || 'worldwallet', {
+      width: 130,
+      margin: 1,
+      color: { dark: '#000000', light: '#ffffff' }
+    }, function(err) {
+      if(err) console.error('QR error:', err);
+    });
+  } else {
+    // fallback：用 Google Charts API
+    const img = document.createElement('img');
+    img.src = `https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=${encodeURIComponent(text)}&choe=UTF-8`;
+    img.style.width = '130px';
+    img.style.height = '130px';
+    canvas.parentNode.replaceChild(img, canvas);
+  }
+}
+
+// 更新二维码（当地址改变时调用）
+function updateQRCode() {
+  if(!REAL_WALLET) return;
+  const chain = document.getElementById('qrChainSelect')?.value || 'trx';
+  let addr = '';
+  if(chain === 'trx') addr = REAL_WALLET.trxAddress || '';
+  else if(chain === 'eth') addr = REAL_WALLET.ethAddress || '';
+  if(addr) generateQRCode(addr, 'qrCanvas');
 }
 
 
