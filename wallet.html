@@ -1,4 +1,4 @@
-<!-- worldtoken.co v20260404 -->
+<!-- worldtoken.cc v20260404 -->
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -1164,7 +1164,7 @@ body {
 
           <!-- 底部 -->
           <div style="padding:10px 20px 14px;border-top:1px solid #111120;display:flex;justify-content:space-between">
-            <span style="font-size:9px;color:#2a2a3a;letter-spacing:1px">worldtoken.co</span>
+            <span style="font-size:9px;color:#2a2a3a;letter-spacing:1px">worldtoken.cc</span>
             <span style="font-size:9px;color:#2a2a3a" id="successChain">TRC-20 · Tron</span>
           </div>
 
@@ -1233,10 +1233,10 @@ body {
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="window.open('https://worldtoken.co/wallet.html','_blank')">
+          <div class="settings-row" onclick="window.open('https://worldtoken.cc/wallet.html','_blank')">
             <span class="settings-icon">🌍</span>
             <span class="settings-label">官网</span>
-            <span class="settings-value">worldtoken.co</span>
+            <span class="settings-value">worldtoken.cc</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
@@ -2697,7 +2697,7 @@ function shareSuccess() {
   const amt = _safeEl('successAmount').textContent;
   const coin = _safeEl('successCoin').textContent;
   const from = _safeEl('successFromPart1').textContent+' '+_safeEl('successFromPart2').textContent;
-  navigator.clipboard?.writeText('我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.co').catch(()=>{});
+  navigator.clipboard?.writeText('我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.cc').catch(()=>{});
   const txEl = _safeEl('successTxHash');
   const txText = txEl ? txEl.textContent : '转账记录';
   navigator.clipboard?.writeText(txText).catch(()=>{});
@@ -2847,7 +2847,7 @@ function createHongbao() {
   document.getElementById('kwShareKeyword').textContent = currentKeyword;
   document.getElementById('kwProgress').textContent = '0 / ' + count + ' 已领取';
   document.getElementById('kwProgressBar').style.width = '0%';
-  const shareUrl = 'https://worldtoken.co/wallet.html';
+  const shareUrl = 'https://worldtoken.cc/wallet.html';
   document.getElementById('kwShareText').innerHTML = '🎁 我给你发了一个WorldToken礼物！<br>口令：<span style="color:var(--gold);font-weight:700">' + currentKeyword + '</span><br>打开WorldToken → 输入口令 → 立即领取 💰<br><span style="color:var(--text-muted);font-size:11px">有效期' + hbExpiry + '小时，先到先得</span>';
 
   goTo('page-hb-keyword');
@@ -2861,16 +2861,16 @@ function copyKw() {
 }
 
 function shareKw() {
-  const txt = '🎁 我给你发了一个WorldToken礼物！\n口令：' + currentKeyword + '\n打开链接领取 👉 https://worldtoken.co/wallet.html\n有效期' + hbExpiry + '小时，先到先得';
+  const txt = '🎁 我给你发了一个WorldToken礼物！\n口令：' + currentKeyword + '\n打开链接领取 👉 https://worldtoken.cc/wallet.html\n有效期' + hbExpiry + '小时，先到先得';
   // 尝试直接分享 Telegram
-  const tgUrl = 'https://t.me/share/url?url=' + encodeURIComponent('https://worldtoken.co/wallet.html') + '&text=' + encodeURIComponent('🎁 WorldToken礼物口令：' + currentKeyword + '\n输入口令即可领取加密货币！');
+  const tgUrl = 'https://t.me/share/url?url=' + encodeURIComponent('https://worldtoken.cc/wallet.html') + '&text=' + encodeURIComponent('🎁 WorldToken礼物口令：' + currentKeyword + '\n输入口令即可领取加密货币！');
   window.open(tgUrl, '_blank');
 }
 
 function showHbQR() {
   if(!currentKeyword) return;
   // 生成礼物口令二维码
-  const url = 'https://worldtoken.co/wallet.html?claim=' + encodeURIComponent(currentKeyword);
+  const url = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(currentKeyword);
   const qrOverlay = document.getElementById('swapConfirmOverlay');
   // 复用确认弹窗显示二维码
   if(typeof QRCode !== 'undefined') {
