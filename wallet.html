@@ -652,8 +652,8 @@ body {
           </svg>
         </div>
         <div class="home-greeting">我的资产</div>
-        <div class="home-balance">$12,480.36</div>
-        <div class="home-balance-sub">≈ 90,106 CNY · +2.4% 今日</div>
+        <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
+        <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
           <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.5)">复制</span>
@@ -666,21 +666,36 @@ body {
         <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">🎁</div><div class="quick-btn-label">礼物</div></div>
       </div>
       <div class="assets-section">
-        <div class="assets-title">我的资产</div>
+        <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>我的资产</span>
+          <span id="balRefreshBtn" onclick="loadBalances()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+        </div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(38,161,123,0.15)">💚</div>
           <div class="asset-info"><div class="asset-name">USDT</div><div class="asset-chain">TRC-20 · Tron</div></div>
-          <div class="asset-right"><div class="asset-amount">8,500</div><div class="asset-value">$8,500.00</div><div class="asset-change up">+0.01%</div></div>
+          <div class="asset-right">
+            <div class="asset-amount" id="balUsdt">--</div>
+            <div class="asset-value" id="valUsdt">$--</div>
+            <div class="asset-change up" id="chgUsdt">+0.01%</div>
+          </div>
         </div>
         <div class="asset-item">
-          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
-          <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
-          <div class="asset-right"><div class="asset-amount">0.0521</div><div class="asset-value">$2,980.36</div><div class="asset-change up">+2.4%</div></div>
+          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🔴</div>
+          <div class="asset-info"><div class="asset-name">TRX</div><div class="asset-chain">Tron</div></div>
+          <div class="asset-right">
+            <div class="asset-amount" id="balTrx">--</div>
+            <div class="asset-value" id="valTrx">$--</div>
+            <div class="asset-change up" id="chgTrx">+0.8%</div>
+          </div>
         </div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(100,100,255,0.12)">🔷</div>
           <div class="asset-info"><div class="asset-name">ETH</div><div class="asset-chain">Ethereum</div></div>
-          <div class="asset-right"><div class="asset-amount">0.310</div><div class="asset-value">$800.00</div><div class="asset-change down">-1.2%</div></div>
+          <div class="asset-right">
+            <div class="asset-amount" id="balEth">--</div>
+            <div class="asset-value" id="valEth">$--</div>
+            <div class="asset-change up" id="chgEth">+2.4%</div>
+          </div>
         </div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(255,80,80,0.12)">🔴</div>
@@ -1947,6 +1962,9 @@ function goTo(pageId) {
   if(pageId==='page-swap') { loadNews(); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
+  if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
+    setTimeout(loadBalances, 500);
+  }
 }
 
 function goTab(tabId) {
@@ -2879,6 +2897,102 @@ function doImportWallet() {
   document.getElementById('importError').style.display = 'none';
   goTo('page-verify-success'); // 显示成功页
   setTimeout(() => goTo('page-home'), 2000);
+}
+
+
+// ── 余额查询 ──────────────────────────────────────────────────
+let priceCache = null;
+let priceCacheTime = 0;
+
+async function getPrices() {
+  if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
+  try {
+    // CoinGecko 免费价格 API（无需 key）
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum&vs_currencies=usd');
+    const data = await res.json();
+    priceCache = {
+      usdt: data.tether?.usd || 1,
+      trx: data.tron?.usd || 0.12,
+      eth: data.ethereum?.usd || 3200,
+    };
+    priceCacheTime = Date.now();
+    return priceCache;
+  } catch(e) {
+    return { usdt: 1, trx: 0.12, eth: 3200 };
+  }
+}
+
+async function loadBalances() {
+  if(!REAL_WALLET || !REAL_WALLET.trxAddress) return;
+  
+  const btn = document.getElementById('balRefreshBtn');
+  if(btn) btn.textContent = '查询中...';
+  
+  // 更新标签为加载中
+  ['balUsdt','balTrx','balEth'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = '...';
+  });
+
+  try {
+    const [prices] = await Promise.all([getPrices()]);
+    
+    // 查询 TRX 余额（TronGrid 免费 API）
+    const trxAddr = REAL_WALLET.trxAddress;
+    const ethAddr = REAL_WALLET.ethAddress;
+    
+    let usdtBal = 0, trxBal = 0, ethBal = 0;
+
+    // TRX 余额
+    try {
+      const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`, {
+        headers: { 'TRON-PRO-API-KEY': '' }
+      });
+      const trxData = await trxRes.json();
+      if(trxData.data && trxData.data[0]) {
+        trxBal = (trxData.data[0].balance || 0) / 1e6;
+        // USDT TRC-20 余额
+        const trc20 = trxData.data[0].trc20 || [];
+        const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
+        if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
+      }
+    } catch(e) { console.log('TRX query failed:', e); }
+
+    // ETH 余额（公共 RPC）
+    try {
+      const ethRes = await fetch('https://eth.llamarpc.com', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[ethAddr,'latest'],id:1})
+      });
+      const ethData = await ethRes.json();
+      if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
+    } catch(e) { console.log('ETH query failed:', e); }
+
+    // 更新UI
+    const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
+    const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
+
+    const usdtUsd = usdtBal * prices.usdt;
+    const trxUsd = trxBal * prices.trx;
+    const ethUsd = ethBal * prices.eth;
+    const total = usdtUsd + trxUsd + ethUsd;
+
+    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    set('balUsdt', fmt(usdtBal));
+    set('valUsdt', fmtUsd(usdtUsd));
+    set('balTrx', fmt(trxBal));
+    set('valTrx', fmtUsd(trxUsd));
+    set('balEth', fmt(ethBal));
+    set('valEth', fmtUsd(ethUsd));
+    set('totalBalanceDisplay', fmtUsd(total));
+    set('totalBalanceSub', '≈ ' + (total * 7.2).toFixed(0) + ' CNY · 实时价格');
+    
+    if(btn) btn.textContent = '刷新';
+  } catch(e) {
+    console.error('Balance load error:', e);
+    if(btn) btn.textContent = '刷新';
+  }
 }
 
 
