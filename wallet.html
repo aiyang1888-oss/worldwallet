@@ -408,6 +408,20 @@ body {
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
+
+@keyframes successPop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.check-path {
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: drawCheck 0.4s ease 0.3s forwards;
+}
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
 </style>
 </head>
 <body>
@@ -1318,6 +1332,18 @@ body {
         <button class="btn-primary" id="verifyBtn" onclick="checkVerify()">✅ 确认验证</button>
         <div id="verifyError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:#ff6060">❌ 验证失败，请重新检查</div>
       </div>
+    </div>
+
+
+    <!-- ══ 验证成功页 ══ -->
+    <div class="page" id="page-verify-success" style="background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0">
+      <div id="successCircle" style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#2a8a2a,#4ac84a);display:flex;align-items:center;justify-content:center;margin-bottom:28px;box-shadow:0 0 40px rgba(74,200,74,0.4);animation:successPop 0.5s ease">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <path d="M12 24L20 32L36 16" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="check-path"/>
+        </svg>
+      </div>
+      <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:10px">备份验证成功</div>
+      <div style="font-size:14px;color:var(--text-muted);text-align:center;line-height:1.7;padding:0 32px">你的钱包已安全创建<br>请妥善保管你的助记词</div>
     </div>
 
     <div class="page" id="page-import">
@@ -2823,9 +2849,13 @@ function checkVerify() {
   
   if(allCorrect) {
     document.getElementById('verifyError').style.display = 'none';
-    // 验证通过，进入首页
+    // 验证通过，显示成功页
     updateAddr();
-    goTo('page-home');
+    goTo('page-verify-success');
+    // 2秒后自动跳首页
+    setTimeout(() => {
+      goTo('page-home');
+    }, 2000);
   } else {
     document.getElementById('verifyError').style.display = 'block';
   }
