@@ -1245,6 +1245,25 @@ body {
           <div style="font-size:14px">正在加载资讯...</div>
         </div>
       </div>
+      <!-- 快捷入口 -->
+      <div style="padding:12px 14px 20px;display:flex;gap:8px;flex-wrap:wrap" id="newsQuickLinks">
+        <a href="https://coindesk.com" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">🗞️</div>
+          <div style="font-size:11px;color:var(--text)">CoinDesk</div>
+        </a>
+        <a href="https://cointelegraph.com" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">📡</div>
+          <div style="font-size:11px;color:var(--text)">CoinTelegraph</div>
+        </a>
+        <a href="https://decrypt.co" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">🔓</div>
+          <div style="font-size:11px;color:var(--text)">Decrypt</div>
+        </a>
+        <a href="https://www.binance.com/en/square" target="_blank" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;text-decoration:none;display:block">
+          <div style="font-size:16px;margin-bottom:4px">🌐</div>
+          <div style="font-size:11px;color:var(--text)">Binance Square</div>
+        </a>
+      </div>
     </div>
 
 
@@ -2846,47 +2865,32 @@ async function loadNews() {
   if(newsLoading) return;
   const list = document.getElementById('newsList');
   if(!list) return;
-  
-  // 5分钟缓存
   if(newsCache && Date.now() - newsCacheTime < 5 * 60 * 1000) {
     renderNews(newsCache);
     return;
   }
-  
   newsLoading = true;
   list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">⏳</div><div style="font-size:13px">加载中...</div></div>';
-  
-  // 用 rss2json 转换 CoinDesk RSS（支持 CORS）
-  const RSS_SOURCES = [
-    {
-      url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.coindesk.com%2Farc%2Foutboundfeeds%2Frss%2F&api_key=public&count=20',
-      parse: d => (d.items||[]).map(i=>({title:i.title,url:i.link,source:{title:'CoinDesk'},published_at:i.pubDate}))
-    },
-    {
-      url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fcointelegraph.com%2Frss&api_key=public&count=20',
-      parse: d => (d.items||[]).map(i=>({title:i.title,url:i.link,source:{title:'CoinTelegraph'},published_at:i.pubDate}))
-    }
-  ];
-  
-  let loaded = false;
-  for(const src of RSS_SOURCES) {
-    try {
-      const res = await fetch(src.url);
-      const data = await res.json();
-      if(data.status === 'ok' && data.items && data.items.length > 0) {
-        newsCache = src.parse(data);
-        newsCacheTime = Date.now();
-        renderNews(newsCache);
-        loaded = true;
-        break;
-      }
-    } catch(e) {
-      console.log('News source failed:', e);
-    }
-  }
-  
-  if(!loaded) {
-    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">😕</div><div style="font-size:13px">加载失败，请点刷新重试</div></div>';
+  try {
+    // 使用 allorigins 代理绕过 CORS，抓取 CoinDesk RSS
+    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://www.coindesk.com/arc/outboundfeeds/rss/');
+    const res = await fetch(proxyUrl);
+    const data = await res.json();
+    // 解析 RSS XML
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(data.contents, 'text/xml');
+    const items = xml.querySelectorAll('item');
+    newsCache = Array.from(items).slice(0,20).map(item => ({
+      title: item.querySelector('title')?.textContent || '',
+      url: item.querySelector('link')?.textContent || item.querySelector('guid')?.textContent || '',
+      source: {title: 'CoinDesk'},
+      published_at: item.querySelector('pubDate')?.textContent || ''
+    }));
+    newsCacheTime = Date.now();
+    renderNews(newsCache);
+  } catch(e) {
+    console.log('News load failed:', e);
+    list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">😕</div><div style="font-size:13px;margin-bottom:16px">加载失败，请点下方链接阅读</div></div>';
   }
   newsLoading = false;
 }
