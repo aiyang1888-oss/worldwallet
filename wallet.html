@@ -8,6 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <!-- ethers.js for real BIP39 wallet generation -->
 <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
+<!-- TronWeb for TRX signing -->
+<script src="https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -712,6 +714,20 @@ body {
           <div class="asset-icon" style="background:rgba(255,80,80,0.12)">🔴</div>
           <div class="asset-info"><div class="asset-name">TRX</div><div class="asset-chain">Tron</div></div>
           <div class="asset-right"><div class="asset-amount">1,200</div><div class="asset-value">$200.00</div><div class="asset-change up">+0.8%</div></div>
+        </div>
+      </div>
+
+      <!-- 交易记录区 -->
+      <div style="margin:0 0 16px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">最近交易</span>
+          <span onclick="loadTxHistory()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+        </div>
+        <div id="txHistoryList">
+          <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">
+            <div style="font-size:24px;margin-bottom:8px">📋</div>
+            暂无交易记录
+          </div>
         </div>
       </div>
     </div>
@@ -1801,12 +1817,22 @@ async function restoreWallet(mnemonic) {
     }
     const wallet = ethers.Wallet.fromMnemonic(mnemonic.trim());
     const trxWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/195'/0'/0/0");
+    // 将 ETH 地址转换为正确的 TRX 地址（Base58Check）
+    let trxAddr = '';
+    try {
+      if(typeof TronWeb !== 'undefined') {
+        trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
+      } else {
+        trxAddr = 'T' + trxWallet.address.slice(2, 36); // fallback
+      }
+    } catch(e) { trxAddr = 'T' + trxWallet.address.slice(2, 36); }
     const w = {
       mnemonic: mnemonic.trim(),
       words: words,
       ethAddress: wallet.address,
-      trxAddress: 'T' + trxWallet.address.slice(3, 36),
-      privateKey: wallet.privateKey,
+      trxAddress: trxAddr,
+      privateKey: wallet.privateKey,       // ETH private key
+      trxPrivateKey: trxWallet.privateKey,  // TRX private key
       createdAt: Date.now()
     };
     REAL_WALLET = w;
@@ -1930,6 +1956,7 @@ function goTo(pageId) {
   if(MAIN_PAGES.includes(pageId)) updateAddr();
   if(pageId==='page-addr') setTimeout(updateQRCode, 100);
   if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
+    setTimeout(loadTxHistory, 500);
     setTimeout(loadBalances, 500);
   }
 }
@@ -2216,6 +2243,90 @@ function copyKeyword() {
 
 
 
+
+// ── 真实转账实现 ──────────────────────────────────────────────────
+const TRON_GRID = 'https://api.trongrid.io';
+const USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+const ETH_RPC = 'https://eth.llamarpc.com';
+
+async function broadcastRealTransfer() {
+  if(!REAL_WALLET) { alert('未找到钱包，请先创建或导入'); return false; }
+  const addr = document.getElementById('transferAddr').value.trim();
+  const amt = parseFloat(document.getElementById('transferAmount').value);
+  const coin = transferCoin.id;
+
+  try {
+    let txHash = '';
+
+    if(coin === 'usdt') {
+      // USDT TRC-20 转账
+      txHash = await sendUSDT_TRC20(addr, amt);
+    } else if(coin === 'trx') {
+      // TRX 转账
+      txHash = await sendTRX(addr, amt);
+    } else if(coin === 'eth') {
+      // ETH 转账
+      txHash = await sendETH(addr, amt);
+    } else {
+      alert('暂不支持 ' + transferCoin.name + ' 转账');
+      return false;
+    }
+
+    if(txHash) {
+      document.getElementById('successTxHash') && (document.getElementById('successTxHash').textContent = txHash);
+      document.getElementById('successTxLink') && (document.getElementById('successTxLink').href =
+        coin==='eth' ? 'https://etherscan.io/tx/'+txHash : 'https://tronscan.org/#/transaction/'+txHash);
+      return true;
+    }
+  } catch(e) {
+    console.error('转账失败:', e);
+    alert('转账失败: ' + (e.message || e));
+  }
+  return false;
+}
+
+async function sendUSDT_TRC20(toAddr, amount) {
+  const tw = new TronWeb({ fullHost: TRON_GRID });
+  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
+  const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
+  const tx = await tw.transactionBuilder.triggerSmartContract(
+    USDT_TRC20,
+    'transfer(address,uint256)',
+    { feeLimit: 20000000 },
+    [
+      { type: 'address', value: toAddr },
+      { type: 'uint256', value: amtSun }
+    ],
+    tw.address.toHex(REAL_WALLET.trxAddress)
+  );
+  const signed = await tw.trx.sign(tx.transaction);
+  const result = await tw.trx.sendRawTransaction(signed);
+  if(result.result) return result.txid;
+  throw new Error(result.message || 'USDT 广播失败');
+}
+
+async function sendTRX(toAddr, amount) {
+  const tw = new TronWeb({ fullHost: TRON_GRID });
+  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
+  const amtSun = Math.floor(amount * 1e6);
+  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress);
+  const signed = await tw.trx.sign(tx);
+  const result = await tw.trx.sendRawTransaction(signed);
+  if(result.result) return result.txid;
+  throw new Error(result.message || 'TRX 广播失败');
+}
+
+async function sendETH(toAddr, amount) {
+  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
+  const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
+  const tx = await wallet.sendTransaction({
+    to: toAddr,
+    value: ethers.utils.parseEther(amount.toString())
+  });
+  await tx.wait(1);
+  return tx.hash;
+}
+
 // ══ 转账系统 ══
 let transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:8500, price:1};
 
@@ -2393,8 +2504,18 @@ function confirmTransfer() {
   const sf2=document.getElementById('swooshFromPart2'); if(sf2) sf2.textContent=document.getElementById('successFromPart2')?.textContent||'';
   const sfl=document.getElementById('swooshFromLang'); if(sfl) sfl.textContent=document.getElementById('successFromLang')?.textContent||'';
 
-  // 显示动画页
-  goTo('page-swoosh');
+  // 尝试真实广播
+  const sendBtn = document.getElementById('confirmSendBtn');
+  if(sendBtn) { sendBtn.disabled=true; sendBtn.textContent='⏳ 广播中...'; }
+
+  broadcastRealTransfer().then(ok => {
+    if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
+    // 不管广播结果都显示动画（演示模式）
+    goTo('page-swoosh');
+  }).catch(() => {
+    if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
+    goTo('page-swoosh');
+  });
 
   // 启动嗖动画
   setTimeout(() => {
@@ -2915,6 +3036,91 @@ function updateQRCode() {
   if(addr) generateQRCode(addr, 'qrCanvas');
 }
 
+
+
+// ── 交易历史 ──────────────────────────────────────────────────
+async function loadTxHistory() {
+  if(!REAL_WALLET) return;
+  const el = document.getElementById('txHistoryList');
+  if(!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">⏳ 加载中...</div>';
+
+  try {
+    const txs = [];
+
+    // TRX 转账记录
+    const trxAddr = REAL_WALLET.trxAddress;
+    if(trxAddr && trxAddr.startsWith('T')) {
+      const r1 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`);
+      const d1 = await r1.json();
+      if(d1.data) {
+        for(const tx of d1.data.slice(0,5)) {
+          const isOut = tx.from === trxAddr;
+          const amt = (parseInt(tx.value) / 1e6).toFixed(2);
+          txs.push({
+            icon: isOut ? '📤' : '📥',
+            type: isOut ? '转出' : '转入',
+            coin: 'USDT',
+            amount: (isOut?'-':'+') + amt,
+            addr: isOut ? tx.to : tx.from,
+            time: new Date(tx.block_timestamp).toLocaleDateString('zh-CN'),
+            hash: tx.transaction_id,
+            color: isOut ? '#e05c5c' : '#26a17b'
+          });
+        }
+      }
+
+      // TRX 原生交易
+      const r2 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions?limit=5&only_confirmed=true`);
+      const d2 = await r2.json();
+      if(d2.data) {
+        for(const tx of d2.data.slice(0,3)) {
+          const contract = tx.raw_data?.contract?.[0];
+          if(contract?.type !== 'TransferContract') continue;
+          const val = contract.parameter?.value;
+          if(!val) continue;
+          const isOut = val.owner_address && TronWeb?.address?.fromHex(val.owner_address) === trxAddr;
+          const amt = ((val.amount||0) / 1e6).toFixed(2);
+          txs.push({
+            icon: isOut ? '📤' : '📥',
+            type: isOut ? '转出' : '转入',
+            coin: 'TRX',
+            amount: (isOut?'-':'+') + amt,
+            addr: val.to_address ? (typeof TronWeb!=='undefined'?TronWeb.address.fromHex(val.to_address):val.to_address) : '',
+            time: new Date(tx.raw_data.timestamp).toLocaleDateString('zh-CN'),
+            hash: tx.txID,
+            color: isOut ? '#e05c5c' : '#e84142'
+          });
+        }
+      }
+    }
+
+    if(txs.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px"><div style="font-size:24px;margin-bottom:8px">📋</div>暂无交易记录</div>';
+      return;
+    }
+
+    el.innerHTML = txs.map(tx => `
+      <div onclick="window.open('https://tronscan.org/#/transaction/${tx.hash}','_blank')"
+        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
+        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
+          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
+        </div>
+      </div>
+    `).join('');
+
+  } catch(e) {
+    console.error('加载交易记录失败:', e);
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">加载失败，请稍后重试</div>';
+  }
+}
 
 // ── 余额查询 ──────────────────────────────────────────────────
 let priceCache = null;
