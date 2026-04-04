@@ -1981,7 +1981,20 @@ function renderKeyGrid() {
       : (SAMPLE_KEYS.en || SAMPLE_KEYS.zh);
   } else {
     // 非英文：始终用对应语言的地名词库
-    words = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    // 从词库随机抽取12个不重复的词
+    const indices = [];
+    while(indices.length < 12) {
+      const idx = Math.floor(Math.random() * pool.length);
+      if(!indices.includes(idx)) indices.push(idx);
+    }
+    words = indices.map(i => pool[i]);
+    // 保存到 REAL_WALLET 以便验证时使用
+    if(REAL_WALLET) {
+      REAL_WALLET.words = words;
+      REAL_WALLET.mnemonic = words.join(' ');
+      saveWallet(REAL_WALLET);
+    }
   }
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
