@@ -1226,7 +1226,7 @@ body {
         <!-- 关于 -->
         <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">关于</div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
-          <div class="settings-row" onclick="showToast('WorldToken v2.0.0 · worldtoken.co', 'info', 3000)">
+          <div class="settings-row" onclick="showToast('WorldToken v1.0.0 · worldtoken.cc', 'info', 3000)">
             <span class="settings-icon">ℹ️</span>
             <span class="settings-label">版本</span>
             <span class="settings-value">v1.0.0</span>
@@ -3035,6 +3035,13 @@ function updateSettingsPage() {
   if(sl) sl.textContent = info.name;
   const sa = document.getElementById('settingsAddr');
   if(sa) sa.textContent = getNativeAddr();
+  // 实时反映备份状态
+  const bs = document.getElementById('backupStatus');
+  if(bs) {
+    const backed = REAL_WALLET && REAL_WALLET.backedUp;
+    bs.textContent = backed ? '已备份 ✓' : '未备份';
+    bs.style.color = backed ? 'var(--green,#26a17b)' : 'var(--red,#e74c3c)';
+  }
 }
 
 
