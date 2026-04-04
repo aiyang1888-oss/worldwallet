@@ -2722,7 +2722,7 @@ function openKeyLangPicker() {
     div.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (isCurrent?'linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))':'var(--bg3)') + ';border:1.5px solid ' + (isCurrent?'var(--gold)':'var(--border)') + ';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
     div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
       '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
-      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'BIP39 公链标准密钥' : '地名助记词') + '</div></div>' +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'BIP39 Standard Mnemonic' : ({zh:'地名助记词',en:'BIP39 Mnemonic',hi:'स्थान नाम',es:'Nombre de lugar',ar:'اسم المكان',pt:'Nome do lugar',bn:'স্থান নাম',ru:'Топоним',ja:'地名',vi:'Địa danh',fr:'Nom de lieu',id:'Nama tempat',de:'Ortsname',ko:'지명',tr:'Yer adı',it:'Nome del luogo',th:'ชื่อสถานที่',pl:'Nazwa miejsca',nl:'Plaatsnaam',fa:'نام مکان',uk:'Топонім',ms:'Nama tempat',sv:'Platsnamn',ro:'Nume de loc',el:'Τοπωνύμιο',sw:'Jina la mahali',ur:'جگہ کا نام'}[lang] || '地名助记词')) + '</div></div>' +
       (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
     div.onclick = () => {
       currentLang = lang;
@@ -2758,7 +2758,7 @@ function openAddrLangPicker() {
     div.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (isCurrent?'linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))':'var(--bg3)') + ';border:1.5px solid ' + (isCurrent?'var(--gold)':'var(--border)') + ';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
     div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
       '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
-      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? '公链地址（BIP39）' : '母语诗句地址') + '</div></div>' +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'Blockchain Address (BIP39)' : ({zh:'万语地址',en:'World Address',hi:'विश्व पता',es:'Dirección mundial',ar:'عنوان عالمي',pt:'Endereço mundial',bn:'বিশ্ব ঠিকানা',ru:'Мировой адрес',ja:'ワールドアドレス',vi:'Địa chỉ thế giới',fr:'Adresse mondiale',id:'Alamat dunia',de:'Weltadresse',ko:'세계 주소',tr:'Dünya adresi',it:'Indirizzo mondiale',th:'ที่อยู่โลก',pl:'Adres światowy',nl:'Wereldadres',fa:'آدرس جهانی',uk:'Світова адреса',ms:'Alamat dunia',sv:'Världsadress',ro:'Adresă mondială',el:'Παγκόσμια διεύθυνση',sw:'Anwani ya dunia',ur:'عالمی پتہ'}[lang2] || '万语地址')) + '</div></div>' +
       (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
     div.onclick = () => {
       currentLang = lang;
