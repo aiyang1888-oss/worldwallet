@@ -1821,6 +1821,13 @@ function openWordEditor(idx) {
 
 
 // ── 真实钱包存储 ──────────────────────────────────────────────
+const _safeEl = (id) => document.getElementById(id) || {
+  textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
+  classList: {add:()=>{},remove:()=>{},contains:()=>false},
+  href: '', disabled: false,
+  addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}
+};
+
 let REAL_WALLET = null;
 
 // ⚠️ 注意：私钥存储于 localStorage，仅供演示，生产环境应加密
@@ -3534,12 +3541,7 @@ document.getElementById = function(id) {
 };
 
 // 批量修复：确保所有已知缺失 id 有默认处理
-const _safeEl = (id) => document.getElementById(id) || {
-  textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
-  classList: {add:()=>{},remove:()=>{},contains:()=>false},
-  href: '', disabled: false,
-  addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}
-};
+// _safeEl moved to top of script
 
 // ── Toast 提示系统（替换 alert）──────────────────────────────
 function showToast(msg, type='info', duration=2500) {
