@@ -2848,31 +2848,37 @@ async function loadNews() {
   newsLoading = true;
   list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">⏳</div><div style="font-size:13px">加载中...</div></div>';
   
-  try {
-    // CryptoPanic 免费公开 API
-    const res = await fetch('https://cryptopanic.com/api/v1/posts/?auth_token=free&public=true&kind=news&limit=20');
-    const data = await res.json();
-    newsCache = data.results || [];
-    newsCacheTime = Date.now();
-    renderNews(newsCache);
-  } catch(e) {
-    console.log('CryptoPanic failed, trying backup...');
-    // 备用：CoinGecko 新闻
-    try {
-      const res2 = await fetch('https://api.coingecko.com/api/v3/news?per_page=20');
-      const data2 = await res2.json();
-      newsCache = (data2.data || []).map(n => ({
-        title: n.title,
-        url: n.url,
-        source: {title: n.news_site},
-        published_at: n.created_at,
-        currencies: []
-      }));
-      newsCacheTime = Date.now();
-      renderNews(newsCache);
-    } catch(e2) {
-      list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">😕</div><div style="font-size:13px">加载失败，请刷新重试</div></div>';
+  // 用 rss2json 转换 CoinDesk RSS（支持 CORS）
+  const RSS_SOURCES = [
+    {
+      url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.coindesk.com%2Farc%2Foutboundfeeds%2Frss%2F&api_key=public&count=20',
+      parse: d => (d.items||[]).map(i=>({title:i.title,url:i.link,source:{title:'CoinDesk'},published_at:i.pubDate}))
+    },
+    {
+      url: 'https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fcointelegraph.com%2Frss&api_key=public&count=20',
+      parse: d => (d.items||[]).map(i=>({title:i.title,url:i.link,source:{title:'CoinTelegraph'},published_at:i.pubDate}))
     }
+  ];
+  
+  let loaded = false;
+  for(const src of RSS_SOURCES) {
+    try {
+      const res = await fetch(src.url);
+      const data = await res.json();
+      if(data.status === 'ok' && data.items && data.items.length > 0) {
+        newsCache = src.parse(data);
+        newsCacheTime = Date.now();
+        renderNews(newsCache);
+        loaded = true;
+        break;
+      }
+    } catch(e) {
+      console.log('News source failed:', e);
+    }
+  }
+  
+  if(!loaded) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">😕</div><div style="font-size:13px">加载失败，请点刷新重试</div></div>';
   }
   newsLoading = false;
 }
