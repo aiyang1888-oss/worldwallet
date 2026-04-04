@@ -2764,13 +2764,15 @@ function closeAddrLangPicker() {
 let verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  if(!REAL_WALLET || !REAL_WALLET.words || REAL_WALLET.words.length < 12) {
-    // 没有真实钱包直接跳过验证
-    goTo('page-home');
-    return;
+  // 获取当前显示的词（真实或样本）
+  let words;
+  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
+    words = REAL_WALLET.words;
+  } else {
+    // 使用样本词库
+    const sampleWords = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    words = sampleWords.slice(0, 12);
   }
-  
-  const words = REAL_WALLET.words;
   verifyAnswers = {};
   
   // 随机选3个位置验证
