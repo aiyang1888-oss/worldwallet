@@ -16,8 +16,10 @@
 <!-- ethers.js for real BIP39 wallet generation -->
 <!-- ethers.js - 钱包派生库，约800KB -->
 <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
-<!-- TronWeb for TRX signing -->
-<script src="https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js"></script>
+<!-- TronWeb 懒加载，仅转账时加载 -->
+<script>
+function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+</script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
