@@ -1865,7 +1865,18 @@ async function restoreWallet(mnemonic) {
 
 // 页面加载时恢复钱包（只恢复数据，不跳转）
 loadWallet();
-// 注意：有钱包也停在欢迎页，让用户主动选择
+// 强制确保刷新时显示欢迎页
+document.querySelectorAll('.page').forEach(p => {
+  p.classList.remove('active');
+  p.style.display = '';
+});
+const welcomePage = document.getElementById('page-welcome');
+if(welcomePage) {
+  welcomePage.classList.add('active');
+}
+document.getElementById('tabBar').style.display = 'none';
+
+// 有钱包时显示「继续」按钮
 setTimeout(() => {
   if(REAL_WALLET && REAL_WALLET.ethAddress) {
     const btn = document.getElementById('btnContinue');
