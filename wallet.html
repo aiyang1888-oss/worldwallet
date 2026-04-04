@@ -2013,7 +2013,9 @@ function renderKeyGrid() {
     if(hint) hint.remove();
   }
 
-  words.forEach((w,i)=>{
+  // 确保只显示12个词
+  const displayWords = words.slice(0, 12);
+  displayWords.forEach((w,i)=>{
     const d=document.createElement('div');
     d.className='key-word fade-up';
     d.style.animationDelay=i*0.04+'s';
