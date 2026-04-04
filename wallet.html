@@ -1343,7 +1343,8 @@ body {
         </svg>
       </div>
       <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:10px">备份验证成功</div>
-      <div style="font-size:14px;color:var(--text-muted);text-align:center;line-height:1.7;padding:0 32px">你的钱包已安全创建<br>请妥善保管你的助记词</div>
+      <div style="font-size:14px;color:var(--text-muted);text-align:center;line-height:1.7;padding:0 32px;margin-bottom:40px">你的钱包已安全创建<br>请妥善保管你的助记词</div>
+      <button class="btn-primary" onclick="updateAddr();goTo('page-home')" style="width:72%;max-width:260px;padding:14px 0;font-size:15px">🚀 开始使用</button>
     </div>
 
     <div class="page" id="page-import">
@@ -2852,10 +2853,7 @@ function checkVerify() {
     // 验证通过，显示成功页
     updateAddr();
     goTo('page-verify-success');
-    // 2秒后自动跳首页
-    setTimeout(() => {
-      goTo('page-home');
-    }, 2000);
+    // 用户手动点按钮进入首页（已移除自动跳转）
   } else {
     document.getElementById('verifyError').style.display = 'block';
   }
