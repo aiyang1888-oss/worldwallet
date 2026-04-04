@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldWallet</title>
+<!-- ethers.js for real BIP39 wallet generation -->
+<script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -582,7 +584,7 @@ body {
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="goTo('page-key')">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async()=>{const w=await createRealWallet();if(w&&currentLang==='en'){updateRealAddr();}goTo('page-key');})()">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
@@ -1309,7 +1311,7 @@ body {
         </div>
         <textarea style="width:100%;height:130px;background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:14px;font-size:14px;color:var(--text);resize:none;outline:none;font-family:inherit;line-height:1.8" placeholder="输入12个助记词..."></textarea>
 
-        <button class="btn-primary" onclick="goTo('page-home')">✅ 导入钱包</button>
+        <button class="btn-primary" onclick="(async()=>{const inp=document.getElementById('importInput');if(!inp)return;const m=inp.value.trim();if(!m){alert('请输入助记词');return;}const w=await restoreWallet(m);if(w){updateAddr();goTo('page-home');}})()">✅ 导入钱包</button>
       </div>
     </div>
 
@@ -1744,6 +1746,79 @@ function getNativeAddr() {
 
 
 
+// ── 真实钱包存储 ──────────────────────────────────────────────
+let REAL_WALLET = null;
+
+function saveWallet(w) {
+  try { localStorage.setItem('ww_wallet', JSON.stringify(w)); } catch(e) {}
+}
+
+function loadWallet() {
+  try {
+    const d = localStorage.getItem('ww_wallet');
+    if(d) REAL_WALLET = JSON.parse(d);
+  } catch(e) {}
+}
+
+async function createRealWallet() {
+  if(typeof ethers === 'undefined') {
+    console.warn('ethers.js not loaded, using demo mode');
+    return null;
+  }
+  try {
+    const wallet = ethers.Wallet.createRandom();
+    const mnemonic = wallet.mnemonic.phrase;
+    // TRX 地址用路径 m/44'/195'/0'/0/0
+    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
+    const w = {
+      mnemonic: mnemonic,
+      words: mnemonic.split(' '),
+      ethAddress: wallet.address,
+      trxAddress: 'T' + trxWallet.address.slice(3, 36),
+      privateKey: wallet.privateKey,
+      createdAt: Date.now()
+    };
+    REAL_WALLET = w;
+    saveWallet(w);
+    console.log('[WorldWallet] 真实钱包创建成功:', w.ethAddress);
+    return w;
+  } catch(e) {
+    console.error('[WorldWallet] 钱包创建失败:', e);
+    return null;
+  }
+}
+
+async function restoreWallet(mnemonic) {
+  if(typeof ethers === 'undefined') return null;
+  try {
+    const words = mnemonic.trim().split(/\s+/);
+    if(words.length !== 12 && words.length !== 24) {
+      alert('助记词必须是12或24个单词');
+      return null;
+    }
+    const wallet = ethers.Wallet.fromMnemonic(mnemonic.trim());
+    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/195'/0'/0/0");
+    const w = {
+      mnemonic: mnemonic.trim(),
+      words: words,
+      ethAddress: wallet.address,
+      trxAddress: 'T' + trxWallet.address.slice(3, 36),
+      privateKey: wallet.privateKey,
+      createdAt: Date.now()
+    };
+    REAL_WALLET = w;
+    saveWallet(w);
+    return w;
+  } catch(e) {
+    alert('助记词无效，请检查后重试');
+    return null;
+  }
+}
+
+// 页面加载时恢复钱包
+loadWallet();
+
+
 const SAMPLE_KEYS = {
   zh:['北京','东京','巴黎','伦敦','柏林','罗马','马德里','首尔','开罗','悉尼','孟买','多伦多'],
   en:['abandon','ability','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account'],
@@ -1805,7 +1880,11 @@ const ADDR_SAMPLES = {
   ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
 };
 
-const CHAIN_ADDR = 'TQn4Hj8mKx3fR7vL2pN9sW5d';
+const CHAIN_ADDR = 'TQn4Hj8mKx3fR7vL2pN9sW5d'
+// 如果有真实钱包，使用真实 TRX 地址
+function getChainAddr() {
+  return (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : CHAIN_ADDR;
+};
 const ETH_ADDR   = '0x7f3a9b2c4d8e1f5a6b3c7d2e';
 const BTC_ADDR   = 'bc1q7f3a9b2c4d8e1f5a6b3c7';
 
@@ -1848,8 +1927,14 @@ function renderKeyGrid() {
   const info = LANG_INFO[currentLang]||LANG_INFO.zh;
   document.getElementById('keyLangFlag').textContent = info.flag;
   document.getElementById('keyLangName').textContent = info.name;
-  const words = SAMPLE_KEYS[currentLang]||SAMPLE_KEYS.zh;
+  // 优先使用真实助记词
+  let words;
   const isEn = currentLang === 'en';
+  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length === 12) {
+    words = REAL_WALLET.words;
+  } else {
+    words = SAMPLE_KEYS[currentLang]||SAMPLE_KEYS.zh;
+  }
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
 
