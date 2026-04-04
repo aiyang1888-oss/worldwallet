@@ -1247,6 +1247,41 @@ body {
       </div>
     </div>
 
+
+    <!-- ══ 导入钱包页 ══ -->
+    <div class="page" id="page-import">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">导入钱包</div>
+        <div class="nav-right"></div>
+      </div>
+      <div style="padding:20px 18px;flex:1;overflow-y:auto">
+
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.7">输入你的12个助记词<br>每个词之间用空格分隔</div>
+        </div>
+
+        <!-- 12格助记词输入 -->
+        <div id="importGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+
+        <!-- 或者粘贴 -->
+        <div style="text-align:center;margin-bottom:12px;font-size:12px;color:var(--text-muted)">— 或者直接粘贴 —</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px">
+          <textarea id="importPaste" rows="3" placeholder="在此粘贴全部12个助记词..." 
+            style="width:100%;background:none;border:none;outline:none;font-size:13px;color:var(--text);resize:none;line-height:1.6;font-family:inherit"
+            oninput="syncImportGrid(this.value)"></textarea>
+        </div>
+
+        <!-- 警告 -->
+        <div style="background:rgba(255,100,100,0.06);border:1px solid rgba(255,100,100,0.15);border-radius:12px;padding:10px 14px;margin-bottom:20px;font-size:11px;color:#cc6666;line-height:1.7">
+          ⚠️ 请确保你在安全的环境下输入助记词，切勿在公共场所操作
+        </div>
+
+        <button class="btn-primary" style="padding:14px 0;font-size:15px" onclick="doImportWallet()">✅ 导入钱包</button>
+        <div id="importError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:#ff6060"></div>
+      </div>
+    </div>
+
     <!-- ═══ 礼物主页 ═══ -->
     <div class="page" id="page-hongbao">
       <div class="nav-bar">
@@ -1874,6 +1909,7 @@ function goTo(pageId) {
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') renderKeyGrid();
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
+  if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; }
   if(pageId==='page-settings') updateSettingsPage();
   if(pageId==='page-swap') { loadNews(); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
@@ -2713,6 +2749,85 @@ function openAddrLangPicker() {
 function closeAddrLangPicker() {
   document.getElementById('addrLangOverlay').classList.remove('show');
 }
+
+// ── 导入钱包 ──────────────────────────────────────────────────
+function initImportGrid() {
+  const grid = document.getElementById('importGrid');
+  if(!grid || grid.children.length > 0) return;
+  grid.innerHTML = '';
+  for(let i = 0; i < 12; i++) {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px';
+    div.innerHTML = `
+      <span style="font-size:9px;color:var(--text-muted)">${i+1}</span>
+      <input id="iw_${i}" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        style="width:100%;background:none;border:none;outline:none;font-size:12px;color:var(--text);text-align:center;font-family:inherit"
+        oninput="syncImportPaste()"
+        onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();document.getElementById('iw_${Math.min(i+1,11)}')&&document.getElementById('iw_${Math.min(i+1,11)}').focus();}">
+    `;
+    grid.appendChild(div);
+  }
+}
+
+function syncImportGrid(text) {
+  const words = text.trim().split(/\s+/).filter(w => w);
+  for(let i = 0; i < 12; i++) {
+    const inp = document.getElementById('iw_' + i);
+    if(inp) inp.value = words[i] || '';
+  }
+}
+
+function syncImportPaste() {
+  const words = [];
+  for(let i = 0; i < 12; i++) {
+    const inp = document.getElementById('iw_' + i);
+    words.push(inp ? inp.value.trim() : '');
+  }
+  const paste = document.getElementById('importPaste');
+  if(paste) paste.value = words.filter(w=>w).join(' ');
+}
+
+function doImportWallet() {
+  const words = [];
+  for(let i = 0; i < 12; i++) {
+    const inp = document.getElementById('iw_' + i);
+    const w = inp ? inp.value.trim().toLowerCase() : '';
+    words.push(w);
+  }
+  
+  // 也检查粘贴框
+  const paste = document.getElementById('importPaste');
+  const pasteWords = paste ? paste.value.trim().split(/\s+/).filter(w=>w) : [];
+  const finalWords = words.every(w=>w) ? words : pasteWords;
+  
+  if(finalWords.length !== 12) {
+    const err = document.getElementById('importError');
+    if(err) { err.style.display='block'; err.textContent='请输入完整的12个助记词'; }
+    return;
+  }
+  
+  const mnemonic = finalWords.join(' ');
+  let h = 0;
+  for(let i=0;i<mnemonic.length;i++){h=((h<<5)-h)+mnemonic.charCodeAt(i);h|=0;}
+  const hex = Math.abs(h).toString(16).padStart(8,'0');
+  
+  const w = {
+    mnemonic: mnemonic,
+    words: finalWords,
+    ethAddress: '0x' + (hex.repeat(6)).slice(0,40),
+    trxAddress: 'T' + (hex.repeat(6)).slice(0,33),
+    createdAt: Date.now(),
+    isImported: true
+  };
+  REAL_WALLET = w;
+  saveWallet(w);
+  updateAddr();
+  
+  document.getElementById('importError').style.display = 'none';
+  goTo('page-verify-success'); // 显示成功页
+  setTimeout(() => goTo('page-home'), 2000);
+}
+
 
 // ── 加密资讯 ──────────────────────────────────────────────────
 let newsLoading = false;
