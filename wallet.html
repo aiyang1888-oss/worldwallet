@@ -1543,7 +1543,9 @@ body {
 
 <script>
 const LANG_INFO = {
-  zh:{name:'中文',flag:'🇨🇳'},          // 1. 中文 ~13亿
+  zh:{name:'中文简体',flag:'🇨🇳'},        // 1. 中文简体 ~13亿
+  'zh-TW':{name:'中文繁體（台灣）',flag:'🇹🇼'}, // 2a. 繁體中文台灣
+  'zh-HK':{name:'中文繁體（香港）',flag:'🇭🇰'}, // 2b. 繁體中文香港
   en:{name:'English',flag:'🇺🇸'},        // 2. 英语 ~15亿
   hi:{name:'हिन्दी',flag:'🇮🇳'},         // 3. 印地 ~6亿
   es:{name:'Español',flag:'🇪🇸'},        // 4. 西班牙 ~5亿
@@ -1584,6 +1586,8 @@ function randDigits(n) {
 // 手机键盘可打出的字符（仅保留真正可输入的字母字符）
 const SINGLE_CHARS = {
   zh: '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪',
+  'zh-TW': '龍鳳虎鶴福壽祿喜財春夏秋冬金木水火土山川雲月星日風雨雪',
+  'zh-HK': '龍鳳虎鶴福壽祿喜財春夏秋冬金木水火土山川雲月星日風雨雪',
   ja: 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほやゆよアイウエオカキクケコ',
   ko: 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ',
   ar: 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي',
@@ -1613,7 +1617,7 @@ function randWord(lang) {
 }
 
 function randLang() {
-  const langs = Object.keys(SAMPLE_KEYS).filter(l => l !== 'en');
+  const langs = Object.keys(SAMPLE_KEYS).filter(l => l !== 'en' && l !== 'zh-TW' && l !== 'zh-HK');
   return langs[Math.floor(Math.random()*langs.length)];
 }
 
@@ -1856,7 +1860,9 @@ setTimeout(() => {
 
 
 const SAMPLE_KEYS = {
-  zh:['北京','东京','巴黎','伦敦','柏林','罗马','马德里','首尔','开罗','悉尼','孟买','多伦多'],
+  zh:['北京','東京','巴黎','倫敦','柏林','羅馬','馬德里','首爾','開羅','悉尼','孟買','多倫多'],
+  'zh-TW':['臺北','高雄','台中','臺南','新竹','嘉義','彰化','屏東','花蓮','宜蘭','桃園','基隆'],
+  'zh-HK':['香港','九龍','新界','沙田','荃灣','屯門','元朗','大埔','將軍澳','天水圍','粉嶺','上水'],
   en:['abandon','ability','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account'],
   ja:['北京','東京','パリ','ロンドン','ベルリン','ローマ','マドリード','ソウル','カイロ','シドニー','ムンバイ','トロント'],
   ko:['베이징','도쿄','파리','런던','베를린','로마','마드리드','서울','카이로','시드니','뭄바이','토론토'],
@@ -2722,7 +2728,7 @@ function openKeyLangPicker() {
     div.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (isCurrent?'linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))':'var(--bg3)') + ';border:1.5px solid ' + (isCurrent?'var(--gold)':'var(--border)') + ';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
     div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
       '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
-      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'BIP39 Standard Mnemonic' : ({zh:'地名助记词',en:'BIP39 Mnemonic',hi:'स्थान नाम',es:'Nombre de lugar',ar:'اسم المكان',pt:'Nome do lugar',bn:'স্থান নাম',ru:'Топоним',ja:'地名',vi:'Địa danh',fr:'Nom de lieu',id:'Nama tempat',de:'Ortsname',ko:'지명',tr:'Yer adı',it:'Nome del luogo',th:'ชื่อสถานที่',pl:'Nazwa miejsca',nl:'Plaatsnaam',fa:'نام مکان',uk:'Топонім',ms:'Nama tempat',sv:'Platsnamn',ro:'Nume de loc',el:'Τοπωνύμιο',sw:'Jina la mahali',ur:'جگہ کا نام'}[lang] || '地名助记词')) + '</div></div>' +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'BIP39 Standard Mnemonic' : ({zh:'地名助记词','zh-TW':'地名（繁體）','zh-HK':'地名（繁體）',en:'BIP39 Mnemonic',hi:'स्थान नाम',es:'Nombre de lugar',ar:'اسم المكان',pt:'Nome do lugar',bn:'স্থান নাম',ru:'Топоним',ja:'地名',vi:'Địa danh',fr:'Nom de lieu',id:'Nama tempat',de:'Ortsname',ko:'지명',tr:'Yer adı',it:'Nome del luogo',th:'ชื่อสถานที่',pl:'Nazwa miejsca',nl:'Plaatsnaam',fa:'نام مکان',uk:'Топонім',ms:'Nama tempat',sv:'Platsnamn',ro:'Nume de loc',el:'Τοπωνύμιο',sw:'Jina la mahali',ur:'جگہ کا نام'}[lang] || '地名助记词')) + '</div></div>' +
       (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
     div.onclick = () => {
       currentLang = lang;
