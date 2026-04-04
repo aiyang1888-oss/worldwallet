@@ -1989,12 +1989,13 @@ function renderKeyGrid() {
       if(!indices.includes(idx)) indices.push(idx);
     }
     words = indices.map(i => pool[i]);
-    // 保存到 REAL_WALLET 以便验证时使用
-    if(REAL_WALLET) {
-      REAL_WALLET.words = words;
-      REAL_WALLET.mnemonic = words.join(' ');
-      saveWallet(REAL_WALLET);
+    // 保存显示的词到 REAL_WALLET（这才是用户实际备份的词）
+    if(!REAL_WALLET) {
+      REAL_WALLET = {ethAddress:'', trxAddress:'', worldPrefix:'12345678', worldSuffix:'87654321', worldChars:[]};
     }
+    REAL_WALLET.words = words;
+    REAL_WALLET.mnemonic = words.join(' ');
+    saveWallet(REAL_WALLET);
   }
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
@@ -2956,14 +2957,23 @@ function renderNews(items) {
 let verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  // 获取当前显示的词（真实或样本）
+  // 直接用 REAL_WALLET.words（由 renderKeyGrid 设置的当前显示词）
   let words;
   if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
-    words = REAL_WALLET.words;
+    words = REAL_WALLET.words.slice(0, 12);
   } else {
-    // 使用样本词库
-    const sampleWords = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
-    words = sampleWords.slice(0, 12);
+    // fallback：从词库随机取12个
+    const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    const indices = [];
+    while(indices.length < 12) {
+      const idx = Math.floor(Math.random() * pool.length);
+      if(!indices.includes(idx)) indices.push(idx);
+    }
+    words = indices.map(i => pool[i]);
+    if(!REAL_WALLET) REAL_WALLET = {};
+    REAL_WALLET.words = words;
+    REAL_WALLET.mnemonic = words.join(' ');
+    saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   
