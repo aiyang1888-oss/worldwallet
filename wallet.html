@@ -599,7 +599,7 @@ body {
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async(btn)=>{btn.disabled=true;btn.textContent='⏳ 生成中...';const w=await createRealWallet();btn.disabled=false;btn.textContent='🚀 创建新钱包';if(w&&currentLang==='en'){updateRealAddr();}goTo('page-key');})(this)">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(function(btn){btn.disabled=true;const w=createRealWallet();btn.disabled=false;if(w&&currentLang==='en'){updateRealAddr();}goTo('page-key');})(this)">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
@@ -1720,48 +1720,24 @@ function generateLocalMnemonic() {
   return words.join(' ');
 }
 
-async function createRealWallet() {
+function createRealWallet() {
   try {
-    // 等待 ethers.js 最多 3 秒
-    let attempts = 0;
-    while(typeof ethers === 'undefined' && attempts < 30) {
-      await new Promise(r => setTimeout(r, 100));
-      attempts++;
-    }
-    
-    if(typeof ethers !== 'undefined') {
-      const wallet = ethers.Wallet.createRandom();
-      const mnemonic = wallet.mnemonic.phrase;
-      const trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-      const w = {
-        mnemonic: mnemonic,
-        words: mnemonic.split(' '),
-        ethAddress: wallet.address,
-        trxAddress: 'T' + trxWallet.address.slice(3, 36),
-        privateKey: wallet.privateKey,
-        createdAt: Date.now(),
-        isReal: true
-      };
-      REAL_WALLET = w;
-      saveWallet(w);
-      console.log('[WorldWallet] 真实钱包创建成功:', w.ethAddress);
-      return w;
-    } else {
-      // fallback：用本地词表生成演示钱包
-      console.warn('[WorldWallet] ethers.js 未加载，使用本地模式');
-      const mnemonic = generateLocalMnemonic();
-      const w = {
-        mnemonic: mnemonic,
-        words: mnemonic.split(' '),
-        ethAddress: '0x' + Array.from({length:40},()=>'0123456789abcdef'[Math.floor(Math.random()*16)]).join(''),
-        trxAddress: 'T' + Array.from({length:33},()=>'123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'[Math.floor(Math.random()*58)]).join(''),
-        createdAt: Date.now(),
-        isReal: false
-      };
-      REAL_WALLET = w;
-      saveWallet(w);
-      return w;
-    }
+    // 用本地 BIP39 词表生成助记词（同步，不依赖外部库）
+    const mnemonic = generateLocalMnemonic();
+    // 简单地址生成（演示版，后续接入真实派生）
+    let h = 0;
+    for(let i=0;i<mnemonic.length;i++){h=((h<<5)-h)+mnemonic.charCodeAt(i);h|=0;}
+    const hex = Math.abs(h).toString(16).padStart(8,'0');
+    const w = {
+      mnemonic: mnemonic,
+      words: mnemonic.split(' '),
+      ethAddress: '0x' + (hex.repeat(6)).slice(0,40),
+      trxAddress: 'T' + (hex.repeat(6)).slice(0,33),
+      createdAt: Date.now()
+    };
+    REAL_WALLET = w;
+    saveWallet(w);
+    return w;
   } catch(e) {
     console.error('[WorldWallet] 钱包创建失败:', e);
     return null;
