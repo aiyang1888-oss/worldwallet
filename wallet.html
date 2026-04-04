@@ -1965,13 +1965,17 @@ function renderKeyGrid() {
   const info = LANG_INFO[currentLang]||LANG_INFO.zh;
   document.getElementById('keyLangFlag').textContent = info.flag;
   document.getElementById('keyLangName').textContent = info.name;
-  // 优先使用真实助记词
+  // 语言选择决定密钥类型
   let words;
   const isEn = currentLang === 'en';
-  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length === 12) {
-    words = REAL_WALLET.words;
+  if(isEn) {
+    // 英文：显示真实 BIP39 助记词（如果有）
+    words = (REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length === 12)
+      ? REAL_WALLET.words
+      : (SAMPLE_KEYS.en || SAMPLE_KEYS.zh);
   } else {
-    words = SAMPLE_KEYS[currentLang]||SAMPLE_KEYS.zh;
+    // 非英文：始终用对应语言的地名词库
+    words = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
   }
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
