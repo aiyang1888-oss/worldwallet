@@ -615,7 +615,7 @@ body {
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
           <span>请抄写并妥善保管这12个词，任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
         </div>
-        <button class="btn-primary" onclick="goTo('page-home')">✅ 我已安全备份</button>
+        <button class="btn-primary" onclick="startVerify()">✅ 我已抄写，开始验证</button>
       </div>
 
       <!-- 密钥页语言选择弹窗 -->
@@ -1300,6 +1300,26 @@ body {
     </div>
 
     <!-- 导入页 -->
+
+    <!-- ══ 助记词验证页 ══ -->
+    <div class="page" id="page-key-verify">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-key')">‹</div>
+        <div class="nav-title">验证备份</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:32px;margin-bottom:8px">🔐</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">确认你已备份</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">请填入对应位置的助记词，确认你已正确抄写</div>
+        </div>
+        <div id="verifyQuestions" style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px"></div>
+        <button class="btn-primary" id="verifyBtn" onclick="checkVerify()">✅ 确认验证</button>
+        <div id="verifyError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:#ff6060">❌ 验证失败，请重新检查</div>
+      </div>
+    </div>
+
     <div class="page" id="page-import">
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo('page-create')">‹</div>
@@ -1899,6 +1919,7 @@ function goTo(pageId) {
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') renderKeyGrid();
+  if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
   if(pageId==='page-settings') updateSettingsPage();
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
@@ -2738,6 +2759,76 @@ function openAddrLangPicker() {
 function closeAddrLangPicker() {
   document.getElementById('addrLangOverlay').classList.remove('show');
 }
+
+// ── 助记词验证 ──────────────────────────────────────────────
+let verifyAnswers = {}; // {position: correctWord}
+
+function startVerify() {
+  if(!REAL_WALLET || !REAL_WALLET.words || REAL_WALLET.words.length < 12) {
+    // 没有真实钱包直接跳过验证
+    goTo('page-home');
+    return;
+  }
+  
+  const words = REAL_WALLET.words;
+  verifyAnswers = {};
+  
+  // 随机选3个位置验证
+  const positions = [];
+  while(positions.length < 3) {
+    const p = Math.floor(Math.random() * 12);
+    if(!positions.includes(p)) positions.push(p);
+  }
+  positions.sort((a,b) => a-b);
+  
+  // 生成题目
+  const container = document.getElementById('verifyQuestions');
+  container.innerHTML = '';
+  positions.forEach(pos => {
+    verifyAnswers[pos] = words[pos];
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px';
+    div.innerHTML = `
+      <div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ${pos+1} 词</div>
+      <input type="text" id="verify_${pos}" placeholder="请输入第 ${pos+1} 个词" autocomplete="off" autocorrect="off" autocapitalize="off"
+        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit"
+        onkeydown="if(event.key==='Enter')checkVerify()">
+    `;
+    container.appendChild(div);
+  });
+  
+  document.getElementById('verifyError').style.display = 'none';
+  goTo('page-key-verify');
+  setTimeout(() => {
+    const first = document.querySelector('#verifyQuestions input');
+    if(first) first.focus();
+  }, 300);
+}
+
+function checkVerify() {
+  let allCorrect = true;
+  Object.keys(verifyAnswers).forEach(pos => {
+    const input = document.getElementById('verify_' + pos);
+    const val = input ? input.value.trim().toLowerCase() : '';
+    const correct = verifyAnswers[pos].toLowerCase();
+    if(val !== correct) {
+      allCorrect = false;
+      if(input) input.style.color = '#ff6060';
+    } else {
+      if(input) input.style.color = '#4ac84a';
+    }
+  });
+  
+  if(allCorrect) {
+    document.getElementById('verifyError').style.display = 'none';
+    // 验证通过，进入首页
+    updateAddr();
+    goTo('page-home');
+  } else {
+    document.getElementById('verifyError').style.display = 'block';
+  }
+}
+
 
 // 时钟
 function updateTime() {
