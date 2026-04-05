@@ -7,6 +7,23 @@
 <title>WorldWallet</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; } :root { --gold: #c8a84b; --gold-light: #f0d070; --bg: #080810; --bg2: #0f0f1c; --bg3: #141426; --border: #22223a; --text: #e0e0f0; --text-dim: #888; --text-muted: #555; --green: #4ac84a; --red: #ff6060; } body { background: #0d0d18; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: 'PingFang SC','Noto Sans CJK SC','Microsoft YaHei','Segoe UI',sans-serif; } @media screen { html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; } .phone { width: 100vw !important; height: 100vh !important; min-height: 100vh !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; transform: none !important; margin: 0 !important; overflow: hidden !important; position: fixed !important; top: 0 !important; left: 0 !important; } .status-bar { display: none !important; } body > * { display: none !important; } .phone { display: flex !important; } } .phone { transform-origin: top center; } @media (max-width: 500px) { .phone { transform: scale(0.85); margin: -60px 0; } } .phone { width: 390px; height: 844px; background: var(--bg); border-radius: 50px; border: 2px solid #2a2a3a; box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px #111120; overflow: hidden; position: relative; display: flex; flex-direction: column; } .status-bar { height: 50px; background: var(--bg); display: flex; align-items: center; justify-content: space-between; padding: 14px 24px 0; font-size: 12px; color: var(--text-dim); flex-shrink: 0; z-index: 10; } .status-time { font-weight: 600; color: var(--text); font-size: 14px; } .pages { flex: 1; position: relative; overflow: hidden; } .page { position: absolute; top: 50px; left: 0; right: 0; bottom: 0; overflow-y: auto; overflow-x: hidden; display: none; flex-direction: column; background: var(--bg); } .page.active { display: flex; } #page-welcome { background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,168,75,0.15) 0%, transparent 60%), var(--bg); align-items: center; padding: 16px 24px 14px; text-align: center; overflow: hidden; } .welcome-logo { width: 52px; height: 52px; background: linear-gradient(135deg, #b8982a, #f0d070); border-radius: 22px; display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 8px; box-shadow: 0 8px 32px rgba(200,168,75,0.3); } .welcome-name { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #c8a84b, #f0d070); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 3px; margin-bottom: 2px; } .welcome-tag { font-size: 12px; color: var(--text-muted); letter-spacing: 2px; margin-bottom: 10px; } .lang-scroll { width: 100%; margin-bottom: 24px; } .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .lang-btn { background: var(--bg2); border: 1.5px solid var(--border); border-radius: 12px; padding: 10px 4px; cursor: pointer; text-align: center; transition: all 0.2s; } .lang-btn:hover, .lang-btn.active { border-color: var(--gold); background: linear-gradient(135deg, #181808, #1c1c0a); } .lang-flag { font-size: 20px; display: block; margin-bottom: 3px; } .lang-name { font-size: 10px; color: var(--text-muted); } .lang-btn.active .lang-name { color: var(--gold-light); } .btn-primary { background: linear-gradient(135deg, #b8982a, #e8c850); color: #0a0a05; border: none; border-radius: 16px; padding: 12px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s; } .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); } .btn-secondary { background: transparent; color: var(--gold); border: 1.5px solid rgba(200,168,75,0.3); border-radius: 16px; padding: 10px; font-size: 13px; cursor: pointer; width: 100%; transition: all 0.2s; margin-top: 6px; } .nav-bar { height: 56px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 14px; flex-shrink: 0; } .nav-back { font-size: 22px; color: var(--gold); cursor: pointer; width: 32px; } .nav-title { font-size: 17px; font-weight: 600; color: var(--text); flex: 1; } .nav-right { font-size: 13px; color: var(--gold); cursor: pointer; } .key-content { padding: 16px 20px; flex: 1; } .key-lang-row { display: flex; align-items: center; gap: 10px; background: var(--bg2); border-radius: 14px; padding: 10px 14px; margin-bottom: 16px; border: 1px solid var(--border); } .key-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; } .key-word { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 10px 6px; text-align: center; } .word-num { font-size: 9px; color: var(--text-muted); margin-bottom: 4px; } .word-val { font-size: 13px; color: var(--text); font-weight: 500; } .key-warning { background: rgba(255,180,0,0.08); border: 1px solid rgba(255,180,0,0.2); border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #ffcc44; line-height: 1.7; margin-bottom: 16px; display: flex; gap: 8px; } .home-header { background: var(--bg2); padding: 16px 20px 20px; border-bottom: 1px solid var(--border); } .home-greeting { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; } .home-addr-chip { font-size: 12px; color: var(--gold); background: rgba(200,168,75,0.08); border: 1px solid rgba(200,168,75,0.2); border-radius: 8px; padding: 5px 10px; display: inline-block; margin-bottom: 12px; } .home-balance { font-size: 32px; font-weight: 800; color: var(--text); } .home-balance-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; } .quick-btns { display: flex; gap: 8px; padding: 14px 20px; } .quick-btn { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s; } .quick-btn:hover { border-color: var(--gold); } .quick-btn-icon { font-size: 20px; margin-bottom: 4px; } .quick-btn-label { font-size: 11px; color: var(--text-dim); } .assets-section { padding: 0 20px 20px; } .assets-title { font-size: 12px; color: var(--text-muted); margin: 12px 0 10px; letter-spacing: 1px; } .asset-item { display: flex; align-items: center; gap: 12px; background: var(--bg2); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; } .asset-item:hover { border-color: rgba(200,168,75,0.2); } .asset-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; } .asset-info { flex: 1; } .asset-name { font-size: 15px; font-weight: 600; color: var(--text); } .asset-chain { font-size: 10px; color: var(--text-muted); } .asset-right { text-align: right; } .asset-amount { font-size: 14px; font-weight: 600; color: var(--text); } .asset-value { font-size: 11px; color: var(--text-muted); } .asset-change { font-size: 10px; } .asset-change.up { color: var(--green); } .asset-change.down { color: var(--red); } .addr-content { padding: 16px 18px; flex: 1; overflow-y: auto; } .addr-native-card { background: linear-gradient(135deg, #12120a, #1a1a08); border: 1.5px solid rgba(200,168,75,0.6); border-radius: 22px; padding: 20px; margin-bottom: 10px; box-shadow: 0 0 20px rgba(200,168,75,0.08); } .addr-card-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--gold); background: rgba(200,168,75,0.1); border: 1px solid rgba(200,168,75,0.2); border-radius: 20px; padding: 3px 10px; margin-bottom: 14px; } .addr-display { margin-bottom: 16px; } .addr-main { font-size: 22px; font-weight: 800; color: var(--gold-light); letter-spacing: 2px; line-height: 1.4; margin-bottom: 4px; } .addr-num { font-size: 13px; color: #555; letter-spacing: 3px; font-variant-numeric: tabular-nums; padding-left: 2px; } .addr-actions { display: flex; gap: 8px; margin-bottom: 0; } .addr-action-btn { flex: 1; background: rgba(200,168,75,0.1); border: 1px solid rgba(200,168,75,0.25); border-radius: 10px; padding: 9px 0; font-size: 12px; color: var(--gold); text-align: center; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 4px; } .addr-action-btn:hover { background: rgba(200,168,75,0.18); } .addr-action-btn.copied { border-color: var(--green); color: var(--green); } .addr-bind-row { display: flex; align-items: center; gap: 10px; padding: 8px 2px; } .addr-bind-line { flex: 1; height: 1px; background: var(--border); } .addr-bind-text { font-size: 10px; color: var(--text-muted); white-space: nowrap; } .addr-chain-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 18px; } .addr-chain-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text-muted); background: var(--bg3); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; margin-bottom: 14px; } .chain-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; } .chain-row:last-child { margin-bottom: 0; } .chain-badge { font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 5px; flex-shrink: 0; width: 32px; text-align: center; } .chain-badge.trx { background: rgba(255,100,100,0.12); border: 1px solid rgba(255,100,100,0.25); color: #ff9a9a; } .chain-badge.eth { background: rgba(100,100,255,0.12); border: 1px solid rgba(100,100,255,0.25); color: #aaaaff; } .chain-badge.btc { background: rgba(255,165,0,0.12); border: 1px solid rgba(255,165,0,0.25); color: #ffb84d; } .chain-hash { font-family: monospace; font-size: 11px; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .chain-copy-btn { font-size: 13px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; padding: 4px; } .chain-copy-btn:hover { color: var(--gold); } .copy-both-btn { width: 100%; margin-top: 14px; background: var(--bg3); border: 1px solid var(--border); border-radius: 14px; padding: 12px; font-size: 13px; color: var(--text-dim); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; } .copy-both-btn:hover { border-color: var(--gold); color: var(--gold-light); } .qr-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 100; } .qr-overlay.show { display: flex; } .wallet-loading-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.72); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 200; } .wallet-loading-overlay.show { display: flex; } .wallet-loading-spinner { width: 44px; height: 44px; border: 3px solid rgba(200,168,75,0.2); border-top-color: var(--gold); border-radius: 50%; animation: wallet-spin 0.75s linear infinite; } @keyframes wallet-spin { to { transform: rotate(360deg); } } .wallet-loading-text { margin-top: 16px; font-size: 14px; color: var(--text-dim); } .pin-setup-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.88); display: none; flex-direction: column; align-items: center; justify-content: flex-end; z-index: 120; padding-bottom: 24px; } .pin-setup-overlay.show { display: flex; } .pin-setup-panel { width: 100%; max-width: 360px; background: var(--bg2); border: 1px solid var(--border); border-radius: 24px 24px 0 0; padding: 20px 18px 28px; } .pin-setup-title { font-size: 16px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 6px; } .pin-setup-hint { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 18px; } .pin-dots { display: flex; justify-content: center; gap: 12px; margin-bottom: 22px; } .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border); background: transparent; transition: background 0.15s, border-color 0.15s; } .pin-dot.filled { background: var(--gold); border-color: var(--gold); } .pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 280px; margin: 0 auto; } .pin-key { aspect-ratio: 1.6; border: none; border-radius: 14px; background: var(--bg3); color: var(--text); font-size: 22px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; } .pin-key:active { background: var(--border); } .pin-key.pin-key-sub { font-size: 15px; color: var(--text-dim); } .pin-setup-cancel { margin-top: 14px; text-align: center; font-size: 14px; color: var(--gold); cursor: pointer; } .import-word-badge { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; color: var(--gold); background: rgba(200,168,75,0.12); border: 1px solid rgba(200,168,75,0.25); border-radius: 999px; padding: 4px 12px; } .import-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; } .qr-card { background: #fff; border-radius: 20px; padding: 24px; width: 280px; text-align: center; } .qr-placeholder { width: 180px; height: 180px; background: #f0f0f0; margin: 0 auto 16px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 60px; } .qr-addr-main { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; } .qr-addr-num { font-size: 12px; color: #999; margin-bottom: 8px; } .qr-chain { font-size: 10px; color: #bbb; font-family: monospace; word-break: break-all; } .qr-close { margin-top: 16px; background: #1a1a2a; color: #e0e0f0; border: none; border-radius: 12px; padding: 12px 32px; font-size: 14px; cursor: pointer; width: 100%; } .swap-content { padding: 20px; flex: 1; } .swap-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 18px; padding: 16px; margin-bottom: 10px; } .swap-label { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; } .swap-row { display: flex; align-items: center; gap: 10px; } .swap-coin-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; } .swap-coin-info { flex: 1; } .swap-coin-name { font-size: 16px; font-weight: 700; color: var(--text); } .swap-coin-bal { font-size: 11px; color: var(--text-muted); } .swap-input { background: none; border: none; font-size: 22px; color: var(--text); width: 110px; text-align: right; outline: none; } .swap-arrow { text-align: center; padding: 4px; color: var(--gold); font-size: 22px; cursor: pointer; } .swap-info { background: var(--bg2); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; } .swap-info-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; } .swap-info-row:last-child { margin-bottom: 0; } .swap-info-val { color: var(--text); } .swap-info-val.gold { color: var(--gold); } .tab-bar { height: 76px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-around; padding-bottom: 12px; flex-shrink: 0; width: 100%; position: relative; z-index: 10; } .tab-item { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; color: var(--text-muted); cursor: pointer; padding: 4px 10px; border-radius: 10px; transition: all 0.2s; } .tab-item.active { color: var(--gold); } .tab-icon { font-size: 22px; } @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } } .fade-up { animation: fadeUp 0.3s ease both; } .settings-row { display: flex; align-items: center; padding: 14px 16px; cursor: pointer; transition: background 0.15s; } .settings-row:hover { background: rgba(255,255,255,0.03); } .settings-icon { font-size: 18px; width: 28px; flex-shrink: 0; } .settings-label { flex: 1; font-size: 14px; color: var(--text); margin-left: 4px; } .settings-value { font-size: 13px; color: var(--text-muted); margin-right: 6px; } .settings-arrow { font-size: 16px; color: var(--text-muted); } .settings-divider { height: 1px; background: var(--border); margin: 0 16px; } .lang-row { display: flex; align-items: center; gap: 14px; background: var(--bg2); border: 1.5px solid var(--border); border-radius: 14px; padding: 12px 16px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; } .lang-row:hover { border-color: rgba(200,168,75,0.4); background: #161616; } .lang-row.active { border-color: var(--gold); background: linear-gradient(135deg,#181808,#1c1c0a); } .lang-row.active .lang-check { opacity: 1 !important; } .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; } @media (max-width: 768px) { html, body { width: 100% !important; height: 100% !important; overflow: hidden !important; background: var(--bg) !important; display: block !important; } body { display: flex !important; justify-content: center !important; align-items: center !important; } .phone { width: 100vw !important; height: 100vh !important; max-width: 100% !important; max-height: 100% !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; transform: none !important; margin: 0 !important; overflow: hidden !important; } .status-bar { display: none !important; } }
+.key-security-banner { display:flex; gap:10px; align-items:flex-start; background:linear-gradient(135deg,rgba(200,80,80,0.14),rgba(200,168,75,0.06)); border:1.5px solid rgba(255,120,100,0.35); border-radius:14px; padding:12px 14px; margin-bottom:14px; }
+.key-security-banner-icon { font-size:20px; flex-shrink:0; line-height:1.3; }
+.key-security-banner-text { font-size:12px; color:#e8c8c0; line-height:1.65; }
+.key-security-banner-text strong { display:block; color:#ffb0a0; font-size:13px; margin-bottom:4px; }
+.tx-history-item { display:flex; align-items:center; gap:12px; background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:14px 16px; margin-bottom:10px; }
+.tx-history-icon { width:44px; height:44px; border-radius:12px; background:var(--bg3); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.tx-history-mid { flex:1; min-width:0; }
+.tx-history-title { font-size:14px; font-weight:600; color:var(--text); }
+.tx-history-sub { font-size:11px; color:var(--text-muted); margin-top:3px; }
+.tx-history-right { text-align:right; flex-shrink:0; }
+.tx-history-amt { font-size:15px; font-weight:700; color:var(--text); }
+.tx-history-date { font-size:11px; color:var(--text-muted); margin-top:4px; }
+.tx-status { display:inline-block; font-size:10px; font-weight:600; padding:2px 8px; border-radius:999px; margin-top:6px; }
+.tx-status.ok { background:rgba(74,200,74,0.12); color:var(--green); border:1px solid rgba(74,200,74,0.25); }
+.tx-status.pending { background:rgba(200,168,75,0.12); color:var(--gold); border:1px solid rgba(200,168,75,0.25); }
+.tx-status.fail { background:rgba(255,96,96,0.1); color:var(--red); border:1px solid rgba(255,96,96,0.2); }
+.tx-history-empty { text-align:center; font-size:13px; color:var(--text-muted); padding:40px 20px; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
 <script src="wordlists.js"></script>
@@ -206,6 +223,13 @@
         <div class="nav-right" onclick="goTo('page-home')">完成</div>
       </div>
       <div class="key-content">
+        <div class="key-security-banner" role="alert">
+          <span class="key-security-banner-icon" aria-hidden="true">🔒</span>
+          <div class="key-security-banner-text">
+            <strong>安全提醒</strong>
+            请勿截图或通过聊天、邮件、网盘等途径分享助记词；任何索要助记词的行为均为诈骗。请勿在公共场合输入或展示助记词，注意周围摄像头与他人视线。
+          </div>
+        </div>
         <div class="key-lang-row">
           <span id="keyLangFlag" style="font-size:22px">🇨🇳</span>
           <span id="keyLangName" style="font-size:14px;font-weight:600;color:var(--text);flex:1">中文</span>
@@ -214,7 +238,7 @@
         <div class="key-grid" id="keyWordGrid"></div>
         <div class="key-warning">
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
-          <span>请抄写并妥善保管这12个词，任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
+          <span>请用纸笔抄写并离线保管这12个词；任何人获得这些词即可控制你的钱包。</span>
         </div>
         <button class="btn-primary" onclick="goTo('page-home')">✅ 我已安全备份</button>
       </div>
@@ -256,22 +280,17 @@
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(38,161,123,0.15)">💚</div>
           <div class="asset-info"><div class="asset-name">USDT</div><div class="asset-chain">TRC-20 · Tron</div></div>
-          <div class="asset-right"><div class="asset-amount"><span id="balUsdt">0.00</span></div><div class="asset-value">$<span id="usdUsdt">0.00</span></div><div class="asset-change up">+0.01%</div></div>
-        </div>
-        <div class="asset-item">
-          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
-          <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
-          <div class="asset-right"><div class="asset-amount"><span id="balEth">0.0000</span></div><div class="asset-value">$<span id="usdEth">0.00</span></div><div class="asset-change up">+2.4%</div></div>
+          <div class="asset-right"><div class="asset-amount"><span id="balUsdt">0.00</span></div><div class="asset-value">≈ $<span id="usdUsdt">0.00</span></div></div>
         </div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(100,100,255,0.12)">🔷</div>
           <div class="asset-info"><div class="asset-name">ETH</div><div class="asset-chain">Ethereum</div></div>
-          <div class="asset-right"><div class="asset-amount">0.310</div><div class="asset-value">$800.00</div><div class="asset-change down">-1.2%</div></div>
+          <div class="asset-right"><div class="asset-amount"><span id="balEth">0.0000</span></div><div class="asset-value">≈ $<span id="usdEth">0.00</span></div></div>
         </div>
         <div class="asset-item">
           <div class="asset-icon" style="background:rgba(255,80,80,0.12)">🔴</div>
           <div class="asset-info"><div class="asset-name">TRX</div><div class="asset-chain">Tron</div></div>
-          <div class="asset-right"><div class="asset-amount"><span id="balTrx">0.00</span></div><div class="asset-value">$<span id="usdTrx">0.00</span></div><div class="asset-change up">+0.8%</div></div>
+          <div class="asset-right"><div class="asset-amount"><span id="balTrx">0.00</span></div><div class="asset-value">≈ $<span id="usdTrx">0.00</span></div></div>
         </div>
       </div>
     </div>
@@ -446,7 +465,7 @@
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
         <div class="nav-title">转账</div>
-        <div class="nav-right" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+        <div class="nav-right" style="font-size:13px;color:var(--gold);cursor:pointer" onclick="goTo('page-tx-history')">记录</div>
       </div>
       <div style="padding:20px 18px;flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0">
 
@@ -1125,6 +1144,18 @@
       </div>
     </div>
 
+    <!-- 转账记录 -->
+    <div class="page" id="page-tx-history">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-transfer')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">转账记录</div>
+      </div>
+      <div style="padding:16px 18px;flex:1;overflow-y:auto">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;letter-spacing:1px">最近交易</div>
+        <div id="txHistoryList"></div>
+      </div>
+    </div>
+
 
   <!-- 底部导航 -->
   <div class="tab-bar" id="tabBar" style="display:none">
@@ -1419,6 +1450,8 @@ function goTo(pageId) {
   if(pageId==='page-import') updateImportWordCount();
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
+  if(pageId==='page-tx-history') renderTxHistory();
+  if(pageId==='page-home' && REAL_WALLET) loadBalances();
   if(MAIN_PAGES.includes(pageId)) updateAddr();
 }
 
@@ -1790,7 +1823,12 @@ function confirmTransfer() {
   closeTransferConfirm();
   // 填充成功页数据
   const amt = document.getElementById('transferAmount').value;
-  const addr = document.getElementById('transferAddr').value.trim();
+  const addrEarly = document.getElementById('transferAddr').value.trim();
+  if (amt && parseFloat(amt) > 0) {
+    const short = addrEarly.length > 32 ? addrEarly.slice(0, 12) + '…' + addrEarly.slice(-10) : addrEarly;
+    appendTxRecord({ type: 'send', amount: String(amt), coin: transferCoin.name, status: 'success', ts: Date.now(), summary: short || '—' });
+  }
+  const addr = addrEarly;
   const fee = (amt*0.003).toFixed(2);
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
   const isEn = currentLang==='en';
@@ -2374,46 +2412,116 @@ function updateTime() {
 updateTime(); setInterval(updateTime,10000);
 const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
 
+// ── 转账记录（本地） ─────────────────────────────────────────
+const TX_HISTORY_KEY = 'ww_tx_history';
+function loadTxHistory() {
+  try { return JSON.parse(localStorage.getItem(TX_HISTORY_KEY) || '[]'); } catch (e) { return []; }
+}
+function saveTxHistory(arr) {
+  try { localStorage.setItem(TX_HISTORY_KEY, JSON.stringify(arr.slice(0, 80))); } catch (e) {}
+}
+function appendTxRecord(rec) {
+  const arr = loadTxHistory();
+  arr.unshift({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 9),
+    type: rec.type || 'send',
+    amount: rec.amount,
+    coin: rec.coin,
+    status: rec.status || 'success',
+    ts: rec.ts || Date.now(),
+    summary: rec.summary || ''
+  });
+  saveTxHistory(arr);
+}
+function escTx(s) {
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+}
+function formatTxDate(ts) {
+  const d = new Date(ts);
+  return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0') + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function renderTxHistory() {
+  const container = document.getElementById('txHistoryList');
+  if (!container) return;
+  const items = loadTxHistory();
+  const typeLabels = { send: '转账', receive: '收款', swap: '兑换', gift: '礼物' };
+  const icons = { send: '📤', receive: '📥', swap: '💱', gift: '🎁' };
+  if (!items.length) {
+    container.innerHTML = '<div class="tx-history-empty">暂无转账记录<br><span style="font-size:12px;opacity:0.8">完成转账后将显示在这里</span></div>';
+    return;
+  }
+  container.innerHTML = items.map(function(tx) {
+    const icon = icons[tx.type] || '📋';
+    const label = typeLabels[tx.type] || '交易';
+    const dateStr = formatTxDate(tx.ts);
+    const st = tx.status === 'success' ? 'ok' : tx.status === 'pending' ? 'pending' : 'fail';
+    const stText = tx.status === 'success' ? '成功' : tx.status === 'pending' ? '确认中' : '失败';
+    const amtLine = escTx(tx.amount) + ' ' + escTx(tx.coin || '');
+    return '<div class="tx-history-item">' +
+      '<div class="tx-history-icon">' + icon + '</div>' +
+      '<div class="tx-history-mid">' +
+        '<div class="tx-history-title">' + escTx(label) + '</div>' +
+        '<div class="tx-history-sub">' + escTx(tx.summary) + '</div>' +
+      '</div>' +
+      '<div class="tx-history-right">' +
+        '<div class="tx-history-amt">' + amtLine + '</div>' +
+        '<div class="tx-history-date">' + escTx(dateStr) + '</div>' +
+        '<span class="tx-status ' + st + '">' + stText + '</span>' +
+      '</div></div>';
+  }).join('');
+}
+
+let spotUsd = { usdt: 1, eth: 3200, trx: 0.12 };
+
+async function refreshUsdPrices() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,ethereum,tron&vs_currencies=usd');
+    const j = await r.json();
+    if (j.tether && typeof j.tether.usd === 'number') spotUsd.usdt = j.tether.usd;
+    if (j.ethereum && typeof j.ethereum.usd === 'number') spotUsd.eth = j.ethereum.usd;
+    if (j.tron && typeof j.tron.usd === 'number') spotUsd.trx = j.tron.usd;
+  } catch (e) { console.log('USD price:', e); }
+  return spotUsd;
+}
 
 // ── 余额查询 ──────────────────────────────────────────────────
 async function loadBalances() {
   if (!REAL_WALLET) return;
-  
+
+  await refreshUsdPrices();
+
   const ethAddr = REAL_WALLET.ethAddress;
   const trxAddr = REAL_WALLET.trxAddress;
-  
+
   let totalUSD = 0;
-  
+
   try {
-    // 查询 TRX 余额（TronGrid 免费 API）
     const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`);
     const trxData = await trxRes.json();
     if (trxData.data && trxData.data[0]) {
       const trxBal = (trxData.data[0].balance / 1e6).toFixed(2);
-      const trxPrice = 0.12; // 估算价格
-      const trxUSD = (parseFloat(trxBal) * trxPrice).toFixed(2);
+      const trxUSD = (parseFloat(trxBal) * spotUsd.trx).toFixed(2);
       document.getElementById('balTrx') && (document.getElementById('balTrx').textContent = trxBal);
       document.getElementById('usdTrx') && (document.getElementById('usdTrx').textContent = trxUSD);
       totalUSD += parseFloat(trxUSD);
-      
-      // 查询 TRC-20 USDT 余额
+
       const trc20 = trxData.data[0].trc20;
       if (trc20) {
         const usdt = trc20.find(t => t['TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t']);
         if (usdt) {
           const usdtBal = (parseInt(String(Object.values(usdt)[0]), 10) / 1e6).toFixed(2);
+          const uUsd = (parseFloat(usdtBal) * spotUsd.usdt).toFixed(2);
           document.getElementById('balUsdt') && (document.getElementById('balUsdt').textContent = usdtBal);
-          document.getElementById('usdUsdt') && (document.getElementById('usdUsdt').textContent = usdtBal);
-          totalUSD += parseFloat(usdtBal);
+          document.getElementById('usdUsdt') && (document.getElementById('usdUsdt').textContent = uUsd);
+          totalUSD += parseFloat(uUsd);
         }
       }
     }
   } catch(e) {
     console.log('TRX balance error:', e);
   }
-  
+
   try {
-    // 查询 ETH 余额（无需 API key 的公共节点）
     const ethRes = await fetch(`https://eth.llamarpc.com`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2425,8 +2533,7 @@ async function loadBalances() {
     const ethData = await ethRes.json();
     if (ethData.result) {
       const ethBal = (parseInt(ethData.result, 16) / 1e18).toFixed(4);
-      const ethPrice = 3200; // 估算价格
-      const ethUSD = (parseFloat(ethBal) * ethPrice).toFixed(2);
+      const ethUSD = (parseFloat(ethBal) * spotUsd.eth).toFixed(2);
       document.getElementById('balEth') && (document.getElementById('balEth').textContent = ethBal);
       document.getElementById('usdEth') && (document.getElementById('usdEth').textContent = ethUSD);
       totalUSD += parseFloat(ethUSD);
@@ -2434,17 +2541,18 @@ async function loadBalances() {
   } catch(e) {
     console.log('ETH balance error:', e);
   }
-  
-  // 更新总余额
+
   document.getElementById('totalBalanceUSD') && (document.getElementById('totalBalanceUSD').textContent = '$' + totalUSD.toFixed(2));
   document.getElementById('totalBalanceCNY') && (document.getElementById('totalBalanceCNY').textContent = '≈ ' + (totalUSD * 7.2).toFixed(0) + ' CNY');
 }
 
-// 页面加载时查询余额
 window.addEventListener('load', () => {
   setTimeout(() => {
     if (REAL_WALLET) loadBalances();
   }, 1000);
+  setInterval(() => {
+    if (REAL_WALLET) loadBalances();
+  }, 90000);
 });
 </script>
 </body>
