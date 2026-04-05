@@ -331,8 +331,8 @@ body {
   justify-content: center;
   align-items: center;
   gap: 10px 14px;
-  margin-top: 12px;
-  padding: 0 4px 12px;
+  margin-top: 8px;
+  padding: 0 4px 10px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -352,8 +352,8 @@ body {
   border-radius: 999px;
   padding: 4px 10px 4px 6px;
 }
-.home-mini-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.home-mini-icon svg { display: block; width: 20px; height: 20px; }
+.home-mini-icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.home-mini-icon svg { display: block; width: 22px; height: 22px; }
 .home-chain-tag {
   font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
   color: rgba(232,200,80,0.95); flex-shrink: 0;
@@ -712,7 +712,7 @@ body {
   background: linear-gradient(135deg,#181808,#1c1c0a);
   box-shadow: 0 0 0 1px rgba(200,168,75,0.55), 0 8px 28px rgba(200,168,75,0.2);
 }
-/* Welcome: 2-col cards + compact corner check */
+/* Welcome: 2-col cards + gold ring + prominent check */
 #welcomeLangGrid .lang-row:not(.active) .lang-check {
   font-size: 13px !important;
   min-width: 0;
@@ -720,34 +720,35 @@ body {
   filter: none;
 }
 #welcomeLangGrid .lang-row.active {
-  border: 3px solid rgba(255,215,120,0.98);
-  background: linear-gradient(160deg, rgba(48,40,18,0.98), rgba(22,18,8,0.99));
+  border: 3.5px solid var(--gold);
+  background: linear-gradient(160deg, rgba(52,44,20,0.99), rgba(24,20,10,0.99));
   box-shadow:
-    0 0 0 2px rgba(255,210,100,0.55),
-    0 0 22px rgba(255,200,80,0.35),
-    0 12px 32px rgba(200,168,75,0.28);
+    0 0 0 1px rgba(255,220,140,0.45),
+    0 0 0 3px rgba(200,168,75,0.55),
+    0 0 28px rgba(255,200,90,0.42),
+    0 14px 36px rgba(200,168,75,0.32);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 22px !important;
+  font-size: 28px !important;
   line-height: 1;
   font-weight: 900;
-  min-width: 30px;
+  min-width: 38px;
   flex-shrink: 0;
   text-align: center;
   color: #1a1508 !important;
-  background: linear-gradient(135deg, #e8c850, #f5e090);
+  background: linear-gradient(135deg, #e8c850, #f8e8a8);
   border-radius: 999px;
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   display: flex !important;
   align-items: center;
   justify-content: center;
   opacity: 1 !important;
   filter: none;
   transform: none;
-  box-shadow: 0 3px 12px rgba(200,168,75,0.55);
+  box-shadow: 0 4px 16px rgba(200,168,75,0.65);
 }
 
 @keyframes successPop {
@@ -1185,7 +1186,7 @@ body {
           <div class="home-balance-chart-foot" id="homeBalanceChartFoot"></div>
         </div>
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
-          <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
+          <span id="homeAddrChip" class="home-addr-chip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);min-height:36px;display:inline-flex;align-items:center;transition:background 0.2s,color 0.2s">复制地址</span>
         </div>
         <div id="homeChainStrip" class="home-chain-strip home-chain-strip--dim">
@@ -3197,6 +3198,10 @@ async function restoreWallet(mnemonic) {
 // 页面加载时恢复钱包（只恢复数据，不跳转）
 captureReferralFromUrl();
 loadWallet();
+try {
+  const _txList = document.getElementById('txHistoryList');
+  if (_txList && typeof txHistoryEmptyHtml === 'function') _txList.innerHTML = txHistoryEmptyHtml();
+} catch (_e) {}
 // 钱包昵称 localStorage（仅本机）
 try { if (localStorage.getItem('ww_wallet_nickname') == null) localStorage.setItem('ww_wallet_nickname', ''); } catch (_wn) {}
 function getWalletNickname() { try { return localStorage.getItem('ww_wallet_nickname') || ''; } catch (e) { return ''; } }
@@ -5849,9 +5854,9 @@ function txHistoryFriendlyHtml(icon, title, hint) {
 }
 function txHistoryEmptyHtml() {
   const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
-  const title = en ? 'No transactions yet — all good!' : '还没有交易记录，一切从零开始';
+  const title = en ? "No transactions yet — you're all set!" : '还没有交易记录，一切从零开始';
   const hint = en
-    ? 'When you send or receive crypto, your latest activity will show up here. First transfer? It may take a few seconds on-chain — tap Refresh above if you just sent one.'
+    ? 'Send or receive once, and your latest activity will appear here. On-chain confirmations can take a few seconds — tap Refresh above if you just sent something.'
     : '这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认偶尔需要几秒，若刚发出请点上方「刷新」或稍后再看。';
   return txHistoryFriendlyHtml('📬', title, hint);
 }
