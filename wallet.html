@@ -46,6 +46,24 @@
   --red: #ff6060;
 }
 
+[data-theme="light"] {
+  --gold: #a88935;
+  --gold-light: #d4b85c;
+  --bg: #f0f0f4;
+  --bg2: #ffffff;
+  --bg3: #e8e8ee;
+  --border: #d0d0dc;
+  --text: #1a1a24;
+  --text-dim: #555;
+  --text-muted: #888;
+  --green: #2a9d4a;
+  --red: #d04040;
+}
+
+[data-theme="light"] body {
+  background: #e4e4ea !important;
+}
+
 body {
   background: #0d0d18;
   display: flex;
@@ -1624,8 +1642,9 @@ body {
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
           <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌍</div>
           <div class="u4">
-            <div style="font-size:15px;font-weight:700;color:var(--text)">我的钱包</div>
+            <div style="font-size:15px;font-weight:700;color:var(--text)" id="settingsWalletTitle">我的钱包</div>
             <div style="font-size:10px;color:var(--text-muted);margin-top:2px;word-break:break-all" id="settingsAddr"></div>
+            <input id="walletNicknameInput" type="text" placeholder="钱包昵称（仅本机）" maxlength="32" autocomplete="off" style="width:100%;margin-top:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;box-sizing:border-box" onblur="if(typeof setWalletNickname==='function'){setWalletNickname(this.value);if(typeof updateSettingsPage==='function')updateSettingsPage();}" />
           </div>
           <div style="font-size:18px;color:var(--text-muted)">›</div>
         </div>
@@ -1633,10 +1652,17 @@ body {
         <!-- 安全 -->
         <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">安全</div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
-          <div class="settings-row" onclick="openPinSettingsDialog()">
+          <div class="settings-row" id="settingsPinRow" onclick="openPinSettingsDialog()">
             <span class="settings-icon">🔐</span>
             <span class="settings-label">PIN码</span>
             <span class="settings-value">已开启</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="toggleWwTheme()">
+            <span class="settings-icon">🌓</span>
+            <span class="settings-label">主题</span>
+            <span class="settings-value" id="settingsThemeValue">深色</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
@@ -2895,6 +2921,24 @@ async function restoreWallet(mnemonic) {
 
 // 页面加载时恢复钱包（只恢复数据，不跳转）
 loadWallet();
+// 钱包昵称 localStorage（仅本机）
+try { if (localStorage.getItem('ww_wallet_nickname') == null) localStorage.setItem('ww_wallet_nickname', ''); } catch (_wn) {}
+function getWalletNickname() { try { return localStorage.getItem('ww_wallet_nickname') || ''; } catch (e) { return ''; } }
+function setWalletNickname(s) { try { localStorage.setItem('ww_wallet_nickname', (s || '').trim().slice(0, 32)); } catch (e) {} }
+function applyWwTheme() {
+  var t = localStorage.getItem('ww_theme') || 'dark';
+  if (t !== 'light' && t !== 'dark') t = 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  var el = document.getElementById('settingsThemeValue');
+  if (el) el.textContent = t === 'light' ? '浅色' : '深色';
+}
+function toggleWwTheme() {
+  var cur = localStorage.getItem('ww_theme') || 'dark';
+  var next = cur === 'light' ? 'dark' : 'light';
+  try { localStorage.setItem('ww_theme', next); } catch (e) {}
+  applyWwTheme();
+}
+applyWwTheme();
 // 页面加载完成
 window.addEventListener('load', () => {
   const hint = document.getElementById('loadingHint');
@@ -4548,6 +4592,12 @@ function updateSettingsPage() {
   const info = LANG_INFO[currentLang]||{name:'中文'};
   const sl = (_safeEl('settingsLang') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* settingsLang fallback */;
   if(sl) sl.textContent = info.name;
+  const wn = getWalletNickname();
+  const wti = document.getElementById('settingsWalletTitle');
+  if (wti) wti.textContent = wn || '我的钱包';
+  const wni = document.getElementById('walletNicknameInput');
+  if (wni && document.activeElement !== wni) wni.value = wn;
+  if (typeof applyWwTheme === 'function') applyWwTheme();
   const sa = document.getElementById('settingsAddr');
   if(sa) sa.textContent = getNativeAddr();
   // 实时反映备份状态
@@ -5646,5 +5696,31 @@ try { applySeoForPage('page-welcome'); applyOfflineState(); window.addEventListe
 
 
 </script>
+<style media="print">
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .phone {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    page-break-inside: avoid;
+  }
+  .status-bar, #tabBar, .nav-back { display: none !important; }
+  .page { display: block !important; position: static !important; }
+}
+</style>
 </body>
 </html>
