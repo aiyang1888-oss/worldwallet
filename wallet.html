@@ -3716,6 +3716,16 @@ function goTo(pageId) {
   } catch (e) {}
 }
 
+
+async function resolveENS(name) {
+  if (!name.endsWith('.eth')) return name;
+  try {
+    const provider = new ethers.providers.JsonRpcProvider('https://eth.llamarpc.com');
+    const addr = await provider.resolveName(name);
+    return addr || name;
+  } catch(e) { return name; }
+}
+
 function goTab(tabId) {
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
   document.getElementById(tabId)?.classList.add('active');
@@ -6727,5 +6737,19 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   .page { display: block !important; position: static !important; }
 }
 </style>
+
+    <!-- 代币授权管理页 -->
+    <div id="page-allowance" class="page">
+      <div class="nav-bar">
+        <span class="nav-back" onclick="goTo('page-settings')">‹</span>
+        <span class="nav-title">代币授权管理</span>
+      </div>
+      <div style="padding:16px">
+        <div style="color:var(--text-muted);font-size:13px;margin-bottom:16px">管理 dApp 对你代币的访问权限</div>
+        <div id="allowanceList">
+          <div style="text-align:center;padding:40px;color:var(--text-muted)">暂无活跃授权</div>
+        </div>
+      </div>
+    </div>
 </body>
 </html>
