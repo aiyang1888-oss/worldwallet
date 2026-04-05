@@ -11,8 +11,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 
-/** 直接使用线上部署的完整钱包页 */
-const WALLET_REMOTE_URL = 'https://www.worldtoken.cc/wallet.html';
+import { getWalletUrl } from './walletUrl';
+
+const WALLET_REMOTE_URL = getWalletUrl();
 
 export default function Index() {
   const [loading, setLoading] = useState(true);
