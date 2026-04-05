@@ -12,7 +12,7 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="translate" content="no" />
         <ScrollViewStyleReset />
       </head>
-      <body>{children}</body>
+      <body style={{ margin: 0, minHeight: '100%', backgroundColor: '#080810' }}>{children}</body>
     </html>
   );
 }
