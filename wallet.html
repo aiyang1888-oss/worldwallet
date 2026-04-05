@@ -387,9 +387,9 @@ body {
 .transfer-contact-del { font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 4px 6px; flex-shrink: 0; user-select: none; }
 .transfer-contact-empty { font-size: 12px; color: var(--text-muted); padding: 8px 4px; }
 .transfer-addr-dd-item .contact-nick-mark { color: var(--gold); font-weight: 600; margin-right: 6px; }
-.quick-btns { display: flex; gap: 8px; padding: 14px 20px; }
+.quick-btns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px; }
 .quick-btn {
-  flex: 1; background: var(--bg2);
+  flex: 1 1 18%; min-width: 56px; background: var(--bg2);
   border: 1px solid var(--border); border-radius: 14px;
   padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s;
 }
@@ -1134,11 +1134,22 @@ body {
           </div>
         </div>
       </div>
+      <div id="trxResourceCard" style="display:none;margin:0 16px 10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:10px;color:var(--text-muted);letter-spacing:1.5px">TRON 资源</span>
+          <span id="trxResourceRefresh" onclick="if(typeof loadTrxResource==='function')loadTrxResource()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+        </div>
+        <div style="display:flex;gap:14px;font-size:12px;line-height:1.45">
+          <div style="flex:1;min-width:0"><span style="color:var(--text-muted);font-size:11px">能量</span><br /><strong id="trxEnergyText" style="color:var(--text);word-break:break-all">--</strong></div>
+          <div style="flex:1;min-width:0"><span style="color:var(--text-muted);font-size:11px">带宽</span><br /><strong id="trxBandwidthText" style="color:var(--text);word-break:break-all">--</strong></div>
+        </div>
+      </div>
       <div class="quick-btns">
         <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon" class="u8">📤</div><div class="quick-btn-label">转账</div></div>
         <div class="quick-btn" onclick="goTab('tab-addr')"><div class="quick-btn-icon" class="u8">📥</div><div class="quick-btn-label">收款</div></div>
         <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" class="u8">💱</div><div class="quick-btn-label">兑换</div></div>
         <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" class="u8">🎁</div><div class="quick-btn-label">礼物</div></div>
+        <div class="quick-btn" onclick="goTo('page-dapp')"><div class="quick-btn-icon" class="u8">🌐</div><div class="quick-btn-label">DApp</div></div>
       </div>
       <div class="assets-section">
         <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -1703,6 +1714,13 @@ body {
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
+          <div class="settings-row" onclick="wwCycleIdleLockMinutes()">
+            <span class="settings-icon">⏱️</span>
+            <span class="settings-label">闲置锁定</span>
+            <span class="settings-value" id="settingsIdleLockValue">关闭</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
           <div class="settings-row" onclick="window._keyBackPage='page-settings';goTo('page-key')">
             <span class="settings-icon">📋</span>
             <span class="settings-label">备份密钥</span>
@@ -1748,6 +1766,23 @@ body {
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- DApp 浏览器 -->
+    <div class="page" id="page-dapp">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">DApp</div>
+        <div class="nav-right" onclick="if(typeof wwDappReload==='function')wwDappReload()" style="font-size:13px;color:var(--gold);cursor:pointer">刷新</div>
+      </div>
+      <div class="u14" style="padding-bottom:24px">
+        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch">
+          <input type="text" id="dappUrlInput" inputmode="url" autocomplete="off" placeholder="https:// 或域名" style="flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter'&&typeof wwLoadDappUrl==='function')wwLoadDappUrl()" />
+          <button type="button" class="btn-primary" style="flex-shrink:0;padding:12px 16px" onclick="wwLoadDappUrl()">打开</button>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin:0 0 10px;line-height:1.5">部分站点禁止嵌入网页，若无法显示请在系统浏览器中打开。</p>
+        <iframe id="dappFrame" title="DApp" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation-by-user-activation" style="width:100%;height:min(72vh,560px);min-height:320px;border:1px solid var(--border);border-radius:14px;background:#0a0a12"></iframe>
       </div>
     </div>
 
@@ -3084,7 +3119,8 @@ const WW_PAGE_SEO = {
   'page-claimed': { title: '已领取 — WorldToken', description: '礼物领取完成。' },
   'page-hb-records': { title: '礼物记录 — WorldToken', description: '历史发送与领取记录。' },
   'page-faq': { title: '常见问题 — WorldToken', description: '助记词安全、钱包备份与恢复说明。' },
-  'page-verify-success': { title: '验证成功 — WorldToken', description: '助记词验证通过，可以开始使用钱包。' }
+  'page-verify-success': { title: '验证成功 — WorldToken', description: '助记词验证通过，可以开始使用钱包。' },
+  'page-dapp': { title: 'DApp 浏览器 — WorldToken', description: '在应用内打开去中心化应用链接。' }
 };
 function applySeoForPage(pageId) {
   try {
@@ -3297,6 +3333,10 @@ async function submitTotpUnlock() {
   _resumeWalletAfterUnlock();
 }
 function closeTotpUnlock() {
+  if(window._wwForceIdleLock) {
+    if(typeof showToast==='function') showToast('请输入两步验证码以解锁', 'warning', 2200);
+    return;
+  }
   const ov = document.getElementById('totpUnlockOverlay');
   if (ov) ov.classList.remove('show');
   const pov = document.getElementById('pinUnlockOverlay');
@@ -3346,10 +3386,19 @@ function goTo(pageId) {
     }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
+    if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
   }
   if(pageId==='page-transfer') {
     calcTransferFee();
     renderTransferContactsList();
+  }
+  if(pageId==='page-dapp') {
+    setTimeout(function() {
+      try {
+        var inp = document.getElementById('dappUrlInput');
+        if(inp) inp.focus();
+      } catch(e) {}
+    }, 200);
   }
   if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
     setTimeout(loadTxHistory, 500);
@@ -3883,6 +3932,113 @@ function copyMnemonicAsCardImage(btn) {
 }
 
 // ── 真实转账实现 ──────────────────────────────────────────────────
+function wwFmtNum(n) {
+  if(n === undefined || n === null || isNaN(n)) return '0';
+  var x = Math.floor(Number(n));
+  return x.toLocaleString('en-US');
+}
+async function loadTrxResource() {
+  var card = document.getElementById('trxResourceCard');
+  var enEl = document.getElementById('trxEnergyText');
+  var bwEl = document.getElementById('trxBandwidthText');
+  if(!card || !REAL_WALLET || !REAL_WALLET.trxAddress) { if(card) card.style.display = 'none'; return; }
+  try {
+    var r = await fetch(TRON_GRID + '/wallet/getaccountresource', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: REAL_WALLET.trxAddress, visible: true })
+    });
+    var d = await r.json();
+    if(!d || (d.EnergyLimit === undefined && d.NetLimit === undefined && d.freeNetLimit === undefined)) {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = 'block';
+    var eLim = Number(d.EnergyLimit) || 0, eUsed = Number(d.EnergyUsed) || 0;
+    var nLim = Number(d.NetLimit) || 0, nUsed = Number(d.NetUsed) || 0;
+    var freeLim = Number(d.freeNetLimit) || 600;
+    var freeUsed = Number(d.freeNetUsed) || 0;
+    var eRem = Math.max(0, eLim - eUsed);
+    var stakeBwRem = Math.max(0, nLim - nUsed);
+    var freeBwRem = Math.max(0, freeLim - freeUsed);
+    var bwAvail = stakeBwRem + freeBwRem;
+    if(enEl) enEl.textContent = '剩余 ' + wwFmtNum(eRem) + ' / 上限 ' + wwFmtNum(eLim);
+    if(bwEl) bwEl.textContent = '可用约 ' + wwFmtNum(bwAvail) + '（免费 ' + wwFmtNum(freeBwRem) + ' + 质押 ' + wwFmtNum(stakeBwRem) + '）';
+  } catch(e) {
+    console.log('loadTrxResource', e);
+    if(card) card.style.display = 'none';
+  }
+}
+function wwLoadDappUrl() {
+  var inp = document.getElementById('dappUrlInput');
+  var f = document.getElementById('dappFrame');
+  if(!f) return;
+  var u = inp && inp.value ? inp.value.trim() : '';
+  if(!u) { if(typeof showToast==='function') showToast('请输入网址', 'warning'); return; }
+  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try {
+    f.src = u;
+  } catch(e1) {
+    if(typeof showToast==='function') showToast('无法打开链接', 'error');
+  }
+}
+function wwDappReload() {
+  var f = document.getElementById('dappFrame');
+  if(f && f.src) { try { f.contentWindow.location.reload(); } catch(e) { f.src = f.src; } }
+}
+function wwGetIdleLockMinutes() {
+  try {
+    var v = localStorage.getItem('ww_lock_idle_min');
+    if(v === '1' || v === '5' || v === '15') return parseInt(v, 10);
+  } catch(e) {}
+  return 0;
+}
+function wwApplyIdleLockLabel() {
+  var el = document.getElementById('settingsIdleLockValue');
+  if(!el) return;
+  var m = wwGetIdleLockMinutes();
+  if(m === 1) el.textContent = '1 分钟';
+  else if(m === 5) el.textContent = '5 分钟';
+  else if(m === 15) el.textContent = '15 分钟';
+  else el.textContent = '关闭';
+}
+function wwCycleIdleLockMinutes() {
+  var cur = wwGetIdleLockMinutes();
+  var next = cur === 0 ? 1 : (cur === 1 ? 5 : (cur === 5 ? 15 : 0));
+  try {
+    if(next === 0) localStorage.removeItem('ww_lock_idle_min');
+    else localStorage.setItem('ww_lock_idle_min', String(next));
+  } catch(e) {}
+  wwApplyIdleLockLabel();
+  wwResetActivityClock();
+  if(typeof showToast==='function') showToast(next === 0 ? '已关闭闲置锁定' : ('闲置 ' + next + ' 分钟后锁定'), 'info', 2200);
+}
+function wwResetActivityClock() {
+  window._wwLastActivityTs = Date.now();
+}
+function wwTickIdleLock() {
+  var mins = wwGetIdleLockMinutes();
+  if(!mins) return;
+  if(!localStorage.getItem('ww_unlock_pin')) return;
+  if(!REAL_WALLET) return;
+  var pov = document.getElementById('pinUnlockOverlay');
+  var tov = document.getElementById('totpUnlockOverlay');
+  if(pov && pov.classList.contains('show')) return;
+  if(tov && tov.classList.contains('show')) return;
+  var last = window._wwLastActivityTs || Date.now();
+  if(Date.now() - last < mins * 60 * 1000) return;
+  window._wwUnlockPreservePage = true;
+  window._wwForceIdleLock = true;
+  var inp = document.getElementById('pinUnlockInput');
+  var err = document.getElementById('pinUnlockError');
+  if(pov && inp) {
+    inp.value = '';
+    if(err) err.style.display = 'none';
+    pov.classList.add('show');
+    setTimeout(function() { try { inp.focus(); } catch(e) {} }, 200);
+  }
+}
+
 const TRON_GRID = 'https://api.trongrid.io';
 const USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 const ETH_RPC = 'https://eth.llamarpc.com';
@@ -4806,6 +4962,7 @@ function updateSettingsPage() {
     tv.textContent = on ? '已开启' : '未开启';
     tv.style.color = on ? 'var(--green,#26a17b)' : 'var(--text-muted)';
   }
+  if(typeof wwApplyIdleLockLabel==='function') wwApplyIdleLockLabel();
 }
 
 /** 首次打开时请求浏览器通知权限（仅询问一次） */
@@ -5636,6 +5793,7 @@ async function loadBalances() {
     
     if(btn) btn.textContent = '刷新';
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
+    if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
     console.error('Balance load error:', e);
     if(tbd) tbd.classList.remove('home-balance--loading');
@@ -5820,6 +5978,13 @@ function _resumeWalletAfterUnlock() {
   const tb = document.getElementById('tabBar');
   if(tb) tb.style.display = 'flex';
   setTimeout(loadBalances, 500);
+  if(window._wwUnlockPreservePage) {
+    window._wwUnlockPreservePage = false;
+    window._wwForceIdleLock = false;
+    try { wwResetActivityClock(); } catch(e) {}
+    return;
+  }
+  window._wwForceIdleLock = false;
   goTo('page-home');
 }
 function continueAfterPinCheck() {
@@ -5849,6 +6014,7 @@ function submitPinUnlock() {
     if(typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
       showTotpUnlockOverlay();
     } else {
+      window._wwForceIdleLock = false;
       _resumeWalletAfterUnlock();
     }
   } else {
@@ -5858,6 +6024,10 @@ function submitPinUnlock() {
   }
 }
 function closePinUnlock() {
+  if(window._wwForceIdleLock) {
+    if(typeof showToast==='function') showToast('闲置超时，请输入 PIN 解锁', 'warning', 2200);
+    return;
+  }
   const ov = document.getElementById('pinUnlockOverlay');
   if(ov) ov.classList.remove('show');
 }
@@ -5879,6 +6049,14 @@ function updateTime() {
   document.getElementById('statusTime').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
 }
 updateTime(); window._timeInterval = setInterval(updateTime,60000);
+try {
+  wwResetActivityClock();
+  ['pointerdown','touchstart','keydown','scroll','click'].forEach(function(ev) {
+    document.addEventListener(ev, function() { wwResetActivityClock(); }, { capture: true, passive: true });
+  });
+  setInterval(function() { try { wwTickIdleLock(); } catch(e) {} }, 15000);
+  wwApplyIdleLockLabel();
+} catch(e) {}
 const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
 try { applySeoForPage('page-welcome'); applyOfflineState(); window.addEventListener('online', applyOfflineState); window.addEventListener('offline', applyOfflineState); } catch(e) {}
 
