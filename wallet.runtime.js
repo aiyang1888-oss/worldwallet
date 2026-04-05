@@ -1236,53 +1236,20 @@ function goTo(pageId, opts) {
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
-    if (opts.preserveKeyPage) {
-      try {
-        if (typeof renderKeyGrid === 'function') renderKeyGrid();
-        if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
-      } catch (_pk) {}
-    } else {
-      // 每次进入密钥页（非从验证页返回）：强制 12 词默认；下拉与内存仅设为 12（不根据钱包词数设下拉）
-      currentMnemonicLength = 12;
-      var _sel = document.getElementById('mnemonicLength');
-      if (_sel) {
-        _sel.value = '12';
-        _sel.selectedIndex = 0;
-      }
-      if (!REAL_WALLET || !REAL_WALLET.enMnemonic) {
-        if (typeof renderKeyGrid === 'function') renderKeyGrid();
-        if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
-      } else {
-        var _wl = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
-        if (_wl === 12) {
-          if (typeof renderKeyGrid === 'function') renderKeyGrid();
-          if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
-        } else {
-          showWalletLoading();
-          createRealWallet(12).then(function () {
-            if (typeof updateRealAddr === 'function') updateRealAddr();
-            hideWalletLoading();
-            if (typeof renderKeyGrid === 'function') renderKeyGrid();
-            if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
-          }).catch(function (e) {
-            hideWalletLoading();
-            if (typeof showToast === 'function') {
-              showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
-            }
-          });
-        }
-      }
-    }
-  }
-  if(pageId==='page-create') {
-    try {
-      currentMnemonicLength = 12;
-      var selKey = document.getElementById('mnemonicLength');
-      if (selKey) {
-        selKey.selectedIndex = 0;
-        selKey.value = '12';
-      }
-    } catch (e) {}
+    // 永远默认 12 词，生成全新钱包
+    currentMnemonicLength = 12;
+    var _sel = document.getElementById('mnemonicLength');
+    if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
+    showWalletLoading();
+    createRealWallet(12).then(function() {
+      if (typeof updateRealAddr === 'function') updateRealAddr();
+      hideWalletLoading();
+      if (typeof renderKeyGrid === 'function') renderKeyGrid();
+      if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
+    }).catch(function(e) {
+      hideWalletLoading();
+      console.error('page-key createRealWallet error:', e);
+    });
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
 if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
