@@ -1,0 +1,3101 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>WorldWallet</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --gold: #c8a84b;
+  --gold-light: #f0d070;
+  --bg: #080810;
+  --bg2: #0f0f1c;
+  --bg3: #141426;
+  --border: #22223a;
+  --text: #e0e0f0;
+  --text-dim: #888;
+  --text-muted: #555;
+  --green: #4ac84a;
+  --red: #ff6060;
+}
+
+body {
+  background: #0d0d18;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'PingFang SC','Noto Sans CJK SC','Microsoft YaHei','Segoe UI',sans-serif;
+}
+
+/* 强制全屏，无手机壳 */
+@media screen {
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+  .phone {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  .status-bar {
+    display: none !important;
+  }
+  body > * {
+    display: none !important;
+  }
+  .phone {
+    display: flex !important;
+  }
+}
+
+.phone {
+  transform-origin: top center;
+}
+
+@media (max-width: 500px) {
+  .phone { transform: scale(0.85); margin: -60px 0; }
+}
+
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--bg);
+  border-radius: 50px;
+  border: 2px solid #2a2a3a;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px #111120;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-bar {
+  height: 50px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  z-index: 10;
+}
+.status-time { font-weight: 600; color: var(--text); font-size: 14px; }
+
+.pages { flex: 1; position: relative; overflow: hidden; }
+.page {
+  position: absolute;
+  top: 50px; left: 0; right: 0; bottom: 0;
+  overflow-y: auto; overflow-x: hidden;
+  display: none; flex-direction: column;
+  background: var(--bg);
+}
+.page.active { display: flex; }
+
+/* ── 欢迎页 ── */
+#page-welcome {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,168,75,0.15) 0%, transparent 60%), var(--bg);
+  align-items: center;
+  padding: 16px 24px 14px;
+  text-align: center;
+  overflow: hidden;
+}
+.welcome-logo {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #b8982a, #f0d070);
+  border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 8px;
+  box-shadow: 0 8px 32px rgba(200,168,75,0.3);
+}
+.welcome-name {
+  font-size: 24px; font-weight: 800;
+  background: linear-gradient(135deg, #c8a84b, #f0d070);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  letter-spacing: 3px; margin-bottom: 2px;
+}
+.welcome-tag { font-size: 12px; color: var(--text-muted); letter-spacing: 2px; margin-bottom: 10px; }
+
+.lang-scroll { width: 100%; margin-bottom: 24px; }
+.lang-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.lang-btn {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 4px;
+  cursor: pointer; text-align: center; transition: all 0.2s;
+}
+.lang-btn:hover, .lang-btn.active {
+  border-color: var(--gold);
+  background: linear-gradient(135deg, #181808, #1c1c0a);
+}
+.lang-flag { font-size: 20px; display: block; margin-bottom: 3px; }
+.lang-name { font-size: 10px; color: var(--text-muted); }
+.lang-btn.active .lang-name { color: var(--gold-light); }
+
+.btn-primary {
+  background: linear-gradient(135deg, #b8982a, #e8c850);
+  color: #0a0a05; border: none; border-radius: 16px;
+  padding: 12px; font-size: 14px; font-weight: 700;
+  cursor: pointer; width: 100%; transition: all 0.2s;
+}
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-secondary {
+  background: transparent; color: var(--gold);
+  border: 1.5px solid rgba(200,168,75,0.3);
+  border-radius: 16px; padding: 10px;
+  font-size: 13px; cursor: pointer; width: 100%;
+  transition: all 0.2s; margin-top: 6px;
+}
+
+/* ── 导航栏 ── */
+.nav-bar {
+  height: 56px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 14px; flex-shrink: 0;
+}
+.nav-back { font-size: 22px; color: var(--gold); cursor: pointer; width: 32px; }
+.nav-title { font-size: 17px; font-weight: 600; color: var(--text); flex: 1; }
+.nav-right { font-size: 13px; color: var(--gold); cursor: pointer; }
+
+/* ── 密钥页 ── */
+.key-content { padding: 16px 20px; flex: 1; }
+.key-lang-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2); border-radius: 14px;
+  padding: 10px 14px; margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.key-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  margin-bottom: 16px;
+}
+.key-word {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 6px; text-align: center;
+}
+.word-num { font-size: 9px; color: var(--text-muted); margin-bottom: 4px; }
+.word-val { font-size: 13px; color: var(--text); font-weight: 500; }
+.key-warning {
+  background: rgba(255,180,0,0.08); border: 1px solid rgba(255,180,0,0.2);
+  border-radius: 12px; padding: 12px 14px;
+  font-size: 12px; color: #ffcc44; line-height: 1.7;
+  margin-bottom: 16px; display: flex; gap: 8px;
+}
+
+/* ── 首页 ── */
+.home-header { background: var(--bg2); padding: 16px 20px 20px; border-bottom: 1px solid var(--border); }
+.home-greeting { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.home-addr-chip {
+  font-size: 12px; color: var(--gold);
+  background: rgba(200,168,75,0.08);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 8px; padding: 5px 10px;
+  display: inline-block; margin-bottom: 12px;
+}
+.home-balance { font-size: 32px; font-weight: 800; color: var(--text); }
+.home-balance-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.quick-btns { display: flex; gap: 8px; padding: 14px 20px; }
+.quick-btn {
+  flex: 1; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 6px; text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.quick-btn:hover { border-color: var(--gold); }
+.quick-btn-icon { font-size: 20px; margin-bottom: 4px; }
+.quick-btn-label { font-size: 11px; color: var(--text-dim); }
+.assets-section { padding: 0 20px 20px; }
+.assets-title { font-size: 12px; color: var(--text-muted); margin: 12px 0 10px; letter-spacing: 1px; }
+.asset-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg2); border-radius: 14px;
+  padding: 12px 14px; margin-bottom: 8px;
+  border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
+}
+.asset-item:hover { border-color: rgba(200,168,75,0.2); }
+.asset-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.asset-info { flex: 1; }
+.asset-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.asset-chain { font-size: 10px; color: var(--text-muted); }
+.asset-right { text-align: right; }
+.asset-amount { font-size: 14px; font-weight: 600; color: var(--text); }
+.asset-value { font-size: 11px; color: var(--text-muted); }
+.asset-change { font-size: 10px; }
+.asset-change.up { color: var(--green); }
+.asset-change.down { color: var(--red); }
+
+/* ── 地址页（核心升级）── */
+.addr-content { padding: 16px 18px; flex: 1; overflow-y: auto; }
+
+/* 母语地址卡 */
+.addr-native-card {
+  background: linear-gradient(135deg, #12120a, #1a1a08);
+  border: 1.5px solid rgba(200,168,75,0.6);
+  border-radius: 22px; padding: 20px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 20px rgba(200,168,75,0.08);
+}
+.addr-card-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--gold);
+  background: rgba(200,168,75,0.1);
+  border: 1px solid rgba(200,168,75,0.2);
+  border-radius: 20px; padding: 3px 10px;
+  margin-bottom: 14px;
+}
+
+/* 地址主体：大字显示 */
+.addr-display {
+  margin-bottom: 16px;
+}
+.addr-main {
+  font-size: 22px; font-weight: 800;
+  color: var(--gold-light);
+  letter-spacing: 2px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.addr-num {
+  font-size: 13px; color: #555;
+  letter-spacing: 3px;
+  font-variant-numeric: tabular-nums;
+  padding-left: 2px;
+}
+
+.addr-actions { display: flex; gap: 8px; margin-bottom: 0; }
+.addr-action-btn {
+  flex: 1;
+  background: rgba(200,168,75,0.1);
+  border: 1px solid rgba(200,168,75,0.25);
+  border-radius: 10px; padding: 9px 0;
+  font-size: 12px; color: var(--gold);
+  text-align: center; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.addr-action-btn:hover { background: rgba(200,168,75,0.18); }
+.addr-action-btn.copied { border-color: var(--green); color: var(--green); }
+
+/* 分隔 */
+.addr-bind-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 2px;
+}
+.addr-bind-line { flex: 1; height: 1px; background: var(--border); }
+.addr-bind-text { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+/* 公链地址卡 */
+.addr-chain-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 20px; padding: 18px;
+}
+.addr-chain-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--text-muted);
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 10px; margin-bottom: 14px;
+}
+.chain-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.chain-row:last-child { margin-bottom: 0; }
+.chain-badge {
+  font-size: 9px; font-weight: 700;
+  padding: 2px 7px; border-radius: 5px;
+  flex-shrink: 0; width: 32px; text-align: center;
+}
+.chain-badge.trx { background: rgba(255,100,100,0.12); border: 1px solid rgba(255,100,100,0.25); color: #ff9a9a; }
+.chain-badge.eth { background: rgba(100,100,255,0.12); border: 1px solid rgba(100,100,255,0.25); color: #aaaaff; }
+.chain-badge.btc { background: rgba(255,165,0,0.12); border: 1px solid rgba(255,165,0,0.25); color: #ffb84d; }
+.chain-hash { font-family: monospace; font-size: 11px; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chain-copy-btn { font-size: 13px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; padding: 4px; }
+.chain-copy-btn:hover { color: var(--gold); }
+
+/* 一键复制两个地址 */
+.copy-both-btn {
+  width: 100%; margin-top: 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px;
+  font-size: 13px; color: var(--text-dim);
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.copy-both-btn:hover { border-color: var(--gold); color: var(--gold-light); }
+
+/* QR弹窗 */
+.qr-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 100;
+}
+.qr-overlay.show { display: flex; }
+
+/* 创建钱包加载 */
+.wallet-loading-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 200;
+}
+.wallet-loading-overlay.show { display: flex; }
+.wallet-loading-spinner {
+  width: 44px; height: 44px;
+  border: 3px solid rgba(200,168,75,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: wallet-spin 0.75s linear infinite;
+}
+@keyframes wallet-spin { to { transform: rotate(360deg); } }
+.wallet-loading-text {
+  margin-top: 16px; font-size: 14px; color: var(--text-dim);
+}
+
+/* PIN 设置键盘 */
+.pin-setup-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  z-index: 120;
+  padding-bottom: 24px;
+}
+.pin-setup-overlay.show { display: flex; }
+.pin-setup-panel {
+  width: 100%; max-width: 360px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 18px 28px;
+}
+.pin-setup-title { font-size: 16px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 6px; }
+.pin-setup-hint { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 18px; }
+.pin-dots {
+  display: flex; justify-content: center; gap: 12px; margin-bottom: 22px;
+}
+.pin-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pin-dot.filled { background: var(--gold); border-color: var(--gold); }
+.pin-keypad {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  max-width: 280px; margin: 0 auto;
+}
+.pin-key {
+  aspect-ratio: 1.6;
+  border: none; border-radius: 14px;
+  background: var(--bg3);
+  color: var(--text);
+  font-size: 22px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pin-key:active { background: var(--border); }
+.pin-key.pin-key-sub { font-size: 15px; color: var(--text-dim); }
+.pin-setup-cancel {
+  margin-top: 14px; text-align: center;
+  font-size: 14px; color: var(--gold); cursor: pointer;
+}
+
+/* 导入页词数徽章 */
+.import-word-badge {
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 600;
+  color: var(--gold);
+  background: rgba(200,168,75,0.12);
+  border: 1px solid rgba(200,168,75,0.25);
+  border-radius: 999px; padding: 4px 12px;
+}
+.import-header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px; gap: 10px;
+}
+.qr-card {
+  background: #fff; border-radius: 20px;
+  padding: 24px; width: 280px; text-align: center;
+}
+.qr-placeholder {
+  width: 180px; height: 180px;
+  background: #f0f0f0; margin: 0 auto 16px;
+  border-radius: 12px; display: flex;
+  align-items: center; justify-content: center;
+  font-size: 60px;
+}
+.qr-addr-main { font-size: 16px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+.qr-addr-num { font-size: 12px; color: #999; margin-bottom: 8px; }
+.qr-chain { font-size: 10px; color: #bbb; font-family: monospace; word-break: break-all; }
+.qr-close {
+  margin-top: 16px; background: #1a1a2a; color: #e0e0f0;
+  border: none; border-radius: 12px; padding: 12px 32px;
+  font-size: 14px; cursor: pointer; width: 100%;
+}
+
+/* ── Swap ── */
+.swap-content { padding: 20px; flex: 1; }
+.swap-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 18px; padding: 16px; margin-bottom: 10px;
+}
+.swap-label { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+.swap-row { display: flex; align-items: center; gap: 10px; }
+.swap-coin-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.swap-coin-info { flex: 1; }
+.swap-coin-name { font-size: 16px; font-weight: 700; color: var(--text); }
+.swap-coin-bal { font-size: 11px; color: var(--text-muted); }
+.swap-input { background: none; border: none; font-size: 22px; color: var(--text); width: 110px; text-align: right; outline: none; }
+.swap-arrow { text-align: center; padding: 4px; color: var(--gold); font-size: 22px; cursor: pointer; }
+.swap-info { background: var(--bg2); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+.swap-info-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.swap-info-row:last-child { margin-bottom: 0; }
+.swap-info-val { color: var(--text); }
+.swap-info-val.gold { color: var(--gold); }
+
+/* ── 底部导航 ── */
+.tab-bar {
+  height: 76px; background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center;
+  justify-content: space-around;
+  padding-bottom: 12px; flex-shrink: 0;
+  width: 100%; position: relative; z-index: 10;
+}
+.tab-item {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 3px;
+  font-size: 10px; color: var(--text-muted);
+  cursor: pointer; padding: 4px 10px;
+  border-radius: 10px; transition: all 0.2s;
+}
+.tab-item.active { color: var(--gold); }
+.tab-icon { font-size: 22px; }
+
+@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.fade-up { animation: fadeUp 0.3s ease both; }
+
+/* 设置列表行 */
+.settings-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.settings-row:hover { background: rgba(255,255,255,0.03); }
+.settings-icon { font-size: 18px; width: 28px; flex-shrink: 0; }
+.settings-label { flex: 1; font-size: 14px; color: var(--text); margin-left: 4px; }
+.settings-value { font-size: 13px; color: var(--text-muted); margin-right: 6px; }
+.settings-arrow { font-size: 16px; color: var(--text-muted); }
+.settings-divider { height: 1px; background: var(--border); margin: 0 16px; }
+
+
+/* 语言列表行 */
+.lang-row {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--bg2); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 12px 16px;
+  cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.lang-row:hover { border-color: rgba(200,168,75,0.4); background: #161616; }
+.lang-row.active {
+  border-color: var(--gold);
+  background: linear-gradient(135deg,#181808,#1c1c0a);
+}
+.lang-row.active .lang-check { opacity: 1 !important; }
+.lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
+
+/* 手机浏览器直接全屏 */
+@media (max-width: 768px) {
+  html, body {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    background: var(--bg) !important;
+    display: block !important;
+  }
+  body {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  .phone {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+  .status-bar { display: none !important; }
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+</head>
+<body>
+<div class="phone">
+
+  <div class="status-bar">
+    <span class="status-time" id="statusTime">04:39</span>
+    <div style="display:flex;gap:5px;align-items:center;font-size:11px">
+      <span>●●●</span><span>WiFi</span><span>🔋</span>
+    </div>
+  </div>
+
+  <div class="pages">
+
+    <!-- 欢迎页 -->
+    <div class="page active" id="page-welcome" style="background:radial-gradient(ellipse 80% 60% at 50% 45%,rgba(200,168,75,0.12) 0%,transparent 70%),var(--bg);overflow:hidden;flex-direction:column;align-items:center;justify-content:center;padding-bottom:80px;padding-left:20px;padding-right:20px;text-align:center">
+
+      <!-- Logo区 紧凑 -->
+      <div style="width:100px;height:100px;background:linear-gradient(135deg,#b8982a,#f0d070);border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:54px;margin-bottom:20px;box-shadow:0 8px 32px rgba(200,168,75,0.5);flex-shrink:0">🌍</div>
+      <div style="font-size:28px;font-weight:800;background:linear-gradient(135deg,#c8a84b,#f0d070);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px;margin-bottom:4px;flex-shrink:0">WorldWallet</div>
+      <div style="font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:12px;flex-shrink:0">One wallet, every language.</div>
+
+      <!-- 语言列表 可滑动 -->
+      <div id="welcomeLangGrid" style="display:none">
+        <div class="lang-row active" data-lang="zh" onclick="selectLang(this)">
+          <span style="font-size:24px">🇨🇳</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">中文</div><div style="font-size:10px;color:var(--text-muted)">Chinese · 11亿使用者</div></div>
+          <span class="lang-check" style="opacity:1;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="en" onclick="selectLang(this)">
+          <span style="font-size:24px">🇺🇸</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">English</div><div style="font-size:10px;color:var(--text-muted)">English · 15亿使用者 · 公链标准</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="hi" onclick="selectLang(this)">
+          <span style="font-size:24px">🇮🇳</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">हिन्दी</div><div style="font-size:10px;color:var(--text-muted)">Hindi · 6亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="es" onclick="selectLang(this)">
+          <span style="font-size:24px">🇪🇸</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Español</div><div style="font-size:10px;color:var(--text-muted)">Spanish · 5亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="ar" onclick="selectLang(this)">
+          <span style="font-size:24px">🇸🇦</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">العربية</div><div style="font-size:10px;color:var(--text-muted)">Arabic · 4亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="fr" onclick="selectLang(this)">
+          <span style="font-size:24px">🇫🇷</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Français</div><div style="font-size:10px;color:var(--text-muted)">French · 3亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="bn" onclick="selectLang(this)">
+          <span style="font-size:24px">🇧🇩</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">বাংলা</div><div style="font-size:10px;color:var(--text-muted)">Bengali · 3亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="pt" onclick="selectLang(this)">
+          <span style="font-size:24px">🇧🇷</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Português</div><div style="font-size:10px;color:var(--text-muted)">Portuguese · 2.5亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="ur" onclick="selectLang(this)">
+          <span style="font-size:24px">🇵🇰</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">اردو</div><div style="font-size:10px;color:var(--text-muted)">Urdu · 2.3亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="id" onclick="selectLang(this)">
+          <span style="font-size:24px">🇮🇩</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Indonesia</div><div style="font-size:10px;color:var(--text-muted)">Indonesian · 2亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="ru" onclick="selectLang(this)">
+          <span style="font-size:24px">🇷🇺</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Русский</div><div style="font-size:10px;color:var(--text-muted)">Russian · 1.5亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="sw" onclick="selectLang(this)">
+          <span style="font-size:24px">🇰🇪</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Kiswahili</div><div style="font-size:10px;color:var(--text-muted)">Swahili · 2亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="ja" onclick="selectLang(this)">
+          <span style="font-size:24px">🇯🇵</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">日本語</div><div style="font-size:10px;color:var(--text-muted)">Japanese · 1.3亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="fa" onclick="selectLang(this)">
+          <span style="font-size:24px">🇮🇷</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">فارسی</div><div style="font-size:10px;color:var(--text-muted)">Persian · 1.1亿使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="vi" onclick="selectLang(this)">
+          <span style="font-size:24px">🇻🇳</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Tiếng Việt</div><div style="font-size:10px;color:var(--text-muted)">Vietnamese · 9千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="de" onclick="selectLang(this)">
+          <span style="font-size:24px">🇩🇪</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Deutsch</div><div style="font-size:10px;color:var(--text-muted)">German · 9千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="tr" onclick="selectLang(this)">
+          <span style="font-size:24px">🇹🇷</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Türkçe</div><div style="font-size:10px;color:var(--text-muted)">Turkish · 8千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="ms" onclick="selectLang(this)">
+          <span style="font-size:24px">🇲🇾</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Bahasa Melayu</div><div style="font-size:10px;color:var(--text-muted)">Malay · 8千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="ko" onclick="selectLang(this)">
+          <span style="font-size:24px">🇰🇷</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">한국어</div><div style="font-size:10px;color:var(--text-muted)">Korean · 7700万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="th" onclick="selectLang(this)">
+          <span style="font-size:24px">🇹🇭</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">ภาษาไทย</div><div style="font-size:10px;color:var(--text-muted)">Thai · 7千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="it" onclick="selectLang(this)">
+          <span style="font-size:24px">🇮🇹</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Italiano</div><div style="font-size:10px;color:var(--text-muted)">Italian · 6500万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="pl" onclick="selectLang(this)">
+          <span style="font-size:24px">🇵🇱</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Polski</div><div style="font-size:10px;color:var(--text-muted)">Polish · 5千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="uk" onclick="selectLang(this)">
+          <span style="font-size:24px">🇺🇦</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Українська</div><div style="font-size:10px;color:var(--text-muted)">Ukrainian · 4500万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="nl" onclick="selectLang(this)">
+          <span style="font-size:24px">🇳🇱</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Nederlands</div><div style="font-size:10px;color:var(--text-muted)">Dutch · 3千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="ro" onclick="selectLang(this)">
+          <span style="font-size:24px">🇷🇴</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Română</div><div style="font-size:10px;color:var(--text-muted)">Romanian · 2400万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="el" onclick="selectLang(this)">
+          <span style="font-size:24px">🇬🇷</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Ελληνικά</div><div style="font-size:10px;color:var(--text-muted)">Greek · 1300万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+        <div class="lang-row" data-lang="sv" onclick="selectLang(this)">
+          <span style="font-size:24px">🇸🇪</span>
+          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Svenska</div><div style="font-size:10px;color:var(--text-muted)">Swedish · 1千万使用者</div></div>
+          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+        </div>
+      </div>
+
+      <!-- 按钮区 -->
+      <div style="width:100%;flex-shrink:0;margin-top:40px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
+          <button class="btn-primary" onclick="goTo('page-create')" style="padding:10px 32px;font-size:14px;width:auto;min-width:160px">🚀 开始使用</button>
+          <button class="btn-secondary" onclick="goTo('page-import')" style="padding:8px 24px;font-size:13px;width:auto;min-width:140px">📥 导入已有钱包</button>
+        </div>
+      </div>
+    </div>
+    <!-- 创建页 -->
+    <div class="page" id="page-create">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
+        <div class="nav-title">设置钱包</div>
+      </div>
+      <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async () => { const el = document.getElementById('walletCreateLoading'); if(el) el.classList.add('show'); try { const w = await createRealWallet(); if(w) { updateKeyDisplay(w.words); } goTo('page-key'); } finally { if(el) el.classList.remove('show'); } })()" >
+          <div style="font-size:36px;margin-bottom:12px">✨</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
+        </div>
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="goTo('page-import')">
+          <div style="font-size:36px;margin-bottom:12px">📥</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">导入已有钱包</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">输入助记词恢复钱包</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 密钥页 -->
+    <div class="page" id="page-key">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-create')">‹</div>
+        <div class="nav-title">我的密钥</div>
+        <div class="nav-right" onclick="goTo('page-home')">完成</div>
+      </div>
+      <div class="key-content">
+        <div class="key-lang-row">
+          <span id="keyLangFlag" style="font-size:22px">🇨🇳</span>
+          <span id="keyLangName" style="font-size:14px;font-weight:600;color:var(--text);flex:1">中文</span>
+          <span style="font-size:12px;color:var(--gold);cursor:pointer" onclick="openKeyLangPicker()">切换语言</span>
+        </div>
+        <div class="key-grid" id="keyWordGrid"></div>
+        <div class="key-warning">
+          <span style="font-size:16px;flex-shrink:0">⚠️</span>
+          <span>请抄写并妥善保管这12个词，任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
+        </div>
+        <button class="btn-primary" onclick="goTo('page-home')">✅ 我已安全备份</button>
+      </div>
+
+      <!-- 密钥页语言选择弹窗 -->
+      <div class="qr-overlay" id="keyLangOverlay" onclick="closeKeyLangPicker()">
+        <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 40px;max-height:75%;overflow-y:auto" onclick="event.stopPropagation()">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择语言</div>
+          <div style="display:flex;flex-direction:column;gap:8px" id="keyLangList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 首页 -->
+    <div class="page" id="page-home">
+      <div class="home-header" style="position:relative">
+        <div onclick="alert('扫码功能开发中')" style="position:absolute;top:0;right:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
+          </svg>
+        </div>
+        <div class="home-greeting">我的资产</div>
+        <div class="home-balance" id="totalBalanceUSD">$0.00</div>
+        <div class="home-balance-sub" id="totalBalanceCNY">正在加载余额...</div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
+          <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
+          <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.5)">复制</span>
+        </div>
+      </div>
+      <div class="quick-btns">
+        <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon">📤</div><div class="quick-btn-label">转账</div></div>
+        <div class="quick-btn" onclick="goTab('tab-addr')"><div class="quick-btn-icon">📥</div><div class="quick-btn-label">收款</div></div>
+        <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon">💱</div><div class="quick-btn-label">兑换</div></div>
+        <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon">🎁</div><div class="quick-btn-label">礼物</div></div>
+      </div>
+      <div class="assets-section">
+        <div class="assets-title">我的资产</div>
+        <div class="asset-item">
+          <div class="asset-icon" style="background:rgba(38,161,123,0.15)">💚</div>
+          <div class="asset-info"><div class="asset-name">USDT</div><div class="asset-chain">TRC-20 · Tron</div></div>
+          <div class="asset-right"><div class="asset-amount"><span id="balUsdt">0.00</span></div><div class="asset-value">$<span id="usdUsdt">0.00</span></div><div class="asset-change up">+0.01%</div></div>
+        </div>
+        <div class="asset-item">
+          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
+          <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
+          <div class="asset-right"><div class="asset-amount"><span id="balEth">0.0000</span></div><div class="asset-value">$<span id="usdEth">0.00</span></div><div class="asset-change up">+2.4%</div></div>
+        </div>
+        <div class="asset-item">
+          <div class="asset-icon" style="background:rgba(100,100,255,0.12)">🔷</div>
+          <div class="asset-info"><div class="asset-name">ETH</div><div class="asset-chain">Ethereum</div></div>
+          <div class="asset-right"><div class="asset-amount">0.310</div><div class="asset-value">$800.00</div><div class="asset-change down">-1.2%</div></div>
+        </div>
+        <div class="asset-item">
+          <div class="asset-icon" style="background:rgba(255,80,80,0.12)">🔴</div>
+          <div class="asset-info"><div class="asset-name">TRX</div><div class="asset-chain">Tron</div></div>
+          <div class="asset-right"><div class="asset-amount"><span id="balTrx">0.00</span></div><div class="asset-value">$<span id="usdTrx">0.00</span></div><div class="asset-change up">+0.8%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 地址页（核心升级版）-->
+    <div class="page" id="page-addr">
+      <div class="addr-content" style="padding-top:10px">
+
+
+
+        <!-- 万语地址卡 -->
+        <div class="addr-native-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:13px">🌍</span>
+              <span style="font-size:12px;font-weight:600;color:var(--gold)">万语地址</span>
+            </div>
+            
+          </div>
+
+          <!-- 万语地址一行展示 -->
+          <div style="width:100%;text-align:center;margin-bottom:6px;padding:10px 0">
+            <div id="addrOneLine" style="display:inline-flex;align-items:center;justify-content:center;gap:3px">
+              <span id="addrPrefix" style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0">38294651</span>
+              <span id="addrWords" style="display:inline-flex;align-items:center"></span>
+              <span id="addrSuffix" style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0">92847361</span>
+            </div>
+            
+          </div>
+
+          <div class="addr-actions">
+            <div class="addr-action-btn" id="copyNativeBtn" onclick="copyNative()">📋 复制地址</div>
+          </div>
+          <div class="addr-actions" style="margin-top:8px">
+            <div class="addr-action-btn" onclick="openCustomizeAddr()" style="width:100%;text-align:center">✏️ 修改地址</div>
+          </div>
+        </div>
+
+        <!-- ✨ 二维码专区 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:10px;text-align:center">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <span style="font-size:13px;color:var(--gold)">📱</span>
+            <span style="font-size:11px;color:var(--text-muted);letter-spacing:1px">扫码收款</span>
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+            <span style="font-size:10px;color:var(--text-muted)" id="qrLangTag">🌍 万语地址</span>
+          </div>
+
+          <!-- 二维码居中 -->
+          <div style="display:flex;justify-content:center;margin-bottom:18px">
+            <div style="width:140px;height:140px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+              <svg width="120" height="120" viewBox="0 0 109 109" xmlns="http://www.w3.org/2000/svg">
+<rect width="109" height="109" fill="white"/>
+<rect x="5" y="5" width="11" height="11" fill="black" rx="1"/>
+<rect x="16" y="5" width="11" height="11" fill="black" rx="1"/>
+<rect x="27" y="5" width="11" height="11" fill="black" rx="1"/>
+<rect x="71" y="5" width="11" height="11" fill="black" rx="1"/>
+<rect x="82" y="5" width="11" height="11" fill="black" rx="1"/>
+<rect x="93" y="5" width="11" height="11" fill="black" rx="1"/>
+<rect x="5" y="16" width="11" height="11" fill="black" rx="1"/>
+<rect x="16" y="16" width="11" height="11" fill="black" rx="1"/>
+<rect x="27" y="16" width="11" height="11" fill="black" rx="1"/>
+<rect x="71" y="16" width="11" height="11" fill="black" rx="1"/>
+<rect x="82" y="16" width="11" height="11" fill="black" rx="1"/>
+<rect x="93" y="16" width="11" height="11" fill="black" rx="1"/>
+<rect x="5" y="27" width="11" height="11" fill="black" rx="1"/>
+<rect x="16" y="27" width="11" height="11" fill="black" rx="1"/>
+<rect x="27" y="27" width="11" height="11" fill="black" rx="1"/>
+<rect x="49" y="27" width="11" height="11" fill="black" rx="1"/>
+<rect x="71" y="27" width="11" height="11" fill="black" rx="1"/>
+<rect x="82" y="27" width="11" height="11" fill="black" rx="1"/>
+<rect x="93" y="27" width="11" height="11" fill="black" rx="1"/>
+<rect x="38" y="38" width="11" height="11" fill="black" rx="1"/>
+<rect x="60" y="38" width="11" height="11" fill="black" rx="1"/>
+<rect x="27" y="49" width="11" height="11" fill="black" rx="1"/>
+<rect x="49" y="49" width="11" height="11" fill="black" rx="1"/>
+<rect x="71" y="49" width="11" height="11" fill="black" rx="1"/>
+<rect x="38" y="60" width="11" height="11" fill="black" rx="1"/>
+<rect x="60" y="60" width="11" height="11" fill="black" rx="1"/>
+<rect x="5" y="71" width="11" height="11" fill="black" rx="1"/>
+<rect x="16" y="71" width="11" height="11" fill="black" rx="1"/>
+<rect x="27" y="71" width="11" height="11" fill="black" rx="1"/>
+<rect x="49" y="71" width="11" height="11" fill="black" rx="1"/>
+<rect x="71" y="71" width="11" height="11" fill="black" rx="1"/>
+<rect x="82" y="71" width="11" height="11" fill="black" rx="1"/>
+<rect x="93" y="71" width="11" height="11" fill="black" rx="1"/>
+<rect x="5" y="82" width="11" height="11" fill="black" rx="1"/>
+<rect x="16" y="82" width="11" height="11" fill="black" rx="1"/>
+<rect x="27" y="82" width="11" height="11" fill="black" rx="1"/>
+<rect x="71" y="82" width="11" height="11" fill="black" rx="1"/>
+<rect x="82" y="82" width="11" height="11" fill="black" rx="1"/>
+<rect x="93" y="82" width="11" height="11" fill="black" rx="1"/>
+<rect x="5" y="93" width="11" height="11" fill="black" rx="1"/>
+<rect x="16" y="93" width="11" height="11" fill="black" rx="1"/>
+<rect x="27" y="93" width="11" height="11" fill="black" rx="1"/>
+<rect x="71" y="93" width="11" height="11" fill="black" rx="1"/>
+<rect x="82" y="93" width="11" height="11" fill="black" rx="1"/>
+<rect x="93" y="93" width="11" height="11" fill="black" rx="1"/>
+<rect x="47" y="47" width="14" height="14" fill="white" rx="2"/>
+<text x="54" y="59" font-size="10" text-anchor="middle" fill="#c8a84b" font-weight="bold">W</text>
+</svg>
+            </div>
+          </div>
+
+          <!-- 三层地址显示 -->
+          <div style="margin-bottom:14px">
+            <!-- 第一层：自定义3字 最大最亮 -->
+            <div id="qrPart1" style="font-size:11px;font-weight:700;color:var(--gold-light);letter-spacing:1px;word-break:break-all;margin-bottom:4px"></div>
+            <!-- 第二层：诗句 中等 -->
+            <div id="qrPart2" style="font-size:11px;color:var(--text);letter-spacing:1px;word-break:break-all;margin-bottom:4px"></div>
+            <!-- 第三层：数字 最小最暗 -->
+            <div id="qrPart3" style="display:none"></div>
+          </div>
+
+
+        </div>
+
+        <!-- 绑定分隔 -->
+        <div class="addr-bind-row">
+          <div class="addr-bind-line"></div>
+          <div class="addr-bind-text">🔗 绑定同一钱包 · 均可收款</div>
+          <div class="addr-bind-line"></div>
+        </div>
+
+        <!-- 公链地址卡 -->
+        <div class="addr-chain-card">
+          <div class="addr-chain-badge">⛓️ 公链地址</div>
+          <div class="chain-row">
+            <span class="chain-badge trx">TRX</span>
+            <span class="chain-hash">TQn4Hj8mKx3fR7vL2pN9sW5d</span>
+            <span class="chain-copy-btn" onclick="copySingle('TQn4Hj8mKx3fR7vL2pN9sW5d', this)">📋</span>
+          </div>
+          <div class="chain-row">
+            <span class="chain-badge eth">ETH</span>
+            <span class="chain-hash">0x7f3a9b2c4d8e1f5a6b3c7d2e</span>
+            <span class="chain-copy-btn" onclick="copySingle('0x7f3a9b2c4d8e1f5a6b3c7d2e', this)">📋</span>
+          </div>
+          <div class="chain-row">
+            <span class="chain-badge btc">BTC</span>
+            <span class="chain-hash">bc1q7f3a9b2c4d8e1f5a6b3c7</span>
+            <span class="chain-copy-btn" onclick="copySingle('bc1q7f3a9b2c4d8e1f5a6b3c7', this)">📋</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+
+
+      <!-- 地址语言选择弹窗 -->
+      <div class="qr-overlay" id="addrLangOverlay" onclick="closeAddrLangPicker()">
+        <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 40px;max-height:80%;overflow-y:auto" onclick="event.stopPropagation()">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择地址语言</div>
+          <div style="display:flex;flex-direction:column;gap:8px" id="addrLangList"></div>
+        </div>
+      </div>
+
+      <!-- QR 弹窗 -->
+      <div class="qr-overlay" id="qrOverlay" onclick="hideQR()">
+        <div class="qr-card" onclick="event.stopPropagation()">
+          <div class="qr-placeholder">📱</div>
+          <div class="qr-addr-main" id="qrAddrMain" style="font-size:11px;word-break:break-all;letter-spacing:1px">38294651龙桜서م春月БRกA92847361</div>
+          <div class="qr-addr-num" id="qrAddrNum" style="display:none"></div>
+          <div class="qr-chain">TQn4Hj8mKx3fR7vL2pN9sW5d</div>
+          <button class="qr-close" onclick="hideQR()">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 转账页 -->
+    <div class="page" id="page-transfer">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">转账</div>
+        <div class="nav-right" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+      </div>
+      <div style="padding:20px 18px;flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0">
+
+        <!-- 地址输入区 -->
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s" id="transferAddrBox">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">收款地址</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <textarea id="transferAddr" rows="2" placeholder="输入万语地址或公链地址" oninput="detectAddrType()" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
+          </div>
+          <!-- 地址识别标签 -->
+          <div id="addrTypeTag" style="margin-top:8px;display:none">
+            <span id="addrTypeIcon" style="font-size:12px"></span>
+            <span id="addrTypeName" style="font-size:11px;color:var(--text-muted)"></span>
+          </div>
+        </div>
+
+        <!-- 收款人信息（识别后显示）-->
+        <div id="recipientCard" style="display:none;background:linear-gradient(135deg,#12120a,#1a1a08);border:1px solid rgba(200,168,75,0.3);border-radius:16px;padding:14px 16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:var(--gold-light);word-break:break-all" id="recipientName"></div>
+              <div style="font-size:11px;color:var(--text-muted)" id="recipientAddr">WorldWallet 用户</div>
+            </div>
+            <div style="margin-left:auto;font-size:10px;color:var(--green);background:rgba(74,200,74,0.1);border:1px solid rgba(74,200,74,0.2);border-radius:6px;padding:2px 8px">✓ 已验证</div>
+          </div>
+        </div>
+
+        <!-- 金额输入 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <!-- 币种选择 -->
+            <div onclick="openTransferCoinPicker()" style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;flex-shrink:0">
+              <span id="transferCoinIcon" style="font-size:18px">💚</span>
+              <span id="transferCoinName" style="font-size:14px;font-weight:700;color:var(--text)">USDT</span>
+              <span style="color:var(--text-muted);font-size:12px">›</span>
+            </div>
+            <input id="transferAmount" type="number" placeholder="0.00" oninput="calcTransferFee()" style="flex:1;min-width:0;width:100%;background:none;border:none;font-size:32px;font-weight:700;color:#e0e0f0;outline:none;text-align:right;display:block" />
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)">
+            <span>余额: <span id="transferBal">8,500</span> USDT <span style="color:var(--gold);cursor:pointer" onclick="setTransferMax()">全部</span></span>
+            <span>≈ <span id="transferUSD">$0.00</span></span>
+          </div>
+        </div>
+
+
+
+
+        <!-- 手续费 -->
+        <div id="transferFeeRow" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--text-muted)">手续费</span>
+            <span style="color:var(--text)" id="transferFee">0.30 USDT</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+            <span style="color:var(--text-muted)">实际到账</span>
+            <span style="color:var(--gold-light);font-weight:600" id="transferActual">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px">
+            <span style="color:var(--text-muted)">链路</span>
+            <span style="color:var(--text)" id="transferChain">TRC-20 · 约30秒</span>
+          </div>
+        </div>
+
+        <div style="flex:1"></div>
+
+        <!-- 发送按钮 -->
+        <button class="btn-primary" id="transferBtn" onclick="doTransfer()" style="opacity:0.4;cursor:not-allowed" disabled>
+          发送
+        </button>
+
+      </div>
+
+      <!-- 币种选择弹窗 -->
+      <div class="qr-overlay" id="transferCoinOverlay" onclick="closeTransferCoinPicker()">
+        <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 36px" onclick="event.stopPropagation()">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择发送币种</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <!-- USDT -->
+            <div onclick="selectTransferCoin('usdt')" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(200,168,75,0.1),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:12px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(38,161,123,0.15);display:flex;align-items:center;justify-content:center;font-size:18px">💚</div>
+              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">USDT</div><div style="font-size:11px;color:var(--text-muted)">TRC-20 · Tron</div></div>
+              <div style="text-align:right"><div style="font-size:14px;color:var(--text)">8,500</div><div style="font-size:11px;color:var(--text-muted)">≈ $8,500</div></div>
+            </div>
+            <div onclick="selectTransferCoin('trx')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,80,80,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🔴</div>
+              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">TRX</div><div style="font-size:11px;color:var(--text-muted)">Tron</div></div>
+              <div style="text-align:right"><div style="font-size:14px;color:var(--text)">1,200</div><div style="font-size:11px;color:var(--text-muted)">≈ $200</div></div>
+            </div>
+            <div onclick="selectTransferCoin('eth')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(100,100,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🔷</div>
+              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">ETH</div><div style="font-size:11px;color:var(--text-muted)">Ethereum</div></div>
+              <div style="text-align:right"><div style="font-size:14px;color:var(--text)">0.310</div><div style="font-size:11px;color:var(--text-muted)">≈ $800</div></div>
+            </div>
+            <div onclick="selectTransferCoin('btc')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
+              <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,165,0,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🟠</div>
+              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">BTC</div><div style="font-size:11px;color:var(--text-muted)">Bitcoin</div></div>
+              <div style="text-align:right"><div style="font-size:14px;color:var(--text)">0.0521</div><div style="font-size:11px;color:var(--text-muted)">≈ $2,980</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 确认弹窗 -->
+      <div class="qr-overlay" id="transferConfirmOverlay" onclick="closeTransferConfirm()">
+        <div style="background:var(--bg2);border-radius:24px;padding:28px 22px;width:300px;text-align:center" onclick="event.stopPropagation()">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">转账确认</div>
+          <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 USDT</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">→ <span id="confirmRecipient"></span></div>
+          <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:var(--text-muted);text-align:left;line-height:2">
+            <div style="display:flex;justify-content:space-between"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 USDT</span></div>
+            <div style="display:flex;justify-content:space-between"><span>实际到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
+            <div style="display:flex;justify-content:space-between"><span>链路</span><span id="confirmChain">TRC-20</span></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button style="flex:1;background:var(--bg3);color:var(--text-muted);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;cursor:pointer" onclick="closeTransferConfirm()">取消</button>
+            <button style="flex:1;background:linear-gradient(135deg,#b8982a,#e8c850);color:#0a0a05;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer" onclick="confirmTransfer()">确认发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- 嗖动画页 -->
+    <div class="page" id="page-swoosh" style="background:#060610;flex-direction:column;align-items:center;justify-content:center;overflow:hidden">
+
+      <style>
+        @keyframes swooshCoin {
+          0%   { transform: translateY(200px) scale(0.6); opacity:0; }
+          20%  { transform: translateY(140px) scale(1); opacity:1; }
+          60%  { transform: translateY(-20px) scale(1.1); opacity:1; }
+          80%  { transform: translateY(-160px) scale(0.8); opacity:0.6; }
+          100% { transform: translateY(-220px) scale(0.3); opacity:0; }
+        }
+        @keyframes trailFade {
+          0%   { opacity:0; transform:scaleY(0); }
+          30%  { opacity:1; transform:scaleY(1); }
+          80%  { opacity:0.3; }
+          100% { opacity:0; }
+        }
+        @keyframes glowPulse {
+          0%,100% { box-shadow: 0 0 20px rgba(200,168,75,0.3); }
+          50%      { box-shadow: 0 0 50px rgba(200,168,75,0.8); }
+        }
+        @keyframes receiverGlow {
+          0%,70% { border-color: #252540; background: #1a1a30; }
+          80%    { border-color: rgba(74,200,74,0.8); background: rgba(74,200,74,0.15); box-shadow: 0 0 30px rgba(74,200,74,0.4); }
+          100%   { border-color: rgba(74,200,74,0.4); background: rgba(74,200,74,0.05); }
+        }
+        @keyframes fadeInUp {
+          from { opacity:0; transform:translateY(10px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+        .swoosh-coin {
+          animation: swooshCoin 1.2s cubic-bezier(0.4,0,0.2,1) forwards;
+        }
+        .swoosh-trail {
+          animation: trailFade 1.2s ease forwards;
+        }
+        .receiver-glow {
+          animation: receiverGlow 1.6s ease forwards;
+        }
+      </style>
+
+      <!-- 收件人（上方） -->
+      <div id="swooshReceiver" style="width:280px;border:1.5px solid #252540;border-radius:20px;padding:14px 18px;background:#1a1a30;margin-bottom:40px;transition:all 0.3s">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:50%;background:#111120;border:1px solid #2a2a40;display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#c0c0d8" id="swooshToName">朝霞暮霭</div>
+            <div style="font-size:10px;color:#444;margin-top:2px" id="swooshToAddr">江清月近人 · 9182736</div>
+          </div>
+          <div style="margin-left:auto;font-size:18px" id="swooshCheck" style="opacity:0">✓</div>
+        </div>
+      </div>
+
+      <!-- 中间动画区 -->
+      <div style="position:relative;width:60px;height:160px;display:flex;justify-content:center;margin-bottom:40px">
+        <!-- 轨道线 -->
+        <div style="position:absolute;top:0;bottom:0;width:1px;background:linear-gradient(to top,rgba(200,168,75,0.3),rgba(200,168,75,0.05));left:50%"></div>
+        <!-- 金币 -->
+        <div id="swooshCoin" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px rgba(200,168,75,0.4);font-weight:900;color:#3a1a00">$</div>
+        <!-- 尾迹 -->
+        <div id="swooshTrail" style="position:absolute;bottom:0;left:50%;width:2px;transform:translateX(-50%) scaleY(0);transform-origin:bottom;background:linear-gradient(to top,rgba(200,168,75,0.6),transparent);height:80px;opacity:0"></div>
+      </div>
+
+      <!-- 金额 -->
+      <div id="swooshAmount" style="text-align:center;margin-bottom:40px">
+        <div style="font-size:42px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1" id="swooshAmtVal">500</div>
+        <div style="font-size:12px;color:#555;letter-spacing:4px;margin-top:4px" id="swooshCoinName">USDT</div>
+      </div>
+
+      <!-- 发件人（下方） -->
+      <div style="width:280px;border:1.5px solid rgba(200,168,75,0.2);border-radius:20px;padding:14px 18px;background:linear-gradient(135deg,rgba(200,168,75,0.06),transparent)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
+          <div>
+            <div style="display:flex;align-items:baseline;gap:5px">
+              <span style="font-size:10px;font-weight:700;color:#f0d070;letter-spacing:0.5px;word-break:break-all" id="swooshFromPart1"></span>
+              <span style="font-size:10px;color:#888" id="swooshFromPart2"></span>
+            </div>
+            <div style="font-size:10px;color:#c8a84b;margin-top:2px" id="swooshFromLang">🇨🇳 中文 · WorldWallet</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 转账成功页 / 社交凭证 -->
+    <div class="page" id="page-transfer-success" style="background:#060610;flex-direction:column">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;position:relative;overflow:hidden">
+
+        <!-- 背景光晕 -->
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 50%,rgba(200,168,75,0.06),transparent);pointer-events:none"></div>
+
+        <!-- 凭证卡 -->
+        <div style="width:100%;background:linear-gradient(160deg,#0d0d1e,#111128);border:1px solid #252540;border-radius:28px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.7);position:relative">
+
+          <!-- 顶部金线 -->
+          <div style="height:2px;background:linear-gradient(90deg,transparent,#c8a84b,#f0d070,#c8a84b,transparent)"></div>
+
+          <!-- 品牌 + 时间 -->
+          <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:7px">
+              <div style="width:22px;height:22px;background:linear-gradient(135deg,#c8a84b,#f0d070);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px">🌍</div>
+              <span style="font-size:12px;font-weight:700;color:#c8a84b;letter-spacing:1px">WorldWallet</span>
+            </div>
+            <span style="font-size:10px;color:#333;letter-spacing:1px" id="successTime2">2026.04.01 09:00</span>
+          </div>
+
+          <!-- 收件人（上） -->
+          <div style="padding:14px 20px 10px;border-top:1px solid #1a1a30">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:38px;height:38px;border-radius:50%;background:#1a1a30;border:1.5px solid #2a2a44;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0" id="successToIcon">🌍</div>
+              <div style="flex:1">
+                <div style="font-size:15px;font-weight:700;color:#d0d0e8" id="successToName">朝霞暮霭</div>
+                <div style="font-size:11px;color:#444;margin-top:2px" id="successToAddr">江清月近人 · 9182736</div>
+              </div>
+              <div style="font-size:10px;color:#4ac84a;background:rgba(74,200,74,0.08);border:1px solid rgba(74,200,74,0.15);border-radius:20px;padding:3px 10px;white-space:nowrap">收到</div>
+            </div>
+          </div>
+
+          <!-- 金额中间区 -->
+          <div style="padding:20px;text-align:center;position:relative">
+            <!-- 左线 -->
+            <div style="position:absolute;left:20px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,#1a1a30,transparent,#1a1a30)"></div>
+            <!-- 右线 -->
+            <div style="position:absolute;right:20px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,#1a1a30,transparent,#1a1a30)"></div>
+
+            <div style="font-size:10px;color:#333;letter-spacing:3px;margin-bottom:10px">· · · · ·</div>
+            <div style="font-size:54px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:6px" id="successAmount">500</div>
+            <div style="font-size:12px;color:#666;letter-spacing:5px" id="successCoin">USDT</div>
+            <div style="font-size:10px;color:#333;letter-spacing:3px;margin-top:10px">· · · · ·</div>
+          </div>
+
+          <!-- 发件人（下） -->
+          <div style="padding:10px 20px 16px;border-top:1px solid #1a1a30">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌍</div>
+              <div style="flex:1">
+                <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
+                  <span style="font-size:10px;font-weight:700;color:#f0d070;letter-spacing:0.5px;word-break:break-all" id="successFromPart1"></span>
+                  <span style="font-size:10px;color:#a0a0b8" id="successFromPart2"></span>
+                  <span style="display:none" id="successFromPart3"></span>
+                </div>
+                <div style="font-size:10px;color:#c8a84b;margin-top:3px;letter-spacing:1px" id="successFromLang">🇨🇳 中文 · WorldWallet</div>
+              </div>
+              <div style="font-size:10px;color:#555;white-space:nowrap">发出</div>
+            </div>
+          </div>
+
+          <!-- 底部 -->
+          <div style="padding:10px 20px 14px;border-top:1px solid #111120;display:flex;justify-content:space-between">
+            <span style="font-size:9px;color:#2a2a3a;letter-spacing:1px">worldwallet.io</span>
+            <span style="font-size:9px;color:#2a2a3a" id="successChain">TRC-20 · Tron</span>
+          </div>
+
+        </div>
+
+        <!-- 按钮 卡片外 低调 -->
+        <div style="width:100%;display:flex;gap:10px;margin-top:18px">
+          <div onclick="shareSuccess()" style="flex:1;background:#0d0d1a;border:1px solid #1a1a2a;border-radius:14px;padding:12px;text-align:center;font-size:12px;color:#555;cursor:pointer">📤 分享</div>
+          <div onclick="goTo('page-home')" style="flex:2;background:#0d0d1a;border:1px solid #1a1a2a;border-radius:14px;padding:12px;text-align:center;font-size:13px;color:#666;cursor:pointer">返回首页</div>
+        </div>
+
+      </div>
+    </div>
+    <!-- 设置页 -->
+    <div class="page" id="page-settings">
+      <div class="nav-bar">
+        <div class="nav-back"></div>
+        <div class="nav-title">设置</div>
+      </div>
+      <div style="padding:16px 18px;flex:1;overflow-y:auto">
+
+        <!-- 钱包信息 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌍</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700;color:var(--text)">我的钱包</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;word-break:break-all" id="settingsAddr"></div>
+          </div>
+          <div style="font-size:18px;color:var(--text-muted)">›</div>
+        </div>
+
+        <!-- 安全 -->
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">安全</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
+          <div class="settings-row" onclick="onSettingsPinClick()">
+            <span class="settings-icon">🔐</span>
+            <span class="settings-label">PIN码</span>
+            <span class="settings-value" id="settingsPinValue">未设置</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="alert('生物识别功能开发中')">
+            <span class="settings-icon">👆</span>
+            <span class="settings-label">Face ID / 指纹</span>
+            <span class="settings-value">已开启</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-key')">
+            <span class="settings-icon">📋</span>
+            <span class="settings-label">备份密钥</span>
+            <span class="settings-value" style="color:var(--red)">未备份</span>
+            <span class="settings-arrow">›</span>
+          </div>
+        </div>
+
+
+
+        <!-- 关于 -->
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">关于</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
+          <div class="settings-row" onclick="alert('WorldWallet v1.0.0\nworldwallet.io')">
+            <span class="settings-icon">ℹ️</span>
+            <span class="settings-label">版本</span>
+            <span class="settings-value">v1.0.0</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row">
+            <span class="settings-icon">🌍</span>
+            <span class="settings-label">官网</span>
+            <span class="settings-value">worldwallet.io</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row">
+            <span class="settings-icon">📄</span>
+            <span class="settings-label">隐私政策</span>
+            <span class="settings-value"></span>
+            <span class="settings-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- 危险区 -->
+        <div style="background:rgba(255,60,60,0.06);border:1px solid rgba(255,60,60,0.15);border-radius:16px;overflow:hidden;margin-bottom:20px">
+          <div class="settings-row" onclick="if(confirm('确认删除此钱包？请先备份密钥！'))alert('钱包已删除')">
+            <span class="settings-icon">🗑️</span>
+            <span class="settings-label" style="color:var(--red)">删除钱包</span>
+            <span class="settings-value"></span>
+            <span class="settings-arrow" style="color:var(--red)">›</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
+        <div class="pin-setup-panel" onclick="event.stopPropagation()">
+          <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
+          <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
+          <div class="pin-dots" id="pinDots"></div>
+          <div class="pin-keypad" id="pinKeypad"></div>
+          <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Swap页 -->
+    <div class="page" id="page-swap">
+      <div class="nav-bar">
+        <div class="nav-back"></div>
+        <div class="nav-title">兑换</div>
+        <div class="nav-right" onclick="goTo('page-swap-records')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+      </div>
+      <div class="swap-content">
+
+        <!-- 从 -->
+        <div class="swap-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="swap-label">从</span>
+            <span style="font-size:11px;color:var(--text-muted)">余额: <span id="swapFromBal">8,500</span> <span style="color:var(--gold);cursor:pointer" onclick="setSwapMax()">全部</span></span>
+          </div>
+          <div class="swap-row">
+            <div id="swapFromCoin" onclick="openCoinPicker('from')" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;flex-shrink:0;transition:all 0.2s">
+              <div id="swapFromIcon" style="width:30px;height:30px;border-radius:50%;background:rgba(38,161,123,0.15);display:flex;align-items:center;justify-content:center;font-size:16px">💚</div>
+              <div>
+                <div id="swapFromName" style="font-size:15px;font-weight:700;color:var(--text)">USDT</div>
+                <div id="swapFromChain" style="font-size:10px;color:var(--text-muted)">TRC-20</div>
+              </div>
+              <span style="color:var(--text-muted);font-size:14px">›</span>
+            </div>
+            <input id="swapAmountIn" class="swap-input" value="100" type="number" oninput="calcSwap()" style="flex:1;text-align:right;font-size:26px" />
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);text-align:right;margin-top:6px">≈ <span id="swapInUSD">$100.00</span></div>
+        </div>
+
+        <!-- 切换按钮 -->
+        <div class="swap-arrow" onclick="swapCoins()" style="cursor:pointer;transition:transform 0.3s" id="swapArrowBtn">⇅</div>
+
+        <!-- 到 -->
+        <div class="swap-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="swap-label">到</span>
+            <span style="font-size:11px;color:var(--text-muted)">预估到账</span>
+          </div>
+          <div class="swap-row">
+            <div id="swapToCoin" onclick="openCoinPicker('to')" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;flex-shrink:0;transition:all 0.2s">
+              <div id="swapToIcon" style="width:30px;height:30px;border-radius:50%;background:rgba(255,165,0,0.12);display:flex;align-items:center;justify-content:center;font-size:16px">🟠</div>
+              <div>
+                <div id="swapToName" style="font-size:15px;font-weight:700;color:var(--text)">BTC</div>
+                <div id="swapToChain" style="font-size:10px;color:var(--text-muted)">Bitcoin</div>
+              </div>
+              <span style="color:var(--text-muted);font-size:14px">›</span>
+            </div>
+            <div style="flex:1;text-align:right">
+              <div id="swapAmountOut" style="font-size:26px;font-weight:700;color:var(--text)">0.001744</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">≈ <span id="swapOutUSD">$99.70</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 汇率信息 -->
+        <div class="swap-info" style="margin-bottom:16px">
+          <div class="swap-info-row">
+            <span>汇率</span>
+            <span class="swap-info-val" id="swapRate">1 USDT ≈ 0.00001744 BTC</span>
+          </div>
+          <div class="swap-info-row">
+            <span>手续费</span>
+            <span class="swap-info-val gold" id="swapFee">0.30%（0.30 USDT）</span>
+          </div>
+          <div class="swap-info-row" style="margin-bottom:0">
+            <span>预计到账</span>
+            <span class="swap-info-val">约 30 秒</span>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="doSwap()">⚡ 立即兑换</button>
+      </div>
+
+      <!-- 币种选择弹窗 -->
+      <div class="qr-overlay" id="coinPickerOverlay" onclick="closeCoinPicker()">
+        <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 36px" onclick="event.stopPropagation()">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择币种</div>
+          <div id="coinPickerList" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 导入页 -->
+    <div class="page" id="page-import">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-create')">‹</div>
+        <div class="nav-title">导入钱包</div>
+      </div>
+      <div style="padding:20px;flex:1">
+        <div class="import-header-row">
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.7;flex:1;min-width:0">
+            输入12个助记词（空格分隔）<br>支持9种语言格式和BIP39英文格式
+          </div>
+          <span class="import-word-badge" id="importWordCountBadge">0/12</span>
+        </div>
+        <textarea id="importInput" style="width:100%;height:130px;background:var(--bg2);border:1.5px solid var(--border);border-radius:16px;padding:14px;font-size:14px;color:var(--text);resize:none;outline:none;font-family:inherit;line-height:1.8" placeholder="输入12个助记词..." oninput="updateImportWordCount()"></textarea>
+
+        <button class="btn-primary" onclick="(async () => { const input = document.getElementById('importInput'); if(!input) return; const m = input.value.trim(); if(m.split(' ').filter(Boolean).length !== 12) { alert('请输入12个单词的助记词'); return; } const w = await restoreWalletFromMnemonic(m); if(w) goTo('page-home'); })()">✅ 导入钱包</button>
+      </div>
+    </div>
+
+
+    <!-- ═══ 礼物主页 ═══ -->
+    <div class="page" id="page-hongbao">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-addr')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">发礼物</div>
+        <div class="nav-right" onclick="goTo('page-hb-records')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+      </div>
+      <div style="padding:16px 18px;flex:1;overflow-y:auto">
+
+        <!-- 类型切换 -->
+        <div style="display:flex;gap:0;background:var(--bg2);border-radius:12px;padding:3px;margin-bottom:18px;border:1px solid var(--border)">
+          <div id="btnNormal" onclick="switchHbType('normal')" style="flex:1;text-align:center;padding:8px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#b8982a,#e8c850);color:#0a0a05;transition:all 0.2s">普通礼物</div>
+          <div id="btnLucky" onclick="switchHbType('lucky')" style="flex:1;text-align:center;padding:8px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);transition:all 0.2s">随机礼物</div>
+        </div>
+
+        <!-- 金额输入 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">总金额</div>
+          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px">
+            <span style="font-size:22px;color:var(--gold)">$</span>
+            <input id="hbAmount" type="number" value="100" oninput="updateHbPreview()" style="flex:1;background:none;border:none;font-size:36px;font-weight:800;color:var(--text);outline:none;width:100%" />
+            <span style="font-size:14px;color:var(--text-muted)">USDT</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <div onclick="setAmt(10)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">10</div>
+            <div onclick="setAmt(50)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">50</div>
+            <div onclick="setAmt(100)" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));border:1px solid rgba(200,168,75,0.3);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--gold);cursor:pointer">100</div>
+            <div onclick="setAmt(500)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">500</div>
+            <div onclick="setAmt(1000)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">1000</div>
+          </div>
+        </div>
+
+        <!-- 个数 + 每人金额 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;margin-bottom:14px">
+            <div style="flex:1">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">礼物个数</div>
+              <div style="font-size:15px;color:var(--text)" id="hbCountLabel">5 个</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px">
+              <div onclick="chgCnt(-1)" style="width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--gold)">-</div>
+              <div id="hbCountVal" style="font-size:22px;font-weight:700;color:var(--text);min-width:28px;text-align:center">5</div>
+              <div onclick="chgCnt(1)" style="width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--gold)">+</div>
+            </div>
+          </div>
+          <div style="height:1px;background:var(--border);margin-bottom:12px"></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px">
+            <span style="color:var(--text-muted)" id="hbTypeLabel">每人金额</span>
+            <span style="color:var(--gold-light);font-weight:600" id="hbPerPerson">20 USDT</span>
+          </div>
+        </div>
+
+        <!-- 祝福语 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:18px">🎊</span>
+          <input id="hbBlessing" value="恭喜发财，万事如意" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none" />
+          <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;cursor:pointer" onclick="randomBlessing()">换一句</span>
+        </div>
+
+        <!-- 有效期 -->
+        <div style="display:flex;gap:8px;margin-bottom:18px">
+          <div onclick="setExpiry(24)" id="exp24" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04));border:1px solid rgba(200,168,75,0.3);border-radius:10px;padding:8px 0;text-align:center;font-size:12px;color:var(--gold);cursor:pointer">24小时</div>
+          <div onclick="setExpiry(72)" id="exp72" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">72小时</div>
+          <div onclick="setExpiry(168)" id="exp168" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">7天</div>
+        </div>
+
+        <!-- 提示 -->
+        <div style="background:rgba(255,180,0,0.06);border:1px solid rgba(255,180,0,0.15);border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#aa8844;line-height:1.7">
+          💡 系统将生成一句诗词口令，将口令发给朋友，朋友在WorldWallet输入即可领取
+        </div>
+
+        <button class="btn-primary" onclick="createHongbao()">🎁 生成礼物口令</button>
+      </div>
+    </div>
+
+    <!-- ═══ 口令展示页（发送后） ═══ -->
+    <div class="page" id="page-hb-keyword">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">口令已生成</div>
+      </div>
+      <div style="padding:20px 18px;flex:1;overflow-y:auto">
+
+        <!-- 礼物封面 -->
+        <div style="background:linear-gradient(160deg,#6b0000,#b81800,#e03000);border-radius:24px;padding:28px 20px;margin-bottom:20px;position:relative;overflow:hidden">
+          <div style="position:absolute;right:-20px;top:-20px;font-size:120px;opacity:0.05">🎁</div>
+          <div style="font-size:44px;text-align:center;margin-bottom:12px">🎁</div>
+          <div style="font-size:15px;color:rgba(255,255,255,0.8);text-align:center;margin-bottom:18px" id="kwBlessingText">恭喜发财，万事如意</div>
+
+          <!-- 口令核心区 -->
+          <div style="background:rgba(0,0,0,0.25);border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-bottom:10px">口 令</div>
+            <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:5px;margin-bottom:10px" id="kwKeyword">举头望明月</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5)">朋友在WorldWallet搜索此口令即可领取</div>
+          </div>
+
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.6)">
+            <span id="kwAmtText">100 USDT</span>
+            <span id="kwCntText">共5份礼物</span>
+            <span id="kwExpText">有效期24小时</span>
+          </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <div onclick="copyKw()" id="copyKwBtn" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.4);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:20px;margin-bottom:4px">📋</div>
+            <div style="font-size:12px;color:var(--gold)">复制口令</div>
+          </div>
+          <div onclick="shareKw()" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
+            <div style="font-size:20px;margin-bottom:4px">📤</div>
+            <div style="font-size:12px;color:var(--text-muted)">分享给朋友</div>
+          </div>
+          <div onclick="showHbQR()" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
+            <div style="font-size:20px;margin-bottom:4px">📱</div>
+            <div style="font-size:12px;color:var(--text-muted)">二维码</div>
+          </div>
+        </div>
+
+        <!-- 复制提示文案 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">发给朋友的文案（点击复制）</div>
+          <div id="kwShareText" onclick="copyShareText()" style="font-size:13px;color:var(--text);line-height:1.7;cursor:pointer">
+            🎁 我给你发了一个WorldWallet礼物！<br>
+            口令：<span style="color:var(--gold);font-weight:700" id="kwShareKeyword">举头望明月</span><br>
+            打开WorldWallet → 输入口令 → 立即领取 💰<br>
+            <span style="color:var(--text-muted);font-size:11px">有效期24小时，先到先得</span>
+          </div>
+        </div>
+
+        <!-- 领取状态 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;display:flex;justify-content:space-between">
+            <span>领取进度</span>
+            <span style="color:var(--gold)" id="kwProgress">0 / 5 已领取</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;height:6px;overflow:hidden">
+            <div id="kwProgressBar" style="background:linear-gradient(90deg,#c8a84b,#f0d070);height:100%;width:0%;transition:width 0.5s;border-radius:6px"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:center">等待朋友输入口令领取...</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═══ 领取礼物页 ═══ -->
+    <div class="page" id="page-claim">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">领取礼物</div>
+      </div>
+      <div style="padding:28px 20px;flex:1;display:flex;flex-direction:column;align-items:center">
+        <div style="font-size:80px;margin-bottom:20px;animation:bounce 1s infinite alternate">🎁</div>
+        <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">输入口令，领取礼物</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:32px;text-align:center;line-height:1.8">
+          朋友发给你的诗词口令<br>在下方输入即可领取加密货币礼物
+        </div>
+
+        <!-- 口令输入框 -->
+        <div style="width:100%;background:var(--bg2);border:2px solid var(--border);border-radius:20px;padding:20px;margin-bottom:16px;transition:border-color 0.2s" id="claimInputBox" onclick="document.getElementById('claimInput').focus()">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">输入口令</div>
+          <input id="claimInput" placeholder="例：举头望明月" oninput="onClaimInput()" style="width:100%;background:none;border:none;font-size:22px;font-weight:700;color:var(--gold-light);outline:none;text-align:center;letter-spacing:4px" />
+        </div>
+
+        <!-- 常见口令提示 -->
+        <div style="width:100%;margin-bottom:24px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-align:center">最近收到的口令</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center" id="recentKeywords">
+            <div onclick="fillKeyword('举头望明月')" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--text-dim);cursor:pointer">举头望明月</div>
+            <div onclick="fillKeyword('春风得意马蹄')" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--text-dim);cursor:pointer">春风得意马蹄</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="width:100%" onclick="submitClaim()">🎊 立即领取</button>
+      </div>
+    </div>
+
+    <!-- ═══ 领取成功页 ═══ -->
+    <div class="page" id="page-claimed">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;background:radial-gradient(ellipse 80% 60% at 50% 30%,rgba(200,100,0,0.15),transparent)">
+        <div style="font-size:80px;margin-bottom:16px">🎉</div>
+        <div style="font-size:24px;font-weight:800;color:var(--gold-light);margin-bottom:8px">恭喜你！</div>
+        <div style="font-size:14px;color:var(--text-muted);margin-bottom:32px">成功领取礼物口令</div>
+
+        <!-- 金额展示 -->
+        <div style="background:linear-gradient(135deg,#12120a,#1a1a08);border:2px solid rgba(200,168,75,0.4);border-radius:24px;padding:28px 32px;text-align:center;margin-bottom:24px;box-shadow:0 0 30px rgba(200,168,75,0.15)">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">你领到了</div>
+          <div style="font-size:48px;font-weight:800;color:var(--gold-light)" id="claimedAmount">20</div>
+          <div style="font-size:16px;color:var(--gold);margin-top:4px">USDT</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:12px" id="claimedRank">第 2 个领取 · 共5份礼物</div>
+        </div>
+
+        <!-- 口令 -->
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px">
+          口令：<span style="color:var(--gold);font-weight:600" id="claimedKeyword">举头望明月</span>
+        </div>
+
+        <button class="btn-primary" style="width:100%;margin-bottom:10px" onclick="goTo('page-home')">查看资产</button>
+        <button class="btn-secondary" onclick="goTo('page-claim')">再领一个</button>
+      </div>
+    </div>
+
+    <!-- ═══ 礼物记录页 ═══ -->
+    <div class="page" id="page-hb-records">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">礼物记录</div>
+      </div>
+      <div style="padding:16px 18px;flex:1;overflow-y:auto">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;letter-spacing:1px">最近发出的礼物</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <span style="font-size:28px">🎁</span>
+            <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">举头望明月</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">普通礼物 · 2小时前</div></div>
+            <div style="text-align:right"><div style="font-size:14px;font-weight:600;color:var(--gold)">100 USDT</div><div style="font-size:11px;color:var(--green)">3/5 已领</div></div>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;height:4px;overflow:hidden"><div style="background:linear-gradient(90deg,#c8a84b,#f0d070);height:100%;width:60%;border-radius:6px"></div></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:10px;opacity:0.6">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:28px">🎁</span>
+            <div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--text)">春风得意马蹄疾</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">随机 · 昨天 · 已过期</div></div>
+            <div style="text-align:right"><div style="font-size:14px;font-weight:600;color:var(--text-muted)">50 USDT</div><div style="font-size:11px;color:var(--text-muted)">5/5 已领完</div></div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:20px">· 已领完的礼物退回原账户 ·</div>
+      </div>
+    </div>
+
+
+  <!-- 底部导航 -->
+  <div class="tab-bar" id="tabBar" style="display:none">
+    <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon">🏠</span><span>资产</span></div>
+    <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon">🏷️</span><span>地址</span></div>
+    <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon">📰</span><span>资讯</span></div>
+    <div class="tab-item" id="tab-settings" onclick="goTab('tab-settings')"><span class="tab-icon">⚙️</span><span>设置</span></div>
+  </div>
+
+  <div class="wallet-loading-overlay" id="walletCreateLoading">
+    <div class="wallet-loading-spinner"></div>
+    <div class="wallet-loading-text">正在创建钱包…</div>
+  </div>
+
+</div>
+
+<script>
+// ── 真实钱包数据 ──────────────────────────────────────────────
+let REAL_WALLET = JSON.parse(localStorage.getItem('ww_real_wallet') || 'null');
+
+async function createRealWallet() {
+  return generateRealWallet();
+}
+
+async function generateRealWallet() {
+  if (typeof ethers === 'undefined') return null;
+  try {
+    const wallet = ethers.Wallet.createRandom();
+    const mnemonic = wallet.mnemonic.phrase;
+    const words = mnemonic.split(' ');
+    // TRX 地址用不同路径派生
+    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
+    const data = {
+      mnemonic: mnemonic,
+      words: words,
+      ethAddress: wallet.address,
+      trxAddress: 'T' + wallet.address.slice(3, 36),
+      privateKey: wallet.privateKey,
+    };
+    localStorage.setItem('ww_real_wallet', JSON.stringify(data));
+    REAL_WALLET = data;
+    return data;
+  } catch(e) {
+    console.error('Wallet generation error:', e);
+    return null;
+  }
+}
+
+async function restoreWalletFromMnemonic(mnemonic) {
+  if (typeof ethers === 'undefined') return null;
+  try {
+    const wallet = ethers.Wallet.fromMnemonic(mnemonic.trim());
+    const data = {
+      mnemonic: mnemonic.trim(),
+      words: mnemonic.trim().split(' '),
+      ethAddress: wallet.address,
+      trxAddress: 'T' + wallet.address.slice(3, 36),
+      privateKey: wallet.privateKey,
+    };
+    localStorage.setItem('ww_real_wallet', JSON.stringify(data));
+    REAL_WALLET = data;
+    return data;
+  } catch(e) {
+    alert('助记词格式错误，请检查后重试');
+    return null;
+  }
+}
+
+// 查询余额（通过公共 API）
+async function fetchBalance(address) {
+  try {
+    // ETH 余额
+    const ethRes = await fetch(`https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=YourApiKeyToken`);
+    // TRX 余额
+    const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${address}`);
+    return { eth: '0.0000', usdt: '0.00', trx: '0.00' };
+  } catch(e) {
+    return { eth: '0.0000', usdt: '0.00', trx: '0.00' };
+  }
+}
+
+const LANG_INFO = {
+  zh:{name:'中文',flag:'🇨🇳'},ja:{name:'日本語',flag:'🇯🇵'},ko:{name:'한국어',flag:'🇰🇷'},
+  es:{name:'Español',flag:'🇪🇸'},fr:{name:'Français',flag:'🇫🇷'},ar:{name:'العربية',flag:'🇸🇦'},
+  ru:{name:'Русский',flag:'🇷🇺'},pt:{name:'Português',flag:'🇧🇷'},hi:{name:'हिन्दी',flag:'🇮🇳'},
+  en:{name:'English',flag:'🇺🇸'},de:{name:'Deutsch',flag:'🇩🇪'},tr:{name:'Türkçe',flag:'🇹🇷'},
+  vi:{name:'Tiếng Việt',flag:'🇻🇳'},id:{name:'Indonesia',flag:'🇮🇩'},th:{name:'ภาษาไทย',flag:'🇹🇭'},
+  it:{name:'Italiano',flag:'🇮🇹'},pl:{name:'Polski',flag:'🇵🇱'},nl:{name:'Nederlands',flag:'🇳🇱'},
+  uk:{name:'Українська',flag:'🇺🇦'},sv:{name:'Svenska',flag:'🇸🇪'},el:{name:'Ελληνικά',flag:'🇬🇷'},
+  fa:{name:'فارسی',flag:'🇮🇷'},ur:{name:'اردو',flag:'🇵🇰'},bn:{name:'বাংলা',flag:'🇧🇩'},
+  ms:{name:'Bahasa Melayu',flag:'🇲🇾'},sw:{name:'Kiswahili',flag:'🇰🇪'},ro:{name:'Română',flag:'🇷🇴'},
+};
+
+// ── 万语地址系统 ──────────────────────────────────────────
+const ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
+
+function randDigits(n) {
+  let s = '';
+  for(let i=0;i<n;i++) s += Math.floor(Math.random()*10);
+  return s;
+}
+
+// 手机键盘可打出的字符（仅保留真正可输入的字母字符）
+const SINGLE_CHARS = {
+  zh: '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪',
+  ja: 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほやゆよアイウエオカキクケコ',
+  ko: 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ',
+  ar: 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي',
+  ru: 'абвгдежзийклмнопрстуфхцчшщыьэюя',
+  hi: 'अआइउएओकखगघचजटडतथदधनपफबभमयरलवशसह',
+  th: 'กขคงจชซณดตถทนบปผพฟภมยรลวสหอ',
+  vi: 'àáâèéêìíòóôùúýăđơư',
+  es: 'áéíóúüñ',
+  fr: 'àâçéèêëîïôùûü',
+  de: 'äöüÄÖÜ',
+  pt: 'áàãâçéêíóõôú',
+  it: 'àèéìíòóùú',
+  tr: 'çğışöüÇĞİŞÖÜ',
+  pl: 'ąćęłńóśźżĄĆĘŁŃÓŚŹŻ',
+  uk: 'абвгєжзийіїйклмнопрстуфхцчшщьюя',
+  ro: 'âăîșț',
+  sv: 'åäöÅÄÖ',
+  el: 'αβγδεζηθικλμνξοπρστυφχψω',
+  fa: 'ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی',
+  bn: 'অআইউএওকখগঘচজটডতথদধনপবভমযরলশসহ',
+  nl: 'abcdefghijklmnopqrstuvwxyz',
+};
+
+function randWord(lang) {
+  const chars = SINGLE_CHARS[lang] || SINGLE_CHARS.zh;
+  return chars[Math.floor(Math.random()*chars.length)];
+}
+
+function randLang() {
+  const langs = Object.keys(SAMPLE_KEYS).filter(l => l !== 'en');
+  return langs[Math.floor(Math.random()*langs.length)];
+}
+
+function initAddrWords() {
+  ADDR_WORDS.length = 0;
+  for(let i=0;i<10;i++) {
+    const lang = randLang();
+    ADDR_WORDS.push({word: randWord(lang), lang, custom: false});
+  }
+  // 随机前后缀
+  document.getElementById('addrPrefix').textContent = randDigits(8);
+  document.getElementById('addrSuffix').textContent = randDigits(8);
+  renderAddrWords();
+  // 同步所有地方的地址显示（统一单行）
+  setTimeout(() => {
+    const addr = getNativeAddr();
+    // 统一样式：单行 + 居中
+    const ADDR_STYLE = 'font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;display:block';
+    // 首页芯片
+    const chip = document.getElementById('homeAddrChip');
+    if(chip) { chip.textContent = addr; chip.style.cssText += ';font-size:11px;letter-spacing:0.5px;text-align:center;display:block'; }
+    // QR大字（居中 + 高亮）
+    const qp1 = document.getElementById('qrPart1');
+    const qp2 = document.getElementById('qrPart2');
+    if(qp1) {
+      const prefix = document.getElementById('addrPrefix')?.textContent || '';
+      const suffix = document.getElementById('addrSuffix')?.textContent || '';
+      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
+      ADDR_WORDS.forEach(w => {
+        if(w.custom) {
+          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
+        } else {
+          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
+        }
+      });
+      html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
+      qp1.innerHTML = html;
+    }
+    if(qp2) qp2.style.display = 'none';
+    // QR弹窗
+    const qm = document.getElementById('qrAddrMain');
+    if(qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
+    // 设置页
+    const sa = document.getElementById('settingsAddr');
+    if(sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    // swoosh（单行居中）
+    const sfp1 = document.getElementById('swooshFromPart1');
+    const sfp2 = document.getElementById('swooshFromPart2');
+    if(sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    if(sfp2) sfp2.style.display = 'none';
+    // 成功页（单行居中）
+    const suc1 = document.getElementById('successFromPart1');
+    const suc2 = document.getElementById('successFromPart2');
+    if(suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    if(suc2) suc2.style.display = 'none';
+  }, 50);
+}
+
+function renderAddrWords() {
+  const container = document.getElementById('addrWords');
+  if(!container) return;
+  // 确保 suffix/prefix 只含8位数字
+  const pre = document.getElementById('addrPrefix');
+  const suf = document.getElementById('addrSuffix');
+  if(pre) pre.textContent = (pre.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
+  if(suf) suf.textContent = (suf.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
+  // 每个字符等宽盒子，定制字金色高亮，随机字淡紫
+  let html = '';
+  ADDR_WORDS.forEach(w => {
+    if(w.custom) {
+      html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;color:#f0d070;font-size:17px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
+    } else {
+      html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px">${w.word}</span>`;
+    }
+  });
+  container.innerHTML = html;
+  // 同步 addrMain
+  const m = document.getElementById('addrMain');
+  if(m) m.textContent = ADDR_WORDS.map(w=>w.word).join('');
+  // 同步 QR 高亮
+  const qp1 = document.getElementById('qrPart1');
+  if(qp1 && ADDR_WORDS.length) {
+    const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
+    const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
+    let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
+    ADDR_WORDS.forEach(w => {
+      html += w.custom
+        ? `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`
+        : `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
+    });
+    html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
+    qp1.innerHTML = html;
+  }
+}
+
+function openCustomizeAddr() {
+  openWordEditor(0);
+}
+
+function openWordEditor(idx) {
+  const w = ADDR_WORDS[idx];
+  const info = LANG_INFO[w.lang] || {flag:'🌍', name:'?'};
+
+  // 弹出简单的 prompt 式选择
+  const langList = Object.keys(SAMPLE_KEYS).filter(l=>l!=='en').map(l=>{
+    const i = LANG_INFO[l]||{flag:'🌍',name:l};
+    return `${i.flag} ${i.name} (${l})`;
+  }).join('\n');
+
+  const input = window.prompt(
+    `第 ${idx+1} 个字（当前：${info.flag} "${w.word}"）\n\n输入新词（直接输入），或留空随机\n\n可用语言：${Object.entries(LANG_INFO).filter(([l])=>l!=='en').map(([l,i])=>i.flag+l).join(' ')}`,
+    w.custom ? w.word : ''
+  );
+
+  if(input === null) return; // 取消
+
+  if(input.trim() === '') {
+    // 随机
+    const lang = randLang();
+    ADDR_WORDS[idx] = {word: randWord(lang), lang, custom: false};
+  } else {
+    ADDR_WORDS[idx] = {word: input.trim(), lang: w.lang, custom: true};
+  }
+  renderAddrWords();
+}
+
+function getNativeAddr() {
+  const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
+  const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
+  const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
+  return prefix + words + suffix;
+}
+
+
+
+const SAMPLE_KEYS = {
+  zh:['北京','东京','巴黎','伦敦','柏林','罗马','马德里','首尔','开罗','悉尼','孟买','多伦多'],
+  en:['abandon','ability','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account'],
+  ja:['北京','東京','パリ','ロンドン','ベルリン','ローマ','マドリード','ソウル','カイロ','シドニー','ムンバイ','トロント'],
+  ko:['베이징','도쿄','파리','런던','베를린','로마','마드리드','서울','카이로','시드니','뭄바이','토론토'],
+  es:['Pekín','Tokio','París','Londres','Berlín','Roma','Madrid','Seúl','El Cairo','Sídney','Bombay','Toronto'],
+  fr:['Pékin','Tokyo','Paris','Londres','Berlin','Rome','Madrid','Séoul','Le Caire','Sydney','Bombay','Toronto'],
+  ar:['بكين','طوكيو','باريس','لندن','برلين','روما','مدريد','سيول','القاهرة','سيدني','مومباي','تورنتو'],
+  ru:['Пекин','Токио','Париж','Лондон','Берлин','Рим','Мадрид','Сеул','Каир','Сидней','Мумбаи','Торонто'],
+  pt:['Pequim','Tóquio','Paris','Londres','Berlim','Roma','Madri','Seul','Cairo','Sydney','Mumbai','Toronto'],
+  hi:['बीजिंग','टोक्यो','पेरिस','लंदन','बर्लिन','रोम','मैड्रिड','सियोल','काहिरा','सिडनी','मुंबई','टोरंटो'],
+  de:['Peking','Tokio','Paris','London','Berlin','Rom','Madrid','Seoul','Kairo','Sydney','Mumbai','Toronto'],
+  tr:['Pekin','Tokyo','Paris','Londra','Berlin','Roma','Madrid','Seul','Kahire','Sidney','Mumbai','Toronto'],
+  vi:['Bắc Kinh','Tokyo','Paris','London','Berlin','Rome','Madrid','Seoul','Cairo','Sydney','Mumbai','Toronto'],
+  id:['Beijing','Tokyo','Paris','London','Berlin','Roma','Madrid','Seoul','Kairo','Sydney','Mumbai','Toronto'],
+  th:['ปักกิ่ง','โตเกียว','ปารีส','ลอนดอน','เบอร์ลิน','โรม','มาดริด','โซล','ไคโร','ซิดนีย์','มุมไบ','โตรอนโต'],
+  it:['Pechino','Tokyo','Parigi','Londra','Berlino','Roma','Madrid','Seul','Il Cairo','Sydney','Mumbai','Toronto'],
+  pl:['Pekin','Tokio','Paryż','Londyn','Berlin','Rzym','Madryt','Seul','Kair','Sydney','Bombaj','Toronto'],
+  nl:['Peking','Tokio','Parijs','Londen','Berlijn','Rome','Madrid','Seoul','Caïro','Sydney','Mumbai','Toronto'],
+  uk:['Пекін','Токіо','Париж','Лондон','Берлін','Рим','Мадрид','Сеул','Каїр','Сідней','Мумбаї','Торонто'],
+  sv:['Peking','Tokyo','Paris','London','Berlin','Rom','Madrid','Seoul','Kairo','Sydney','Mumbai','Toronto'],
+  el:['Πεκίνο','Τόκιο','Παρίσι','Λονδίνο','Βερολίνο','Ρώμη','Μαδρίτη','Σεούλ','Κάιρο','Σίδνεϊ','Μουμπάι','Τορόντο'],
+  fa:['پکن','توکیو','پاریس','لندن','برلین','رم','مادرید','سئول','قاهره','سیدنی','بمبئی','تورنتو'],
+  ur:['بیجنگ','ٹوکیو','پیرس','لندن','برلن','روم','میڈرڈ','سیول','قاہرہ','سڈنی','ممبئی','ٹورنٹو'],
+  bn:['বেইজিং','টোকিও','প্যারিস','লন্ডন','বার্লিন','রোম','মাদ্রিদ','সিউল','কায়রো','সিডনি','মুম্বাই','টরন্টো'],
+  ms:['Beijing','Tokyo','Paris','London','Berlin','Rom','Madrid','Seoul','Kairo','Sydney','Mumbai','Toronto'],
+  sw:['Beijing','Tokyo','Paris','London','Berlin','Roma','Madrid','Seoul','Cairo','Sydney','Mumbai','Toronto'],
+  ro:['Beijing','Tokyo','Paris','Londra','Berlin','Roma','Madrid','Seoul','Cairo','Sydney','Mumbai','Toronto'],
+};
+
+// 英文用户用公链地址，其他用母语诗句地址
+const ADDR_SAMPLES = {
+  zh:{main:'龙凤虎 · 举头望明月', num:'3829461'},
+  en:{main:'TQn4Hj8mKx3fR7vL2pN9', num:'(公链地址)'},
+  ja:{main:'桜富士 · 古池や蛙飛び', num:'3829461'},
+  ko:{main:'한라백두 · 청산리벽계수', num:'3829461'},
+  es:{main:'Sol Mar · Quien madruga', num:'3829461'},
+  fr:{main:'Paris Seine · La vie en rose', num:'3829461'},
+  ar:{main:'مكة بغداد · الصبر مفتاح', num:'3829461'},
+  ru:{main:'Байкал Урал · Я помню чудное', num:'3829461'},
+  pt:{main:'Rio Lisboa · No sertão', num:'3829461'},
+  hi:{main:'गंगा हिमालय · माटी कहे', num:'3829461'},
+  de:{main:'Berlin Rhein · Wandern ist des Müllers', num:'3829461'},
+  tr:{main:'İstanbul · Bir yiğit gurbete', num:'3829461'},
+  vi:{main:'Hà Nội · Công cha như núi', num:'3829461'},
+  id:{main:'Jakarta · Bagai air di daun', num:'3829461'},
+  th:{main:'กรุงเทพ · น้ำเชี่ยวอย่าขวาง', num:'3829461'},
+  it:{main:'Roma Milano · Chi dorme non piglia', num:'3829461'},
+  pl:{main:'Warszawa Kraków · Nie ma róży bez', num:'3829461'},
+  nl:{main:'Amsterdam Rotterdam · Al doende leert', num:'3829461'},
+  uk:{main:'Київ Львів · Де згода в сімействі', num:'3829461'},
+  sv:{main:'Stockholm Göteborg · Många bäckar små', num:'3829461'},
+  el:{main:'Αθήνα Θεσσαλ · Φτώχεια και αρετή', num:'3829461'},
+  fa:{main:'تهران اصفهان · صبر و ظفر هر دو', num:'3829461'},
+  ur:{main:'کراچی لاہور · صبر کا پھل میٹھا', num:'3829461'},
+  bn:{main:'ঢাকা চট্টগ্রাম · সবুরে মেওয়া ফলে', num:'3829461'},
+  ms:{main:'Kuala Lumpur · Seperti air di daun', num:'3829461'},
+  sw:{main:'Nairobi Mombasa · Haraka haraka haina', num:'3829461'},
+  ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
+};
+
+const CHAIN_ADDR = 'TQn4Hj8mKx3fR7vL2pN9sW5d';
+const ETH_ADDR   = '0x7f3a9b2c4d8e1f5a6b3c7d2e';
+const BTC_ADDR   = 'bc1q7f3a9b2c4d8e1f5a6b3c7';
+
+let currentLang = 'zh';
+const MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
+const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
+
+function goTo(pageId) {
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
+  const activePage=document.getElementById(pageId);
+  activePage.classList.add('active');
+  activePage.style.display='';
+  document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
+  if(pageId==='page-key') renderKeyGrid();
+  if(pageId==='page-settings') updateSettingsPage();
+  if(pageId==='page-import') updateImportWordCount();
+  if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} }
+  if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
+  if(MAIN_PAGES.includes(pageId)) updateAddr();
+}
+
+function goTab(tabId) {
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById(tabId)?.classList.add('active');
+  goTo(TAB_MAP[tabId]||'page-home');
+}
+
+function selectLang(btn) {
+  document.querySelectorAll('#welcomeLangGrid .lang-row, #welcomeLangGrid .lang-btn').forEach(b=>{
+    b.classList.remove('active');
+    const check = b.querySelector('.lang-check');
+    if(check) check.style.opacity='0';
+  });
+  btn.classList.add('active');
+  const check = btn.querySelector('.lang-check');
+  if(check) check.style.opacity='1';
+  currentLang = btn.dataset.lang;
+}
+
+function renderKeyGrid() {
+  const info = LANG_INFO[currentLang]||LANG_INFO.zh;
+  document.getElementById('keyLangFlag').textContent = info.flag;
+  document.getElementById('keyLangName').textContent = info.name;
+  // 优先用真实生成的助记词，否则用样本
+  const words = (REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length === 12)
+    ? REAL_WALLET.words
+    : (SAMPLE_KEYS[currentLang]||SAMPLE_KEYS.zh);
+  const isEn = currentLang === 'en';
+  const grid = document.getElementById('keyWordGrid');
+  grid.innerHTML = '';
+
+  // 英文显示提示
+  const hint = document.getElementById('keyEnHint');
+  if(isEn) {
+    if(!hint) {
+      const h = document.createElement('div');
+      h.id = 'keyEnHint';
+      h.style.cssText = 'background:rgba(100,150,255,0.08);border:1px solid rgba(100,150,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#8aadff;line-height:1.7';
+      h.innerHTML = '⛓️ 英文使用 BIP39 标准密钥，兼容所有公链钱包';
+      grid.parentNode.insertBefore(h, grid);
+    }
+  } else {
+    if(hint) hint.remove();
+  }
+
+  words.forEach((w,i)=>{
+    const d=document.createElement('div');
+    d.className='key-word fade-up';
+    d.style.animationDelay=i*0.04+'s';
+    const isSmall = currentLang==='en';
+    d.innerHTML=`<div class="word-num">${String(i+1).padStart(2,'0')}</div><div class="word-val" style="font-size:${isSmall?'11px':'13px'}">${w}</div>`;
+    grid.appendChild(d);
+  });
+}
+
+function updateAddr() {
+  const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
+  const isEn = currentLang==='en';
+  // 初始化万语地址（如果还没初始化）
+  if(ADDR_WORDS.length === 0) initAddrWords();
+  else renderAddrWords();
+  // 获取完整万语地址
+  const nativeAddr = getNativeAddr();
+  const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
+  // 首页芯片
+  const chip = document.getElementById('homeAddrChip');
+  if(chip) chip.textContent = isEn ? CHAIN_ADDR : nativeAddr;
+  // QR 二维码区大字显示
+  const qp1 = document.getElementById('qrPart1');
+  const qp2 = document.getElementById('qrPart2');
+  if(qp1 && !isEn) { qp1.textContent = nativeAddr.substring(0,10); qp1.style.fontSize='14px'; qp1.style.letterSpacing='1px'; }
+  if(qp2 && !isEn) { qp2.textContent = nativeAddr.substring(10); qp2.style.fontSize='12px'; }
+  // swoosh 转账动画
+  const sfp1 = document.getElementById('swooshFromPart1');
+  const sfp2 = document.getElementById('swooshFromPart2');
+  if(sfp1 && !isEn) { sfp1.textContent = nativeAddr.substring(0,8); sfp1.style.fontSize='12px'; sfp1.style.letterSpacing='1px'; }
+  if(sfp2 && !isEn) sfp2.textContent = nativeAddr.substring(8,18)+'...';
+  // 转账成功页
+  const suc1 = document.getElementById('successFromPart1');
+  const suc2 = document.getElementById('successFromPart2');
+  if(suc1 && !isEn) { suc1.textContent = nativeAddr.substring(0,8); suc1.style.fontSize='12px'; }
+  if(suc2 && !isEn) suc2.textContent = nativeAddr.substring(8,18)+'...';
+  // 地址页
+  const m=document.getElementById('addrMain');
+  const n=document.getElementById('addrNum');
+  if(m) m.textContent = isEn ? CHAIN_ADDR : a.main;
+  if(n) n.style.display = isEn?'none':'block';
+  if(n&&!isEn) n.textContent = a.num;
+  // QR弹窗同步
+  const qm=document.getElementById('qrAddrMain');
+  if(qm) qm.textContent = isEn ? CHAIN_ADDR : nativeAddr;
+  // 二维码区语言标签
+  const langTag = document.getElementById('qrLangTag');
+  const info = LANG_INFO[currentLang]||{flag:'🌍',name:'Mother'};
+  if(langTag) langTag.textContent = '🌍 万语地址';
+  // 更新二维码显示内容
+  updateQRDisplay();
+  // 同步礼金UI
+  if(typeof updateGiftUI==='function') updateGiftUI();
+}
+
+function getNativeAddr() {
+  if(currentLang === 'en') return CHAIN_ADDR;
+  const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
+  const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
+  const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
+  return prefix + words + suffix;
+}
+
+function copyHomeAddr() {
+  const addr = getNativeAddr();
+  navigator.clipboard?.writeText(addr).catch(()=>{});
+  const btn = document.getElementById('homeCopyBtn');
+  if(btn) { btn.textContent='已复制'; setTimeout(()=>btn.textContent='复制',1500); }
+}
+
+function copyNative() {
+  navigator.clipboard?.writeText(getNativeAddr()).catch(()=>{});
+  const btn=document.getElementById('copyNativeBtn');
+  btn.textContent='✅ 已复制'; btn.classList.add('copied');
+  setTimeout(()=>{btn.textContent='📋 复制';btn.classList.remove('copied');},2000);
+}
+
+function copyBoth() {
+  const native = getNativeAddr();
+  const isEn = currentLang === 'en';
+  let text;
+  if(isEn) {
+    text = `⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${ETH_ADDR}\nBTC: ${BTC_ADDR}`;
+  } else {
+    text = `🌍 万语地址\n${native}\n\n⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${ETH_ADDR}\nBTC: ${BTC_ADDR}`;
+  }
+  navigator.clipboard?.writeText(text).catch(()=>{});
+  const btn=document.getElementById('copyBothBtn');
+  btn.innerHTML='✅ 已复制两个地址';
+  btn.style.borderColor='var(--green)';btn.style.color='var(--green)';
+  setTimeout(()=>{btn.innerHTML='📋 一键复制两个地址（母语 + 公链）';btn.style.borderColor='';btn.style.color='';},2500);
+}
+
+function copySingle(text, el) {
+  navigator.clipboard?.writeText(text).catch(()=>{});
+  const orig=el.textContent; el.textContent='✅';
+  setTimeout(()=>el.textContent=orig,1500);
+}
+
+function showQR() { document.getElementById('qrOverlay').classList.add('show'); }
+
+let currentQRChain = 'native';
+const QR_CHAIN_DATA = {
+  native: { label:'万语地址', color:'var(--gold)' },
+  trx: { label:'TRX 公链地址', color:'#ff9a9a' },
+  eth: { label:'ETH 公链地址', color:'#aaaaff' },
+  btc: { label:'BTC 公链地址', color:'#ffb84d' },
+};
+
+function switchQRChain(chain) {
+  currentQRChain = chain;
+  const btns = ['native','trx','eth','btc'];
+  btns.forEach(b => {
+    const el = document.getElementById('qrBtn'+b.charAt(0).toUpperCase()+b.slice(1));
+    if(!el) return;
+    if(b===chain) {
+      el.style.borderColor='rgba(200,168,75,0.4)';
+      el.style.color='var(--gold)';
+      el.style.background='linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05))';
+    } else {
+      el.style.borderColor='var(--border)';
+      el.style.color='var(--text-muted)';
+      el.style.background='var(--bg3)';
+    }
+  });
+  updateQRDisplay();
+}
+
+function updateQRDisplay() {
+  const isEn = currentLang==='en';
+  const p1 = document.getElementById('qrPart1');
+  const p2 = document.getElementById('qrPart2');
+  if(!p1) return;
+  if(isEn) {
+    p1.innerHTML = '<span style="color:var(--text-muted);font-size:11px">'+CHAIN_ADDR+'</span>';
+    if(p2) p2.style.display = 'none';
+  } else {
+    // 用万语地址，带高亮
+    const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
+    const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
+    let html = '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">'+prefix+'</span>';
+    if(ADDR_WORDS.length) {
+      ADDR_WORDS.forEach(w => {
+        html += w.custom
+          ? '<span style="color:#f0d070;font-size:13px;font-weight:700">'+w.word+'</span>'
+          : '<span style="color:#8888bb;font-size:12px">'+w.word+'</span>';
+      });
+    }
+    html += '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">'+suffix+'</span>';
+    p1.innerHTML = html;
+    p1.style.cssText = 'text-align:center;display:block;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+    if(p2) p2.style.display = 'none';
+  }
+}
+
+function copyQRAddr() {
+  const native = getNativeAddr();
+  const text = currentLang==='en'
+    ? '⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+ETH_ADDR+'\nBTC: '+BTC_ADDR
+    : '🌍 万语地址\n'+native+'\n\n⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+ETH_ADDR+'\nBTC: '+BTC_ADDR;
+  navigator.clipboard?.writeText(text).catch(()=>{});
+  const btn = document.getElementById('qrCopyBtn');
+  if(btn) { btn.innerHTML='✅ 已复制'; setTimeout(()=>btn.innerHTML='📋 复制地址',1500); }
+}
+
+function toggleQRChain() {
+  const chains = ['native','trx','eth','btc'];
+  const idx = chains.indexOf(currentQRChain);
+  switchQRChain(chains[(idx+1)%chains.length]);
+}
+function hideQR() { document.getElementById('qrOverlay').classList.remove('show'); }
+
+
+const KEYWORDS_ZH = ['举头望明月','春风得意马蹄','柳暗花明又一村','山重水复疑无路','千里江陵一日还','轻舟已过万重山','飞流直下三千尺','春色满园关不住','接天莲叶无穷碧','万紫千红总是春'];
+const KEYWORDS_EN = ['Fortune smiles today','Golden harvest comes','Every cloud has silver','Stars align tonight','Good luck flows now'];
+let currentKeyword = KEYWORDS_ZH[0];
+
+function getKeywords() {
+  return currentLang === 'en' ? KEYWORDS_EN : KEYWORDS_ZH;
+}
+
+function refreshKeyword() {
+  const kws = getKeywords();
+  const idx = Math.floor(Math.random() * kws.length);
+  currentKeyword = kws[idx];
+  document.getElementById('hbKeyword').textContent = currentKeyword;
+}
+
+function setAmount(v) {
+  document.getElementById('hbAmount').value = v;
+  updateHbPreview();
+}
+
+function claimHongbao() {
+  const input = document.getElementById('claimInput').value.trim();
+  if (!input) return;
+  alert('🎊 恭喜！成功领取 20 USDT！\n\n口令：' + input);
+}
+
+function copyKeyword() {
+  navigator.clipboard?.writeText(currentKeyword + ' (WorldWallet礼物口令)').catch(()=>{});
+  alert('口令已复制：' + currentKeyword);
+}
+
+
+
+// ══ 转账系统 ══
+let transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:8500, price:1};
+
+function detectAddrType() {
+  const addr = document.getElementById('transferAddr').value.trim();
+  const tag = document.getElementById('addrTypeTag');
+  const icon = document.getElementById('addrTypeIcon');
+  const name = document.getElementById('addrTypeName');
+  const box = document.getElementById('transferAddrBox');
+  const recipient = document.getElementById('recipientCard');
+  const btn = document.getElementById('transferBtn');
+
+  if(!addr) {
+    tag.style.display='none';
+    recipient.style.display='none';
+    box.style.borderColor='var(--border)';
+    btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
+    return;
+  }
+
+  let type='', chainName='', isWorldWallet=false;
+
+  // 识别地址类型
+  if(addr.includes('·') || addr.length < 30) {
+    type='🌍'; chainName='WorldWallet 万语地址'; isWorldWallet=true;
+  } else if(addr.startsWith('T') && addr.length>=34) {
+    type='🔴'; chainName='TRX · Tron 链';
+  } else if(addr.startsWith('0x') && addr.length>=42) {
+    type='🔷'; chainName='ETH · Ethereum 链';
+  } else if(addr.startsWith('bc1') || addr.startsWith('1') || addr.startsWith('3')) {
+    type='🟠'; chainName='BTC · Bitcoin 链';
+  } else {
+    type='❓'; chainName='未识别地址格式';
+  }
+
+  tag.style.display='block';
+  icon.textContent=type+' ';
+  name.textContent=chainName;
+  box.style.borderColor='rgba(200,168,75,0.4)';
+
+  // WorldWallet用户显示收款人卡片
+  if(isWorldWallet && addr.includes('·')) {
+    const parts = addr.split('·');
+    document.getElementById('recipientName').textContent = parts[0].trim();
+    document.getElementById('recipientAddr').textContent = parts[1]?.trim()+' · '+parts[2]?.trim() || 'WorldWallet 用户';
+    recipient.style.display='block';
+  } else {
+    recipient.style.display='none';
+  }
+
+  checkTransferReady();
+}
+
+function checkTransferReady() {
+  const addr = document.getElementById('transferAddr').value.trim();
+  const amt = parseFloat(document.getElementById('transferAmount').value)||0;
+  const btn = document.getElementById('transferBtn');
+  const feeRow = document.getElementById('transferFeeRow');
+  if(addr && amt>0) {
+    btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
+    feeRow.style.display='block';
+  } else {
+    btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
+  }
+}
+
+function calcTransferFee() {
+  const amt = parseFloat(document.getElementById('transferAmount').value)||0;
+  const fee = (amt*0.003).toFixed(2);
+  const actual = (amt - fee*1).toFixed(2);
+  document.getElementById('transferFee').textContent = fee+' '+transferCoin.name;
+  document.getElementById('transferActual').textContent = actual+' '+transferCoin.name;
+  document.getElementById('transferUSD').textContent = '$'+(amt*transferCoin.price).toFixed(2);
+  document.getElementById('transferChain').textContent = transferCoin.chain+' · 约30秒';
+  checkTransferReady();
+}
+
+function setTransferMax() {
+  document.getElementById('transferAmount').value = transferCoin.bal;
+  calcTransferFee();
+}
+
+function selectTransferCoin(id) {
+  const map = {
+    usdt:{id:'usdt',name:'USDT',chain:'TRC-20 · Tron',icon:'💚',bal:8500,price:1},
+    trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',bal:1200,price:0.167},
+    eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',bal:0.31,price:2580},
+    btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',bal:0.0521,price:57200},
+  };
+  transferCoin = map[id] || map.usdt;
+  document.getElementById('transferCoinIcon').textContent = transferCoin.icon;
+  document.getElementById('transferCoinName').textContent = transferCoin.name;
+  document.getElementById('transferBal').textContent = transferCoin.bal.toLocaleString();
+  closeTransferCoinPicker();
+  calcTransferFee();
+}
+
+function openTransferCoinPicker() { document.getElementById('transferCoinOverlay').classList.add('show'); }
+function closeTransferCoinPicker() { document.getElementById('transferCoinOverlay').classList.remove('show'); }
+
+function doTransfer() {
+  const addr = document.getElementById('transferAddr').value.trim();
+  const amt = document.getElementById('transferAmount').value;
+  const fee = (amt*0.003).toFixed(2);
+  const actual = (amt - fee*1).toFixed(2);
+  document.getElementById('confirmAmount').textContent = amt+' '+transferCoin.name;
+  document.getElementById('confirmRecipient').textContent = addr.length>20 ? addr.slice(0,20)+'...' : addr;
+  document.getElementById('confirmFee').textContent = fee+' '+transferCoin.name;
+  document.getElementById('confirmActual').textContent = actual+' '+transferCoin.name;
+  document.getElementById('confirmChain').textContent = transferCoin.chain;
+  document.getElementById('transferConfirmOverlay').classList.add('show');
+}
+
+function closeTransferConfirm() { document.getElementById('transferConfirmOverlay').classList.remove('show'); }
+
+function confirmTransfer() {
+  closeTransferConfirm();
+  // 填充成功页数据
+  const amt = document.getElementById('transferAmount').value;
+  const addr = document.getElementById('transferAddr').value.trim();
+  const fee = (amt*0.003).toFixed(2);
+  const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
+  const isEn = currentLang==='en';
+  const info = LANG_INFO[currentLang]||{flag:'🇨🇳',name:'中文'};
+  const g = getGiftCulture ? getGiftCulture() : {icon:'🌍'};
+
+  // 发件人（我的地址）
+  document.getElementById('successAmount').textContent = amt;
+  document.getElementById('successCoin').textContent = transferCoin.name;
+  document.getElementById('successCultureIcon').textContent = g.icon;
+  // 发件人 = 我自己的地址
+  if(isEn) {
+    document.getElementById('successFromPart1').textContent = 'My Wallet';
+    document.getElementById('successFromPart2').textContent = '';
+    document.getElementById('successFromPart3').textContent = '';
+    document.getElementById('successFromLang').textContent = info.flag+' English · BIP39';
+  } else {
+    const parts = a.main.split(' · ');
+    document.getElementById('successFromPart1').textContent = parts[0]||'龙凤虎';
+    document.getElementById('successFromPart2').textContent = parts[1]||'举头望明月';
+    document.getElementById('successFromPart3').textContent = a.num||'3829461';
+    const fromAddr = getNativeAddr(); document.getElementById('successFromLang').textContent = fromAddr.substring(0,12)+'...';
+  }
+
+  // 收件人 = 输入的对方地址（不同！）
+  const isWW = addr.includes('·');
+  if(isWW) {
+    // WorldWallet母语地址，拆解显示
+    const parts2 = addr.split('·').map(s=>s.trim());
+    document.getElementById('successToIcon').textContent = '🌍';
+    document.getElementById('successToName').textContent = parts2[0]||addr;
+    document.getElementById('successToAddr').textContent = (parts2[1]||'')+' · '+(parts2[2]||'') + ' · WorldWallet';
+  } else {
+    // 公链地址
+    const chainIcon = addr.startsWith('T')?'🔴':addr.startsWith('0x')?'🔷':addr.startsWith('bc')?'🟠':'⛓️';
+    document.getElementById('successToIcon').textContent = chainIcon;
+    document.getElementById('successToName').textContent = addr.slice(0,18)+'...'+addr.slice(-6);
+    document.getElementById('successToAddr').textContent = transferCoin.chain;
+  }
+
+  // 详情
+  document.getElementById('successFee') && (document.getElementById('successFee').textContent = fee+' '+transferCoin.name);
+  const sfi=document.getElementById('successFeeInline'); if(sfi) sfi.textContent='手续费 '+fee+' '+transferCoin.name+' · '+transferCoin.chain;
+  document.getElementById('successChain').textContent = transferCoin.chain;
+  const nt = new Date();
+  const ts = nt.getFullYear()+'.'+String(nt.getMonth()+1).padStart(2,'0')+'.'+String(nt.getDate()).padStart(2,'0')+' '+String(nt.getHours()).padStart(2,'0')+':'+String(nt.getMinutes()).padStart(2,'0');
+  const st=document.getElementById('successTime2'); if(st) st.textContent=ts;
+
+  // 先填充动画页数据
+  const sw1=document.getElementById('swooshToName'); if(sw1) sw1.textContent=document.getElementById('successToName')?.textContent||'';
+  const sw2=document.getElementById('swooshToAddr'); if(sw2) sw2.textContent=document.getElementById('successToAddr')?.textContent||'';
+  const sw3=document.getElementById('swooshAmtVal'); if(sw3) sw3.textContent=amt;
+  const sw4=document.getElementById('swooshCoinName'); if(sw4) sw4.textContent=transferCoin.name;
+  const sf1=document.getElementById('swooshFromPart1'); if(sf1) sf1.textContent=document.getElementById('successFromPart1')?.textContent||'';
+  const sf2=document.getElementById('swooshFromPart2'); if(sf2) sf2.textContent=document.getElementById('successFromPart2')?.textContent||'';
+  const sfl=document.getElementById('swooshFromLang'); if(sfl) sfl.textContent=document.getElementById('successFromLang')?.textContent||'';
+
+  // 显示动画页
+  goTo('page-swoosh');
+
+  // 启动嗖动画
+  setTimeout(() => {
+    const coin = document.getElementById('swooshCoin');
+    const trail = document.getElementById('swooshTrail');
+    const receiver = document.getElementById('swooshReceiver');
+    const check = document.getElementById('swooshCheck');
+    if(coin) coin.classList.add('swoosh-coin');
+    if(trail) trail.classList.add('swoosh-trail');
+    setTimeout(()=>{ if(receiver) receiver.classList.add('receiver-glow'); if(check) { check.textContent='✓'; check.style.color='#4ac84a'; check.style.fontSize='20px'; } }, 900);
+    // 动画结束后跳成功页
+    setTimeout(()=>{ goTo('page-transfer-success'); }, 1800);
+  }, 200);
+}
+
+function shareSuccess() {
+  const amt = document.getElementById('successAmount').textContent;
+  const coin = document.getElementById('successCoin').textContent;
+  const from = document.getElementById('successFromPart1').textContent+' '+document.getElementById('successFromPart2').textContent;
+  navigator.clipboard?.writeText('我刚通过 WorldWallet 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldwallet.io').catch(()=>{});
+  alert('凭证已复制到剪贴板');
+}
+
+// ══ 多文化礼金系统 ══
+const GIFT_CULTURE = {
+  zh: { name:'礼物', icon:'🎁', color:'#cc2200', desc:'恭喜发财', festival:'春节·中秋·生日' },
+  ja: { name:'お年玉', icon:'🎍', color:'#8b0000', desc:'新年おめでとう', festival:'お正月·お祝い' },
+  ko: { name:'세뱃돈', icon:'🎎', color:'#9b0000', desc:'새해 복 많이 받으세요', festival:'설날·추석' },
+  ar: { name:'عيدية', icon:'🌙', color:'#1a5c2e', desc:'عيد مبارك', festival:'عيد الفطر·عيد الأضحى' },
+  hi: { name:'शगुन', icon:'🪔', color:'#8b4500', desc:'शुभ दीपावली', festival:'दीपावली·विवाह·जन्मदिन' },
+  vi: { name:'Lì xì', icon:'🎁', color:'#cc2200', desc:'Chúc mừng năm mới', festival:'Tết·Sinh nhật' },
+  id: { name:'Angpao', icon:'🎁', color:'#cc2200', desc:'Selamat & Sukses', festival:'Lebaran·Imlek' },
+  ms: { name:'Ang Pao', icon:'🎁', color:'#cc2200', desc:'Gong Xi Fa Cai', festival:'Tahun Baru Cina' },
+  th: { name:'ซองแดง', icon:'🎀', color:'#aa0000', desc:'สวัสดีปีใหม่', festival:'ตรุษจีน·วันเกิด' },
+  ru: { name:'Подарок', icon:'🎁', color:'#1a3a8b', desc:'Поздравляем', festival:'Новый год·День рождения' },
+  es: { name:'Regalo', icon:'🎁', color:'#8b6914', desc:'¡Felicidades!', festival:'Navidad·Cumpleaños' },
+  fr: { name:'Cadeau', icon:'🎁', color:'#1a3a6b', desc:'Félicitations', festival:'Noël·Anniversaire' },
+  pt: { name:'Presente', icon:'🎁', color:'#1a5c1a', desc:'Parabéns', festival:'Natal·Aniversário' },
+  de: { name:'Geldgeschenk', icon:'🎁', color:'#1a1a5c', desc:'Herzlichen Glückwunsch', festival:'Weihnachten·Geburtstag' },
+  en: { name:'Gift', icon:'🎁', color:'#1a3a8b', desc:'Congratulations', festival:'Christmas·Birthday' },
+};
+
+function getGiftCulture() {
+  return GIFT_CULTURE[currentLang] || GIFT_CULTURE.zh;
+}
+
+function updateGiftUI() {
+  const g = getGiftCulture();
+  // 更新礼物页标题
+  const title = document.getElementById('giftTitle');
+  const subtitle = document.getElementById('giftSubtitle');
+  const preview = document.getElementById('giftPreview');
+  const icon = document.getElementById('giftIcon');
+  const blessingInput = document.getElementById('hbBlessing');
+  const festivalTag = document.getElementById('giftFestival');
+  if(title) title.textContent = g.name;
+  if(subtitle) subtitle.textContent = g.festival;
+  if(icon) icon.textContent = g.icon;
+  if(blessingInput) blessingInput.value = g.desc;
+  if(festivalTag) festivalTag.textContent = g.festival;
+  if(preview) {
+    preview.style.background = `linear-gradient(160deg, ${g.color}dd, ${g.color}88, ${g.color}44)`;
+  }
+  updateHbPreview();
+}
+
+// ══ 礼物口令系统 ══
+const KW_ZH = ['举头望明月','春风得意马蹄','柳暗花明又一村','飞流直下三千尺','万紫千红总是春','轻舟已过万重山','千里江陵一日还','接天莲叶无穷碧','春色满园关不住','山重水复疑无路','白日依山尽黄河','烟花三月下扬州','孤帆远影碧空尽','不识庐山真面目','停车坐爱枫林晚'];
+const KW_EN = ['Fortune smiles today','Golden harvest comes','Every cloud silver lining','Stars align tonight','Lucky winds blow now'];
+const KW_JA = ['古池や蛙飛び込む','春の海終日のたり','菜の花や月は東に','五月雨を集めて早し','閑さや岩にしみ入る'];
+const KW_AR = ['الصبر مفتاح الفرج','نور وبركة وسعادة','خير وأمل وفرحة'];
+const KW_RU = ['Я помню чудное мгновенье','Белеет парус одинокой','Мороз и солнце день чудесный'];
+const KW_ES = ['Quien madruga Dios le ayuda','No hay mal que por bien no venga','A buen entendedor pocas palabras'];
+const KW_FR = ['La vie en rose toujours','Tout vient à point qui sait attendre','Mieux vaut tard que jamais'];
+
+const LANG_KW = {zh:KW_ZH,en:KW_EN,ja:KW_JA,ar:KW_AR,ru:KW_RU,es:KW_ES,fr:KW_FR};
+
+let hbExpiry = 24;
+let hbType = 'normal';
+
+const BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
+
+function getKwPool() {
+  return LANG_KW[currentLang] || KW_ZH;
+}
+
+function genKeyword() {
+  const pool = getKwPool();
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function switchHbType(type) {
+  hbType = type;
+  const n = document.getElementById('btnNormal');
+  const l = document.getElementById('btnLucky');
+  if(type === 'normal') {
+    n.style.background = 'linear-gradient(135deg,#b8982a,#e8c850)';
+    n.style.color = '#0a0a05';
+    l.style.background = 'none';
+    l.style.color = 'var(--text-muted)';
+  } else {
+    l.style.background = 'linear-gradient(135deg,#b8982a,#e8c850)';
+    l.style.color = '#0a0a05';
+    n.style.background = 'none';
+    n.style.color = 'var(--text-muted)';
+  }
+  updateHbPreview();
+}
+
+function setAmt(v) {
+  document.getElementById('hbAmount').value = v;
+  updateHbPreview();
+}
+
+function setExpiry(h) {
+  hbExpiry = h;
+  ['exp24','exp72','exp168'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) { el.style.borderColor='var(--border)'; el.style.color='var(--text-muted)'; el.style.background='var(--bg2)'; }
+  });
+  const active = h===24?'exp24':h===72?'exp72':'exp168';
+  const el = document.getElementById(active);
+  if(el) { el.style.borderColor='rgba(200,168,75,0.4)'; el.style.color='var(--gold)'; el.style.background='linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))'; }
+}
+
+function randomBlessing() {
+  const b = BLESSINGS[Math.floor(Math.random()*BLESSINGS.length)];
+  document.getElementById('hbBlessing').value = b;
+}
+
+function createHongbao() {
+  currentKeyword = genKeyword();
+  const amount = document.getElementById('hbAmount').value || 100;
+  const blessing = document.getElementById('hbBlessing').value;
+  const count = hbCount;
+
+  document.getElementById('kwKeyword').textContent = currentKeyword;
+  document.getElementById('kwBlessingText').textContent = blessing;
+  document.getElementById('kwAmtText').textContent = amount + ' USDT';
+  document.getElementById('kwCntText').textContent = '共' + count + '份礼物';
+  document.getElementById('kwExpText').textContent = '有效期' + hbExpiry + '小时';
+  document.getElementById('kwShareKeyword').textContent = currentKeyword;
+  document.getElementById('kwProgress').textContent = '0 / ' + count + ' 已领取';
+  document.getElementById('kwProgressBar').style.width = '0%';
+  document.getElementById('kwShareText').innerHTML = '🎁 我给你发了一个WorldWallet礼物！<br>口令：<span style="color:var(--gold);font-weight:700">' + currentKeyword + '</span><br>打开WorldWallet → 输入口令 → 立即领取 💰<br><span style="color:var(--text-muted);font-size:11px">有效期' + hbExpiry + '小时，先到先得</span>';
+
+  goTo('page-hb-keyword');
+}
+
+function copyKw() {
+  navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
+  const btn = document.getElementById('copyKwBtn');
+  btn.querySelector('div:last-child').textContent = '✅ 已复制';
+  setTimeout(()=>{ btn.querySelector('div:last-child').textContent = '复制口令'; }, 2000);
+}
+
+function shareKw() {
+  const txt = '🎁 WorldWallet礼物\n口令：' + currentKeyword + '\n有效期' + hbExpiry + '小时';
+  navigator.clipboard?.writeText(txt).catch(()=>{});
+  alert('分享文案已复制！');
+}
+
+function showHbQR() { alert('二维码功能开发中...'); }
+
+function copyShareText() {
+  const txt = document.getElementById('kwShareText').textContent;
+  navigator.clipboard?.writeText(txt).catch(()=>{});
+  document.getElementById('kwShareText').style.opacity = '0.6';
+  setTimeout(()=>document.getElementById('kwShareText').style.opacity='1', 800);
+}
+
+function onClaimInput() {
+  const v = document.getElementById('claimInput').value;
+  const box = document.getElementById('claimInputBox');
+  box.style.borderColor = v.length > 2 ? 'var(--gold)' : 'var(--border)';
+}
+
+function fillKeyword(kw) {
+  document.getElementById('claimInput').value = kw;
+  onClaimInput();
+}
+
+function submitClaim() {
+  const kw = document.getElementById('claimInput').value.trim();
+  if(!kw) { document.getElementById('claimInputBox').style.borderColor='var(--red)'; return; }
+  const amt = (Math.random()*30+10).toFixed(2);
+  const rank = Math.floor(Math.random()*4)+1;
+  document.getElementById('claimedAmount').textContent = amt;
+  document.getElementById('claimedKeyword').textContent = kw;
+  document.getElementById('claimedRank').textContent = '第 '+rank+' 个领取 · 共5份礼物';
+  goTo('page-claimed');
+}
+
+let hbCount = 5;
+function selectHbType(type) {
+  hbType = type;
+  document.getElementById('hbTypeNormal').style.borderColor = type==='normal'?'var(--gold)':'var(--border)';
+  document.getElementById('hbTypeLucky').style.borderColor = type==='lucky'?'var(--gold)':'var(--border)';
+  updateHbPreview();
+}
+function changeCount(delta) {
+  hbCount = Math.max(1, Math.min(100, hbCount+delta));
+  document.getElementById('hbCountVal').textContent = hbCount;
+  document.getElementById('hbCountDisplay').textContent = hbCount+' 个';
+  updateHbPreview();
+}
+function updateHbPreview() {
+  const amount = parseFloat(document.getElementById('hbAmount')?.value)||0;
+  const per = document.getElementById('hbPerPerson');
+  const tl = document.getElementById('hbTypeLabel');
+  if(per) per.textContent = hbType==='lucky' ? '随机金额' : (hbCount>0?(amount/hbCount).toFixed(2)+' USDT':'- USDT');
+  if(tl) tl.textContent = hbType==='lucky' ? '随机金额' : '每人金额';
+}
+function sendHongbao() {
+  const amount = document.getElementById('hbAmount').value;
+  document.getElementById('hbSuccessDesc').innerHTML = amount+' USDT · '+hbCount+'份礼物';
+  document.getElementById('hbSuccessKeyword').textContent = currentKeyword;
+  document.getElementById('hbSuccessOverlay').classList.add('show');
+}
+function hideHbSuccess() { document.getElementById('hbSuccessOverlay').classList.remove('show'); }
+
+
+const CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
+let currencyIdx = 0;
+function toggleCurrency() {
+  currencyIdx = (currencyIdx+1) % CURRENCIES.length;
+  const el = document.getElementById('settingsCurrency');
+  if(el) el.textContent = CURRENCIES[currencyIdx];
+}
+
+function toggleNetwork() {
+  const el = document.getElementById('settingsNetwork');
+  if(el) el.textContent = el.textContent==='主网' ? '测试网' : '主网';
+}
+
+const WW_PIN_KEY = 'ww_pin';
+
+function isPinSet() {
+  const p = localStorage.getItem(WW_PIN_KEY);
+  return typeof p === 'string' && /^\d{6}$/.test(p);
+}
+
+function updateSettingsPinRow() {
+  const val = document.getElementById('settingsPinValue');
+  if(val) val.textContent = isPinSet() ? '已开启' : '未设置';
+}
+
+let pinSetupStep = 'first';
+let pinFirstEntry = '';
+let pinBuffer = '';
+
+function onSettingsPinClick() {
+  if(isPinSet()) {
+    alert('PIN 已设置');
+    return;
+  }
+  openPinSetupOverlay();
+}
+
+function renderPinDots() {
+  const box = document.getElementById('pinDots');
+  if(!box) return;
+  box.innerHTML = '';
+  for(let i = 0; i < 6; i++) {
+    const d = document.createElement('div');
+    d.className = 'pin-dot' + (i < pinBuffer.length ? ' filled' : '');
+    box.appendChild(d);
+  }
+}
+
+function openPinSetupOverlay() {
+  pinSetupStep = 'first';
+  pinFirstEntry = '';
+  pinBuffer = '';
+  const o = document.getElementById('pinSetupOverlay');
+  const t = document.getElementById('pinSetupTitle');
+  const h = document.getElementById('pinSetupHint');
+  if(t) t.textContent = '设置 PIN';
+  if(h) h.textContent = '请输入 6 位数字';
+  renderPinDots();
+  buildPinKeypad();
+  if(o) o.classList.add('show');
+}
+
+function closePinSetupOverlay() {
+  const o = document.getElementById('pinSetupOverlay');
+  if(o) o.classList.remove('show');
+  pinBuffer = '';
+  pinFirstEntry = '';
+  pinSetupStep = 'first';
+}
+
+function buildPinKeypad() {
+  const pad = document.getElementById('pinKeypad');
+  if(!pad) return;
+  pad.innerHTML = '';
+  const keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+  keys.forEach(k => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pin-key' + (k === '⌫' ? ' pin-key-sub' : '');
+    if(k === '') {
+      b.style.visibility = 'hidden';
+      b.setAttribute('aria-hidden','true');
+      pad.appendChild(b);
+      return;
+    }
+    b.textContent = k;
+    b.onclick = () => pinKeypadPress(k);
+    pad.appendChild(b);
+  });
+}
+
+function pinKeypadPress(key) {
+  if(key === '⌫') {
+    pinBuffer = pinBuffer.slice(0, -1);
+    renderPinDots();
+    return;
+  }
+  if(pinBuffer.length >= 6 || !/^\d$/.test(key)) return;
+  pinBuffer += key;
+  renderPinDots();
+  if(pinBuffer.length < 6) return;
+
+  if(pinSetupStep === 'first') {
+    pinFirstEntry = pinBuffer;
+    pinBuffer = '';
+    pinSetupStep = 'confirm';
+    const h = document.getElementById('pinSetupHint');
+    if(h) h.textContent = '请再次输入以确认';
+    renderPinDots();
+    return;
+  }
+
+  if(pinBuffer === pinFirstEntry) {
+    localStorage.setItem(WW_PIN_KEY, pinBuffer);
+    closePinSetupOverlay();
+    updateSettingsPinRow();
+    alert('PIN 已保存');
+  } else {
+    alert('两次输入不一致，请重新设置');
+    pinSetupStep = 'first';
+    pinFirstEntry = '';
+    pinBuffer = '';
+    const h = document.getElementById('pinSetupHint');
+    if(h) h.textContent = '请输入 6 位数字';
+    renderPinDots();
+  }
+}
+
+function countMnemonicWords(text) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function updateImportWordCount() {
+  const input = document.getElementById('importInput');
+  const badge = document.getElementById('importWordCountBadge');
+  if(!input || !badge) return;
+  const n = countMnemonicWords(input.value);
+  badge.textContent = n + '/12';
+}
+
+function updateSettingsPage() {
+  const info = LANG_INFO[currentLang]||{name:'中文'};
+  const sl = document.getElementById('settingsLang');
+  if(sl) sl.textContent = info.name;
+  const sa = document.getElementById('settingsAddr');
+  if(sa) sa.textContent = getNativeAddr();
+  updateSettingsPinRow();
+}
+
+
+// ══ 兑换系统 ══
+const COINS = [
+  {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', bg:'rgba(38,161,123,0.15)', bal:8500, price:1},
+  {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', bg:'rgba(255,165,0,0.12)', bal:0.0521, price:57200},
+  {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', bg:'rgba(100,100,255,0.12)', bal:0.31, price:2580},
+  {id:'trx',  name:'TRX',  chain:'Tron', icon:'🔴', bg:'rgba(255,80,80,0.12)', bal:1200, price:0.167},
+  {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', bg:'rgba(255,215,0,0.12)', bal:0, price:312},
+];
+
+let swapFrom = COINS[0]; // USDT
+let swapTo   = COINS[1]; // BTC
+let pickerTarget = 'from';
+
+function setSwapCoin(target, coin) {
+  if(target==='from') swapFrom=coin;
+  else swapTo=coin;
+  renderSwapUI();
+  calcSwap();
+}
+
+function renderSwapUI() {
+  const f=swapFrom, t=swapTo;
+  document.getElementById('swapFromIcon').style.background=f.bg;
+  document.getElementById('swapFromIcon').textContent=f.icon;
+  document.getElementById('swapFromName').textContent=f.name;
+  document.getElementById('swapFromChain').textContent=f.chain;
+  document.getElementById('swapFromBal').textContent=f.bal.toLocaleString();
+  document.getElementById('swapToIcon').style.background=t.bg;
+  document.getElementById('swapToIcon').textContent=t.icon;
+  document.getElementById('swapToName').textContent=t.name;
+  document.getElementById('swapToChain').textContent=t.chain;
+  const rate = (swapFrom.price/swapTo.price).toFixed(swapTo.price>100?6:4);
+  document.getElementById('swapRate').textContent=`1 ${f.name} ≈ ${rate} ${t.name}`;
+}
+
+function calcSwap() {
+  const amtIn = parseFloat(document.getElementById('swapAmountIn').value)||0;
+  const fee = amtIn * 0.003;
+  const amtOut = ((amtIn-fee)*swapFrom.price/swapTo.price);
+  const fmt = amtOut > 1 ? amtOut.toFixed(4) : amtOut.toFixed(6);
+  document.getElementById('swapAmountOut').textContent = fmt;
+  document.getElementById('swapInUSD').textContent = '$'+(amtIn*swapFrom.price).toFixed(2);
+  document.getElementById('swapOutUSD').textContent = '$'+((amtIn-fee)*swapFrom.price).toFixed(2);
+  document.getElementById('swapFee').textContent = `0.30%（${fee.toFixed(2)} ${swapFrom.name}）`;
+}
+
+function swapCoins() {
+  const tmp=swapFrom; swapFrom=swapTo; swapTo=tmp;
+  const btn=document.getElementById('swapArrowBtn');
+  btn.style.transform='rotate(180deg)';
+  setTimeout(()=>btn.style.transform='',300);
+  renderSwapUI(); calcSwap();
+}
+
+function setSwapMax() {
+  document.getElementById('swapAmountIn').value=swapFrom.bal;
+  calcSwap();
+}
+
+function openCoinPicker(target) {
+  pickerTarget=target;
+  const list=document.getElementById('coinPickerList');
+  list.innerHTML='';
+  COINS.forEach(coin=>{
+    const current = target==='from'?swapFrom:swapTo;
+    const other = target==='from'?swapTo:swapFrom;
+    if(coin.id===other.id) return; // 不能选同一个
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:12px;background:var(--bg3);border:1.5px solid '+(coin.id===current.id?'var(--gold)':'var(--border)')+';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
+    div.innerHTML=`<div style="width:36px;height:36px;border-radius:50%;background:${coin.bg};display:flex;align-items:center;justify-content:center;font-size:18px">${coin.icon}</div><div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">${coin.name}</div><div style="font-size:11px;color:var(--text-muted)">${coin.chain}</div></div><div style="text-align:right"><div style="font-size:14px;color:var(--text)">${coin.bal.toLocaleString()}</div></div>`;
+    div.onclick=()=>{setSwapCoin(pickerTarget,coin);closeCoinPicker();};
+    list.appendChild(div);
+  });
+  document.getElementById('coinPickerOverlay').classList.add('show');
+}
+
+function closeCoinPicker() { document.getElementById('coinPickerOverlay').classList.remove('show'); }
+
+function doSwap() {
+  const amt=document.getElementById('swapAmountIn').value;
+  const out=document.getElementById('swapAmountOut').textContent;
+  alert(`兑换确认\n${amt} ${swapFrom.name} → ${out} ${swapTo.name}\n\n功能开发中，敬请期待！`);
+}
+
+
+// ── 密钥页语言切换 ──
+function openKeyLangPicker() {
+  const list = document.getElementById('keyLangList');
+  if(!list) return;
+  list.innerHTML = '';
+  Object.keys(LANG_INFO).forEach(lang => {
+    const info = LANG_INFO[lang];
+    const isEn = lang === 'en';
+    const isCurrent = lang === currentLang;
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (isCurrent?'linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))':'var(--bg3)') + ';border:1.5px solid ' + (isCurrent?'var(--gold)':'var(--border)') + ';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
+    div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
+      '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'BIP39 公链标准密钥' : '地名助记词') + '</div></div>' +
+      (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
+    div.onclick = () => {
+      currentLang = lang;
+      renderKeyGrid();
+      closeKeyLangPicker();
+      // 同步更新语言标签
+      const info2 = LANG_INFO[lang];
+      const flagEl = document.getElementById('keyLangFlag');
+      const nameEl = document.getElementById('keyLangName');
+      if(flagEl) flagEl.textContent = info2.flag;
+      if(nameEl) nameEl.textContent = info2.name;
+    };
+    list.appendChild(div);
+  });
+  document.getElementById('keyLangOverlay').classList.add('show');
+}
+
+function closeKeyLangPicker() {
+  document.getElementById('keyLangOverlay').classList.remove('show');
+}
+
+
+// ── 地址页语言切换 ──
+function openAddrLangPicker() {
+  const list = document.getElementById('addrLangList');
+  if(!list) return;
+  list.innerHTML = '';
+  Object.keys(LANG_INFO).forEach(lang => {
+    const info = LANG_INFO[lang];
+    const isEn = lang === 'en';
+    const isCurrent = lang === currentLang;
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (isCurrent?'linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))':'var(--bg3)') + ';border:1.5px solid ' + (isCurrent?'var(--gold)':'var(--border)') + ';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
+    div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
+      '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? '公链地址（BIP39）' : '母语诗句地址') + '</div></div>' +
+      (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
+    div.onclick = () => {
+      currentLang = lang;
+      const info2 = LANG_INFO[lang];
+      // 更新语言切换行
+      const flagEl = document.getElementById('addrLangFlag');
+      const nameEl = document.getElementById('addrLangName');
+      if(flagEl) flagEl.textContent = info2.flag;
+      if(nameEl) nameEl.textContent = info2.name + (isEn ? ' 公链地址' : ' 地址');
+      // 更新地址显示
+      updateAddr();
+      closeAddrLangPicker();
+    };
+    list.appendChild(div);
+  });
+  document.getElementById('addrLangOverlay').classList.add('show');
+}
+
+function closeAddrLangPicker() {
+  document.getElementById('addrLangOverlay').classList.remove('show');
+}
+
+// 时钟
+function updateTime() {
+  const now=new Date();
+  document.getElementById('statusTime').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+}
+updateTime(); setInterval(updateTime,10000);
+const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
+
+
+// ── 余额查询 ──────────────────────────────────────────────────
+async function loadBalances() {
+  if (!REAL_WALLET) return;
+  
+  const ethAddr = REAL_WALLET.ethAddress;
+  const trxAddr = REAL_WALLET.trxAddress;
+  
+  let totalUSD = 0;
+  
+  try {
+    // 查询 TRX 余额（TronGrid 免费 API）
+    const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`);
+    const trxData = await trxRes.json();
+    if (trxData.data && trxData.data[0]) {
+      const trxBal = (trxData.data[0].balance / 1e6).toFixed(2);
+      const trxPrice = 0.12; // 估算价格
+      const trxUSD = (parseFloat(trxBal) * trxPrice).toFixed(2);
+      document.getElementById('balTrx') && (document.getElementById('balTrx').textContent = trxBal);
+      document.getElementById('usdTrx') && (document.getElementById('usdTrx').textContent = trxUSD);
+      totalUSD += parseFloat(trxUSD);
+      
+      // 查询 TRC-20 USDT 余额
+      const trc20 = trxData.data[0].trc20;
+      if (trc20) {
+        const usdt = trc20.find(t => t['TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t']);
+        if (usdt) {
+          const usdtBal = (parseInt(String(Object.values(usdt)[0]), 10) / 1e6).toFixed(2);
+          document.getElementById('balUsdt') && (document.getElementById('balUsdt').textContent = usdtBal);
+          document.getElementById('usdUsdt') && (document.getElementById('usdUsdt').textContent = usdtBal);
+          totalUSD += parseFloat(usdtBal);
+        }
+      }
+    }
+  } catch(e) {
+    console.log('TRX balance error:', e);
+  }
+  
+  try {
+    // 查询 ETH 余额（无需 API key 的公共节点）
+    const ethRes = await fetch(`https://eth.llamarpc.com`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', method: 'eth_getBalance',
+        params: [ethAddr, 'latest'], id: 1
+      })
+    });
+    const ethData = await ethRes.json();
+    if (ethData.result) {
+      const ethBal = (parseInt(ethData.result, 16) / 1e18).toFixed(4);
+      const ethPrice = 3200; // 估算价格
+      const ethUSD = (parseFloat(ethBal) * ethPrice).toFixed(2);
+      document.getElementById('balEth') && (document.getElementById('balEth').textContent = ethBal);
+      document.getElementById('usdEth') && (document.getElementById('usdEth').textContent = ethUSD);
+      totalUSD += parseFloat(ethUSD);
+    }
+  } catch(e) {
+    console.log('ETH balance error:', e);
+  }
+  
+  // 更新总余额
+  document.getElementById('totalBalanceUSD') && (document.getElementById('totalBalanceUSD').textContent = '$' + totalUSD.toFixed(2));
+  document.getElementById('totalBalanceCNY') && (document.getElementById('totalBalanceCNY').textContent = '≈ ' + (totalUSD * 7.2).toFixed(0) + ' CNY');
+}
+
+// 页面加载时查询余额
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    if (REAL_WALLET) loadBalances();
+  }, 1000);
+});
+</script>
+</body>
+</html>
