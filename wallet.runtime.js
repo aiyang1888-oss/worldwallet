@@ -1354,6 +1354,7 @@ function closeTotpUnlock() {
 function goTo(pageId, opts) {
   opts = opts || {};
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
+  try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
     var curId = curEl && curEl.id;
