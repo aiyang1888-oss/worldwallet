@@ -29,13 +29,29 @@ function updateImportWordCount() {
   const n = countMnemonicWords(input ? input.value : '');
   badge.textContent = n + '/12';
 }
+function setWalletCreateStep(n) {
+  const steps = document.getElementById('walletCreateSteps');
+  const text = document.getElementById('walletLoadingText');
+  const labels = ['正在生成钱包…', '1/3 生成密钥', '2/3 派生地址', '3/3 完成'];
+  if (text) text.textContent = (n >= 1 && n <= 3) ? labels[n] : labels[0];
+  if (!steps) return;
+  steps.querySelectorAll('.wcs-step').forEach(function(el) {
+    const s = parseInt(el.getAttribute('data-step'), 10);
+    el.classList.remove('active', 'done');
+    if (n <= 0) return;
+    if (s < n) el.classList.add('done');
+    else if (s === n) el.classList.add('active');
+  });
+}
 function showWalletLoading() {
   const el = document.getElementById('walletLoadingOverlay');
   if(el) el.classList.add('show');
+  setWalletCreateStep(1);
 }
 function hideWalletLoading() {
   const el = document.getElementById('walletLoadingOverlay');
   if(el) el.classList.remove('show');
+  setWalletCreateStep(0);
 }
 
 </script>
@@ -622,7 +638,58 @@ body {
   border-radius: 50%;
   animation: wallet-spin 0.75s linear infinite;
 }
-@keyframes wallet-spin { to { transform: rotate(360deg); }
+@keyframes wallet-spin { to { transform: rotate(360deg); } }
+
+.wallet-loading-text {
+  margin-top: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  text-align: center;
+  padding: 0 20px;
+}
+.wallet-create-steps {
+  margin-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  padding: 0 16px;
+}
+.wcs-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.38);
+  transition: color 0.2s;
+}
+.wcs-step .wcs-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  flex-shrink: 0;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.wcs-step.done { color: rgba(200,168,75,0.85); }
+.wcs-step.done .wcs-dot {
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(200,168,75,0.45);
+}
+.wcs-step.active {
+  color: #fff;
+  font-weight: 700;
+}
+.wcs-step.active .wcs-dot {
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(200,168,75,0.65);
+  animation: wcs-pulse 1s ease-in-out infinite;
+}
+@keyframes wcs-pulse {
+  50% { opacity: 0.75; transform: scale(1.05); }
+}
 
 /* PIN 设置键盘 */
 .pin-setup-overlay {
@@ -684,7 +751,12 @@ body {
 <div class="phone">
   <div class="wallet-loading-overlay" id="walletLoadingOverlay">
     <div class="wallet-loading-spinner"></div>
-    <div class="wallet-loading-text">正在生成钱包…</div>
+    <div class="wallet-loading-text" id="walletLoadingText">正在生成钱包…</div>
+    <div class="wallet-create-steps" id="walletCreateSteps">
+      <div class="wcs-step" data-step="1"><span class="wcs-dot"></span><span class="wcs-label">1/3 生成密钥</span></div>
+      <div class="wcs-step" data-step="2"><span class="wcs-dot"></span><span class="wcs-label">2/3 派生地址</span></div>
+      <div class="wcs-step" data-step="3"><span class="wcs-dot"></span><span class="wcs-label">3/3 完成</span></div>
+    </div>
   </div>
 
   <div class="status-bar">
@@ -860,7 +932,7 @@ body {
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(){showWalletLoading();try{const w=await createRealWallet();if(w){window.REAL_WALLET=w;saveWallet(w);if(typeof updateRealAddr==='function')updateRealAddr();goTo('page-key');}else{showToast('创建失败，请重试','error');}}catch(e){showToast(e.message||'创建失败','error');}finally{hideWalletLoading();}})()">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(){showWalletLoading();try{const w=await createRealWallet();if(!w){showToast('创建失败：未完成密钥生成','error');return;}window.REAL_WALLET=w;saveWallet(w);if(typeof updateRealAddr==='function')updateRealAddr();hideWalletLoading();goTo('page-key');requestAnimationFrame(function(){if(typeof renderKeyGrid==='function')renderKeyGrid();});}catch(e){showToast(typeof formatWalletCreateError==='function'?formatWalletCreateError(e):(e&&e.message)||'创建失败','error');}finally{hideWalletLoading();}})()">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
@@ -2184,6 +2256,7 @@ function saveWallet(w) {
     // 助记词需要用户自行备份
     const safe = {
       mnemonic: w.mnemonic,  // 用户需要备份
+      enMnemonic: w.enMnemonic || w.mnemonic,
       words: w.words,
       ethAddress: w.ethAddress,
       trxAddress: w.trxAddress,
@@ -2216,49 +2289,78 @@ function generateLocalMnemonic() {
   return words.join(' ');
 }
 
-async async function createRealWallet() {
-  try {
-    // ✅ 使用 ethers.js 真实 BIP39 派生（安全）
-    if(typeof ethers === 'undefined') {
-      showToast('⏳ 正在加载钱包库，请稍后再试', 'warning');
-      return null;
-    }
-    // 生成真实 BIP39 助记词（使用完整 2048 词表）
-    const mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic);
-    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-    const btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
-
-    // TRX Base58Check 地址
-    let trxAddr = '';
-    try {
-      await loadTronWeb();
-      if(typeof TronWeb !== 'undefined') {
-        trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-      } else {
-        trxAddr = 'T' + trxWallet.address.slice(2, 35);
-      }
-    } catch(e) { trxAddr = 'T' + trxWallet.address.slice(2, 35); }
-
-    const w = {
-      mnemonic: mnemonic,
-      enMnemonic: mnemonic,              // 始终保存英文BIP39助记词（真实密钥）
-      words: mnemonic.split(' '),
-      ethAddress: wallet.address,        // 标准 42 字符 ETH 地址
-      trxAddress: trxAddr,               // 标准 34 字符 TRX 地址
-      btcAddress: btcWallet.address,     // BTC 地址
-      privateKey: wallet.privateKey,
-      trxPrivateKey: trxWallet.privateKey,
-      createdAt: Date.now()
-    };
-    window.REAL_WALLET = w;
-    saveWallet(w);
-    return w;
-  } catch(e) {
-    console.error('[WorldToken] 钱包创建失败:', e);
-    showToast('❌ 钱包创建失败：' + e.message, 'error');
-    return null;
+function formatWalletCreateError(e) {
+  if (!e) return '创建失败：未知错误';
+  const raw = String(e.message || e.reason || '');
+  if (/^创建失败：/.test(raw)) return raw;
+  if (typeof ethers === 'undefined')
+    return '创建失败：钱包库（ethers）未加载，请检查网络后刷新页面';
+  if (e.name === 'QuotaExceededError' || /quota|存储空间|exceeded/i.test(raw))
+    return '创建失败：浏览器存储已满或受限，请清理本站数据后重试';
+  if (/ethers is not defined|ethers.*undefined/i.test(raw) || (e.name === 'ReferenceError' && /ethers/i.test(raw)))
+    return '创建失败：钱包库（ethers）未加载，请检查网络后刷新页面';
+  if (/invalid mnemonic|checksum|invalid entropy|bad seed/i.test(raw))
+    return '创建失败：助记词生成异常（' + raw + '）';
+  if (/fromMnemonic|HDNode|hardened|path/i.test(raw))
+    return '创建失败：密钥派生失败（' + raw + '）';
+  if (raw) return '创建失败：' + raw;
+  return '创建失败：' + (e.name || String(e));
+}
+function walletCreateYield() {
+  return new Promise(function(resolve) {
+    requestAnimationFrame(function() { setTimeout(resolve, 16); });
+  });
+}
+async function createRealWallet() {
+  if (typeof ethers === 'undefined') {
+    throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
   }
+  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(1);
+  await walletCreateYield();
+  let mnemonic, wallet, trxWallet, btcWallet, trxAddr;
+  try {
+    mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
+    wallet = ethers.Wallet.fromMnemonic(mnemonic);
+  } catch (e) {
+    console.error('[WorldToken] 钱包创建失败:', e);
+    throw new Error(formatWalletCreateError(e));
+  }
+  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(2);
+  await walletCreateYield();
+  try {
+    trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
+    btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
+  } catch (e) {
+    console.error('[WorldToken] 钱包创建失败:', e);
+    throw new Error(formatWalletCreateError(e));
+  }
+  trxAddr = '';
+  try {
+    await loadTronWeb();
+    if (typeof TronWeb !== 'undefined') {
+      trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
+    } else {
+      trxAddr = 'T' + trxWallet.address.slice(2, 35);
+    }
+  } catch (e2) {
+    trxAddr = 'T' + trxWallet.address.slice(2, 35);
+  }
+  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(3);
+  await walletCreateYield();
+  const w = {
+    mnemonic: mnemonic,
+    enMnemonic: mnemonic,
+    words: mnemonic.split(' '),
+    ethAddress: wallet.address,
+    trxAddress: trxAddr,
+    btcAddress: btcWallet.address,
+    privateKey: wallet.privateKey,
+    trxPrivateKey: trxWallet.privateKey,
+    createdAt: Date.now()
+  };
+  window.REAL_WALLET = w;
+  saveWallet(w);
+  return w;
 }
 
 async function restoreWallet(mnemonic) {
@@ -2552,6 +2654,9 @@ function renderKeyGrid() {
     d.innerHTML=`<div class="word-num">${String(i+1).padStart(2,'0')}</div><div class="word-val" style="font-size:${isSmall?'11px':'13px'}">${w}</div>`;
     grid.appendChild(d);
   });
+  if (REAL_WALLET) {
+    REAL_WALLET.words = words.slice();
+  }
 }
 
 function shortChainAddr(addr) {
