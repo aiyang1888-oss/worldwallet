@@ -167,7 +167,6 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .page { transition-duration: 0.01ms; }
-  .ww-scroll-top-btn { transition: none; }
 }
 
 /* ── 欢迎页 ── */
@@ -459,6 +458,10 @@ body {
 }
 .ww-scroll-top-btn.ww-show { display: flex; }
 .ww-scroll-top-btn:active { transform: scale(0.93); }
+@media (prefers-reduced-motion: reduce) {
+  .ww-scroll-top-btn { transition: none; }
+}
+
 .ww-price-ticker-bar { overflow: hidden; width: 100%; background: linear-gradient(90deg, rgba(18,14,28,0.98), rgba(26,22,40,0.95)); border-bottom: 1px solid var(--border); padding: 9px 0; margin: 0 0 0 0; }
 .ww-price-ticker-marquee { display: flex; width: max-content; animation: wwTickerScroll 32s linear infinite; }
 .ww-price-ticker-marquee:hover { animation-play-state: paused; }
@@ -3436,7 +3439,7 @@ body {
       <div style="font-size:80px;margin-bottom:20px;animation:pulse 0.6s ease">✅</div>
       <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">验证成功！</div>
       <div style="font-size:14px;color:var(--text-muted);margin-bottom:40px;text-align:center;padding:0 30px">助记词已安全保存，钱包创建完成</div>
-      <button class="btn-primary" style="width:240px" onclick="try{updateAddr();var _t=document.getElementById('tabBar');if(_t)_t.style.display='flex';setTimeout(loadBalances,500);goTo('page-home')}catch(e){console.error(e);if(typeof showToast==='function')try{showToast(String(e&&e.message||e),'error');}catch(_){}}">
+      <button class="btn-primary" style="width:240px" onclick="updateAddr();document.getElementById('tabBar').style.display='flex';setTimeout(loadBalances,500);goTo('page-home')">
         🚀 开始使用
       </button>
     </div>
@@ -4402,7 +4405,7 @@ const welcomePage = document.getElementById('page-welcome');
 if(welcomePage) {
   welcomePage.classList.add('active');
 }
-(function(){var t=document.getElementById('tabBar');if(t)t.style.display='none';})();
+document.getElementById('tabBar').style.display = 'none';
 
 // 有钱包时显示「继续」按钮
 setTimeout(() => {
@@ -4773,15 +4776,13 @@ function closeTotpUnlock() {
 }
 
 function goTo(pageId) {
-  /* ww-stabilize-v1 */
-  try {
   applySeoForPage(pageId);
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   const activePage=document.getElementById(pageId);
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='';
-  var _tbGo=document.getElementById('tabBar');if(_tbGo)_tbGo.style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
+  document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') renderKeyGrid();
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
   if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
@@ -4853,7 +4854,7 @@ function goTo(pageId) {
   if(pageId==='page-home') {
     // 有钱包时显示导航栏
     if(REAL_WALLET && REAL_WALLET.ethAddress) {
-      var _tbH=document.getElementById('tabBar');if(_tbH)_tbH.style.display = 'flex';
+      document.getElementById('tabBar').style.display = 'flex';
     }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
@@ -4892,10 +4893,6 @@ function goTo(pageId) {
       }
     }
   } catch (e) {}
-  } catch (e) {
-    console.error('[WorldToken] goTo', pageId, e);
-    try { if (typeof showToast === 'function') showToast(String(e && e.message || e), 'error'); } catch (_) {}
-  }
 }
 
 
@@ -4909,14 +4906,9 @@ async function resolveENS(name) {
 }
 
 function goTab(tabId) {
-  try {
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
   document.getElementById(tabId)?.classList.add('active');
   goTo(TAB_MAP[tabId]||'page-home');
-  } catch (e) {
-    console.error('[WorldToken] goTab', tabId, e);
-    try { if (typeof showToast === 'function') showToast(String(e && e.message || e), 'error'); } catch (_) {}
-  }
 }
 function wwUpdateScrollTopBtn() {
   var btn = document.getElementById('wwScrollTopBtn');
@@ -4990,7 +4982,6 @@ function initTabSwipeGesture() {
 
 
 function selectLang(btn) {
-  try {
   document.querySelectorAll('#welcomeLangGrid .lang-row, #welcomeLangGrid .lang-btn').forEach(b=>{
     b.classList.remove('active');
     const check = b.querySelector('.lang-check');
@@ -5000,10 +4991,6 @@ function selectLang(btn) {
   const check = btn.querySelector('.lang-check');
   if(check) check.style.opacity='1';
   currentLang = btn.dataset.lang;
-  } catch (e) {
-    console.error('[WorldToken] selectLang', e);
-    try { if (typeof showToast === 'function') showToast(String(e && e.message || e), 'error'); } catch (_) {}
-  }
 }
 
 function renderKeyGrid() {
@@ -8190,7 +8177,7 @@ function doImportWallet() {
   restoreWallet(mnemonic).then(w => {
     if(w) {
       updateAddr();
-      var _tbH=document.getElementById('tabBar');if(_tbH)_tbH.style.display = 'flex';
+      document.getElementById('tabBar').style.display = 'flex';
       setTimeout(loadBalances, 500);
       goTo('page-home');
       showToast('✅ 钱包导入成功！', 'success');
