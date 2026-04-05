@@ -165,69 +165,43 @@ async function loadBalances() {
   if(btn) btn.textContent = '查询中...';
   
   // 更新标签为加载中
-  ['balUsdt','balTrx','balEth'].forEach(id => {
+  ['balUsdt','balTrx','balEth','balBtc'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.textContent = '...';
   });
 
   try {
-    const [prices] = await Promise.all([getPrices()]);
-    
-    // 查询 TRX 余额（TronGrid 免费 API）
-    const trxAddr = REAL_WALLET.trxAddress;
-    const ethAddr = REAL_WALLET.ethAddress;
-    
-    let usdtBal = 0, trxBal = 0, ethBal = 0;
+    const [bal, prices] = await Promise.all([
+      typeof getBalance === 'function'
+        ? getBalance({
+            eth: REAL_WALLET.ethAddress || '',
+            trx: REAL_WALLET.trxAddress || ''
+          })
+        : Promise.resolve({ eth: 0, trx: 0, usdt: 0, btc: 0, totalUsd: 0 }),
+      getPrices()
+    ]);
 
-    // TRX 余额
+    const usdtBal = bal.usdt;
+    const trxBal = bal.trx;
+    const ethBal = bal.eth;
+
+    let btcBal = 0;
     try {
-      const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`, {
-        headers: { 'TRON-PRO-API-KEY': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' } // 建议在 trongrid.io 申请免费 key
-      });
-      const trxData = await trxRes.json();
-      if(trxData.data && trxData.data[0]) {
-        trxBal = (trxData.data[0].balance || 0) / 1e6;
-        // USDT TRC-20 余额
-        const trc20 = trxData.data[0].trc20 || [];
-        const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-        if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
-      }
-    } catch(e) { console.log('TRX query failed:', e); }
-
-    // ETH 余额（公共 RPC）
-    try {
-      const ethRes = await fetch('https://eth.llamarpc.com', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[ethAddr,'latest'],id:1})
-      });
-      const ethData = await ethRes.json();
-      if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
-    } catch(e) { console.log('ETH query failed:', e); }
-
-    // 更新UI
-    const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
-    const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
-
-    // BTC 余额（BlockCypher 免费API，从助记词派生BTC地址）
-    let btcBal = 0, btcAddr = '';
-    try {
-      // 从 ETH 地址派生 BTC 地址（简化：用 Blockchain.info 查询）
-      // 由于BTC地址派生复杂，暂时尝试查询（如有BTC地址）
-      if(REAL_WALLET.btcAddress) {
-        btcAddr = REAL_WALLET.btcAddress;
-        // BTC 余额查询（使用 mempool.space，更稳定）
-        const btcRes = await fetch(`https://mempool.space/api/address/${btcAddr}`);
+      if (REAL_WALLET.btcAddress) {
+        const btcRes = await fetch(`https://mempool.space/api/address/${REAL_WALLET.btcAddress}`);
         const btcData = await btcRes.json();
         btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
       }
     } catch(e) { console.log('BTC query skipped'); }
 
+    const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
+    const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
+
     const usdtUsd = usdtBal * prices.usdt;
     const trxUsd = trxBal * prices.trx;
     const ethUsd = ethBal * prices.eth;
     const btcUsd = btcBal * (prices.btc || 60000);
-    const total = usdtUsd + trxUsd + ethUsd + btcUsd;
+    const total = bal.totalUsd + btcUsd;
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
