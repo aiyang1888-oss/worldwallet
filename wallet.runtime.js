@@ -672,17 +672,12 @@ function syncMnemonicLengthChoice(v) {
 }
 /** 密钥页下拉：无钱包时默认 12；已有钱包时直接按本机助记词词数同步，避免先显示 12 再被 renderKeyGrid 改成 15/18 造成「默认变了」的观感 */
 function initMnemonicLengthSelectors() {
-  let n = 12;
-  try {
-    if (REAL_WALLET && REAL_WALLET.enMnemonic) {
-      const wl = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
-      if ([12, 15, 18, 21, 24].includes(wl)) n = wl;
-    }
-  } catch (e) {}
+  // 永远默认 12 词，不读已有钱包的词数
+  const n = 12;
   currentMnemonicLength = n;
   try {
     const mk = document.getElementById('mnemonicLength');
-    if (mk) mk.value = String(n);
+    if (mk) mk.value = '12';
   } catch (e) {}
 }
 /** @param {number} [forcedWordCount] 若传入则按该词数生成（避免与 DOM 不同步） */
