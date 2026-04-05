@@ -1477,16 +1477,11 @@ function renderKeyGrid() {
     }
   }
   try {
+    // 只更新警告文字，不覆盖用户选择的词数
     const wlen = words.length;
     const wce = document.getElementById('warnWordCount');
     if (wce) wce.textContent = String(wlen);
-    const sel = document.getElementById('mnemonicLength');
-    if (sel && [12, 15, 18, 21, 24].includes(wlen)) {
-      sel.value = String(wlen);
-      currentMnemonicLength = wlen;
-    } else if (wlen > 0) {
-      currentMnemonicLength = wlen;
-    }
+    // 不反向覆盖 currentMnemonicLength 或下拉框
   } catch (e) {}
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
