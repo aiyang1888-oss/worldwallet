@@ -350,6 +350,8 @@ body {
 .tx-empty-friendly .tx-empty-title { font-size: 16px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
 .tx-empty-friendly .tx-empty-hint { font-size: 12px; line-height: 1.75; color: var(--text-muted); max-width: 300px; margin: 0 auto; }
 .home-balance { font-size: 32px; font-weight: 800; color: var(--text); }
+.home-balance.home-balance--loading { animation: homeBalPulse 0.85s ease-in-out infinite; }
+@keyframes homeBalPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
 .home-balance-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .home-balance-chart-wrap { margin: 14px 0 6px; padding: 0 2px; }
 .home-balance-chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -2312,6 +2314,44 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+function tapHaptic(ms) {
+  try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
+}
+document.addEventListener('click', function(ev) {
+  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
+  if (!el) return;
+  tapHaptic(12);
+}, true);
+
+function parseUsdFromBalanceTxt(txt) {
+  if (!txt) return 0;
+  var n = parseFloat(String(txt).replace(/[$,\s]/g, ''));
+  return isFinite(n) ? n : 0;
+}
+function cancelHomeBalanceAnim() {
+  if (window._homeBalanceAnimRaf) {
+    cancelAnimationFrame(window._homeBalanceAnimRaf);
+    window._homeBalanceAnimRaf = 0;
+  }
+}
+function animateHomeUsdTo(targetUsd, fmtUsdFn) {
+  cancelHomeBalanceAnim();
+  var el = document.getElementById('totalBalanceDisplay');
+  var from = parseUsdFromBalanceTxt(el ? el.textContent : '');
+  if (!isFinite(from)) from = 0;
+  var dur = 560;
+  var t0 = null;
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  function tick(now) {
+    if (!t0) t0 = now;
+    var p = Math.min(1, (now - t0) / dur);
+    var v = from + (targetUsd - from) * easeOutCubic(p);
+    if (el) el.textContent = fmtUsdFn(p < 1 ? v : targetUsd);
+    if (p < 1) window._homeBalanceAnimRaf = requestAnimationFrame(tick);
+    else window._homeBalanceAnimRaf = 0;
+  }
+  window._homeBalanceAnimRaf = requestAnimationFrame(tick);
+}
 
 function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
 var _qrLoadPromise=null;
@@ -5205,6 +5245,10 @@ async function getPrices() {
 
 async function loadBalances() {
   if(!REAL_WALLET || !REAL_WALLET.trxAddress) return;
+  const tbd = document.getElementById('totalBalanceDisplay');
+  const tbs = document.getElementById('totalBalanceSub');
+  if(tbd) tbd.classList.add('home-balance--loading');
+  if(tbs) tbs.textContent = '同步中…';
   
   const btn = _safeEl('balRefreshBtn');
   if(btn) btn.textContent = '查询中...';
@@ -5290,7 +5334,8 @@ async function loadBalances() {
       if(d2.tron?.usd_24h_change!==undefined) set('chgTrx', fmtChg(d2.tron.usd_24h_change));
       if(d2.ethereum?.usd_24h_change!==undefined) set('chgEth', fmtChg(d2.ethereum.usd_24h_change));
     } catch(e) {}
-    set('totalBalanceDisplay', fmtUsd(total));
+    if(tbd) tbd.classList.remove('home-balance--loading');
+    animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
     drawHomeBalanceChart(total);
     // 动态汇率（从价格接口获取，fallback 7.2）
@@ -5323,6 +5368,7 @@ async function loadBalances() {
     if(btn) btn.textContent = '刷新';
   } catch(e) {
     console.error('Balance load error:', e);
+    if(tbd) tbd.classList.remove('home-balance--loading');
     if(btn) btn.textContent = '刷新';
   }
 }
