@@ -413,7 +413,7 @@ function getBtcAddr() { return (REAL_WALLET && REAL_WALLET.btcAddress) ? REAL_WA
 const ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
 
 let currentLang = detectDeviceLang();
-// MAIN_PAGES defined in globals.js
+// MAIN_PAGES in globals.js
 const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
 
 const WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
@@ -1136,6 +1136,49 @@ function wwTickIdleLock() {
 }
 
 const TRON_GRID = 'https://api.trongrid.io';
+const USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+const ETH_RPC = 'https://eth.llamarpc.com';
+
+async function broadcastRealTransfer() {
+  if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
+  const addr = document.getElementById('transferAddr').value.trim();
+  if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
+    showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
+    return false;
+  }
+  const amt = parseFloat(document.getElementById('transferAmount').value);
+  const coin = transferCoin.id;
+
+  try {
+    let txHash = '';
+
+    if(coin === 'usdt') {
+      // USDT TRC-20 转账
+      txHash = await sendUSDT_TRC20(addr, amt);
+    } else if(coin === 'trx') {
+      // TRX 转账
+      txHash = await sendTRX(addr, amt);
+    } else if(coin === 'eth') {
+      // ETH 转账
+      txHash = await sendETH(addr, amt);
+    } else {
+      showToast('⚠️ 暂不支持 ' + transferCoin.name + ' 转账', 'warning');
+      return false;
+    }
+
+    if(txHash) {
+      try { if (typeof wwRecordSpendAfterBroadcast === 'function') wwRecordSpendAfterBroadcast(amt); } catch (_rs) {}
+      _safeEl('successTxHash') && ((_safeEl('successTxHash') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successTxHash fallback */.textContent = txHash);
+      _safeEl('successTxLink') && (_safeEl('successTxLink').href =
+        coin==='eth' ? 'https://etherscan.io/tx/'+txHash : 'https://tronscan.org/#/transaction/'+txHash);
+      return true;
+    }
+  } catch(e) {
+    console.error('转账失败:', e);
+    showToast('❌ 转账失败: ' + (e.message || e), 'error');
+  }
+  return false;
+}
 
 // ══ 转账系统 ══
 let transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
@@ -2113,7 +2156,6 @@ async function doImportWallet() {
     if (pin) {
       var flatForStore = {
         mnemonic: result.mnemonic,
-        wordCount: result.wordCount,
         enMnemonic: result.mnemonic,
         words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
         ethAddress: result.eth.address,
