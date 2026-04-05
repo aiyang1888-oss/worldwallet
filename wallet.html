@@ -51,7 +51,19 @@ body {
 }
 
 @media (max-width: 500px) {
-  .phone { transform: scale(0.85); margin: -60px 0; }
+  /* 真机：去掉模拟手机框，直接全屏 */
+  body { background: var(--bg) !important; }
+  .phone {
+    width: 100vw !important;
+    height: 100dvh !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    margin: 0 !important;
+  }
+  .status-bar { display: none !important; }
 }
 
 /* iOS：输入框字号小于 16px 时聚焦会强制缩放页面，关键表单区统一 16px */
