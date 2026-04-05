@@ -3599,5 +3599,19 @@ body {
         </div>
       </div>
     </div>
+
+<script>
+// 强制清除旧 Service Worker 缓存
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.update(); });
+  });
+  caches.keys().then(function(names) {
+    names.forEach(function(name) {
+      if (name !== 'worldtoken-v202604060428') caches.delete(name);
+    });
+  });
+}
+</script>
 </body>
 </html>
