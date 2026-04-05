@@ -1,6 +1,6 @@
 /**
  * 未接入 package.json 的 main（当前为 expo-router）。
- * 正式壳与钱包页：见 app/index.tsx + dist/wallet.html / public/wallet.html。
+ * 正式壳与钱包页：见 app/index.tsx（线上 https://www.worldtoken.cc/wallet.html）。
  */
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';

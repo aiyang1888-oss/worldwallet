@@ -3,13 +3,12 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "prestart": "node ./scripts/sync-public-wallet.js",
     "sync-wallet": "node ./scripts/sync-public-wallet.js",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "node ./scripts/sync-public-wallet.js && expo start --web",
+    "web": "expo start --web",
     "lint": "expo lint"
   },
   "dependencies": {
