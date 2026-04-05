@@ -420,6 +420,12 @@ body {
   75% { transform: translateX(-4px); }
 }
 .wt-shake-wrong { animation: wtShake 0.5s ease; }
+.wt-transfer-shake { animation: wtShake 0.45s ease; }
+.transfer-addr-dd { position:absolute; left:10px; right:10px; top:100%; margin-top:6px; background:var(--bg3); border:1px solid rgba(200,168,75,0.35); border-radius:12px; max-height:200px; overflow-y:auto; z-index:40; box-shadow:0 10px 28px rgba(0,0,0,0.45); }
+.transfer-addr-dd-item { padding:10px 14px; font-size:12px; color:var(--text); cursor:pointer; border-bottom:1px solid var(--border); word-break:break-all; line-height:1.45; }
+.transfer-addr-dd-item:last-child { border-bottom:none; }
+.transfer-addr-dd-item:hover,.transfer-addr-dd-item:active { background:var(--bg2); }
+.transfer-addr-dd-empty { padding:12px 14px; font-size:12px; color:var(--text-muted); }
 .overlay.show { display: flex !important; }
 .qr-overlay {
   position: absolute; inset: 0;
@@ -1108,16 +1114,17 @@ body {
       <div style="padding:20px 18px;flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0">
 
         <!-- 地址输入区 -->
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s" id="transferAddrBox">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s;position:relative" id="transferAddrBox">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">收款地址</div>
           <div style="display:flex;align-items:center;gap:10px">
-            <textarea id="transferAddr" rows="2" placeholder="输入万语地址或公链地址" oninput="detectAddrType()" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
+            <textarea id="transferAddr" rows="2" placeholder="输入万语地址或公链地址" oninput="detectAddrType();updateTransferAddrBook()" onfocus="updateTransferAddrBook()" onblur="setTimeout(hideTransferAddrBook,180)" autocomplete="off" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
           </div>
           <!-- 地址识别标签 -->
           <div id="addrTypeTag" style="margin-top:8px;display:none">
             <span id="addrTypeIcon" style="font-size:12px"></span>
             <span id="addrTypeName" style="font-size:11px;color:var(--text-muted)"></span>
           </div>
+          <div id="transferAddrBook" class="transfer-addr-dd" style="display:none" onclick="event.preventDefault()"></div>
         </div>
 
         <!-- 收款人信息（识别后显示）-->
@@ -1133,7 +1140,7 @@ body {
         </div>
 
         <!-- 金额输入 -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
+        <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
             <!-- 币种选择 -->
             <div onclick="openTransferCoinPicker()" style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;flex-shrink:0">
@@ -1785,7 +1792,11 @@ body {
     <div id="pinUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
       <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">输入 PIN</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">已设置 6 位数字 PIN，用于保护钱包访问</div>
-      <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')submitPinUnlock()" />
+      <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitPinUnlock()" />
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockBackspace()">⌫ 退格</button>
+        <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
+      </div>
       <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN 不正确</div>
       <button class="btn-primary" style="width:100%;padding:12px" onclick="submitPinUnlock()">解锁</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
@@ -2854,6 +2865,82 @@ async function sendETH(toAddr, amount) {
 // ══ 转账系统 ══
 let transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
 
+const WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
+function getRecentTransferAddrs() {
+  try {
+    const raw = localStorage.getItem(WW_RECENT_ADDR_KEY);
+    const a = raw ? JSON.parse(raw) : [];
+    return Array.isArray(a) ? a.filter(x => typeof x === 'string' && x.trim()) : [];
+  } catch(e) { return []; }
+}
+function saveRecentTransferAddr(addr) {
+  const t = (addr || '').trim();
+  if(!t) return;
+  let list = getRecentTransferAddrs().filter(x => x !== t);
+  list.unshift(t);
+  if(list.length > 24) list = list.slice(0, 24);
+  try { localStorage.setItem(WW_RECENT_ADDR_KEY, JSON.stringify(list)); } catch(e) {}
+}
+function hideTransferAddrBook() {
+  const box = document.getElementById('transferAddrBook');
+  if(box) box.style.display = 'none';
+}
+function pickTransferAddrFromBookRaw(addr) {
+  const ta = document.getElementById('transferAddr');
+  if(ta) ta.value = addr;
+  hideTransferAddrBook();
+  detectAddrType();
+}
+function updateTransferAddrBook() {
+  const box = document.getElementById('transferAddrBook');
+  const ta = document.getElementById('transferAddr');
+  if(!box || !ta) return;
+  const q = ta.value.trim().toLowerCase();
+  const all = getRecentTransferAddrs();
+  if(!all.length) { box.innerHTML = ''; box.style.display = 'none'; return; }
+  const filtered = q ? all.filter(a => a.toLowerCase().includes(q)) : all;
+  box.innerHTML = '';
+  if(!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'transfer-addr-dd-empty';
+    empty.textContent = '暂无匹配的历史地址';
+    box.appendChild(empty);
+    box.style.display = 'block';
+    return;
+  }
+  filtered.forEach(a => {
+    const div = document.createElement('div');
+    div.className = 'transfer-addr-dd-item';
+    div.textContent = a;
+    div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(a); };
+    box.appendChild(div);
+  });
+  box.style.display = 'block';
+}
+function shakeTransferAmountTooHigh() {
+  const el = document.getElementById('transferAmountBox');
+  if(!el) return;
+  el.classList.remove('wt-transfer-shake');
+  void el.offsetWidth;
+  el.classList.add('wt-transfer-shake');
+}
+function pinUnlockBackspace() {
+  const inp = document.getElementById('pinUnlockInput');
+  if(!inp) return;
+  inp.value = (inp.value || '').slice(0, -1);
+  try { inp.focus(); } catch(e) {}
+}
+function pinUnlockClear() {
+  const inp = document.getElementById('pinUnlockInput');
+  if(!inp) return;
+  inp.value = '';
+  const err = document.getElementById('pinUnlockError');
+  if(err) err.style.display = 'none';
+  try { inp.focus(); } catch(e) {}
+}
+
+
+
 function detectAddrType() {
   const addr = document.getElementById('transferAddr').value.trim();
   const tag = document.getElementById('addrTypeTag');
@@ -2909,9 +2996,15 @@ function checkTransferReady() {
   const amt = parseFloat(document.getElementById('transferAmount').value)||0;
   const btn = document.getElementById('transferBtn');
   const feeRow = document.getElementById('transferFeeRow');
-  if(addr && amt>0) {
-    btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
+  const bal = Number(transferCoin.bal) || 0;
+  const over = amt > bal + 1e-10;
+  if(addr && amt > 0) {
     feeRow.style.display='block';
+  } else {
+    feeRow.style.display='none';
+  }
+  if(addr && amt > 0 && !over) {
+    btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
   } else {
     btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
   }
@@ -2928,6 +3021,8 @@ function calcTransferFee() {
   document.getElementById('transferActual').textContent = actual+' '+transferCoin.name;
   document.getElementById('transferUSD').textContent = '$'+(amt*price).toFixed(2);
   document.getElementById('transferChain').textContent = transferCoin.chain+' · 约30秒';
+  const bal = Number(transferCoin.bal) || 0;
+  if(amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
 }
 
@@ -2961,6 +3056,9 @@ function doTransfer() {
   const amt = document.getElementById('transferAmount').value;
   if(!addr) { showToast('❌ 请输入接收地址', 'error'); return; }
   if(!amt || parseFloat(amt) <= 0) { showToast('❌ 请输入有效金额', 'error'); return; }
+  const amtNum = parseFloat(amt) || 0;
+  const bal = Number(transferCoin.bal) || 0;
+  if(amtNum > bal + 1e-10) { showToast('❌ 金额超过可用余额', 'error'); shakeTransferAmountTooHigh(); return; }
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
   const fee = (amt*0.003).toFixed(2);
   const actual = (amt - fee*1).toFixed(2);
@@ -2979,6 +3077,7 @@ function confirmTransfer() {
   // 填充成功页数据
   const amt = document.getElementById('transferAmount').value;
   const addr = document.getElementById('transferAddr').value.trim();
+  saveRecentTransferAddr(addr);
   const fee = (amt*0.003).toFixed(2);
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
   const isEn = currentLang==='en';
