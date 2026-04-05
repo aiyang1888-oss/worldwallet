@@ -1215,12 +1215,7 @@ body {
 
     <!-- 首页 -->
     <div class="page" id="page-home">
-      <div class="ww-price-ticker-bar" id="wwPriceTickerBar">
-        <div class="ww-price-ticker-marquee">
-          <span class="ww-ticker-text" id="wwTickerTextA">BTC <strong id="tickBtc">—</strong> · ETH <strong id="tickEth">—</strong> · TRX <strong id="tickTrx">—</strong> · USDT <strong id="tickUsdt">—</strong></span>
-          <span class="ww-ticker-text" id="wwTickerTextB" aria-hidden="true">BTC <strong>—</strong> · ETH <strong>—</strong> · TRX <strong>—</strong> · USDT <strong>—</strong></span>
-        </div>
-      </div>
+      
       <div class="home-header" style="position:relative">
         <div id="homeBackupBanner" class="home-backup-banner" role="alert" onclick="goTo('page-settings')">⚠️ 钱包尚未备份助记词，丢失设备将无法恢复资产。点此处前往设置确认备份</div>
         <div style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px">
@@ -1232,7 +1227,7 @@ body {
             </svg>
           </div>
         </div>
-        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span><button type="button" class="ww-balance-hide-btn" id="balanceHideToggle" aria-label="隐藏余额" aria-pressed="false" title="显示/隐藏余额">👁</button></div>
+        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
         <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
