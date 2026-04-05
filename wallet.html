@@ -252,13 +252,18 @@ body {
   display: inline-block; margin-bottom: 12px;
 }
 .home-chain-strip {
-  display: none;
+  display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   gap: 8px 12px;
-  margin-top: 10px;
-  padding: 0 12px 4px;
+  margin-top: 12px;
+  padding: 0 4px 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.home-chain-strip.home-chain-strip--off {
+  display: none !important;
 }
 .home-mini-chain {
   display: flex;
@@ -521,13 +526,20 @@ body {
   background: linear-gradient(135deg,#181808,#1c1c0a);
   box-shadow: 0 0 0 1px rgba(200,168,75,0.55), 0 8px 28px rgba(200,168,75,0.2);
 }
+/* Welcome: stronger gold frame + larger check */
+#welcomeLangGrid .lang-row.active {
+  border: 3px solid #e8c850;
+  box-shadow: 0 0 0 2px rgba(200,168,75,0.45), 0 10px 32px rgba(200,168,75,0.28);
+}
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 30px !important;
+  font-size: 38px !important;
   line-height: 1;
-  font-weight: 800;
-  filter: drop-shadow(0 0 10px rgba(200,168,75,0.5));
+  font-weight: 900;
+  min-width: 38px;
+  text-align: center;
+  filter: drop-shadow(0 0 12px rgba(232,200,80,0.65));
 }
 
 @keyframes successPop {
@@ -884,7 +896,7 @@ body {
           <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);min-height:36px;display:inline-flex;align-items:center;transition:background 0.2s,color 0.2s">复制地址</span>
         </div>
-        <div id="homeChainStrip" class="home-chain-strip" style="display:none">
+        <div id="homeChainStrip" class="home-chain-strip home-chain-strip--off">
           <div class="home-mini-chain" title="Tron (TRX)">
             <span class="home-mini-icon" aria-hidden="true"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#FF0013"/><path fill="#fff" d="M10.5 9h11v2.8h-3.8v10.2h-3.4V11.8h-3.8V9z"/></svg></span>
             <span id="homeShortTrx" class="home-short-addr">--</span>
@@ -893,7 +905,7 @@ body {
             <span class="home-mini-icon" aria-hidden="true"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#627EEA"/><path fill="#fff" d="M16 7l6.8 10.2-6.8 3.8-6.8-3.8L16 7zm0 12.4l5.6 3.2L16 24.8l-5.6-2.2 5.6-3.2z"/></svg></span>
             <span id="homeShortEth" class="home-short-addr">--</span>
           </div>
-          <div id="homeMiniBtcWrap" class="home-mini-chain" title="Bitcoin (BTC)" style="display:none">
+          <div id="homeMiniBtcWrap" class="home-mini-chain" title="Bitcoin (BTC)">
             <span class="home-mini-icon" aria-hidden="true"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#F7931A"/><path fill="#fff" d="M20.8 13.9c.2-1.6-1-2.5-2.7-3l.5-2.3-1.4-.3-.5 2.2c-.4-.1-.7-.2-1.1-.3l.5-2.3-1.4-.3-.5 2.3c-.3-.1-.6-.1-.8-.2v-.1l-2.4-.5-.4 1.6 1.2.3c.6.1.7.5.7.9l-.7 2.6c0 .1-.1.1-.1.1h-.2l-.9-.2-.2 1.8 2.2.5c.4.1.7.2 1 .3l-.6 2.4 1.4.3.5-2.3c.4.1.8.2 1.2.3l-.5 2.4 1.4.3.5-2.3c2.3.7 4 .4 4.7-1.5.6-1.6 0-2.6-1.2-3.2zm-2.3 4.8c-.4 1.7-3.3.8-4.2.6l.8-2.9c.9.2 3.7.8 3.4 2.3zm.4-5.1c-.4 1.5-2.8.8-3.5.6l.7-2.7c.7.2 3 .8 2.8 2.1z"/></svg></span>
             <span id="homeShortBtc" class="home-short-addr">--</span>
           </div>
@@ -956,10 +968,10 @@ body {
           <span onclick="loadTxHistory()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
         </div>
         <div id="txHistoryList">
-          <div class="tx-empty-friendly" style="text-align:center;padding:28px 18px 26px;color:var(--text-muted);font-size:13px">
-            <div style="font-size:38px;margin-bottom:12px;line-height:1;filter:grayscale(0.15)">📬</div>
-            <div style="font-size:15px;font-weight:600;color:var(--text-dim);margin-bottom:8px">这里还没有交易记录</div>
-            <div style="font-size:12px;line-height:1.7;color:var(--text-muted);max-width:300px;margin:0 auto">完成转账、收款或兑换后，链上记录会出现在这里。若刚发送了一笔，可点右上角「刷新」稍等片刻再试。</div>
+          <div class="tx-empty-friendly" style="text-align:center;padding:32px 20px 28px;color:var(--text-muted);font-size:13px">
+            <div style="font-size:42px;margin-bottom:14px;line-height:1;opacity:0.92">📬</div>
+            <div style="font-size:16px;font-weight:600;color:var(--text-dim);margin-bottom:10px">还没有任何交易</div>
+            <div style="font-size:12px;line-height:1.75;color:var(--text-muted);max-width:300px;margin:0 auto">转账、收款或兑换成功后，记录会出现在这里。若刚发了一笔，可点右上角「刷新」，稍等几秒再试。</div>
           </div>
         </div>
       </div>
@@ -2395,6 +2407,7 @@ function goTo(pageId) {
     if(REAL_WALLET && REAL_WALLET.ethAddress) {
       document.getElementById('tabBar').style.display = 'flex';
     }
+    if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
   }
   if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
     setTimeout(loadTxHistory, 500);
@@ -2496,7 +2509,7 @@ function updateHomeChainStrip() {
   const btcWrap = document.getElementById('homeMiniBtcWrap');
   if (!strip || !trxEl || !ethEl) return;
   if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
-    strip.style.display = 'none';
+    strip.classList.add('home-chain-strip--off');
     return;
   }
   const trx = REAL_WALLET.trxAddress || '';
@@ -2506,12 +2519,11 @@ function updateHomeChainStrip() {
   ethEl.textContent = shortChainAddr(eth || '--');
   if (btc && btc.length > 2 && btc !== '--') {
     btcEl.textContent = shortChainAddr(btc);
-    if (btcWrap) { btcWrap.style.display = 'flex'; }
   } else {
     btcEl.textContent = '—';
-    if (btcWrap) { btcWrap.style.display = 'none'; }
   }
-  strip.style.display = 'flex';
+  if (btcWrap) btcWrap.style.display = 'flex';
+  strip.classList.remove('home-chain-strip--off');
 }
 
 function updateAddr() {
@@ -3784,6 +3796,10 @@ function updateQRCode() {
 
 
 
+function txHistoryEmptyHtml() {
+  return '<div class="tx-empty-friendly" style="text-align:center;padding:32px 20px 28px;color:var(--text-muted);font-size:13px"><div style="font-size:42px;margin-bottom:14px;line-height:1;opacity:0.92">📬</div><div style="font-size:16px;font-weight:600;color:var(--text-dim);margin-bottom:10px">还没有任何交易</div><div style="font-size:12px;line-height:1.75;color:var(--text-muted);max-width:300px;margin:0 auto">转账、收款或兑换成功后，记录会出现在这里。若刚发了一笔，可点右上角「刷新」，稍等几秒再试。</div></div>';
+}
+
 // ── 交易历史 ──────────────────────────────────────────────────
 async function loadTxHistory() {
   if(!REAL_WALLET) return;
@@ -3842,7 +3858,7 @@ async function loadTxHistory() {
     }
 
     if(txs.length === 0) {
-      el.innerHTML = '<div class="tx-empty-friendly" style="text-align:center;padding:28px 18px 26px;color:var(--text-muted);font-size:13px"><div style="font-size:38px;margin-bottom:12px;line-height:1;filter:grayscale(0.15)">📬</div><div style="font-size:15px;font-weight:600;color:var(--text-dim);margin-bottom:8px">这里还没有交易记录</div><div style="font-size:12px;line-height:1.7;color:var(--text-muted);max-width:300px;margin:0 auto">完成转账、收款或兑换后，链上记录会出现在这里。若刚发送了一笔，可点右上角「刷新」稍等片刻再试。</div></div>';
+      el.innerHTML = txHistoryEmptyHtml();
       return;
     }
 
