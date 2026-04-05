@@ -41,9 +41,6 @@ yarn-error.*
 
 app-example
 
-# Local IDE session notes
-CURSOR_HANDOFF.md
-
 # generated native folders
 /ios
 /android
