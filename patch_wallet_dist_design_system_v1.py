@@ -17,7 +17,8 @@ DIST = ROOT / "dist" / "wallet.html"
 MIN_BYTES = 800_000
 MARKER = "/* WW_DESIGN_V1 */"
 
-OLD_ROOT = """::root {
+# 替换前基准 = layout_polish 后的 :root（未跑 Design v1 时）
+OLD_ROOT = """:root {
   --gold: #c8a84b;
   --gold-light: #f0d070;
   --bg: #080810;
@@ -35,9 +36,6 @@ OLD_ROOT = """::root {
   --line-body: 1.55;
   --line-tight: 1.35;
 }"""
-
-# 注意：上面 typo — 文件里是 :root 不是 ::root
-OLD_ROOT = OLD_ROOT.replace("::root", ":root", 1)
 
 NEW_ROOT = """:root {
   /* —— Brand —— */
