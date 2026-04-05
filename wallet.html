@@ -668,33 +668,34 @@ body {
   filter: none;
 }
 #welcomeLangGrid .lang-row.active {
-  border: 2px solid rgba(245,215,106,0.95);
-  background: linear-gradient(160deg, rgba(40,34,14,0.96), rgba(18,16,8,0.98));
+  border: 3px solid rgba(255,215,120,0.98);
+  background: linear-gradient(160deg, rgba(48,40,18,0.98), rgba(22,18,8,0.99));
   box-shadow:
-    0 0 0 1px rgba(255,220,140,0.45),
-    0 10px 28px rgba(200,168,75,0.22);
+    0 0 0 2px rgba(255,210,100,0.55),
+    0 0 22px rgba(255,200,80,0.35),
+    0 12px 32px rgba(200,168,75,0.28);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 15px !important;
+  font-size: 22px !important;
   line-height: 1;
-  font-weight: 800;
-  min-width: 22px;
+  font-weight: 900;
+  min-width: 30px;
   flex-shrink: 0;
   text-align: center;
   color: #1a1508 !important;
   background: linear-gradient(135deg, #e8c850, #f5e090);
   border-radius: 999px;
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   display: flex !important;
   align-items: center;
   justify-content: center;
   opacity: 1 !important;
   filter: none;
   transform: none;
-  box-shadow: 0 2px 8px rgba(200,168,75,0.45);
+  box-shadow: 0 3px 12px rgba(200,168,75,0.55);
 }
 
 @keyframes successPop {
@@ -1246,6 +1247,12 @@ body {
             </select>
           </div>
 
+          <div style="margin-bottom:14px;text-align:left">
+            <label for="qrReceiveAmount" style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;display:block;margin-bottom:6px">收款金额（可选）</label>
+            <input id="qrReceiveAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="留空则仅编码地址" oninput="updateQRCode()" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--text);outline:none" />
+            <div style="font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.55">填写后二维码使用链上付款 URI（TRX/ETH 本位），扫码钱包可预填金额。</div>
+          </div>
+
           <!-- 二维码居中 -->
           <div style="display:flex;justify-content:center;margin-bottom:18px">
             <div id="qrCodeContainer" style="width:140px;height:140px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.3);overflow:hidden">
@@ -1377,9 +1384,9 @@ body {
             </div>
             <input id="transferAmount" type="number" placeholder="0.00" oninput="calcTransferFee()" style="flex:1;min-width:0;width:100%;background:none;border:none;font-size:32px;font-weight:700;color:#e0e0f0;outline:none;text-align:right;display:block" />
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:11px;color:var(--text-muted);flex-wrap:wrap">
             <span>余额: <span id="transferBal">0</span> USDT <span style="color:var(--gold);cursor:pointer" onclick="setTransferMax()">全部</span></span>
-            <span>≈ <span id="transferUSD">$0.00</span></span>
+            <span style="text-align:right;line-height:1.5">≈ <span id="transferUSD">$0.00</span><br/>≈ ¥<span id="transferCNY">0.00</span></span>
           </div>
         </div>
 
@@ -4087,10 +4094,13 @@ function calcTransferFee() {
   const nf = getNetworkFeeEstimateLines(transferCoin.id);
   const netEl = document.getElementById('transferNetworkFee');
   if(netEl) netEl.textContent = nf.line + ' · ' + nf.sub;
+  const usdToCny = 7.24;
+  const cnyEl = document.getElementById('transferCNY');
   if(amt <= 0) {
     document.getElementById('transferFee').textContent = '—';
     document.getElementById('transferActual').textContent = '—';
     document.getElementById('transferUSD').textContent = '$0.00';
+    if(cnyEl) cnyEl.textContent = '0.00';
   } else {
     const feeNum = amt * 0.003;
     const fee = feeNum.toFixed(4);
@@ -4098,6 +4108,7 @@ function calcTransferFee() {
     document.getElementById('transferFee').textContent = fee+' '+transferCoin.name;
     document.getElementById('transferActual').textContent = actual+' '+transferCoin.name;
     document.getElementById('transferUSD').textContent = '$'+(amt*price).toFixed(2);
+    if(cnyEl) cnyEl.textContent = (amt*price*usdToCny).toFixed(2);
   }
   document.getElementById('transferChain').textContent = transferCoin.chain+' · 约30秒';
   const bal = Number(transferCoin.bal) || 0;
@@ -5028,13 +5039,39 @@ function generateQRCode(text, canvasId) {
 }
 
 // 更新二维码（当地址改变时调用）
+function ethFloatToWeiString(v) {
+  if (!isFinite(v) || v <= 0) return '0';
+  const s = v.toFixed(18);
+  const i = s.indexOf('.');
+  const whole = i < 0 ? s : s.slice(0, i);
+  const frac = i < 0 ? '' : s.slice(i + 1, i + 1 + 18);
+  const w = (whole.replace(/^0+/, '') || '0') + frac.padEnd(18, '0').slice(0, 18);
+  return w.replace(/^0+/, '') || '0';
+}
+function buildReceiveQrPayload(chain, addr, amountRaw) {
+  if (!addr) return '';
+  const raw = (document.getElementById('qrReceiveAmount') && document.getElementById('qrReceiveAmount').value) || amountRaw || '';
+  const amt = parseFloat(String(raw).replace(',', '.'));
+  const hasAmt = !isNaN(amt) && amt > 0;
+  if (!hasAmt) return addr;
+  if (chain === 'trx') {
+    const sun = Math.round(amt * 1e6);
+    if (!isFinite(sun) || sun <= 0) return addr;
+    return 'tron:' + addr + '?amount=' + sun;
+  }
+  if (chain === 'eth') {
+    const wei = ethFloatToWeiString(amt);
+    return 'ethereum:' + addr + '?value=' + wei;
+  }
+  return addr;
+}
 function updateQRCode() {
   if(!REAL_WALLET) return;
   const chain = document.getElementById('qrChainSelect')?.value || 'trx';
   let addr = '';
   if(chain === 'trx') addr = REAL_WALLET.trxAddress || '';
   else if(chain === 'eth') addr = REAL_WALLET.ethAddress || '';
-  if(addr) generateQRCode(addr, 'qrCanvas');
+  if(addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
 }
 
 
