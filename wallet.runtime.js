@@ -6296,12 +6296,11 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 
 // ── 刷新恢复当前页 ────────────────────────────────────────────────
 (function() {
-  // 不需要恢复的页面（需要钱包数据的中间页）
-  var SKIP_RESTORE = ['page-key','page-key-verify','page-pin-set','page-pin','page-welcome'];
+  // 只有主要 Tab 页面才恢复（必须有钱包数据才有意义的页面不恢复）
+  var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings'];
   try {
     var last = sessionStorage.getItem('ww_last_page');
-    if (last && !SKIP_RESTORE.includes(last) && document.getElementById(last)) {
-      // 延迟执行，等其他初始化完成
+    if (last && ALLOW_RESTORE.includes(last) && document.getElementById(last)) {
       setTimeout(function() { goTo(last); }, 50);
     }
   } catch(_) {}
