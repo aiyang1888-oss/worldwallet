@@ -405,6 +405,7 @@ body {
 .tx-empty-friendly .tx-empty-icon { font-size: 58px; margin-bottom: 18px; line-height: 1; opacity: 0.95; }
 .tx-empty-friendly .tx-empty-title { font-size: 17px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
 .tx-empty-friendly .tx-empty-hint { font-size: 12.5px; line-height: 1.8; color: var(--text-muted); max-width: 320px; margin: 0 auto; }
+#txHistoryFilter::placeholder { color: var(--text-muted); opacity: 0.85; }
 .home-balance { font-size: 32px; font-weight: 800; color: var(--text); }
 .home-balance.home-balance--loading { animation: homeBalPulse 0.85s ease-in-out infinite; }
 @keyframes homeBalPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
@@ -1280,6 +1281,14 @@ body {
           <div class="ww-portfolio-pie-legend" id="portfolioPieLegend"></div>
         </div>
       </div>
+      <div id="wwRebalanceCard" style="display:none;margin:0 16px 12px;padding:12px 14px;background:rgba(98,126,234,0.09);border:1px solid rgba(98,126,234,0.32);border-radius:14px;font-size:12px;line-height:1.55;color:var(--text)">
+        <div style="font-weight:700;margin-bottom:6px;color:var(--text)">⚖️ 快速再平衡建议</div>
+        <div id="wwRebalanceText" style="color:var(--text-muted)"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:8px;font-size:12px" onclick="goTo('page-transfer')">去转账</button>
+          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:8px;font-size:12px" onclick="goTab('tab-swap')">去兑换</button>
+        </div>
+      </div>
       <div class="assets-section">
         <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <span>我的资产</span>
@@ -1336,6 +1345,7 @@ body {
           <span style="font-size:13px;font-weight:600;color:var(--text)">最近交易</span>
           <span onclick="loadTxHistory()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
         </div>
+        <input type="search" id="txHistoryFilter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" style="width:100%;box-sizing:border-box;padding:10px 12px;margin-bottom:10px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;outline:none" />
         <div id="txHistoryList">
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
@@ -1830,6 +1840,20 @@ body {
             <input id="walletNicknameInput" type="text" placeholder="钱包昵称（仅本机）" maxlength="32" autocomplete="off" style="width:100%;margin-top:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;box-sizing:border-box" onblur="if(typeof setWalletNickname==='function'){setWalletNickname(this.value);if(typeof updateSettingsPage==='function')updateSettingsPage();}" />
           </div>
           <div style="font-size:18px;color:var(--text-muted)">›</div>
+        </div>
+
+        <div id="wwSecurityScoreCard" style="background:linear-gradient(135deg,rgba(200,168,75,0.1),transparent);border:1px solid rgba(200,168,75,0.35);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div>
+              <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">钱包安全分</div>
+              <div style="font-size:26px;font-weight:800;color:var(--gold);line-height:1" id="wwSecurityScoreValue">--</div>
+            </div>
+            <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:var(--bg3);color:var(--text-muted)" id="wwSecurityScoreBadge">评估中</span>
+          </div>
+          <div style="margin-top:10px;height:6px;border-radius:6px;background:var(--bg3);overflow:hidden">
+            <div id="wwSecurityScoreBar" style="height:100%;width:0%;background:linear-gradient(90deg,#26a17b,#c8a84b);border-radius:6px;transition:width 0.35s ease"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.55" id="wwSecurityScoreHint">根据本机 PIN 与助记词备份状态估算（满分 100）。</div>
         </div>
 
         <!-- 安全 -->
@@ -3003,6 +3027,7 @@ function loadWallet() {
     }
   } catch(e) {}
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
+  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
 }
 
 const WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
@@ -4747,7 +4772,7 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
     { v: Number(btcUsd) || 0, c: '#f7931a', l: 'BTC' }
   ];
   const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
-  if(total <= 1e-9) { card.style.display = 'none'; return; }
+  if(total <= 1e-9) { card.style.display = 'none'; try { if(typeof updateRebalanceSuggestion==='function') updateRebalanceSuggestion([], 0); } catch(_r) {} return; }
   card.style.display = 'block';
   const ctx = c.getContext('2d');
   const w = c.width, h = c.height, cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 6;
@@ -4774,6 +4799,7 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
     htm += '<div><span><span class="ww-pie-dot" style="background:' + p.c + '"></span>' + p.l + '</span><span>' + pct + '%</span></div>';
   });
   leg.innerHTML = htm;
+  try { if (typeof updateRebalanceSuggestion === 'function') updateRebalanceSuggestion(parts, total); } catch (_rb) {}
 }
 function getNetworkFeeEstimateLines(coinId) {
   const sp = typeof getTransferFeeSpeed === 'function' ? getTransferFeeSpeed() : 'normal';
@@ -5506,6 +5532,7 @@ function markBackupDone() {
   const el = document.getElementById('backupStatus');
   if(el) { el.textContent='已备份 ✓'; el.style.color='var(--green,#26a17b)'; }
   if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
+  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
 }
 
 function updateSettingsPage() {
@@ -5536,6 +5563,7 @@ function updateSettingsPage() {
   if(typeof wwApplyIdleLockLabel==='function') wwApplyIdleLockLabel();
   if (typeof updateReferralSettingsUI === 'function') updateReferralSettingsUI();
   if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
+  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
 }
 
 /** 首次打开时请求浏览器通知权限（仅询问一次） */
@@ -6011,6 +6039,117 @@ function txHistoryEmptyHtml() {
   return txHistoryFriendlyHtml('📬', pack.title, pack.hint);
 }
 
+function filterTxHistoryList(txs, q) {
+  if (!txs || !txs.length) return [];
+  if (!q || !String(q).trim()) return txs.slice();
+  var s = String(q).trim().toLowerCase();
+  return txs.filter(function(tx) {
+    var coin = String(tx.coin || '').toLowerCase();
+    var addr = String(tx.addr || '').toLowerCase();
+    var hash = String(tx.hash || '').toLowerCase();
+    var typ = String(tx.type || '').toLowerCase();
+    var amt = String(tx.amount || '').toLowerCase();
+    return coin.indexOf(s) >= 0 || addr.indexOf(s) >= 0 || hash.indexOf(s) >= 0 || typ.indexOf(s) >= 0 || amt.indexOf(s) >= 0;
+  });
+}
+
+function txHistoryRowHtml(tx) {
+  return `
+      <div onclick="window.open((tx.coin==='eth'?'https://etherscan.io/tx/':'https://tronscan.org/#/transaction/')+tx.hash,'_blank')"
+        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
+        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
+          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
+        </div>
+      </div>
+    `;
+}
+
+function renderTxHistoryFromCache() {
+  var el = document.getElementById('txHistoryList');
+  if (!el) return;
+  var txs = window._wwTxHistoryCache || [];
+  var inp = document.getElementById('txHistoryFilter');
+  var q = inp ? inp.value : '';
+  var filtered = filterTxHistoryList(txs, q);
+  if (txs.length === 0) {
+    el.innerHTML = txHistoryEmptyHtml();
+    return;
+  }
+  if (filtered.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-muted);font-size:12px;line-height:1.6">无匹配记录<br/><span style="font-size:11px;opacity:0.9">试试缩短关键词或清空搜索框</span></div>';
+    return;
+  }
+  el.innerHTML = filtered.map(function(tx) { return txHistoryRowHtml(tx); }).join('');
+}
+
+function applyTxHistoryFilter() {
+  renderTxHistoryFromCache();
+}
+
+function getWalletSecurityBreakdown() {
+  var pinOk = false;
+  try {
+    var p = localStorage.getItem('ww_unlock_pin');
+    pinOk = !!(p && String(p).length >= 4);
+  } catch (e) {}
+  var backed = false;
+  try {
+    if (REAL_WALLET && REAL_WALLET.backedUp) backed = true;
+    else {
+      var w = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      backed = !!w.backedUp;
+    }
+  } catch (e) {}
+  var pinPts = pinOk ? 50 : 0;
+  var backupPts = backed ? 50 : 0;
+  return { score: pinPts + backupPts, pinOk: pinOk, backed: backed, pinPts: pinPts, backupPts: backupPts };
+}
+
+function updateWalletSecurityScoreUI() {
+  var el = document.getElementById('wwSecurityScoreValue');
+  var bar = document.getElementById('wwSecurityScoreBar');
+  var hint = document.getElementById('wwSecurityScoreHint');
+  var badge = document.getElementById('wwSecurityScoreBadge');
+  if (!el || !bar || !hint) return;
+  var b = getWalletSecurityBreakdown();
+  el.textContent = String(b.score);
+  bar.style.width = b.score + '%';
+  var tips = [];
+  if (!b.pinOk) tips.push('未设置 PIN：他人拿到设备时可能直接打开钱包。');
+  if (!b.backed) tips.push('未确认备份助记词：设备丢失将无法恢复资产。');
+  if (b.pinOk && b.backed) tips.push('PIN 与备份均已就绪；请离线保管助记词，勿截图或泄露。');
+  hint.textContent = tips.length ? tips.join(' ') : '加载中…';
+  if (badge) {
+    if (b.score >= 100) { badge.textContent = '优秀'; badge.style.color = 'var(--green,#26a17b)'; }
+    else if (b.score >= 50) { badge.textContent = '一般'; badge.style.color = 'var(--gold)'; }
+    else { badge.textContent = '待加强'; badge.style.color = 'var(--red,#e74c3c)'; }
+  }
+}
+
+function updateRebalanceSuggestion(parts, total) {
+  var card = document.getElementById('wwRebalanceCard');
+  var txt = document.getElementById('wwRebalanceText');
+  if (!card || !txt) return;
+  if (!total || total <= 1e-9) { card.style.display = 'none'; return; }
+  var maxP = null;
+  var maxPct = 0;
+  parts.forEach(function(p) {
+    if (p.v <= 0) return;
+    var pct = 100 * p.v / total;
+    if (pct > maxPct) { maxPct = pct; maxP = p; }
+  });
+  if (!maxP || maxPct < 72) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  txt.textContent = maxP.l + ' 约占总估值 ' + maxPct.toFixed(0) + '%：单一资产占比过高时，可通过转账或兑换分散至其他币种以降低集中度。';
+}
+
 // ── 交易历史 ──────────────────────────────────────────────────
 async function loadTxHistory() {
   if(!REAL_WALLET) return;
@@ -6069,25 +6208,12 @@ async function loadTxHistory() {
     }
 
     if(txs.length === 0) {
+      try { window._wwTxHistoryCache = []; } catch (_c) {}
       el.innerHTML = txHistoryEmptyHtml();
       return;
     }
-
-    el.innerHTML = txs.map(tx => `
-      <div onclick="window.open((tx.coin==='eth'?'https://etherscan.io/tx/':'https://tronscan.org/#/transaction/')+tx.hash,'_blank')"
-        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
-        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
-          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
-        </div>
-      </div>
-    `).join('');
+    try { window._wwTxHistoryCache = txs; } catch (_c2) {}
+    renderTxHistoryFromCache();
 
   } catch(e) {
     console.error('加载交易记录失败:', e);
@@ -6641,6 +6767,7 @@ function openPinSettingsDialog() {
   if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
   localStorage.setItem('ww_unlock_pin', t);
   showToast('PIN 已保存', 'success');
+  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
 }
 
