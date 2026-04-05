@@ -10,7 +10,16 @@
 <meta name="theme-color" content="#c8a84b">
 <meta property="og:title" content="WorldToken - 全球多语言钱包">
 <meta property="og:description" content="支持120+种语言的万语地址加密钱包">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://worldtoken.cc/wallet.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WorldToken - 全球多语言加密钱包">
+<meta name="twitter:description" content="支持120+种语言万语地址，TRX / ETH / USDT / BTC 多链资产管理。">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://worldtoken.cc/wallet.html">
 <link rel="manifest" href="manifest.json">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"WorldToken","applicationCategory":"FinanceApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"全球多语言加密钱包：万语地址、多链资产与转账。","url":"https://worldtoken.cc/wallet.html"}</script>
+<script type="application/ld+json" id="ww-seo-jsonld">{"@context":"https://schema.org","@type":"WebPage","name":"WorldToken","description":"全球多语言加密钱包，支持万语地址与 TRX、ETH、USDT、BTC。","url":"https://worldtoken.cc/wallet.html","isPartOf":{"@type":"WebSite","name":"WorldToken","url":"https://worldtoken.cc/"}}</script>
 <!-- QR Code Generator -->
 <!-- qrcode: on-demand loadQRCodeLib() -->
 <!-- ethers.js for real BIP39 wallet generation -->
@@ -775,6 +784,20 @@ body {
   font-size: 14px; color: var(--gold); cursor: pointer;
 }
 
+.offline-banner {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1408;
+  background: linear-gradient(135deg, #e8a010, #f0c040);
+  flex-shrink: 0;
+  z-index: 50;
+}
+.offline-banner.show { display: flex; }
 
 </style>
   <link rel="apple-touch-icon" href="icon-192.png">
@@ -800,6 +823,7 @@ body {
       <span>●●●</span><span>WiFi</span><span>🔋</span>
     </div>
   </div>
+  <div class="offline-banner" id="offlineBanner" role="status" aria-live="polite">📡 当前无网络连接 · 链上转账等功能需联网后使用</div>
 
   <div class="pages">
 
@@ -1605,6 +1629,13 @@ body {
             <span class="settings-icon">🔐</span>
             <span class="settings-label">PIN码</span>
             <span class="settings-value">已开启</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="openTotpSettingsRow()">
+            <span class="settings-icon">🔢</span>
+            <span class="settings-label">两步验证</span>
+            <span class="settings-value" id="settingsTotpValue">未开启</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
