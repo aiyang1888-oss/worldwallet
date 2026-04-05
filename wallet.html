@@ -1130,23 +1130,7 @@ body {
     </div>
 
     <!-- ══ PIN 解锁（原密码恢复入口） ══ -->
-    <div class="page" id="page-password-restore">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-welcome')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
-        <div class="nav-title">PIN 解锁</div>
-        <div class="nav-right"></div>
-      </div>
-      <div style="padding:20px 18px;flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:min(420px,70vh)">
-        <div style="text-align:center;margin-bottom:28px;max-width:300px">
-          <div style="font-size:14px;color:var(--text-muted);line-height:1.75">若本机已创建钱包并设置过 PIN，在下方输入 6 位 PIN 解锁。<br><span style="font-size:12px;opacity:0.9">未设置 PIN 时无法从此页进入，请先在设置中设置 6 位 PIN。</span></div>
-        </div>
-        <div id="pageRestorePinPanel" style="width:100%;max-width:280px">
-          <input id="pinRestorePageInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitPageRestorePin()" oninput="var e=document.getElementById('pageRestorePinError');if(e){e.style.display='none';e.textContent='';}" />
-          <div id="pageRestorePinError" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;text-align:center"></div>
-          <button type="button" class="btn-primary" style="padding:14px 0;font-size:15px;width:100%" onclick="submitPageRestorePin()">解锁</button>
-        </div>
-      </div>
-    </div>
+    
     <!-- 创建页 -->
     <div class="page" id="page-create">
       <div class="nav-bar">
@@ -1258,7 +1242,7 @@ body {
           </div>
         </div>
         </div>
-      </div>
+      
       <div id="trxResourceCard" style="display:none;margin:0 16px 10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:10px;color:var(--text-muted);letter-spacing:1.5px">TRON 资源</span>
@@ -1270,21 +1254,8 @@ body {
         </div>
       </div>
       
-      <div id="wwPortfolioPieCard" class="ww-portfolio-pie-card" style="display:none">
-        <div class="ww-portfolio-pie-title">资产占比</div>
-        <div class="ww-portfolio-pie-row">
-          <canvas id="portfolioPieCanvas" width="168" height="168" style="flex-shrink:0;display:block"></canvas>
-          <div class="ww-portfolio-pie-legend" id="portfolioPieLegend"></div>
-        </div>
-      </div>
-      <div id="wwRebalanceCard" style="display:none;margin:0 16px 12px;padding:12px 14px;background:rgba(98,126,234,0.09);border:1px solid rgba(98,126,234,0.32);border-radius:14px;font-size:12px;line-height:1.55;color:var(--text)">
-        <div style="font-weight:700;margin-bottom:6px;color:var(--text)">⚖️ 快速再平衡建议</div>
-        <div id="wwRebalanceText" style="color:var(--text-muted)"></div>
-        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
-          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:8px;font-size:12px" onclick="goTo('page-transfer')">去转账</button>
-          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:8px;font-size:12px" onclick="goTab('tab-swap')">去兑换</button>
-        </div>
-      </div>
+      
+      
       
       <div class="assets-section">
         <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -1354,6 +1325,8 @@ body {
     </div>
 
     <!-- 地址页（核心升级版）-->
+    </div>
+
     <div class="page" id="page-addr">
       <div class="addr-content" style="padding-top:10px">
 
@@ -1665,169 +1638,10 @@ body {
 
 
     <!-- 嗖动画页 -->
-    <div class="page" id="page-swoosh" style="background:#060610;flex-direction:column;align-items:center;justify-content:center;overflow:hidden">
-
-      <style>
-        @keyframes swooshCoin {
-          0%   { transform: translateY(200px) scale(0.6); opacity:0; }
-          20%  { transform: translateY(140px) scale(1); opacity:1; }
-          60%  { transform: translateY(-20px) scale(1.1); opacity:1; }
-          80%  { transform: translateY(-160px) scale(0.8); opacity:0.6; }
-          100% { transform: translateY(-220px) scale(0.3); opacity:0; }
-        }
-        @keyframes trailFade {
-          0%   { opacity:0; transform:scaleY(0); }
-          30%  { opacity:1; transform:scaleY(1); }
-          80%  { opacity:0.3; }
-          100% { opacity:0; }
-        }
-        @keyframes glowPulse {
-          0%,100% { box-shadow: 0 0 20px rgba(200,168,75,0.3); }
-          50%      { box-shadow: 0 0 50px rgba(200,168,75,0.8); }
-        }
-        @keyframes receiverGlow {
-          0%,70% { border-color: #252540; background: #1a1a30; }
-          80%    { border-color: rgba(74,200,74,0.8); background: rgba(74,200,74,0.15); box-shadow: 0 0 30px rgba(74,200,74,0.4); }
-          100%   { border-color: rgba(74,200,74,0.4); background: rgba(74,200,74,0.05); }
-        }
-        @keyframes fadeInUp {
-          from { opacity:0; transform:translateY(10px); }
-          to   { opacity:1; transform:translateY(0); }
-        }
-        .swoosh-coin {
-          animation: swooshCoin 1.2s cubic-bezier(0.4,0,0.2,1) forwards;
-        }
-        .swoosh-trail {
-          animation: trailFade 1.2s ease forwards;
-        }
-        .receiver-glow {
-          animation: receiverGlow 1.6s ease forwards;
-        }
-      </style>
-
-      <!-- 收件人（上方） -->
-      <div id="swooshReceiver" style="width:280px;border:1.5px solid #252540;border-radius:20px;padding:14px 18px;background:#1a1a30;margin-bottom:40px;transition:all 0.3s">
-        <div class="u7">
-          <div style="width:40px;height:40px;border-radius:50%;background:#111120;border:1px solid #2a2a40;display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
-          <div>
-            <div style="font-size:15px;font-weight:700;color:#c0c0d8" id="swooshToName">朝霞暮霭</div>
-            <div style="font-size:10px;color:#444;margin-top:2px" id="swooshToAddr">江清月近人 · 9182736</div>
-          </div>
-          <div style="margin-left:auto;font-size:18px" id="swooshCheck" class="u3">✓</div>
-        </div>
-      </div>
-
-      <!-- 中间动画区 -->
-      <div style="position:relative;width:60px;height:160px;display:flex;justify-content:center;margin-bottom:40px">
-        <!-- 轨道线 -->
-        <div style="position:absolute;top:0;bottom:0;width:1px;background:linear-gradient(to top,rgba(200,168,75,0.3),rgba(200,168,75,0.05));left:50%"></div>
-        <!-- 金币 -->
-        <div id="swooshCoin" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%) translateY(0);width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 20px rgba(200,168,75,0.4);font-weight:900;color:#3a1a00">$</div>
-        <!-- 尾迹 -->
-        <div id="swooshTrail" style="position:absolute;bottom:0;left:50%;width:2px;transform:translateX(-50%) scaleY(0);transform-origin:bottom;background:linear-gradient(to top,rgba(200,168,75,0.6),transparent);height:80px;opacity:0"></div>
-      </div>
-
-      <!-- 金额 -->
-      <div id="swooshAmount" style="text-align:center;margin-bottom:40px">
-        <div style="font-size:42px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1" id="swooshAmtVal">500</div>
-        <div style="font-size:12px;color:#555;letter-spacing:4px;margin-top:4px" id="swooshCoinName">USDT</div>
-      </div>
-
-      <!-- 发件人（下方） -->
-      <div style="width:280px;border:1.5px solid rgba(200,168,75,0.2);border-radius:20px;padding:14px 18px;background:linear-gradient(135deg,rgba(200,168,75,0.06),transparent)">
-        <div class="u7">
-          <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
-          <div>
-            <div style="display:flex;align-items:baseline;gap:5px">
-              <span style="font-size:10px;font-weight:700;color:#f0d070;letter-spacing:0.5px;word-break:break-all" id="swooshFromPart1"></span>
-              <span style="font-size:10px;color:#888" id="swooshFromPart2"></span>
-            </div>
-            <div style="font-size:10px;color:#c8a84b;margin-top:2px" id="swooshFromLang">🇨🇳 中文 · WorldToken</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    
 
     <!-- 转账成功页 / 社交凭证 -->
-    <div class="page" id="page-transfer-success" style="background:#060610;flex-direction:column">
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;position:relative;overflow:hidden">
-
-        <!-- 背景光晕 -->
-        <div style="position:absolute;inset:0;background:radial-gradient(ellipse 80% 50% at 50% 50%,rgba(200,168,75,0.06),transparent);pointer-events:none"></div>
-
-        <!-- 凭证卡 -->
-        <div style="width:100%;background:linear-gradient(160deg,#0d0d1e,#111128);border:1px solid #252540;border-radius:28px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.7);position:relative">
-
-          <!-- 顶部金线 -->
-          <div style="height:2px;background:linear-gradient(90deg,transparent,#c8a84b,#f0d070,#c8a84b,transparent)"></div>
-
-          <!-- 品牌 + 时间 -->
-          <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
-            <div style="display:flex;align-items:center;gap:7px">
-              <div style="width:22px;height:22px;background:linear-gradient(135deg,#c8a84b,#f0d070);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px">🌍</div>
-              <span style="font-size:12px;font-weight:700;color:#c8a84b;letter-spacing:1px">WorldToken</span>
-            </div>
-            <span style="font-size:10px;color:#333;letter-spacing:1px" id="successTime2">2026.04.01 09:00</span>
-          </div>
-
-          <!-- 收件人（上） -->
-          <div style="padding:14px 20px 10px;border-top:1px solid #1a1a30">
-            <div class="u7">
-              <div style="width:38px;height:38px;border-radius:50%;background:#1a1a30;border:1.5px solid #2a2a44;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0" id="successToIcon">🌍</div>
-              <div class="u4">
-                <div style="font-size:15px;font-weight:700;color:#d0d0e8" id="successToName">朝霞暮霭</div>
-                <div style="font-size:11px;color:#444;margin-top:2px" id="successToAddr">江清月近人 · 9182736</div>
-              </div>
-              <div style="font-size:10px;color:#4ac84a;background:rgba(74,200,74,0.08);border:1px solid rgba(74,200,74,0.15);border-radius:20px;padding:3px 10px;white-space:nowrap">收到</div>
-            </div>
-          </div>
-
-          <!-- 金额中间区 -->
-          <div style="padding:20px;text-align:center;position:relative">
-            <!-- 左线 -->
-            <div style="position:absolute;left:20px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,#1a1a30,transparent,#1a1a30)"></div>
-            <!-- 右线 -->
-            <div style="position:absolute;right:20px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,#1a1a30,transparent,#1a1a30)"></div>
-
-            <div style="font-size:10px;color:#333;letter-spacing:3px;margin-bottom:10px">· · · · ·</div>
-            <div style="font-size:54px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:6px" id="successAmount">500</div>
-            <div style="font-size:12px;color:#666;letter-spacing:5px" id="successCoin">USDT</div>
-            <div style="font-size:10px;color:#333;letter-spacing:3px;margin-top:10px">· · · · ·</div>
-          </div>
-
-          <!-- 发件人（下） -->
-          <div style="padding:10px 20px 16px;border-top:1px solid #1a1a30">
-            <div class="u7">
-              <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌍</div>
-              <div class="u4">
-                <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
-                  <span style="font-size:10px;font-weight:700;color:#f0d070;letter-spacing:0.5px;word-break:break-all" id="successFromPart1"></span>
-                  <span style="font-size:10px;color:#a0a0b8" id="successFromPart2"></span>
-                  <span class="u5" id="successFromPart3"></span>
-                </div>
-                <div style="font-size:10px;color:#c8a84b;margin-top:3px;letter-spacing:1px" id="successFromLang">🇨🇳 中文 · WorldToken</div>
-              </div>
-              <div style="font-size:10px;color:#555;white-space:nowrap">发出</div>
-            </div>
-          </div>
-
-          <!-- 底部 -->
-          <div style="padding:10px 20px 14px;border-top:1px solid #111120;display:flex;justify-content:space-between">
-            <span style="font-size:9px;color:#2a2a3a;letter-spacing:1px">worldtoken.cc</span>
-            <span style="font-size:9px;color:#2a2a3a" id="successChain">TRC-20 · Tron</span>
-          </div>
-
-        </div>
-
-        <!-- 按钮 卡片外 低调 -->
-        <div style="width:100%;display:flex;gap:10px;margin-top:18px">
-          <div onclick="shareSuccess()" style="flex:1;background:#0d0d1a;border:1px solid #1a1a2a;border-radius:14px;padding:12px;text-align:center;font-size:12px;color:#555;cursor:pointer">📤 分享</div>
-          <div onclick="goTo('page-home')" style="flex:2;background:#0d0d1a;border:1px solid #1a1a2a;border-radius:14px;padding:12px;text-align:center;font-size:13px;color:#666;cursor:pointer">返回首页</div>
-        </div>
-
-      </div>
-    </div>
+    
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
@@ -2251,676 +2065,106 @@ body {
     </div>
 
     <!-- 社交恢复（联系人仅本机保存） -->
-    <div class="page" id="page-social-recovery">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">社交恢复</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="background:rgba(80,120,200,0.08);border:1px solid rgba(80,120,200,0.28);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.65;color:var(--text-muted)">
-          <b style="color:var(--text)">说明</b>：在此记录可协助您保管分片或见证恢复的<b>信任联系人</b>（姓名与备注仅保存在本机，不会上传）。实际链上社交恢复需智能合约或多签方案；此处用于家庭/团队预案登记。
-        </div>
-        <div id="wwSocialContactsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px;margin-bottom:10px" onclick="if(typeof wwSocialAddContactPrompt==='function')wwSocialAddContactPrompt()">＋ 添加信任联系人</button>
-        <button type="button" class="btn-primary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwSocialSaveFromUI==='function')wwSocialSaveFromUI()">保存列表</button>
-      </div>
-    </div>
+    
 
     <!-- 支出限额 -->
-    <div class="page" id="page-spending-limits">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">支出限额</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">按<b>美元估值</b>统计当日转出（与首页币种单价一致）。超出限额时需输入与本机相同的 6 位 PIN 以<b>单次放行</b>。</div>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;cursor:pointer;user-select:none">
-          <input type="checkbox" id="wwSpendLimitEnable" style="accent-color:var(--gold);width:18px;height:18px" /> 启用每日限额
-        </label>
-        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">每日限额（USD 约值）</div>
-        <input id="wwSpendLimitDailyUsd" type="number" step="any" min="0" placeholder="例如 500" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:14px" />
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6">
-          <div>今日已计：<strong id="wwSpendUsedDisplay">$0.00</strong></div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">每日 UTC 自然日重置；成功广播后累计。</div>
-        </div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px;font-size:14px" onclick="if(typeof wwSpendSaveFromUI==='function')wwSpendSaveFromUI()">保存</button>
-      </div>
-    </div>
+    
 
     <!-- 巨鲸提醒 -->
-    <div class="page" id="page-whale-alerts">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">巨鲸提醒</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">当<b>交易记录</b>中出现与下列地址相关、且美元估值超过阈值的大额流水时，通过<b>浏览器通知</b>提醒（需授权通知）。</div>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:12px;cursor:pointer;user-select:none">
-          <input type="checkbox" id="wwWhaleEnable" style="accent-color:var(--gold);width:18px;height:18px" /> 启用巨鲸提醒
-        </label>
-        <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;cursor:pointer;user-select:none">
-          <input type="checkbox" id="wwWhaleSelf" style="accent-color:var(--gold);width:18px;height:18px" /> 同时提醒本人钱包的大额转出
-        </label>
-        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">阈值（USD）</div>
-        <input id="wwWhaleThreshold" type="number" step="any" min="0" placeholder="例如 10000" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:12px" />
-        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">监控地址（每行一个，TRX / 0x）</div>
-        <textarea id="wwWhaleAddresses" rows="5" placeholder="T...&#10;0x..." autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;line-height:1.45;resize:vertical;font-family:ui-monospace,monospace"></textarea>
-        <button type="button" class="btn-secondary" style="width:100%;margin-top:12px;padding:12px;font-size:13px" onclick="if(typeof wwRequestWhaleNotifyPermission==='function')wwRequestWhaleNotifyPermission()">请求通知权限</button>
-        <button type="button" class="btn-primary" style="width:100%;margin-top:10px;padding:14px;font-size:14px" onclick="if(typeof wwWhaleSaveFromUI==='function')wwWhaleSaveFromUI()">保存</button>
-      </div>
-    </div>
+    
 
     <!-- 跨链桥 -->
-    <div class="page" id="page-bridge">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">跨链桥</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在 <b>TRON</b> 与 <b>以太坊</b> 之间转移资产通常通过<strong>第三方桥</strong>或交易所。以下为示意界面，请核对官方合约与手续费。</div>
-        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">从</div>
-        <select id="wwBridgeFrom" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" onchange="if(typeof wwBridgeSyncTo==='function')wwBridgeSyncTo()">
-          <option value="trx">Tron (TRC20)</option>
-          <option value="eth">Ethereum (ERC20)</option>
-        </select>
-        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">到</div>
-        <select id="wwBridgeTo" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" disabled>
-          <option value="eth">Ethereum (ERC20)</option>
-          <option value="trx">Tron (TRC20)</option>
-        </select>
-        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">代币（示意）</div>
-        <input id="wwBridgeToken" type="text" placeholder="USDT" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" />
-        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">数量</div>
-        <input id="wwBridgeAmount" type="text" inputmode="decimal" placeholder="0.0" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:14px" />
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px;margin-bottom:10px;font-size:13px" onclick="if(typeof wwBridgeCopyRecvAddr==='function')wwBridgeCopyRecvAddr()">复制收款地址（当前钱包）</button>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="if(typeof wwBridgeOpenStargate==='function')wwBridgeOpenStargate()">打开 Stargate（多链桥）</button>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwBridgeOpenTronDocs==='function')wwBridgeOpenTronDocs()">Tron 文档 — 跨链说明</button>
-      </div>
-    </div>
+    
 
     <!-- 代币解锁 -->
-    <div class="page" id="page-vesting">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">代币解锁</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">展示「锁定 / 已解锁」比例随时间变化（本机示例数据，可对接真实锁仓合约）。</div>
-        <div id="wwVestingTimeline" style="margin-bottom:14px"></div>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwVestingResetDemo==='function')wwVestingResetDemo()">恢复示例进度</button>
-      </div>
-    </div>
+    
 
     <!-- 连接 DEX -->
-    <div class="page" id="page-dex-connect">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">连接 DEX</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在浏览器中打开去中心化交易所，使用 <b>WalletConnect</b> 或浏览器插件连接与本应用相同的地址。</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;word-break:break-all" id="wwDexAddrHint">当前地址加载中…</div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="wwOpenDexUniswap()">打开 Uniswap（以太坊）</button>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px;margin-bottom:10px;font-size:13px" onclick="if(typeof wwOpenDexSunswap==='function')wwOpenDexSunswap()">打开 SunSwap（TRON）</button>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwOpenDexOneinch==='function')wwOpenDexOneinch()">打开 1inch 聚合器</button>
-      </div>
-    </div>
+    
 
     <!-- 硬件钱包 -->
-    <div class="page" id="page-hardware-wallet">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">硬件钱包</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">通过 USB 或蓝牙连接 <b>Ledger</b> / <b>Trezor</b>，在桌面浏览器中完成配对；本页为流程说明与入口（Web 端无法直接访问 USB 设备时需使用配套应用）。</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;color:var(--text-muted)">
-          <div style="font-weight:700;color:var(--text);margin-bottom:8px">推荐步骤</div>
-          <ol style="margin:0;padding-left:18px;line-height:1.75">
-            <li>安装厂商官方应用（Ledger Live / Trezor Suite）</li>
-            <li>在设备上启用对应链（ETH / Tron 等）</li>
-            <li>使用「用本钱包地址验证」核对派生地址一致</li>
-          </ol>
-        </div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="if(typeof wwOpenLedgerSupport==='function')wwOpenLedgerSupport()">Ledger 支持中心</button>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px;margin-bottom:10px;font-size:13px" onclick="if(typeof wwOpenTrezorSupport==='function')wwOpenTrezorSupport()">Trezor 入门</button>
-        <div id="wwHardwareAddrEcho" style="background:var(--bg2);border:1px dashed var(--border);border-radius:12px;padding:10px 12px;font-size:11px;word-break:break-all;color:var(--text-muted)"></div>
-      </div>
-    </div>
+    
 
     <!-- 税务报表 -->
-    <div class="page" id="page-tax-report">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">税务报表</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">将首页已加载的<b>交易历史缓存</b>导出为 CSV，便于自行申报或交给会计师（字段为示意，请按当地法规调整）。</div>
-        <div id="wwTaxReportSummary" style="background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.28);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text-muted)"></div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="if(typeof wwTaxExportCsv==='function')wwTaxExportCsv()">导出 CSV 文件</button>
-        <p style="font-size:11px;color:var(--text-muted);line-height:1.55;margin:0">若记录为空，请先在首页「最近交易」处点击刷新加载链上数据后再导出。</p>
-      </div>
-    </div>
+    
 
     <!-- 跟单交易 -->
-    <div class="page" id="page-copy-trading">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">跟单交易</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.28);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:11px;line-height:1.6;color:var(--text-muted)"><b style="color:var(--gold)">风险提示</b>：以下为本地登记监控地址的示意功能，不会自动下单；实盘跟单需对接交易所 / 智能合约，请务必自行验证策略与合约安全。</div>
-        <label style="font-size:12px;color:var(--text);display:block;margin-bottom:6px;font-weight:600">巨鲸 / 目标地址（每行一个）</label>
-        <textarea id="wwCopyWatchInput" rows="5" placeholder="T… 或 0x…" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;line-height:1.45;resize:vertical;font-family:ui-monospace,monospace"></textarea>
-        <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;font-size:13px" onclick="if(typeof wwCopyTradingSave==='function')wwCopyTradingSave()">保存监控列表</button>
-        <div id="wwCopyWatchList" style="margin-top:14px"></div>
-      </div>
-    </div>
+    
 
     <!-- 资产保险 -->
-    <div class="page" id="page-portfolio-insurance">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">资产保险</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">链上资产可通过第三方协议或托管方提供的<b>保险产品</b>降低黑客与合约风险。以下为常见入口（示意，不构成投保建议）。</div>
-        <div id="wwInsuranceBody" style="display:flex;flex-direction:column;gap:12px"></div>
-        <p style="font-size:11px;color:var(--text-muted);line-height:1.55;margin-top:14px">投保前请阅读条款、承保范围与免赔额；本应用不代售保险。</p>
-      </div>
-    </div>
+    
 
     <!-- 收益优化 -->
-    <div class="page" id="page-yield-optimizer">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">收益优化</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">根据首页<b>持仓占比</b>与参考 APY，给出可考虑的收益策略（本地估算，非投资建议）。</div>
-        <div id="wwYieldOptimizerHint" style="background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.28);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--text-muted)"></div>
-        <div id="wwYieldOptimizerBody" style="display:flex;flex-direction:column;gap:10px"></div>
-        <p style="font-size:10px;color:var(--text-muted);margin-top:12px;line-height:1.5">智能合约与质押均有本金风险，请以官方文档与链上数据为准。</p>
-      </div>
-    </div>
+    
 
     <!-- 解锁日历 -->
-    <div class="page" id="page-token-unlock-calendar">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">解锁日历</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">主流项目<b>代币解锁</b>日程（示例数据，非实时行情；请以项目方公告为准）。</div>
-        <div id="wwUnlockCalendarBody" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-    </div>
+    
 
     <!-- 链上身份 -->
-    <div class="page" id="page-identity">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">链上身份</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">将 <b>ENS 名称</b>与社交资料与当前钱包关联（仅保存在本机，不上传服务器）。链上解析 ENS 需在支持的网络使用对应地址。</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">ENS / 域名</div>
-          <input id="wwIdentityEns" type="text" placeholder="例如 vitalik.eth" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">X (Twitter)</div>
-          <input id="wwIdentityTwitter" type="text" placeholder="@handle" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Farcaster / Lens（备注）</div>
-          <input id="wwIdentitySocial2" type="text" placeholder="FID 或 @lens/handle" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
-        </div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-top:4px" onclick="if(typeof wwIdentitySave==='function')wwIdentitySave()">保存到本机</button>
-        <p style="font-size:10px;color:var(--text-muted);margin-top:12px;line-height:1.5">提示：在第三方 DApp 中仍需自行验证合约与签名请求。</p>
-      </div>
-    </div>
+    
 
     <!-- 数据洞察 -->
-    <div class="page" id="page-analytics">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">数据洞察</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">基于首页<b>最近交易缓存</b>的本地统计（示意）。刷新交易列表后数据更新。</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">近7日活跃热度（示意）</div>
-        <div id="wwAnalyticsHeatmap" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:18px"></div>
-        <div id="wwAnalyticsTopTokens" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
-        <div id="wwAnalyticsSummary" style="font-size:12px;color:var(--text-muted);line-height:1.6"></div>
-      </div>
-    </div>
+    
 
     <!-- 定期转账 -->
-    <div class="page" id="page-recurring">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">定期转账</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在本机保存<b>计划任务</b>（示意）：到达间隔后推送提醒，不会自动扣款；实际转账仍需您手动确认。</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">收款地址</div>
-          <input id="wwRecurringAddr" type="text" autocomplete="off" placeholder="TRX / ETH 地址" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
-        </div>
-        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
-          <label style="flex:1;min-width:120px;display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;color:var(--text-muted)">金额（示意）</span>
-            <input id="wwRecurringAmt" type="text" inputmode="decimal" placeholder="0.0" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
-          </label>
-          <label style="flex:1;min-width:120px;display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;color:var(--text-muted)">间隔（天）</span>
-            <input id="wwRecurringDays" type="text" inputmode="numeric" placeholder="7" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
-          </label>
-        </div>
-        <label style="display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px;color:var(--text)">
-          <input type="checkbox" id="wwRecurringEnabled" style="width:18px;height:18px;accent-color:var(--gold)" />
-          <span>启用此计划</span>
-        </label>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px" onclick="if(typeof wwRecurringAdd==='function')wwRecurringAdd()">添加到计划列表</button>
-        <div id="wwRecurringList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
-      </div>
-    </div>
+    
 
     <!-- 转账白名单 -->
-    <div class="page" id="page-token-whitelist">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">转账白名单</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="background:rgba(200,80,80,0.08);border:1px solid rgba(200,80,80,0.28);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;color:var(--text-muted)">开启后，<b>仅允许</b>向下方列表中的地址发起转账（本机校验）。请谨慎启用，并确保列表完整。</div>
-        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
-          <span style="font-size:14px;color:var(--text)">启用白名单模式</span>
-          <input type="checkbox" id="wwWhitelistEnabled" onchange="if(typeof wwWhitelistSave==='function')wwWhitelistSave()" style="width:20px;height:20px;accent-color:var(--gold)" />
-        </label>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">每行一个地址（TRX / ETH / BTC 等）</div>
-        <textarea id="wwWhitelistTextarea" rows="8" placeholder="T…&#10;0x…" autocomplete="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;line-height:1.5;resize:vertical" onchange="if(typeof wwWhitelistSave==='function')wwWhitelistSave()" onblur="if(typeof wwWhitelistSave==='function')wwWhitelistSave()"></textarea>
-        <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px" onclick="if(typeof wwWhitelistSave==='function')wwWhitelistSave()">保存白名单</button>
-      </div>
-    </div>
+    
 
     <!-- 继承与受益人 -->
-    <div class="page" id="page-inheritance">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">继承与受益人</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">仅作<b>本机备忘</b>：记录您希望家人知晓的受益地址或说明。链上无法自动执行继承；请结合法律遗嘱与托管方案。</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">受益人 / 备用收款地址</div>
-          <input id="wwInheritanceBeneficiary" type="text" autocomplete="off" placeholder="公链地址" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">备注（联系方式、托管说明等）</div>
-          <textarea id="wwInheritanceNote" rows="4" placeholder="仅保存在本机" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;line-height:1.5;resize:vertical"></textarea>
-        </div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px" onclick="if(typeof wwInheritanceSave==='function')wwInheritanceSave()">保存备忘</button>
-      </div>
-    </div>
+    
 
     <!-- DAO 治理（本机示意） -->
-    <div class="page" id="page-dao">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">DAO 治理</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">以下为<b>示意</b>治理提案：投票仅保存在本机，用于演示界面；链上治理请前往对应项目的官方入口。</div>
-        <div id="wwDaoProposalList" style="display:flex;flex-direction:column;gap:12px"></div>
-      </div>
-    </div>
+    
 
     <!-- 钱包信誉分 -->
-    <div class="page" id="page-reputation">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">钱包信誉分</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="background:linear-gradient(135deg,rgba(98,126,234,0.12),transparent);border:1px solid rgba(98,126,234,0.35);border-radius:16px;padding:16px;margin-bottom:16px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">综合评分（本机估算）</div>
-          <div style="font-size:36px;font-weight:800;color:var(--gold);line-height:1" id="wwReputationScoreBig">--</div>
-          <div style="margin-top:12px;height:8px;border-radius:8px;background:var(--bg3);overflow:hidden">
-            <div id="wwReputationBar" style="height:100%;width:0%;background:linear-gradient(90deg,#627eea,#c8a84b);border-radius:8px;transition:width 0.4s ease"></div>
-          </div>
-          <p style="font-size:12px;color:var(--text-muted);margin-top:12px;line-height:1.6" id="wwReputationExplain">根据本机交易记录条数、安全设置与 DAO 参与度等估算，不代表链上信用或征信。</p>
-        </div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:12px;line-height:1.65;color:var(--text-muted)">
-          <div style="font-weight:600;color:var(--text);margin-bottom:8px">计分说明</div>
-          <ul style="margin:0;padding-left:18px;line-height:1.8">
-            <li>交易活跃度（历史条数）</li>
-            <li>钱包安全分（PIN 与备份）</li>
-            <li>本机 DAO 投票参与次数</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- 借贷协议（本机示意） -->
-    <div class="page" id="page-lending">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">借贷协议</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">以下为<b>示意</b>市场利率与操作入口，数据为本地占位；真实存借请前往 Aave、Compound、JustLend 等官方 dApp。</div>
-        <div id="wwLendingMarkets" style="display:flex;flex-direction:column;gap:12px"></div>
-        <button type="button" class="btn-secondary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof showToast==='function')showToast('请通过 DApp 浏览器打开官方借贷协议','info',2400)">在 DApp 中打开协议</button>
-      </div>
-    </div>
+    
 
     <!-- 永续合约持仓（本机示意） -->
-    <div class="page" id="page-perp-futures">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">永续合约</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-          <div>
-            <div style="font-size:11px;color:var(--text-muted)">未实现盈亏（示意）</div>
-            <div id="wwPerpUnrealizedPnl" style="font-size:22px;font-weight:800;color:var(--gold)">—</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;color:var(--text-muted)">持仓数</div>
-            <div id="wwPerpOpenCount" style="font-size:18px;font-weight:700;color:var(--text)">0</div>
-          </div>
-        </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.55">以下为<b>本地演示</b>持仓列表；连接交易所 API 后可替换为真实数据。</div>
-        <div id="wwPerpPositions" style="display:flex;flex-direction:column;gap:10px"></div>
-        <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof wwPerpAddDemo==='function')wwPerpAddDemo()">添加示例持仓</button>
-      </div>
-    </div>
+    
 
     <!-- 期权（基础界面示意） -->
-    <div class="page" id="page-options">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">期权</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">简易期权询价界面（<b>示意</b>）：权利金为本地估算公式，非链上报价。</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
-          <label style="display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;color:var(--text-muted)">标的</span>
-            <select id="wwOptUnderlying" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" onchange="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()">
-              <option value="ETH">ETH</option>
-              <option value="BTC">BTC</option>
-              <option value="TRX">TRX</option>
-            </select>
-          </label>
-          <label style="display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;color:var(--text-muted)">方向</span>
-            <select id="wwOptSide" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" onchange="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()">
-              <option value="call">看涨 Call</option>
-              <option value="put">看跌 Put</option>
-            </select>
-          </label>
-          <label style="display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;color:var(--text-muted)">行权价 (USD)</span>
-            <input id="wwOptStrike" type="text" inputmode="decimal" placeholder="例如 3500" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" oninput="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()" />
-          </label>
-          <label style="display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;color:var(--text-muted)">到期（天）</span>
-            <input id="wwOptDays" type="text" inputmode="numeric" placeholder="30" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" oninput="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()" />
-          </label>
-          <label style="display:flex;flex-direction:column;gap:4px">
-            <span style="font-size:11px;color:var(--text-muted)">合约数量（张·示意）</span>
-            <input id="wwOptQty" type="text" inputmode="decimal" placeholder="1" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" oninput="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()" />
-          </label>
-        </div>
-        <div style="margin-top:16px;background:linear-gradient(135deg,rgba(200,168,75,0.1),transparent);border:1px solid rgba(200,168,75,0.35);border-radius:14px;padding:16px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">参考权利金（示意）</div>
-          <div id="wwOptPremiumEst" style="font-size:28px;font-weight:800;color:var(--gold)">—</div>
-          <div id="wwOptExplain" style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.55"></div>
-        </div>
-        <button type="button" class="btn-primary" style="width:100%;margin-top:16px;padding:14px" onclick="if(typeof showToast==='function')showToast('演示环境不支持真实下单','info',2200)">预览订单（示意）</button>
-      </div>
-    </div>
+    
 
     <!-- 收益聚合对比（本机示意） -->
-    <div class="page" id="page-yield-aggregator">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">收益聚合</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">并排对比 <b>Aave</b>、<b>Compound</b>、<b>Venus</b> 等协议的参考供应 APY（<b>本地占位</b>，非实时链上）。</div>
-        <div id="wwYieldAggTable" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px" onclick="if(typeof wwYieldAggRefreshDemo==='function')wwYieldAggRefreshDemo()">刷新示例利率</button>
-      </div>
-    </div>
+    
 
     <!-- 清算保护预警（本机示意） -->
-    <div class="page" id="page-liquidation-alerts">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">清算预警</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">当健康因子 / 抵押率低于阈值时提醒（浏览器通知需授权）。数据为<b>本机演示</b>。</div>
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">预警阈值：抵押率 &lt; （%）</div>
-          <input id="wwLiqThreshold" type="text" inputmode="decimal" placeholder="130" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px" onchange="if(typeof wwLiquidationSaveThreshold==='function')wwLiquidationSaveThreshold()" />
-          <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--text)">
-            <input type="checkbox" id="wwLiqNotify" style="width:18px;height:18px;accent-color:var(--gold)" onchange="if(typeof wwLiquidationSaveThreshold==='function')wwLiquidationSaveThreshold()" />
-            启用浏览器通知
-          </label>
-        </div>
-        <div id="wwLiquidationList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
-        <button type="button" class="btn-primary" style="width:100%;padding:12px;margin-bottom:10px" onclick="if(typeof wwLiquidationScanDemo==='function')wwLiquidationScanDemo()">扫描示例仓位</button>
-      </div>
-    </div>
+    
 
     <!-- Launchpad / IDO（本机示意） -->
-    <div class="page" id="page-launchpad">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">Launchpad</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">即将开始的 <b>IDO / IEO</b> 项目列表为<b>占位</b>；参与需前往官方平台并完成 KYC。</div>
-        <div id="wwLaunchpadList" style="display:flex;flex-direction:column;gap:12px"></div>
-        <button type="button" class="btn-secondary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof showToast==='function')showToast('演示环境不提交真实申购','info',2200)">连接官方 Launchpad</button>
-      </div>
-    </div>
+    
 
     <!-- 社交跟单榜（示意） -->
-    <div class="page" id="page-social-leaderboard">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">跟单榜</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">演示地址的<b>模拟收益率</b>排行；「复制地址」仅填入转账收款框，不构成投资建议。</div>
-        <div id="wwSocialLeaderboardList" style="display:flex;flex-direction:column;gap:12px"></div>
-      </div>
-    </div>
+    
 
     <!-- 自动组合再平衡 -->
-    <div class="page" id="page-auto-rebalance">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">自动再平衡</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">当 USDT / TRX / ETH / BTC 的美元占比相对<b>目标权重</b>偏离超过阈值时，本页给出调仓提示（本机计算，不自动下单）。</div>
-        <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;color:var(--text)">
-          <input type="checkbox" id="wwAutoRebalEnable" onchange="if(typeof wwAutoRebalanceSave==='function')wwAutoRebalanceSave()" style="width:18px;height:18px;accent-color:var(--gold)" />
-          启用偏离提醒（本地）
-        </label>
-        <label style="display:block;margin-bottom:8px;font-size:11px;color:var(--text-muted)">偏离阈值 %</label>
-        <input id="wwAutoRebalThreshold" type="number" min="1" max="50" step="1" value="8" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:14px" oninput="if(typeof wwAutoRebalanceSave==='function')wwAutoRebalanceSave()" />
-        <div id="wwAutoRebalanceBody" style="display:flex;flex-direction:column;gap:10px"></div>
-        <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof wwAutoRebalancePopulate==='function')wwAutoRebalancePopulate()">重新计算</button>
-      </div>
-    </div>
+    
 
     <!-- 舆情 / 情绪（示意） -->
-    <div class="page" id="page-sentiment">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">舆情分析</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">与首页行情代币联动，展示<b>模拟</b>多空情绪分数（-100～+100），非真实新闻 NLP。</div>
-        <div id="wwSentimentList" style="display:flex;flex-direction:column;gap:12px"></div>
-      </div>
-    </div>
+    
 
     <!-- 链上消息（本地加密载荷，可随转账备注传播） -->
-    <div class="page" id="page-onchain-messaging">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">链上消息</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在本地用密码将文本<b>加密</b>为载荷；收款方可凭约定密码解密。密文可放入转账备注或另行发送（具体链上备注长度以网络为准）。</div>
-        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">消息内容</label>
-        <textarea id="wwOnchainMsgInput" rows="4" placeholder="输入要加密的短消息…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;resize:vertical;margin-bottom:12px"></textarea>
-        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">加密密码（至少 4 位）</label>
-        <input id="wwOnchainMsgPass" type="password" placeholder="与收款方线下约定" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" />
-        <button type="button" class="btn-primary" style="width:100%;padding:12px;margin-bottom:10px" onclick="if(typeof wwOnchainMsgEncrypt==='function')wwOnchainMsgEncrypt()">生成本地加密载荷</button>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">密文预览（截断）</div>
-        <div id="wwOnchainMsgPreview" style="font-size:10px;color:var(--text);word-break:break-all;line-height:1.5;padding:10px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);min-height:48px;margin-bottom:12px"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="if(typeof wwOnchainMsgCopy==='function')wwOnchainMsgCopy()">复制密文</button>
-          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="if(typeof wwOnchainMsgGoTransfer==='function')wwOnchainMsgGoTransfer()">前往转账</button>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- 备份二维码（加密 JSON，非明文助记词） -->
-    <div class="page" id="page-backup-qr">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">备份二维码</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">生成含<b>地址与备份标记</b>的 AES-GCM 加密包二维码，需与解密密码配合使用；请勿将密码与二维码存放在同一处。</div>
-        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">导出密码</label>
-        <input id="wwBackupQrPass" type="password" placeholder="解密时须使用同一密码" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:14px" />
-        <div style="display:flex;justify-content:center;margin-bottom:14px">
-          <canvas id="wwBackupQrCanvas" width="200" height="200" style="border-radius:16px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.25)"></canvas>
-        </div>
-        <button type="button" class="btn-primary" style="width:100%;padding:12px" onclick="if(typeof wwBackupQrGenerate==='function')wwBackupQrGenerate()">生成加密备份二维码</button>
-      </div>
-    </div>
+    
 
     <!-- 免 Gas / 元交易（偏好示意） -->
-    <div class="page" id="page-gasless">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">免 Gas / 元交易</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">开启后，发送界面将<b>提示</b>可选用中继器代付 Gas（EIP-2771 / 4337 等需合约与节点支持；此处仅为本机偏好与说明）。</div>
-        <label style="display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px;color:var(--text)">
-          <input type="checkbox" id="wwGaslessEnable" onchange="if(typeof wwGaslessSave==='function')wwGaslessSave()" style="width:18px;height:18px;accent-color:var(--gold)" />
-          优先展示元交易 / 中继路由（示意）
-        </label>
-        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">中继 / Bundler URL（可选，仅备忘）</label>
-        <input id="wwGaslessRelay" type="text" placeholder="https://…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;margin-bottom:14px" oninput="if(typeof wwGaslessSave==='function')wwGaslessSave()" />
-        <div style="font-size:11px;color:var(--text-muted);line-height:1.65;padding:12px;border-radius:12px;background:rgba(98,126,234,0.08);border:1px solid rgba(98,126,234,0.25)">零 Gas 体验通常依赖项目方赞助或 Paymaster；请仅使用可信中继，并注意 MEV 与延迟风险。</div>
-      </div>
-    </div>
+    
 
     <!-- 恢复演练（安全模式） -->
-    <div class="page" id="page-recovery-test">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">恢复演练</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 40px">
-        <div style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.3);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.65;color:var(--text-muted)">
-          <b style="color:var(--gold)">安全模式</b>：仅在设备本地校验助记词派生地址是否与当前钱包一致，不会上传网络。请在私密环境操作，完成后请清除输入。
-        </div>
-        <div style="font-size:14px;color:var(--text);margin-bottom:10px;font-weight:600">输入助记词（与备份语言一致）</div>
-        <textarea id="recoveryTestInput" rows="5" placeholder="空格分隔的 12 / 15 / 18 / 21 / 24 个词…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;resize:vertical"></textarea>
-        <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:14px" onclick="if(typeof wwRecoveryTestSubmit==='function')wwRecoveryTestSubmit()">验证是否与当前钱包一致</button>
-        <button type="button" class="btn-secondary" style="width:100%;margin-top:10px;padding:12px" onclick="if(typeof wwRecoveryTestClear==='function')wwRecoveryTestClear()">清除输入</button>
-      </div>
-    </div>
+    
 
     <!-- K线 / 行情（图表示意） -->
-    <div class="page" id="page-charts">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">行情</div>
-        <div class="nav-right"></div>
-      </div>
-      <div class="u14" style="padding:16px 20px 32px">
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1H</button>
-          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">4H</button>
-          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1D</button>
-          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1W</button>
-        </div>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.55">TradingView 风格 K 线占位（本地示意，非实时行情源）。</div>
-        <div id="wwCandleChartHost" style="height:220px;border-radius:14px;border:1px solid var(--border);background:linear-gradient(180deg,#0e1218 0%,#0a0a12 100%);position:relative;overflow:hidden">
-          <div style="position:absolute;inset:0;opacity:0.22;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:28px 22px"></div>
-          <div id="wwCandleBars" style="position:absolute;left:0;right:0;bottom:24px;top:16px;display:flex;align-items:flex-end;justify-content:space-around;gap:2px;padding:0 8px"></div>
-          <div style="position:absolute;bottom:6px;left:10px;font-size:10px;color:var(--text-muted)">OHLC · 示意</div>
-        </div>
-        <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.6">完整图表可接入 TradingView Widget 或自建行情；此处仅展示布局与蜡烛占位。</p>
-      </div>
-    </div>
+    
 
     <!-- DApp 浏览器 -->
-    <div class="page" id="page-dapp">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">DApp</div>
-        <div class="nav-right" onclick="if(typeof wwDappReload==='function')wwDappReload()" style="font-size:13px;color:var(--gold);cursor:pointer">刷新</div>
-      </div>
-      <div class="u14" style="padding-bottom:24px">
-        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:stretch">
-          <input type="text" id="dappUrlInput" inputmode="url" autocomplete="off" placeholder="https:// 或域名" style="flex:1;min-width:0;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter'&&typeof wwLoadDappUrl==='function')wwLoadDappUrl()" />
-          <button type="button" class="btn-primary" style="flex-shrink:0;padding:12px 16px" onclick="wwLoadDappUrl()">打开</button>
-        </div>
-        <p style="font-size:11px;color:var(--text-muted);margin:0 0 10px;line-height:1.5">部分站点禁止嵌入网页，若无法显示请在系统浏览器中打开。</p>
-        <iframe id="dappFrame" title="DApp" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-top-navigation-by-user-activation" style="width:100%;height:min(72vh,560px);min-height:320px;border:1px solid var(--border);border-radius:14px;background:#0a0a12"></iframe>
-      </div>
-    </div>
+    
 
     <!-- Swap页 -->
     <div class="page" id="page-swap">
@@ -3014,20 +2258,7 @@ body {
       </div>
     </div>
 
-    <div class="page" id="page-swap-records">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-swap')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">兑换记录</div>
-      </div>
-      <div style="padding:16px 18px;flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column">
-        <div id="swapRecordsList" style="display:none;flex:1"></div>
-        <div id="swapRecordsEmpty" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px 16px 48px;min-height:220px">
-          <div style="font-size:52px;line-height:1;margin-bottom:18px">💱</div>
-          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px;letter-spacing:0.3px">暂无兑换记录</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:1.75;max-width:300px">在兑换页完成一笔兑换后，历史记录会出现在这里。</div>
-        </div>
-      </div>
-    </div>
+    
 
 
     <!-- ══ 导入钱包页 ══ -->
@@ -3065,228 +2296,19 @@ body {
     </div>
 
     <!-- ═══ 礼物主页 ═══ -->
-    <div class="page" id="page-hongbao">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTab('tab-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">发礼物</div>
-        <div class="nav-right" onclick="goTo('page-hb-records')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
-      </div>
-      <div class="u14">
-
-        <!-- 礼物文化预览 -->
-        <div id="giftPreview" style="background:var(--bg2);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;border:1px solid var(--border)">
-          <span id="giftIcon" class="u1">🎁</span>
-          <div class="u4">
-            <div id="giftTitle" style="font-size:13px;font-weight:600;color:var(--gold)">礼物</div>
-            <div id="giftSubtitle" style="font-size:11px;color:var(--text-muted)" id="giftFestival">春节·生日·节日</div>
-          </div>
-        </div>
-        <!-- 类型切换 -->
-        <div style="display:flex;gap:0;background:var(--bg2);border-radius:12px;padding:3px;margin-bottom:18px;border:1px solid var(--border)">
-          <div id="btnNormal" id="hbTypeNormal" onclick="switchHbType('normal')" style="flex:1;text-align:center;padding:8px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,#b8982a,#e8c850);color:#0a0a05;transition:all 0.2s">普通礼物</div>
-          <div id="btnLucky" id="hbTypeLucky" onclick="switchHbType('lucky')" style="flex:1;text-align:center;padding:8px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);transition:all 0.2s">随机礼物</div>
-        </div>
-
-        <!-- 金额输入 -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:12px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">总金额</div>
-          <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px">
-            <span style="font-size:22px;color:var(--gold)">$</span>
-            <input id="hbAmount" type="number" value="100" oninput="updateHbPreview()" style="flex:1;background:none;border:none;font-size:36px;font-weight:800;color:var(--text);outline:none;width:100%" />
-            <span style="font-size:14px;color:var(--text-muted)">USDT</span>
-          </div>
-          <div style="display:flex;gap:8px">
-            <div onclick="setAmt(10)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">10</div>
-            <div onclick="setAmt(50)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">50</div>
-            <div onclick="setAmt(100)" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));border:1px solid rgba(200,168,75,0.3);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--gold);cursor:pointer">100</div>
-            <div onclick="setAmt(500)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">500</div>
-            <div onclick="setAmt(1000)" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">1000</div>
-          </div>
-        </div>
-
-        <!-- 个数 + 每人金额 -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px">
-          <div style="display:flex;align-items:center;margin-bottom:14px">
-            <div class="u4">
-              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">礼物个数</div>
-              <div style="font-size:15px;color:var(--text)" id="hbCountLabel">5 个</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:14px">
-              <div onclick="chgCnt(-1)" style="width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--gold)">-</div>
-              <div id="hbCountVal" aria-label="hbCountDisplay" style="font-size:22px;font-weight:700;color:var(--text);min-width:28px;text-align:center">5</div>
-              <div onclick="chgCnt(1)" style="width:32px;height:32px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--gold)">+</div>
-            </div>
-          </div>
-          <div style="height:1px;background:var(--border);margin-bottom:12px"></div>
-          <div style="display:flex;justify-content:space-between;font-size:13px">
-            <span style="color:var(--text-muted)" id="hbTypeLabel">每人金额</span>
-            <span style="color:var(--gold-light);font-weight:600" id="hbPerPerson">20 USDT</span>
-          </div>
-        </div>
-
-        <!-- 祝福语 -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
-          <span style="font-size:18px">🎊</span>
-          <input id="hbBlessing" value="恭喜发财，万事如意" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none" />
-          <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;cursor:pointer" onclick="randomBlessing()">换一句</span>
-        </div>
-
-        <!-- 有效期 -->
-        <div style="display:flex;gap:8px;margin-bottom:18px">
-          <div onclick="setExpiry(24)" id="exp24" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04));border:1px solid rgba(200,168,75,0.3);border-radius:10px;padding:8px 0;text-align:center;font-size:12px;color:var(--gold);cursor:pointer">24小时</div>
-          <div onclick="setExpiry(72)" id="exp72" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">72小时</div>
-          <div onclick="setExpiry(168)" id="exp168" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px 0;text-align:center;font-size:12px;color:var(--text-muted);cursor:pointer">7天</div>
-        </div>
-
-        <!-- 提示 -->
-        <div style="background:rgba(255,180,0,0.06);border:1px solid rgba(255,180,0,0.15);border-radius:12px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#aa8844;line-height:1.7">
-          💡 系统将生成一句诗词口令，将口令发给朋友，朋友在WorldToken输入即可领取
-        </div>
-
-        <button class="btn-primary" onclick="createHongbao()">🎁 生成礼物口令</button>
-      </div>
-    </div>
+    
 
     <!-- ═══ 口令展示页（发送后） ═══ -->
-    <div class="page" id="page-hb-keyword">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">口令已生成</div>
-      </div>
-      <div style="padding:20px 18px;flex:1;overflow-y:auto">
-
-        <!-- 礼物封面 -->
-        <div style="background:linear-gradient(160deg,#6b0000,#b81800,#e03000);border-radius:24px;padding:28px 20px;margin-bottom:20px;position:relative;overflow:hidden">
-          <div style="position:absolute;right:-20px;top:-20px;font-size:120px;opacity:0.05">🎁</div>
-          <div style="font-size:44px;text-align:center;margin-bottom:12px">🎁</div>
-          <div style="font-size:15px;color:rgba(255,255,255,0.8);text-align:center;margin-bottom:18px" id="kwBlessingText">恭喜发财，万事如意</div>
-
-          <!-- 口令核心区 -->
-          <div style="background:rgba(0,0,0,0.25);border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
-            <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-bottom:10px">口 令</div>
-            <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:5px;margin-bottom:10px" id="kwKeyword">举头望明月</div>
-            <div style="font-size:11px;color:rgba(255,255,255,0.5)">朋友在WorldToken搜索此口令即可领取</div>
-          </div>
-
-          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.6)">
-            <span id="kwAmtText">100 USDT</span>
-            <span id="kwCntText">共5份礼物</span>
-            <span id="kwExpText">有效期24小时</span>
-          </div>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div style="display:flex;gap:10px;margin-bottom:14px">
-          <div onclick="copyKw()" id="copyKwBtn" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.4);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer;transition:all 0.2s">
-            <div class="u15">📋</div>
-            <div style="font-size:12px;color:var(--gold)">复制口令</div>
-          </div>
-          <div onclick="shareKw()" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
-            <div class="u15">📤</div>
-            <div style="font-size:12px;color:var(--text-muted)">分享给朋友</div>
-          </div>
-          <div onclick="showHbQR()" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
-            <div class="u15">📱</div>
-            <div style="font-size:12px;color:var(--text-muted)">二维码</div>
-          </div>
-        </div>
-
-        <!-- 复制提示文案 -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">发给朋友的文案（点击复制）</div>
-          <div id="kwShareText" onclick="copyShareText()" style="font-size:13px;color:var(--text);line-height:1.7;cursor:pointer">
-            🎁 我给你发了一个WorldToken礼物！<br>
-            口令：<span style="color:var(--gold);font-weight:700" id="kwShareKeyword">举头望明月</span><br>
-            打开WorldToken → 输入口令 → 立即领取 💰<br>
-            <span style="color:var(--text-muted);font-size:11px">有效期24小时，先到先得</span>
-          </div>
-        </div>
-
-        <!-- 领取状态 -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
-          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;display:flex;justify-content:space-between">
-            <span>领取进度</span>
-            <span style="color:var(--gold)" id="kwProgress">0 / 5 已领取</span>
-          </div>
-          <div style="background:var(--bg3);border-radius:6px;height:6px;overflow:hidden">
-            <div id="kwProgressBar" style="background:linear-gradient(90deg,#c8a84b,#f0d070);height:100%;width:0%;transition:width 0.5s;border-radius:6px"></div>
-          </div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:center">等待朋友输入口令领取...</div>
-        </div>
-
-      </div>
-    </div>
+    
 
     <!-- ═══ 领取礼物页 ═══ -->
-    <div class="page" id="page-claim">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">领取礼物</div>
-      </div>
-      <div style="padding:28px 20px;flex:1;display:flex;flex-direction:column;align-items:center">
-        <div style="font-size:80px;margin-bottom:20px;animation:bounce 1s infinite alternate">🎁</div>
-        <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">输入口令，领取礼物</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:32px;text-align:center;line-height:1.8">
-          朋友发给你的诗词口令<br>在下方输入即可领取加密货币礼物
-        </div>
-
-        <!-- 口令输入框 -->
-        <div style="width:100%;background:var(--bg2);border:2px solid var(--border);border-radius:20px;padding:20px;margin-bottom:16px;transition:border-color 0.2s" id="claimInputBox" onclick="document.getElementById('claimInput').focus()">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">输入口令</div>
-          <input id="claimInput" placeholder="例：举头望明月" oninput="onClaimInput()" style="width:100%;background:none;border:none;font-size:22px;font-weight:700;color:var(--gold-light);outline:none;text-align:center;letter-spacing:4px" />
-        </div>
-
-        <!-- 常见口令提示 -->
-        <div style="width:100%;margin-bottom:24px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-align:center">最近收到的口令</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center" id="recentKeywords">
-            <div onclick="fillKeyword('举头望明月')" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--text-dim);cursor:pointer">举头望明月</div>
-            <div onclick="fillKeyword('春风得意马蹄')" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;color:var(--text-dim);cursor:pointer">春风得意马蹄</div>
-          </div>
-        </div>
-
-        <button class="btn-primary" style="width:100%" onclick="submitClaim()">🎊 立即领取</button>
-      </div>
-    </div>
+    
 
     <!-- ═══ 领取成功页 ═══ -->
-    <div class="page" id="page-claimed">
-      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;background:radial-gradient(ellipse 80% 60% at 50% 30%,rgba(200,100,0,0.15),transparent)">
-        <div style="font-size:80px;margin-bottom:16px">🎉</div>
-        <div style="font-size:24px;font-weight:800;color:var(--gold-light);margin-bottom:8px">恭喜你！</div>
-        <div style="font-size:14px;color:var(--text-muted);margin-bottom:32px">成功领取礼物口令</div>
-
-        <!-- 金额展示 -->
-        <div style="background:linear-gradient(135deg,#12120a,#1a1a08);border:2px solid rgba(200,168,75,0.4);border-radius:24px;padding:28px 32px;text-align:center;margin-bottom:24px;box-shadow:0 0 30px rgba(200,168,75,0.15)">
-          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">你领到了</div>
-          <div style="font-size:48px;font-weight:800;color:var(--gold-light)" id="claimedAmount">20</div>
-          <div style="font-size:16px;color:var(--gold);margin-top:4px">USDT</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-top:12px" id="claimedRank">第 2 个领取 · 共5份礼物</div>
-        </div>
-
-        <!-- 口令 -->
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px">
-          口令：<span style="color:var(--gold);font-weight:600" id="claimedKeyword">举头望明月</span>
-        </div>
-
-        <button class="btn-primary" style="width:100%;margin-bottom:10px" onclick="goTo('page-home')">查看资产</button>
-        <button class="btn-secondary" onclick="goTo('page-claim')">再领一个</button>
-      </div>
-    </div>
+    
 
     <!-- ═══ 礼物记录页 ═══ -->
-    <div class="page" id="page-hb-records">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">礼物记录</div>
-      </div>
-      <div class="u14" id="hbRecordsList">
-        <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px">
-          <div class="u10">🎁</div>
-          暂无礼物记录
-        </div>
-      </div>
-    </div>
+    
 
 
 
@@ -3323,14 +2345,7 @@ body {
 
 
     <!-- 验证成功页 -->
-    <div class="page" id="page-verify-success" style="flex-direction:column;align-items:center;justify-content:center;background:var(--bg)">
-      <div style="font-size:80px;margin-bottom:20px;animation:pulse 0.6s ease">✅</div>
-      <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px">验证成功！</div>
-      <div style="font-size:14px;color:var(--text-muted);margin-bottom:40px;text-align:center;padding:0 30px">助记词已安全保存，钱包创建完成</div>
-      <button class="btn-primary" style="width:240px" onclick="updateAddr();document.getElementById('tabBar').style.display='flex';setTimeout(loadBalances,500);goTo('page-home')">
-        🚀 开始使用
-      </button>
-    </div>
+    
 
   <!-- PIN 解锁（继续使用钱包） -->
   <div class="overlay" id="pinUnlockOverlay" onclick="if(event.target===this)closePinUnlock()">
@@ -3588,18 +2603,7 @@ body {
 </style>
 
     <!-- 代币授权管理页 -->
-    <div id="page-allowance" class="page">
-      <div class="nav-bar">
-        <span class="nav-back" onclick="goTo('page-settings')">‹</span>
-        <span class="nav-title">代币授权管理</span>
-      </div>
-      <div style="padding:16px">
-        <div style="color:var(--text-muted);font-size:13px;margin-bottom:16px">管理 dApp 对你代币的访问权限</div>
-        <div id="allowanceList">
-          <div style="text-align:center;padding:40px;color:var(--text-muted)">暂无活跃授权</div>
-        </div>
-      </div>
-    </div>
+    
 
 <script>
 // 强制清除旧 Service Worker 缓存
