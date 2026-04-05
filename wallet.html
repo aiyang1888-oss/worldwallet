@@ -416,6 +416,8 @@ body {
   display: flex; align-items: center;
   padding: 0 max(18px, env(safe-area-inset-left, 0px)) 0 max(18px, env(safe-area-inset-right, 0px));
   gap: 14px; flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 .nav-back { font-size: 34px; font-weight: 900; color: var(--gold); cursor: pointer; width: 44px; line-height: 1; }
 .nav-title { font-size: 17px; font-weight: 600; color: var(--text); flex: 1; }
@@ -3083,7 +3085,7 @@ body {
     <!-- ══ 导入钱包页 ══ -->
     <div class="page" id="page-import">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-welcome')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" onclick="goTo(window._importBackTarget||'page-welcome')" role="button" tabindex="0" aria-label="返回" style="display:flex;align-items:center;gap:2px;font-size:15px;font-weight:600;color:var(--gold);cursor:pointer;width:auto;min-width:64px;line-height:1;padding:8px 6px 8px 0;margin-left:-4px;box-sizing:border-box"><span style="font-size:30px;font-weight:900;line-height:1">‹</span><span style="letter-spacing:0.04em">返回</span></div>
         <div class="nav-title">导入钱包</div>
         <div class="nav-right"></div>
       </div>
@@ -4712,6 +4714,13 @@ function closeTotpUnlock() {
 }
 
 function goTo(pageId) {
+  try {
+    var curEl = document.querySelector('.page.active');
+    var curId = curEl && curEl.id;
+    if (curId && pageId === 'page-import' && curId !== 'page-import') {
+      window._importBackTarget = curId;
+    }
+  } catch (_ib) {}
   applySeoForPage(pageId);
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   const activePage=document.getElementById(pageId);
