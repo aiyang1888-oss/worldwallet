@@ -195,7 +195,8 @@ body {
   align-content: start;
   box-sizing: border-box;
 }
-#welcomeLangGrid .lang-row {
+#welcomeLangGrid .lang-row:active { transform: scale(0.98); opacity: 0.8; }
+.lang-row {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -259,6 +260,10 @@ body {
 .lang-name { font-size: 10px; color: var(--text-muted); }
 .lang-btn.active .lang-name { color: var(--gold-light); }
 
+.btn-primary:active, .btn-secondary:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
 .btn-primary {
   background: linear-gradient(135deg, #b8982a, #e8c850);
   color: #0a0a05; border: none; border-radius: 16px;
