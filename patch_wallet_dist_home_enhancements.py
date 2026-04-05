@@ -12,6 +12,20 @@ def main() -> None:
     raw = DIST.read_text(encoding="utf-8")
     orig_lines = len(raw.splitlines())
 
+    # Bundle may already include ticker / pie / fee speed (merged out-of-order vs this script).
+    _markers = (
+        'id="wwPriceTickerBar"',
+        "function getTransferFeeSpeed(",
+        "function drawPortfolioPieChart(",
+    )
+    if all(m in raw for m in _markers):
+        sz = DIST.stat().st_size
+        lines = len(raw.splitlines())
+        print(f"OK: already applied — {DIST} ({lines} lines, {sz} bytes)")
+        if sz < 800_000:
+            raise SystemExit(f"ERROR: file size {sz} must stay above 800000 bytes")
+        return
+
     # ── CSS (ticker + pie + speed buttons) ───────────────────────────
     needle_css = """.home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
 .transfer-contacts-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; }"""
