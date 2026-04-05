@@ -13,7 +13,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-
 document.addEventListener('click', function(ev) {
   var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
   if (!el) return;
@@ -21,7 +20,6 @@ document.addEventListener('click', function(ev) {
 }, true);
 
 var _qrLoadPromise=null;
-
 
 function updateImportWordCount() {
   const input = document.getElementById('importPaste');
@@ -76,7 +74,6 @@ const LANG_INFO = {
 
 /** 与系统语言对齐：navigator.language(s) → LANG_INFO 键，未支持则回退 zh */
 
-
 // 扩展语言词库（万语地址用）
 // ⏱️ 词库懒加载：WW_WORDS_EXTRA 在地址生成时按需访问
 const WW_WORDS_EXTRA = {
@@ -85,7 +82,6 @@ const WW_WORDS_EXTRA = {
 };
 
 // ── 补充缺失函数定义 ──────────────────────────────────────────
-
 
 // ── 万语地址系统 ──────────────────────────────────────────
 const ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
@@ -129,7 +125,6 @@ var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star'
 // ═══════════════════════════════════════════════════════
 // WT_WORDLISTS loaded from wordlists.js
 
-
 // 英文词 → 索引（BIP39标准索引）
 const EN_WORD_INDEX = {};
 WT_WORDLISTS.en.forEach((w, i) => EN_WORD_INDEX[w] = i);
@@ -148,9 +143,7 @@ Object.keys(WT_WORDLISTS).forEach(lang => {
  * @returns {string} 目标语言助记词（空格分隔）
  */
 
-
 /** 英文 BIP39 词数组 → 当前语言密钥表词条（词数与上方词数选择一致，逐词映射索引） */
-
 
 /**
  * 任意语言助记词 → 英文BIP39助记词
@@ -158,7 +151,6 @@ Object.keys(WT_WORDLISTS).forEach(lang => {
  * @param {string} lang - 输入语言
  * @returns {string} 标准英文助记词
  */
-
 
 const _safeEl = (id) => document.getElementById(id) || {
   textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
@@ -183,14 +175,12 @@ let importGridWordCount = 12;
  * @returns {Promise<CryptoKey>}
  */
 
-
 /**
  * AES-GCM 加密
  * @param {string} plaintext - 明文 JSON 字符串
  * @param {string} pin - 用户 PIN
  * @returns {Promise<{salt:string, iv:string, data:string}>} Base64 编码
  */
-
 
 /**
  * AES-GCM 解密
@@ -199,18 +189,15 @@ let importGridWordCount = 12;
  * @returns {Promise<string>} 解密后的明文
  */
 
-
 /**
  * 保存钱包（敏感数据加密）
  * @param {object} w - 完整钱包对象
  * @param {string} pin - 用户 PIN（无 PIN 则不存敏感数据）
  */
 
-
 /**
  * 加载钱包（只加载公开信息到 REAL_WALLET）
  */
-
 
 /**
  * 解密敏感数据（需要时调用，用完清除）
@@ -219,7 +206,6 @@ let importGridWordCount = 12;
  */
 
 // ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
-
 
 /** 只存公开信息（无 PIN 降级方案） */
 
@@ -259,13 +245,11 @@ function shareReferralLink() {
   }
 }
 
-
 // 内置 BIP39 词表（前128个，生成演示助记词）
 // BIP39 fallback 词表（仅128词，实际创建钱包由 ethers.js 生成完整2048词）
 const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake'];
 
 /** BIP39：12/15/18/21/24 词对应 128/160/192/224/256 bit 熵 */
-
 
 /** 密钥页下拉：与 currentMnemonicLength 同步 */
 
@@ -273,9 +257,7 @@ const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb
 
 /** @param {number} [forcedWordCount] 若传入则按该词数生成（避免与 DOM 不同步） */
 
-
 /** 仅内存 window.TEMP_WALLET：密钥页展示用，不调用 saveWallet / localStorage */
-
 
 async function createNewWallet() {
   showWalletLoading();
@@ -300,7 +282,6 @@ try {
 } catch (_e) {}
 // 钱包昵称 localStorage（仅本机）
 try { if (localStorage.getItem('ww_wallet_nickname') == null) localStorage.setItem('ww_wallet_nickname', ''); } catch (_wn) {}
-
 
 function applyWwTheme() {
   var t = localStorage.getItem('ww_theme') || 'dark';
@@ -1010,12 +991,6 @@ function claimHongbao() {
   submitClaim(); // 调用真实领取
 }
 
-function copyKeyword() {
-  navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
-  const btn = event?.target?.closest('div');
-  if(btn) { const old = btn.textContent; btn.textContent = '✅ 已复制'; setTimeout(()=>btn.textContent=old, 1500); }
-}
-
 function parseAssetDisplayBalance(balId) {
   const el = document.getElementById(balId);
   if(!el) return 0;
@@ -1107,7 +1082,6 @@ async function loadTrxResource() {
     if(card) card.style.display = 'none';
   }
 }
-
 
 function wwGetIdleLockMinutes() {
   try {
@@ -1236,7 +1210,6 @@ function removeTransferContact(addr) {
   setTransferContacts(getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== t));
   renderTransferContactsList();
 }
-
 
 function renderTransferContactsList() {
   const box = document.getElementById('transferContactsList');
@@ -1445,12 +1418,6 @@ function wwTransferWhitelistCheck(rawAddr) {
   } catch (e) { return true; }
 }
 
-var WW_DAO_PROPOSALS = [
-  { id: 'p1', title: '是否将默认滑点提示调整为 0.5%？', summary: '减少新手因滑点过小导致的失败交易（示意）。' },
-  { id: 'p2', title: '是否在设置中默认开启隐私模式？', summary: '首屏隐藏余额，需长按或 PIN 查看（示意）。' },
-  { id: 'p3', title: '是否增加 TRX Gas 不足时的弹窗提醒？', summary: '当 TRX 余额低于阈值时强提醒（示意）。' }
-];
-
 function computeWalletReputationScore() {
   var txs = (typeof window._wwTxHistoryCache !== 'undefined' && window._wwTxHistoryCache) ? window._wwTxHistoryCache : [];
   var nTx = Array.isArray(txs) ? Math.min(txs.length, 200) : 0;
@@ -1502,13 +1469,6 @@ function updateCrossChainSwapCompare() {
   if (best) best.textContent = amtIn > 0 ? better : '';
 }
 
-var WW_LENDING_MARKETS = [
-  { asset: 'USDT', chain: 'TRON', supplyApy: '3.8%', borrowApr: '5.2%', color: '#26a17b' },
-  { asset: 'USDC', chain: 'Ethereum', supplyApy: '4.1%', borrowApr: '5.9%', color: '#2775ca' },
-  { asset: 'ETH', chain: 'Ethereum', supplyApy: '2.4%', borrowApr: '3.6%', color: '#627eea' },
-  { asset: 'TRX', chain: 'TRON', supplyApy: '1.9%', borrowApr: '4.0%', color: '#ff0013' }
-];
-
 function wwOptionsSpotPrice(u) {
   var map = { ETH: 3200, BTC: 64000, TRX: 0.13 };
   return map[u] || 1;
@@ -1539,18 +1499,6 @@ function wwOptionsPopulate() {
 }
 
 var WW_YIELD_AGG_PROTOCOLS = ['Aave V3', 'Compound V3', 'Venus'];
-
-var WW_LAUNCHPAD_PROJECTS = [
-  { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 USDT', status: '即将开始' },
-  { name: 'TronBoost', chain: 'TRON', date: '2026-04-22', allocation: '2,000 TRX', status: '白名单' },
-  { name: 'MetaVault', chain: 'BSC', date: '2026-05-01', allocation: 'TBD', status: '筹备中' }
-];
-
-var WW_SOCIAL_LEADERBOARD_DEMO = [
-  { addr: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', label: 'AlphaVault', roi: 42.3, win: 68 },
-  { addr: 'TXYZopYRdj2D9XRtbG411XZZ3kMfsVk8Q6', label: 'TronWhale', roi: 28.1, win: 55 },
-  { addr: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', label: 'vitalik.eth', roi: 19.4, win: 52 }
-];
 
 function wwOnchainMessagingPopulate() {
   var el = document.getElementById('wwOnchainMsgPreview');
@@ -1869,13 +1817,6 @@ let hbType = 'normal';
 
 const BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
 
-function copyKw() {
-  navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
-  const btn = document.getElementById('copyKwBtn');
-  btn.querySelector('div:last-child').textContent = '✅ 已复制';
-  setTimeout(()=>{ btn.querySelector('div:last-child').textContent = '复制口令'; }, 2000);
-}
-
 function submitClaim() {
   const kw = document.getElementById('claimInput').value.trim();
   if(!kw) { document.getElementById('claimInputBox').style.borderColor='var(--red)'; return; }
@@ -1929,22 +1870,6 @@ function submitClaim() {
 }
 
 let hbCount = 5;
-
-function changeCount(delta) {
-  hbCount = Math.max(1, Math.min(100, hbCount+delta));
-  document.getElementById('hbCountVal').textContent = hbCount;
-  (_safeEl('hbCountDisplay')||document.getElementById('hbCountVal')).textContent = hbCount+' 个';
-  updateHbPreview();
-}
-
-function chgCnt(delta) {
-  hbCount = Math.max(1, Math.min(20, hbCount + delta));
-  const el = document.getElementById('hbCountVal');
-  if(el) el.textContent = hbCount;
-  const label = document.getElementById('hbCountLabel');
-  if(label) label.textContent = hbCount + ' 个';
-  updateHbPreview();
-}
 
 function updateHbPreview() {
   const amount = parseFloat(document.getElementById('hbAmount')?.value)||0;
@@ -2092,19 +2017,6 @@ function calcSwap() {
 
 // 从 CoinGecko 拉实时价格
 const COIN_GECKO_IDS = { usdt:'tether', trx:'tron', eth:'ethereum', btc:'bitcoin', bnb:'binancecoin' };
-async function loadSwapPrices() {
-  try {
-    const ids = ['tether','tron','ethereum','bitcoin','binancecoin'].join(',');
-    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
-    const d = await r.json();
-    const priceMap = { usdt: d.tether?.usd||1, trx: d.tron?.usd||0.12, eth: d.ethereum?.usd||2500, btc: d.bitcoin?.usd||60000, bnb: d.binancecoin?.usd||400 };
-    // 更新 COINS 价格
-    COINS.forEach(coin => { if(priceMap[coin.id]) coin.price = priceMap[coin.id]; });
-    calcSwap();
-    try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc2) {}
-    console.log('兑换价格已更新');
-  } catch(e) { console.log('价格加载失败，使用默认'); }
-}
 
 function closeCoinPicker() { const _ovcoinPi2 = document.getElementById('coinPickerOverlay'); if(_ovcoinPi2) _ovcoinPi2.classList.remove('show'); }
 
@@ -2132,7 +2044,6 @@ function openDex() {
     window.open(`https://app.uniswap.org/swap?inputCurrency=${inToken}&outputCurrency=${outToken}`, '_blank');
   }
 }
-
 
 // ── 导入钱包 ──────────────────────────────────────────────────
 function initImportGrid(count) {
@@ -2170,7 +2081,6 @@ function syncImportPaste() {
 // ── 从导入格子获取助记词 ──────────────────────────────────────────
 
 // ── 二维码生成 ──────────────────────────────────────────────────
-
 
 // 更新二维码（当地址改变时调用）
 
@@ -2320,27 +2230,7 @@ function wwEstUsdForTransfer(amtNum) {
   } catch (e) { p = c.price || 1; }
   return Math.max(0, amtNum * (parseFloat(p) || 1));
 }
-function wwSpendGateBeforeConfirm(amtNum) {
-  var cfg = {};
-  try { cfg = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { cfg = {}; }
-  if (!cfg || !cfg.en) return true;
-  var d = new Date().toISOString().slice(0, 10);
-  if (cfg.day !== d) { cfg.day = d; cfg.usedUsd = 0; try { localStorage.setItem('ww_spend_limit_v1', JSON.stringify(cfg)); } catch (e2) {} }
-  var lim = parseFloat(cfg.dailyUsd) || 0;
-  if (!(lim > 0)) return true;
-  var est = wwEstUsdForTransfer(amtNum);
-  var used = parseFloat(cfg.usedUsd) || 0;
-  if (used + est <= lim + 1e-6) return true;
-  var pin = prompt('本笔约 $' + est.toFixed(2) + '，今日已累计约 $' + used.toFixed(2) + '，已超过每日限额 $' + lim.toFixed(2) + '。输入 6 位 PIN 以本次继续');
-  if (pin === null) return false;
-  var saved = '';
-  try { saved = localStorage.getItem('ww_pin') || ''; } catch (e3) { saved = ''; }
-  if (!saved || String(pin) !== saved) {
-    if (typeof showToast === 'function') showToast('PIN 不正确或未设置 PIN', 'error');
-    return false;
-  }
-  return true;
-}
+
 function wwRecordSpendAfterBroadcast(amtNum) {
   var cfg = {};
   try { cfg = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { cfg = {}; }
@@ -2470,7 +2360,6 @@ async function changeMnemonicLength(n) {
   }
 }
 
-
 // ── 助记词验证 ──────────────────────────────────────────────
 var verifyAnswers = {}; // {position: correctWord}
 
@@ -2567,7 +2456,6 @@ function checkVerify() {
     if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
   }
 }
-
 
 function _resumeWalletAfterUnlock() {
   // 解密敏感数据并临时注入 REAL_WALLET
@@ -2679,7 +2567,6 @@ function closePinUnlock() {
   const ov = document.getElementById('pinUnlockOverlay');
   if(ov) ov.classList.remove('show');
 }
-
 
 function openPinSettingsDialog() {
   const cur = localStorage.getItem('ww_pin') || '';
