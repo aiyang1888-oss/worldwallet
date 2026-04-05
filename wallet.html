@@ -1149,7 +1149,7 @@ body {
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(){showWalletLoading();try{const w=await createRealWallet();if(!w){showToast('创建失败：未完成密钥生成','error');return;}window.REAL_WALLET=w;saveWallet(w);if(typeof updateRealAddr==='function')updateRealAddr();hideWalletLoading();goTo('page-key');requestAnimationFrame(function(){if(typeof renderKeyGrid==='function')renderKeyGrid();});}catch(e){showToast(typeof formatWalletCreateError==='function'?formatWalletCreateError(e):(e&&e.message)||'创建失败','error');}finally{hideWalletLoading();}})()">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(){showWalletLoading();try{const w=await createRealWallet();if(!w){showToast('创建失败：未完成密钥生成','error');return;}window.REAL_WALLET=w;saveWallet(w);if(typeof updateRealAddr==='function')updateRealAddr();hideWalletLoading();goTo('page-key');}catch(e){showToast(typeof formatWalletCreateError==='function'?formatWalletCreateError(e):(e&&e.message)||'创建失败','error');}finally{hideWalletLoading();}})()">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
@@ -1171,7 +1171,7 @@ body {
           <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
           <select id="mnemonicLength" autocomplete="off" data-form-type="other" onchange="changeMnemonicLength(this.value)"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none"
-            title="词数与下方助记词网格一致；默认 12 词">
+            title="词数与下方网格一致；每次进入本页默认 12 词；切换词数将生成全新随机助记词；所选词数不跨会话保存">
             <option value="12" selected>12词</option>
             <option value="15">15词</option>
             <option value="18">18词</option>
@@ -1199,7 +1199,7 @@ body {
     <!-- 助记词验证（抄写确认） -->
     <div class="page" id="page-key-verify">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-key')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" onclick="goTo('page-key',{preserveKeyPage:true})" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">验证助记词</div>
         <div class="nav-right"></div>
       </div>
@@ -3312,7 +3312,7 @@ body {
     <!-- 常见问题 FAQ -->
     <div class="page" id="page-faq">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-key')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" onclick="goTo('page-key',{preserveKeyPage:true})" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">常见问题</div>
         <div class="nav-right"></div>
       </div>

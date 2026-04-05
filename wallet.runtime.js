@@ -455,8 +455,10 @@ const _safeEl = (id) => document.getElementById(id) || {
 };
 
 let REAL_WALLET = null;
-/** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致 */
+/** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
 let currentMnemonicLength = 12;
+/** 导入页格子词数（与 #importGrid 一致；勿与密钥页 currentMnemonicLength 混用） */
+let importGridWordCount = 12;
 
 // ⚠️ 注意：私钥存储于 localStorage，仅供演示，生产环境应加密
 function saveWallet(w) {
@@ -670,7 +672,7 @@ function syncMnemonicLengthChoice(v) {
     if (mk) mk.value = String(n);
   } catch (e) {}
 }
-/** 密钥页下拉：无钱包时默认 12；已有钱包时直接按本机助记词词数同步，避免先显示 12 再被 renderKeyGrid 改成 15/18 造成「默认变了」的观感 */
+/** 页面加载时初始化密钥页下拉为 12（不读 REAL_WALLET.enMnemonic 词数；词数不写入 localStorage） */
 function initMnemonicLengthSelectors() {
   // 永远默认 12 词，不读已有钱包的词数
   const n = 12;
@@ -734,10 +736,6 @@ async function createRealWallet(forcedWordCount) {
   };
   window.REAL_WALLET = w;
   saveWallet(w);
-  try {
-    const wl = mnemonic.trim().split(/\s+/).filter(Boolean).length;
-    if ([12, 15, 18, 21, 24].includes(wl)) currentMnemonicLength = wl;
-  } catch (_cw) {}
   applyReferralCredit();
   return w;
 }
@@ -800,10 +798,6 @@ async function restoreWallet(mnemonic) {
     };
     REAL_WALLET = w;
     saveWallet(w);
-    try {
-      const wl = enMnemonicStr.trim().split(/\s+/).filter(Boolean).length;
-      if ([12, 15, 18, 21, 24].includes(wl)) currentMnemonicLength = wl;
-    } catch (_rw) {}
     applyReferralCredit();
     return w;
   } catch(e) {
@@ -1219,7 +1213,8 @@ function closeTotpUnlock() {
   try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
 }
 
-function goTo(pageId) {
+function goTo(pageId, opts) {
+  opts = opts || {};
   try {
     var curEl = document.querySelector('.page.active');
     var curId = curEl && curEl.id;
@@ -1235,11 +1230,36 @@ function goTo(pageId) {
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
-    // 永远默认 12 词
-    currentMnemonicLength = 12;
-    var _sel = document.getElementById('mnemonicLength');
-    if(_sel) { _sel.value = '12'; }
-    renderKeyGrid();
+    if (opts.preserveKeyPage) {
+      try {
+        if (typeof renderKeyGrid === 'function') renderKeyGrid();
+        if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
+      } catch (_pk) {}
+    } else {
+      currentMnemonicLength = 12;
+      var _sel = document.getElementById('mnemonicLength');
+      if (_sel) _sel.value = '12';
+      if (!REAL_WALLET || !REAL_WALLET.enMnemonic) {
+        if (typeof renderKeyGrid === 'function') renderKeyGrid();
+      } else {
+        var _wl = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
+        if (_wl === 12) {
+          if (typeof renderKeyGrid === 'function') renderKeyGrid();
+        } else {
+          showWalletLoading();
+          createRealWallet(12).then(function () {
+            if (typeof updateRealAddr === 'function') updateRealAddr();
+            hideWalletLoading();
+            if (typeof renderKeyGrid === 'function') renderKeyGrid();
+          }).catch(function (e) {
+            hideWalletLoading();
+            if (typeof showToast === 'function') {
+              showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
+            }
+          });
+        }
+      }
+    }
   }
   if(pageId==='page-create') {
     try {
@@ -1557,12 +1577,12 @@ function updateHomeBackupBanner() {
 
 function getMnemonicStrengthDisplay() {
   var n = 12;
-  if (REAL_WALLET && REAL_WALLET.enMnemonic) {
-    var ws = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean);
-    n = ws.length || 12;
-  } else {
-    var sel = document.getElementById('mnemonicLength');
-    if (sel && sel.value) n = parseInt(sel.value, 10) || 12;
+  var sel = document.getElementById('mnemonicLength');
+  if (sel && sel.value) {
+    var v = parseInt(sel.value, 10);
+    if ([12, 15, 18, 21, 24].includes(v)) n = v;
+  } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
+    n = currentMnemonicLength;
   }
   if (![12,15,18,21,24].includes(n)) n = 12;
   var bitsMap = {12:128,15:160,18:192,21:224,24:256};
@@ -4412,6 +4432,7 @@ function openDex() {
 // ── 导入钱包 ──────────────────────────────────────────────────
 function initImportGrid(count) {
   count = count || 12;
+  importGridWordCount = count;
   const grid = document.getElementById('importGrid');
   if(!grid) return;
   grid.innerHTML = '';
@@ -4444,7 +4465,7 @@ function syncImportGrid(text) {
 
 function syncImportPaste() {
   const words = [];
-  const syncLen = currentMnemonicLength || 12;
+  const syncLen = importGridWordCount || 12;
   for(let i = 0; i < syncLen; i++) {
     const inp = document.getElementById('iw_' + i);
     words.push(inp ? inp.value.trim() : '');
@@ -4494,7 +4515,7 @@ function copyAllMnemonic(btn) {
 
 // ── 从导入格子获取助记词 ──────────────────────────────────────────
 function getMnemonicFromGrid() {
-  const len = currentMnemonicLength || 12;
+  const len = importGridWordCount || 12;
   const words = [];
   // 先尝试从 textarea 粘贴区读取
   const paste = document.getElementById('importPaste');
@@ -5745,51 +5766,50 @@ function renderNews(items) {
 }
 
 
-// 切换助记词词数：与当前钱包词数不一致时重新生成密钥（新地址）
+// 切换助记词词数：始终从熵重新生成全新 BIP39 助记词（不截断/沿用旧钱包词）
 function changeMnemonicLength(len) {
   const newLen = parseInt(len, 10) || 12;
   if (![12, 15, 18, 21, 24].includes(newLen)) return;
-  // 先锁定下拉与内存为本次所选，避免异步期间被其它逻辑改回
+  const prevLen = [12, 15, 18, 21, 24].includes(currentMnemonicLength) ? currentMnemonicLength : 12;
   currentMnemonicLength = newLen;
   try {
     const sel0 = document.getElementById('mnemonicLength');
     if (sel0) sel0.value = String(newLen);
   } catch (e) {}
-  const hasWallet = REAL_WALLET && REAL_WALLET.enMnemonic;
-  const curLen = hasWallet ? REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length : 0;
-  if (hasWallet && curLen !== newLen) {
-    (async function () {
-      showWalletLoading();
-      try {
-        await createRealWallet(newLen);
-        if (typeof updateRealAddr === 'function') updateRealAddr();
-        hideWalletLoading();
-        goTo('page-key');
-        requestAnimationFrame(function () {
-          try {
-            const sel1 = document.getElementById('mnemonicLength');
-            if (sel1) sel1.value = String(newLen);
-            currentMnemonicLength = newLen;
-          } catch (_s) {}
-          if (typeof renderKeyGrid === 'function') renderKeyGrid();
-        });
-      } catch (e) {
-        hideWalletLoading();
-        if (typeof showToast === 'function') {
-          showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
-        }
-        const sel = document.getElementById('mnemonicLength');
-        if (sel) sel.value = String(curLen);
-        currentMnemonicLength = curLen;
-      }
-    })();
+  if (!REAL_WALLET || !REAL_WALLET.enMnemonic) {
+    if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning');
+    currentMnemonicLength = prevLen;
+    try {
+      const s = document.getElementById('mnemonicLength');
+      if (s) s.value = String(prevLen);
+    } catch (_e) {}
     return;
   }
-  if (REAL_WALLET) {
-    REAL_WALLET.words = null;
-    saveWallet(REAL_WALLET);
-  }
-  renderKeyGrid();
+  (async function () {
+    showWalletLoading();
+    try {
+      await createRealWallet(newLen);
+      if (typeof updateRealAddr === 'function') updateRealAddr();
+      hideWalletLoading();
+      currentMnemonicLength = newLen;
+      try {
+        const sel1 = document.getElementById('mnemonicLength');
+        if (sel1) sel1.value = String(newLen);
+      } catch (_s) {}
+      if (typeof renderKeyGrid === 'function') renderKeyGrid();
+      if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
+    } catch (e) {
+      hideWalletLoading();
+      if (typeof showToast === 'function') {
+        showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
+      }
+      currentMnemonicLength = prevLen;
+      try {
+        const sel = document.getElementById('mnemonicLength');
+        if (sel) sel.value = String(prevLen);
+      } catch (_e2) {}
+    }
+  })();
 }
 
 
@@ -5802,11 +5822,12 @@ function startVerify() {
   if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
     words = REAL_WALLET.words.slice();
   } else {
-    // fallback：从当前语言演示词库随机取词（词数与密钥页所选/钱包一致）
+    // fallback：从当前语言演示词库随机取词（词数与密钥页下拉一致，不读钱包助记词词数）
     var nPick = 12;
-    if (REAL_WALLET && REAL_WALLET.enMnemonic) {
-      var _wl = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
-      if ([12, 15, 18, 21, 24].includes(_wl)) nPick = _wl;
+    var _selV = document.getElementById('mnemonicLength');
+    if (_selV && _selV.value) {
+      var _pv = parseInt(_selV.value, 10);
+      if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
     } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
       nPick = currentMnemonicLength;
     }
