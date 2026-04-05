@@ -405,6 +405,7 @@ body {
 .tx-empty-friendly .tx-empty-icon { font-size: 58px; margin-bottom: 18px; line-height: 1; opacity: 0.95; }
 .tx-empty-friendly .tx-empty-title { font-size: 17px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
 .tx-empty-friendly .tx-empty-hint { font-size: 12.5px; line-height: 1.8; color: var(--text-muted); max-width: 320px; margin: 0 auto; }
+#txHistoryFilter::placeholder { color: var(--text-muted); opacity: 0.85; }
 .home-balance { font-size: 32px; font-weight: 800; color: var(--text); }
 .home-balance.home-balance--loading { animation: homeBalPulse 0.85s ease-in-out infinite; }
 @keyframes homeBalPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
@@ -433,6 +434,20 @@ body {
 .ww-balance-hidden #page-home .asset-change {
   filter: blur(11px);
   user-select: none;
+}
+.ww-balance-hidden #homeAddrChip,
+.ww-balance-hidden .home-short-addr,
+.ww-balance-hidden #settingsAddr,
+.ww-balance-hidden #settingsWalletTitle,
+.ww-balance-hidden #page-addr .addr-display,
+.ww-balance-hidden #page-addr .copy-row,
+.ww-balance-hidden #receiveAddrText {
+  filter: blur(9px);
+  user-select: none;
+  pointer-events: none;
+}
+.ww-balance-hidden .ww-balance-hide-btn {
+  pointer-events: auto;
 }
 .ww-scroll-top-btn {
   position: absolute; bottom: 88px; right: 14px; width: 44px; height: 44px; border-radius: 50%;
@@ -473,6 +488,7 @@ body {
 .transfer-contact-empty { font-size: 12px; color: var(--text-muted); padding: 8px 4px; }
 .transfer-addr-dd-item .contact-nick-mark { color: var(--gold); font-weight: 600; margin-right: 6px; }
 .quick-btns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px; }
+#wwCandleChartHost { box-shadow: inset 0 0 0 1px rgba(200,168,75,0.08); }
 .quick-btn {
   flex: 1 1 18%; min-width: 56px; background: var(--bg2);
   border: 1px solid var(--border); border-radius: 14px;
@@ -1272,6 +1288,7 @@ body {
         <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" class="u8">💱</div><div class="quick-btn-label">兑换</div></div>
         <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" class="u8">🎁</div><div class="quick-btn-label">礼物</div></div>
         <div class="quick-btn" onclick="goTo('page-dapp')"><div class="quick-btn-icon" class="u8">🌐</div><div class="quick-btn-label">DApp</div></div>
+        <div class="quick-btn" onclick="goTo('page-charts')"><div class="quick-btn-icon" class="u8">📈</div><div class="quick-btn-label">行情</div></div>
       </div>
       <div id="wwPortfolioPieCard" class="ww-portfolio-pie-card" style="display:none">
         <div class="ww-portfolio-pie-title">资产占比</div>
@@ -1279,6 +1296,20 @@ body {
           <canvas id="portfolioPieCanvas" width="168" height="168" style="flex-shrink:0;display:block"></canvas>
           <div class="ww-portfolio-pie-legend" id="portfolioPieLegend"></div>
         </div>
+      </div>
+      <div id="wwRebalanceCard" style="display:none;margin:0 16px 12px;padding:12px 14px;background:rgba(98,126,234,0.09);border:1px solid rgba(98,126,234,0.32);border-radius:14px;font-size:12px;line-height:1.55;color:var(--text)">
+        <div style="font-weight:700;margin-bottom:6px;color:var(--text)">⚖️ 快速再平衡建议</div>
+        <div id="wwRebalanceText" style="color:var(--text-muted)"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:8px;font-size:12px" onclick="goTo('page-transfer')">去转账</button>
+          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:8px;font-size:12px" onclick="goTab('tab-swap')">去兑换</button>
+        </div>
+      </div>
+      <div id="wwYieldFarmCard" style="margin:0 16px 12px;padding:12px 14px;background:rgba(38,161,123,0.07);border:1px solid rgba(38,161,123,0.28);border-radius:14px;font-size:12px;line-height:1.55;color:var(--text)">
+        <div style="font-weight:700;margin-bottom:6px;color:var(--text)">🌾 收益追踪（示意）</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">参考常见质押 / 理财 APY，按当前持仓美元估值估算日收益与年化（本地统计，非链上合约）。</div>
+        <div id="wwYieldFarmBody" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div style="margin-top:8px;font-size:10px;color:var(--text-muted)">APY 为示例值，实际收益以各平台与链上数据为准。</div>
       </div>
       <div class="assets-section">
         <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -1336,6 +1367,7 @@ body {
           <span style="font-size:13px;font-weight:600;color:var(--text)">最近交易</span>
           <span onclick="loadTxHistory()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
         </div>
+        <input type="search" id="txHistoryFilter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" style="width:100%;box-sizing:border-box;padding:10px 12px;margin-bottom:10px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;outline:none" />
         <div id="txHistoryList">
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
@@ -1567,6 +1599,23 @@ body {
             <span style="color:var(--text-muted);flex-shrink:0">预估 Gas / 网络费</span>
             <span style="color:var(--text);text-align:right;font-size:11px;line-height:1.45;word-break:break-word" id="transferGasFeeLine">—</span>
           </div>
+        </div>
+
+        <div id="wwMevToggleRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">MEV 保护（示意）</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.45">开启后优先通过私有中继 / 私有内存池路由（本地开关，实际路由取决于钱包后端）。</div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
+            <input type="checkbox" id="wwMevToggle" onchange="wwMevSave()" style="width:18px;height:18px;accent-color:var(--gold)" />
+            <span style="font-size:12px;color:var(--text-muted)">私有中继</span>
+          </label>
+        </div>
+
+        <div id="wwTxSimulatePanel" style="background:rgba(98,126,234,0.06);border:1px solid rgba(98,126,234,0.28);border-radius:14px;padding:12px 14px;margin-bottom:14px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)">🔍 交易模拟预览</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.5">根据当前表单估算将发生的动作（本地示意，非链上 eth_call）。</div>
+          <pre id="wwTxSimulateBody" style="margin:0;white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.55;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg3);padding:10px;border-radius:10px;border:1px solid var(--border);min-height:72px"></pre>
         </div>
 
         <!-- 手续费 -->
@@ -1832,6 +1881,26 @@ body {
           <div style="font-size:18px;color:var(--text-muted)">›</div>
         </div>
 
+        <div id="wwSecurityScoreCard" style="background:linear-gradient(135deg,rgba(200,168,75,0.1),transparent);border:1px solid rgba(200,168,75,0.35);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div>
+              <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">钱包安全分</div>
+              <div style="font-size:26px;font-weight:800;color:var(--gold);line-height:1" id="wwSecurityScoreValue">--</div>
+            </div>
+            <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:var(--bg3);color:var(--text-muted)" id="wwSecurityScoreBadge">评估中</span>
+          </div>
+          <div style="margin-top:10px;height:6px;border-radius:6px;background:var(--bg3);overflow:hidden">
+            <div id="wwSecurityScoreBar" style="height:100%;width:0%;background:linear-gradient(90deg,#26a17b,#c8a84b);border-radius:6px;transition:width 0.35s ease"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.55" id="wwSecurityScoreHint">根据本机 PIN 与助记词备份状态估算（满分 100）。</div>
+        </div>
+
+        <div id="wwCloudBackupHint" style="background:rgba(80,120,200,0.08);border:1px solid rgba(80,120,200,0.35);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">☁️ 云端备份提示</div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">可将<b>加密后的备份文本</b>发到自有邮箱或保存到云盘；请勿明文发送助记词。下列导出仅含地址与备份标记，经您输入的密码加密（AES-GCM）。</div>
+          <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwExportEncryptedCloudBackup==='function')wwExportEncryptedCloudBackup()">复制加密备份到剪贴板</button>
+        </div>
+
         <!-- 安全 -->
         <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">安全</div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
@@ -1876,8 +1945,280 @@ body {
             <span class="settings-value" id="backupStatus" style="color:var(--red)">未备份</span>
             <span class="settings-arrow">›</span>
           </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-recovery-test')">
+            <span class="settings-icon">🧪</span>
+            <span class="settings-label">恢复演练</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">安全模式</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof wwOpenAntiPhishDialog==='function')wwOpenAntiPhishDialog()">
+            <span class="settings-icon">🪪</span>
+            <span class="settings-label">防钓鱼口令</span>
+            <span class="settings-value" id="settingsAntiPhishValue" style="font-size:11px;color:var(--text-muted)">未设置</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-social-recovery')">
+            <span class="settings-icon">🤝</span>
+            <span class="settings-label">社交恢复</span>
+            <span class="settings-value" id="settingsSocialRecoveryValue" style="font-size:11px;color:var(--text-muted)">联系人</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-spending-limits')">
+            <span class="settings-icon">📉</span>
+            <span class="settings-label">支出限额</span>
+            <span class="settings-value" id="settingsSpendLimitValue" style="font-size:11px;color:var(--text-muted)">关闭</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-whale-alerts')">
+            <span class="settings-icon">🐋</span>
+            <span class="settings-label">巨鲸提醒</span>
+            <span class="settings-value" id="settingsWhaleValue" style="font-size:11px;color:var(--text-muted)">关闭</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-bridge')">
+            <span class="settings-icon">🌉</span>
+            <span class="settings-label">跨链桥</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">TRX ↔ ETH</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-vesting')">
+            <span class="settings-icon">📅</span>
+            <span class="settings-label">代币解锁</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">进度</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-dex-connect')">
+            <span class="settings-icon">🔗</span>
+            <span class="settings-label">连接 DEX</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">Uniswap</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-hardware-wallet')">
+            <span class="settings-icon">🔐</span>
+            <span class="settings-label">硬件钱包</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">Ledger / Trezor</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-tax-report')">
+            <span class="settings-icon">📑</span>
+            <span class="settings-label">税务报表</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">导出 CSV</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-copy-trading')">
+            <span class="settings-icon">🐳</span>
+            <span class="settings-label">跟单交易</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">巨鲸地址</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-portfolio-insurance')">
+            <span class="settings-icon">🛡️</span>
+            <span class="settings-label">资产保险</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">承保选项</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-yield-optimizer')">
+            <span class="settings-icon">📊</span>
+            <span class="settings-label">收益优化</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">DeFi 策略</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-token-unlock-calendar')">
+            <span class="settings-icon">📅</span>
+            <span class="settings-label">解锁日历</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">大户项目</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-identity')">
+            <span class="settings-icon">🪪</span>
+            <span class="settings-label">链上身份</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">ENS / 社交</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-analytics')">
+            <span class="settings-icon">📉</span>
+            <span class="settings-label">数据洞察</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">支出与活跃</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-recurring')">
+            <span class="settings-icon">🔁</span>
+            <span class="settings-label">定期转账</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">计划任务</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-token-whitelist')">
+            <span class="settings-icon">✅</span>
+            <span class="settings-label">转账白名单</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">仅允许向…</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-inheritance')">
+            <span class="settings-icon">📜</span>
+            <span class="settings-label">继承与受益人</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">备忘</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-dao')">
+            <span class="settings-icon">🏛️</span>
+            <span class="settings-label">DAO 治理</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">提案与投票</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-reputation')">
+            <span class="settings-icon">⭐</span>
+            <span class="settings-label">钱包信誉分</span>
+            <span class="settings-value" id="wwReputationSettingsValue" style="font-size:11px;color:var(--text-muted)">--</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-lending')">
+            <span class="settings-icon">🏦</span>
+            <span class="settings-label">借贷协议</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">存借利率示意</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-perp-futures')">
+            <span class="settings-icon">📈</span>
+            <span class="settings-label">永续合约</span>
+            <span class="settings-value" id="wwPerpSettingsSummary" style="font-size:11px;color:var(--text-muted)">--</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-options')">
+            <span class="settings-icon">📊</span>
+            <span class="settings-label">期权交易</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">基础界面</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-yield-aggregator')">
+            <span class="settings-icon">🧮</span>
+            <span class="settings-label">收益聚合</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">Aave / Compound / Venus</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-liquidation-alerts')">
+            <span class="settings-icon">⚠️</span>
+            <span class="settings-label">清算预警</span>
+            <span class="settings-value" id="wwLiqSettingsHint" style="font-size:11px;color:var(--text-muted)">抵押率监控</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-launchpad')">
+            <span class="settings-icon">🚀</span>
+            <span class="settings-label">Launchpad</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">IDO / IEO 示意</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-social-leaderboard')">
+            <span class="settings-icon">🏆</span>
+            <span class="settings-label">社交跟单榜</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">排行榜 · 复制</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-auto-rebalance')">
+            <span class="settings-icon">⚙️</span>
+            <span class="settings-label">自动再平衡</span>
+            <span class="settings-value" id="wwAutoRebalSettingsHint" style="font-size:11px;color:var(--text-muted)">关闭</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-sentiment')">
+            <span class="settings-icon">📰</span>
+            <span class="settings-label">舆情分析</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">多空头绪</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-onchain-messaging')">
+            <span class="settings-icon">💬</span>
+            <span class="settings-label">链上消息</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">加密载荷 · 附转账</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-backup-qr')">
+            <span class="settings-icon">📲</span>
+            <span class="settings-label">备份二维码</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">加密导出 QR</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-gasless')">
+            <span class="settings-icon">🎈</span>
+            <span class="settings-label">免 Gas / 元交易</span>
+            <span class="settings-value" id="wwGaslessSettingsHint" style="font-size:11px;color:var(--text-muted)">中继示意</span>
+            <span class="settings-arrow">›</span>
+          </div>
         </div>
 
+        <div id="wwGasManagerCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">⛽ Gas 代币储备</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.55">本机记录目标阈值，与首页余额对比（示意，非托管）。用于提醒保留足够 TRX / ETH 支付网络费。</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="color:var(--text-muted)">TRX（当前）</span>
+              <span style="font-weight:600;color:var(--text)" id="wwGasTrxCurrent">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="color:var(--text-muted)">ETH（当前）</span>
+              <span style="font-weight:600;color:var(--text)" id="wwGasEthCurrent">—</span>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:11px;color:var(--text-muted)">目标 TRX 储备</span>
+              <input id="wwGasTrxTarget" type="text" inputmode="decimal" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px" oninput="wwGasSaveTargets()" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:11px;color:var(--text-muted)">目标 ETH 储备</span>
+              <input id="wwGasEthTarget" type="text" inputmode="decimal" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px" oninput="wwGasSaveTargets()" />
+            </label>
+            <div id="wwGasStatus" style="font-size:11px;padding:8px 10px;border-radius:10px;background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.25);color:var(--text-muted);line-height:1.5"></div>
+          </div>
+        </div>
+
+
+        <div id="wwPriceAlertSection" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">🔔 价格提醒</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.55">使用浏览器 Web Notifications。价格与首页行情同源（约 90 秒刷新）。保存后需在系统中允许通知。</div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:10px;cursor:pointer;user-select:none">
+            <input type="checkbox" id="wwAlertEnable" style="accent-color:var(--gold);width:16px;height:16px" />
+            启用价格提醒
+          </label>
+          <button type="button" class="btn-secondary" style="width:100%;padding:10px;margin-bottom:12px;font-size:13px" onclick="if(typeof wwRequestPriceAlertPermission==='function')wwRequestPriceAlertPermission()">请求通知权限</button>
+          <div style="display:grid;gap:10px;font-size:12px">
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">BTC</span> 美元价 — 高于 <input id="wwAlertBtcAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertBtcBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">ETH</span> 美元价 — 高于 <input id="wwAlertEthAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertEthBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">TRX</span> 美元价 — 高于 <input id="wwAlertTrxAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertTrxBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0"><span style="font-weight:600">USDT</span> 美元价 — 高于 <input id="wwAlertUsdtAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertUsdtBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+          </div>
+          <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;font-size:13px" onclick="if(typeof wwSavePriceAlertsFromUI==='function')wwSavePriceAlertsFromUI()">保存提醒条件</button>
+        </div>
 
 
         <!-- 邀请 -->
@@ -1939,6 +2280,661 @@ body {
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- 社交恢复（联系人仅本机保存） -->
+    <div class="page" id="page-social-recovery">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">社交恢复</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="background:rgba(80,120,200,0.08);border:1px solid rgba(80,120,200,0.28);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.65;color:var(--text-muted)">
+          <b style="color:var(--text)">说明</b>：在此记录可协助您保管分片或见证恢复的<b>信任联系人</b>（姓名与备注仅保存在本机，不会上传）。实际链上社交恢复需智能合约或多签方案；此处用于家庭/团队预案登记。
+        </div>
+        <div id="wwSocialContactsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px;margin-bottom:10px" onclick="if(typeof wwSocialAddContactPrompt==='function')wwSocialAddContactPrompt()">＋ 添加信任联系人</button>
+        <button type="button" class="btn-primary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwSocialSaveFromUI==='function')wwSocialSaveFromUI()">保存列表</button>
+      </div>
+    </div>
+
+    <!-- 支出限额 -->
+    <div class="page" id="page-spending-limits">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">支出限额</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">按<b>美元估值</b>统计当日转出（与首页币种单价一致）。超出限额时需输入与本机相同的 6 位 PIN 以<b>单次放行</b>。</div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="wwSpendLimitEnable" style="accent-color:var(--gold);width:18px;height:18px" /> 启用每日限额
+        </label>
+        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">每日限额（USD 约值）</div>
+        <input id="wwSpendLimitDailyUsd" type="number" step="any" min="0" placeholder="例如 500" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:14px" />
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.6">
+          <div>今日已计：<strong id="wwSpendUsedDisplay">$0.00</strong></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px">每日 UTC 自然日重置；成功广播后累计。</div>
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px;font-size:14px" onclick="if(typeof wwSpendSaveFromUI==='function')wwSpendSaveFromUI()">保存</button>
+      </div>
+    </div>
+
+    <!-- 巨鲸提醒 -->
+    <div class="page" id="page-whale-alerts">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">巨鲸提醒</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">当<b>交易记录</b>中出现与下列地址相关、且美元估值超过阈值的大额流水时，通过<b>浏览器通知</b>提醒（需授权通知）。</div>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:12px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="wwWhaleEnable" style="accent-color:var(--gold);width:18px;height:18px" /> 启用巨鲸提醒
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;margin-bottom:14px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="wwWhaleSelf" style="accent-color:var(--gold);width:18px;height:18px" /> 同时提醒本人钱包的大额转出
+        </label>
+        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">阈值（USD）</div>
+        <input id="wwWhaleThreshold" type="number" step="any" min="0" placeholder="例如 10000" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:12px" />
+        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">监控地址（每行一个，TRX / 0x）</div>
+        <textarea id="wwWhaleAddresses" rows="5" placeholder="T...&#10;0x..." autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;line-height:1.45;resize:vertical;font-family:ui-monospace,monospace"></textarea>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:12px;padding:12px;font-size:13px" onclick="if(typeof wwRequestWhaleNotifyPermission==='function')wwRequestWhaleNotifyPermission()">请求通知权限</button>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:10px;padding:14px;font-size:14px" onclick="if(typeof wwWhaleSaveFromUI==='function')wwWhaleSaveFromUI()">保存</button>
+      </div>
+    </div>
+
+    <!-- 跨链桥 -->
+    <div class="page" id="page-bridge">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">跨链桥</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在 <b>TRON</b> 与 <b>以太坊</b> 之间转移资产通常通过<strong>第三方桥</strong>或交易所。以下为示意界面，请核对官方合约与手续费。</div>
+        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">从</div>
+        <select id="wwBridgeFrom" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" onchange="if(typeof wwBridgeSyncTo==='function')wwBridgeSyncTo()">
+          <option value="trx">Tron (TRC20)</option>
+          <option value="eth">Ethereum (ERC20)</option>
+        </select>
+        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">到</div>
+        <select id="wwBridgeTo" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" disabled>
+          <option value="eth">Ethereum (ERC20)</option>
+          <option value="trx">Tron (TRC20)</option>
+        </select>
+        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">代币（示意）</div>
+        <input id="wwBridgeToken" type="text" placeholder="USDT" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" />
+        <div style="font-size:12px;margin-bottom:6px;color:var(--text)">数量</div>
+        <input id="wwBridgeAmount" type="text" inputmode="decimal" placeholder="0.0" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:14px" />
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px;margin-bottom:10px;font-size:13px" onclick="if(typeof wwBridgeCopyRecvAddr==='function')wwBridgeCopyRecvAddr()">复制收款地址（当前钱包）</button>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="if(typeof wwBridgeOpenStargate==='function')wwBridgeOpenStargate()">打开 Stargate（多链桥）</button>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwBridgeOpenTronDocs==='function')wwBridgeOpenTronDocs()">Tron 文档 — 跨链说明</button>
+      </div>
+    </div>
+
+    <!-- 代币解锁 -->
+    <div class="page" id="page-vesting">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">代币解锁</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">展示「锁定 / 已解锁」比例随时间变化（本机示例数据，可对接真实锁仓合约）。</div>
+        <div id="wwVestingTimeline" style="margin-bottom:14px"></div>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwVestingResetDemo==='function')wwVestingResetDemo()">恢复示例进度</button>
+      </div>
+    </div>
+
+    <!-- 连接 DEX -->
+    <div class="page" id="page-dex-connect">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">连接 DEX</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在浏览器中打开去中心化交易所，使用 <b>WalletConnect</b> 或浏览器插件连接与本应用相同的地址。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;word-break:break-all" id="wwDexAddrHint">当前地址加载中…</div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="wwOpenDexUniswap()">打开 Uniswap（以太坊）</button>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px;margin-bottom:10px;font-size:13px" onclick="if(typeof wwOpenDexSunswap==='function')wwOpenDexSunswap()">打开 SunSwap（TRON）</button>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwOpenDexOneinch==='function')wwOpenDexOneinch()">打开 1inch 聚合器</button>
+      </div>
+    </div>
+
+    <!-- 硬件钱包 -->
+    <div class="page" id="page-hardware-wallet">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">硬件钱包</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">通过 USB 或蓝牙连接 <b>Ledger</b> / <b>Trezor</b>，在桌面浏览器中完成配对；本页为流程说明与入口（Web 端无法直接访问 USB 设备时需使用配套应用）。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;color:var(--text-muted)">
+          <div style="font-weight:700;color:var(--text);margin-bottom:8px">推荐步骤</div>
+          <ol style="margin:0;padding-left:18px;line-height:1.75">
+            <li>安装厂商官方应用（Ledger Live / Trezor Suite）</li>
+            <li>在设备上启用对应链（ETH / Tron 等）</li>
+            <li>使用「用本钱包地址验证」核对派生地址一致</li>
+          </ol>
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="if(typeof wwOpenLedgerSupport==='function')wwOpenLedgerSupport()">Ledger 支持中心</button>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px;margin-bottom:10px;font-size:13px" onclick="if(typeof wwOpenTrezorSupport==='function')wwOpenTrezorSupport()">Trezor 入门</button>
+        <div id="wwHardwareAddrEcho" style="background:var(--bg2);border:1px dashed var(--border);border-radius:12px;padding:10px 12px;font-size:11px;word-break:break-all;color:var(--text-muted)"></div>
+      </div>
+    </div>
+
+    <!-- 税务报表 -->
+    <div class="page" id="page-tax-report">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">税务报表</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">将首页已加载的<b>交易历史缓存</b>导出为 CSV，便于自行申报或交给会计师（字段为示意，请按当地法规调整）。</div>
+        <div id="wwTaxReportSummary" style="background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.28);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text-muted)"></div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-bottom:10px;font-size:14px" onclick="if(typeof wwTaxExportCsv==='function')wwTaxExportCsv()">导出 CSV 文件</button>
+        <p style="font-size:11px;color:var(--text-muted);line-height:1.55;margin:0">若记录为空，请先在首页「最近交易」处点击刷新加载链上数据后再导出。</p>
+      </div>
+    </div>
+
+    <!-- 跟单交易 -->
+    <div class="page" id="page-copy-trading">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">跟单交易</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.28);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:11px;line-height:1.6;color:var(--text-muted)"><b style="color:var(--gold)">风险提示</b>：以下为本地登记监控地址的示意功能，不会自动下单；实盘跟单需对接交易所 / 智能合约，请务必自行验证策略与合约安全。</div>
+        <label style="font-size:12px;color:var(--text);display:block;margin-bottom:6px;font-weight:600">巨鲸 / 目标地址（每行一个）</label>
+        <textarea id="wwCopyWatchInput" rows="5" placeholder="T… 或 0x…" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;line-height:1.45;resize:vertical;font-family:ui-monospace,monospace"></textarea>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;font-size:13px" onclick="if(typeof wwCopyTradingSave==='function')wwCopyTradingSave()">保存监控列表</button>
+        <div id="wwCopyWatchList" style="margin-top:14px"></div>
+      </div>
+    </div>
+
+    <!-- 资产保险 -->
+    <div class="page" id="page-portfolio-insurance">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">资产保险</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">链上资产可通过第三方协议或托管方提供的<b>保险产品</b>降低黑客与合约风险。以下为常见入口（示意，不构成投保建议）。</div>
+        <div id="wwInsuranceBody" style="display:flex;flex-direction:column;gap:12px"></div>
+        <p style="font-size:11px;color:var(--text-muted);line-height:1.55;margin-top:14px">投保前请阅读条款、承保范围与免赔额；本应用不代售保险。</p>
+      </div>
+    </div>
+
+    <!-- 收益优化 -->
+    <div class="page" id="page-yield-optimizer">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">收益优化</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">根据首页<b>持仓占比</b>与参考 APY，给出可考虑的收益策略（本地估算，非投资建议）。</div>
+        <div id="wwYieldOptimizerHint" style="background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.28);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--text-muted)"></div>
+        <div id="wwYieldOptimizerBody" style="display:flex;flex-direction:column;gap:10px"></div>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:12px;line-height:1.5">智能合约与质押均有本金风险，请以官方文档与链上数据为准。</p>
+      </div>
+    </div>
+
+    <!-- 解锁日历 -->
+    <div class="page" id="page-token-unlock-calendar">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">解锁日历</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:12px">主流项目<b>代币解锁</b>日程（示例数据，非实时行情；请以项目方公告为准）。</div>
+        <div id="wwUnlockCalendarBody" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- 链上身份 -->
+    <div class="page" id="page-identity">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">链上身份</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">将 <b>ENS 名称</b>与社交资料与当前钱包关联（仅保存在本机，不上传服务器）。链上解析 ENS 需在支持的网络使用对应地址。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">ENS / 域名</div>
+          <input id="wwIdentityEns" type="text" placeholder="例如 vitalik.eth" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">X (Twitter)</div>
+          <input id="wwIdentityTwitter" type="text" placeholder="@handle" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">Farcaster / Lens（备注）</div>
+          <input id="wwIdentitySocial2" type="text" placeholder="FID 或 @lens/handle" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px;margin-top:4px" onclick="if(typeof wwIdentitySave==='function')wwIdentitySave()">保存到本机</button>
+        <p style="font-size:10px;color:var(--text-muted);margin-top:12px;line-height:1.5">提示：在第三方 DApp 中仍需自行验证合约与签名请求。</p>
+      </div>
+    </div>
+
+    <!-- 数据洞察 -->
+    <div class="page" id="page-analytics">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">数据洞察</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">基于首页<b>最近交易缓存</b>的本地统计（示意）。刷新交易列表后数据更新。</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">近7日活跃热度（示意）</div>
+        <div id="wwAnalyticsHeatmap" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:18px"></div>
+        <div id="wwAnalyticsTopTokens" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+        <div id="wwAnalyticsSummary" style="font-size:12px;color:var(--text-muted);line-height:1.6"></div>
+      </div>
+    </div>
+
+    <!-- 定期转账 -->
+    <div class="page" id="page-recurring">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">定期转账</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在本机保存<b>计划任务</b>（示意）：到达间隔后推送提醒，不会自动扣款；实际转账仍需您手动确认。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">收款地址</div>
+          <input id="wwRecurringAddr" type="text" autocomplete="off" placeholder="TRX / ETH 地址" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <label style="flex:1;min-width:120px;display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;color:var(--text-muted)">金额（示意）</span>
+            <input id="wwRecurringAmt" type="text" inputmode="decimal" placeholder="0.0" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
+          </label>
+          <label style="flex:1;min-width:120px;display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;color:var(--text-muted)">间隔（天）</span>
+            <input id="wwRecurringDays" type="text" inputmode="numeric" placeholder="7" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
+          </label>
+        </div>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px;color:var(--text)">
+          <input type="checkbox" id="wwRecurringEnabled" style="width:18px;height:18px;accent-color:var(--gold)" />
+          <span>启用此计划</span>
+        </label>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px" onclick="if(typeof wwRecurringAdd==='function')wwRecurringAdd()">添加到计划列表</button>
+        <div id="wwRecurringList" style="margin-top:16px;display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+    </div>
+
+    <!-- 转账白名单 -->
+    <div class="page" id="page-token-whitelist">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">转账白名单</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="background:rgba(200,80,80,0.08);border:1px solid rgba(200,80,80,0.28);border-radius:14px;padding:12px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;color:var(--text-muted)">开启后，<b>仅允许</b>向下方列表中的地址发起转账（本机校验）。请谨慎启用，并确保列表完整。</div>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
+          <span style="font-size:14px;color:var(--text)">启用白名单模式</span>
+          <input type="checkbox" id="wwWhitelistEnabled" onchange="if(typeof wwWhitelistSave==='function')wwWhitelistSave()" style="width:20px;height:20px;accent-color:var(--gold)" />
+        </label>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">每行一个地址（TRX / ETH / BTC 等）</div>
+        <textarea id="wwWhitelistTextarea" rows="8" placeholder="T…&#10;0x…" autocomplete="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;line-height:1.5;resize:vertical" onchange="if(typeof wwWhitelistSave==='function')wwWhitelistSave()" onblur="if(typeof wwWhitelistSave==='function')wwWhitelistSave()"></textarea>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px" onclick="if(typeof wwWhitelistSave==='function')wwWhitelistSave()">保存白名单</button>
+      </div>
+    </div>
+
+    <!-- 继承与受益人 -->
+    <div class="page" id="page-inheritance">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">继承与受益人</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">仅作<b>本机备忘</b>：记录您希望家人知晓的受益地址或说明。链上无法自动执行继承；请结合法律遗嘱与托管方案。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">受益人 / 备用收款地址</div>
+          <input id="wwInheritanceBeneficiary" type="text" autocomplete="off" placeholder="公链地址" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" />
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">备注（联系方式、托管说明等）</div>
+          <textarea id="wwInheritanceNote" rows="4" placeholder="仅保存在本机" autocomplete="off" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;line-height:1.5;resize:vertical"></textarea>
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px" onclick="if(typeof wwInheritanceSave==='function')wwInheritanceSave()">保存备忘</button>
+      </div>
+    </div>
+
+    <!-- DAO 治理（本机示意） -->
+    <div class="page" id="page-dao">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">DAO 治理</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">以下为<b>示意</b>治理提案：投票仅保存在本机，用于演示界面；链上治理请前往对应项目的官方入口。</div>
+        <div id="wwDaoProposalList" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- 钱包信誉分 -->
+    <div class="page" id="page-reputation">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">钱包信誉分</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="background:linear-gradient(135deg,rgba(98,126,234,0.12),transparent);border:1px solid rgba(98,126,234,0.35);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">综合评分（本机估算）</div>
+          <div style="font-size:36px;font-weight:800;color:var(--gold);line-height:1" id="wwReputationScoreBig">--</div>
+          <div style="margin-top:12px;height:8px;border-radius:8px;background:var(--bg3);overflow:hidden">
+            <div id="wwReputationBar" style="height:100%;width:0%;background:linear-gradient(90deg,#627eea,#c8a84b);border-radius:8px;transition:width 0.4s ease"></div>
+          </div>
+          <p style="font-size:12px;color:var(--text-muted);margin-top:12px;line-height:1.6" id="wwReputationExplain">根据本机交易记录条数、安全设置与 DAO 参与度等估算，不代表链上信用或征信。</p>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:12px;line-height:1.65;color:var(--text-muted)">
+          <div style="font-weight:600;color:var(--text);margin-bottom:8px">计分说明</div>
+          <ul style="margin:0;padding-left:18px;line-height:1.8">
+            <li>交易活跃度（历史条数）</li>
+            <li>钱包安全分（PIN 与备份）</li>
+            <li>本机 DAO 投票参与次数</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 借贷协议（本机示意） -->
+    <div class="page" id="page-lending">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">借贷协议</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">以下为<b>示意</b>市场利率与操作入口，数据为本地占位；真实存借请前往 Aave、Compound、JustLend 等官方 dApp。</div>
+        <div id="wwLendingMarkets" style="display:flex;flex-direction:column;gap:12px"></div>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof showToast==='function')showToast('请通过 DApp 浏览器打开官方借贷协议','info',2400)">在 DApp 中打开协议</button>
+      </div>
+    </div>
+
+    <!-- 永续合约持仓（本机示意） -->
+    <div class="page" id="page-perp-futures">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">永续合约</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:11px;color:var(--text-muted)">未实现盈亏（示意）</div>
+            <div id="wwPerpUnrealizedPnl" style="font-size:22px;font-weight:800;color:var(--gold)">—</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--text-muted)">持仓数</div>
+            <div id="wwPerpOpenCount" style="font-size:18px;font-weight:700;color:var(--text)">0</div>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.55">以下为<b>本地演示</b>持仓列表；连接交易所 API 后可替换为真实数据。</div>
+        <div id="wwPerpPositions" style="display:flex;flex-direction:column;gap:10px"></div>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof wwPerpAddDemo==='function')wwPerpAddDemo()">添加示例持仓</button>
+      </div>
+    </div>
+
+    <!-- 期权（基础界面示意） -->
+    <div class="page" id="page-options">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">期权</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">简易期权询价界面（<b>示意</b>）：权利金为本地估算公式，非链上报价。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px">
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;color:var(--text-muted)">标的</span>
+            <select id="wwOptUnderlying" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" onchange="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()">
+              <option value="ETH">ETH</option>
+              <option value="BTC">BTC</option>
+              <option value="TRX">TRX</option>
+            </select>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;color:var(--text-muted)">方向</span>
+            <select id="wwOptSide" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" onchange="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()">
+              <option value="call">看涨 Call</option>
+              <option value="put">看跌 Put</option>
+            </select>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;color:var(--text-muted)">行权价 (USD)</span>
+            <input id="wwOptStrike" type="text" inputmode="decimal" placeholder="例如 3500" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" oninput="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;color:var(--text-muted)">到期（天）</span>
+            <input id="wwOptDays" type="text" inputmode="numeric" placeholder="30" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" oninput="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:11px;color:var(--text-muted)">合约数量（张·示意）</span>
+            <input id="wwOptQty" type="text" inputmode="decimal" placeholder="1" style="padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px" oninput="if(typeof wwOptionsPopulate==='function')wwOptionsPopulate()" />
+          </label>
+        </div>
+        <div style="margin-top:16px;background:linear-gradient(135deg,rgba(200,168,75,0.1),transparent);border:1px solid rgba(200,168,75,0.35);border-radius:14px;padding:16px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">参考权利金（示意）</div>
+          <div id="wwOptPremiumEst" style="font-size:28px;font-weight:800;color:var(--gold)">—</div>
+          <div id="wwOptExplain" style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.55"></div>
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:16px;padding:14px" onclick="if(typeof showToast==='function')showToast('演示环境不支持真实下单','info',2200)">预览订单（示意）</button>
+      </div>
+    </div>
+
+    <!-- 收益聚合对比（本机示意） -->
+    <div class="page" id="page-yield-aggregator">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">收益聚合</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">并排对比 <b>Aave</b>、<b>Compound</b>、<b>Venus</b> 等协议的参考供应 APY（<b>本地占位</b>，非实时链上）。</div>
+        <div id="wwYieldAggTable" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px" onclick="if(typeof wwYieldAggRefreshDemo==='function')wwYieldAggRefreshDemo()">刷新示例利率</button>
+      </div>
+    </div>
+
+    <!-- 清算保护预警（本机示意） -->
+    <div class="page" id="page-liquidation-alerts">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">清算预警</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">当健康因子 / 抵押率低于阈值时提醒（浏览器通知需授权）。数据为<b>本机演示</b>。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">预警阈值：抵押率 &lt; （%）</div>
+          <input id="wwLiqThreshold" type="text" inputmode="decimal" placeholder="130" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px" onchange="if(typeof wwLiquidationSaveThreshold==='function')wwLiquidationSaveThreshold()" />
+          <label style="display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--text)">
+            <input type="checkbox" id="wwLiqNotify" style="width:18px;height:18px;accent-color:var(--gold)" onchange="if(typeof wwLiquidationSaveThreshold==='function')wwLiquidationSaveThreshold()" />
+            启用浏览器通知
+          </label>
+        </div>
+        <div id="wwLiquidationList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+        <button type="button" class="btn-primary" style="width:100%;padding:12px;margin-bottom:10px" onclick="if(typeof wwLiquidationScanDemo==='function')wwLiquidationScanDemo()">扫描示例仓位</button>
+      </div>
+    </div>
+
+    <!-- Launchpad / IDO（本机示意） -->
+    <div class="page" id="page-launchpad">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">Launchpad</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">即将开始的 <b>IDO / IEO</b> 项目列表为<b>占位</b>；参与需前往官方平台并完成 KYC。</div>
+        <div id="wwLaunchpadList" style="display:flex;flex-direction:column;gap:12px"></div>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof showToast==='function')showToast('演示环境不提交真实申购','info',2200)">连接官方 Launchpad</button>
+      </div>
+    </div>
+
+    <!-- 社交跟单榜（示意） -->
+    <div class="page" id="page-social-leaderboard">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">跟单榜</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">演示地址的<b>模拟收益率</b>排行；「复制地址」仅填入转账收款框，不构成投资建议。</div>
+        <div id="wwSocialLeaderboardList" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- 自动组合再平衡 -->
+    <div class="page" id="page-auto-rebalance">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">自动再平衡</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">当 USDT / TRX / ETH / BTC 的美元占比相对<b>目标权重</b>偏离超过阈值时，本页给出调仓提示（本机计算，不自动下单）。</div>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;color:var(--text)">
+          <input type="checkbox" id="wwAutoRebalEnable" onchange="if(typeof wwAutoRebalanceSave==='function')wwAutoRebalanceSave()" style="width:18px;height:18px;accent-color:var(--gold)" />
+          启用偏离提醒（本地）
+        </label>
+        <label style="display:block;margin-bottom:8px;font-size:11px;color:var(--text-muted)">偏离阈值 %</label>
+        <input id="wwAutoRebalThreshold" type="number" min="1" max="50" step="1" value="8" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:14px" oninput="if(typeof wwAutoRebalanceSave==='function')wwAutoRebalanceSave()" />
+        <div id="wwAutoRebalanceBody" style="display:flex;flex-direction:column;gap:10px"></div>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:12px" onclick="if(typeof wwAutoRebalancePopulate==='function')wwAutoRebalancePopulate()">重新计算</button>
+      </div>
+    </div>
+
+    <!-- 舆情 / 情绪（示意） -->
+    <div class="page" id="page-sentiment">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">舆情分析</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">与首页行情代币联动，展示<b>模拟</b>多空情绪分数（-100～+100），非真实新闻 NLP。</div>
+        <div id="wwSentimentList" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+    </div>
+
+    <!-- 链上消息（本地加密载荷，可随转账备注传播） -->
+    <div class="page" id="page-onchain-messaging">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">链上消息</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">在本地用密码将文本<b>加密</b>为载荷；收款方可凭约定密码解密。密文可放入转账备注或另行发送（具体链上备注长度以网络为准）。</div>
+        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">消息内容</label>
+        <textarea id="wwOnchainMsgInput" rows="4" placeholder="输入要加密的短消息…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;resize:vertical;margin-bottom:12px"></textarea>
+        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">加密密码（至少 4 位）</label>
+        <input id="wwOnchainMsgPass" type="password" placeholder="与收款方线下约定" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:12px" />
+        <button type="button" class="btn-primary" style="width:100%;padding:12px;margin-bottom:10px" onclick="if(typeof wwOnchainMsgEncrypt==='function')wwOnchainMsgEncrypt()">生成本地加密载荷</button>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">密文预览（截断）</div>
+        <div id="wwOnchainMsgPreview" style="font-size:10px;color:var(--text);word-break:break-all;line-height:1.5;padding:10px;border-radius:12px;background:var(--bg2);border:1px solid var(--border);min-height:48px;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="if(typeof wwOnchainMsgCopy==='function')wwOnchainMsgCopy()">复制密文</button>
+          <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="if(typeof wwOnchainMsgGoTransfer==='function')wwOnchainMsgGoTransfer()">前往转账</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 备份二维码（加密 JSON，非明文助记词） -->
+    <div class="page" id="page-backup-qr">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">备份二维码</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">生成含<b>地址与备份标记</b>的 AES-GCM 加密包二维码，需与解密密码配合使用；请勿将密码与二维码存放在同一处。</div>
+        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">导出密码</label>
+        <input id="wwBackupQrPass" type="password" placeholder="解密时须使用同一密码" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:14px" />
+        <div style="display:flex;justify-content:center;margin-bottom:14px">
+          <canvas id="wwBackupQrCanvas" width="200" height="200" style="border-radius:16px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.25)"></canvas>
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;padding:12px" onclick="if(typeof wwBackupQrGenerate==='function')wwBackupQrGenerate()">生成加密备份二维码</button>
+      </div>
+    </div>
+
+    <!-- 免 Gas / 元交易（偏好示意） -->
+    <div class="page" id="page-gasless">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">免 Gas / 元交易</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">开启后，发送界面将<b>提示</b>可选用中继器代付 Gas（EIP-2771 / 4337 等需合约与节点支持；此处仅为本机偏好与说明）。</div>
+        <label style="display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13px;color:var(--text)">
+          <input type="checkbox" id="wwGaslessEnable" onchange="if(typeof wwGaslessSave==='function')wwGaslessSave()" style="width:18px;height:18px;accent-color:var(--gold)" />
+          优先展示元交易 / 中继路由（示意）
+        </label>
+        <label style="display:block;margin-bottom:6px;font-size:11px;color:var(--text-muted)">中继 / Bundler URL（可选，仅备忘）</label>
+        <input id="wwGaslessRelay" type="text" placeholder="https://…" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;margin-bottom:14px" oninput="if(typeof wwGaslessSave==='function')wwGaslessSave()" />
+        <div style="font-size:11px;color:var(--text-muted);line-height:1.65;padding:12px;border-radius:12px;background:rgba(98,126,234,0.08);border:1px solid rgba(98,126,234,0.25)">零 Gas 体验通常依赖项目方赞助或 Paymaster；请仅使用可信中继，并注意 MEV 与延迟风险。</div>
+      </div>
+    </div>
+
+    <!-- 恢复演练（安全模式） -->
+    <div class="page" id="page-recovery-test">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">恢复演练</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.3);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.65;color:var(--text-muted)">
+          <b style="color:var(--gold)">安全模式</b>：仅在设备本地校验助记词派生地址是否与当前钱包一致，不会上传网络。请在私密环境操作，完成后请清除输入。
+        </div>
+        <div style="font-size:14px;color:var(--text);margin-bottom:10px;font-weight:600">输入助记词（与备份语言一致）</div>
+        <textarea id="recoveryTestInput" rows="5" placeholder="空格分隔的 12 / 15 / 18 / 21 / 24 个词…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;resize:vertical"></textarea>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:14px" onclick="if(typeof wwRecoveryTestSubmit==='function')wwRecoveryTestSubmit()">验证是否与当前钱包一致</button>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:10px;padding:12px" onclick="if(typeof wwRecoveryTestClear==='function')wwRecoveryTestClear()">清除输入</button>
+      </div>
+    </div>
+
+    <!-- K线 / 行情（图表示意） -->
+    <div class="page" id="page-charts">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">行情</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 32px">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1H</button>
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">4H</button>
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1D</button>
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1W</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.55">TradingView 风格 K 线占位（本地示意，非实时行情源）。</div>
+        <div id="wwCandleChartHost" style="height:220px;border-radius:14px;border:1px solid var(--border);background:linear-gradient(180deg,#0e1218 0%,#0a0a12 100%);position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;opacity:0.22;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:28px 22px"></div>
+          <div id="wwCandleBars" style="position:absolute;left:0;right:0;bottom:24px;top:16px;display:flex;align-items:flex-end;justify-content:space-around;gap:2px;padding:0 8px"></div>
+          <div style="position:absolute;bottom:6px;left:10px;font-size:10px;color:var(--text-muted)">OHLC · 示意</div>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.6">完整图表可接入 TradingView Widget 或自建行情；此处仅展示布局与蜡烛占位。</p>
       </div>
     </div>
 
@@ -2023,6 +3019,28 @@ body {
             <span>预计到账</span>
             <span class="swap-info-val">约 30 秒</span>
           </div>
+        </div>
+
+        <div id="wwCrossChainCompare" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px">
+          <div style="font-weight:700;margin-bottom:10px;color:var(--text);display:flex;align-items:center;gap:6px">🌐 跨链路由比价 <span style="font-size:10px;font-weight:500;color:var(--text-muted)">（参考）</span></div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted)">TRON 生态（SunSwap 等）</div>
+                <div id="wwSwapCompareTron" style="font-weight:700;color:var(--text);margin-top:2px">—</div>
+              </div>
+              <span id="wwSwapCompareBadgeTron" style="font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bg3);color:var(--text-muted);align-self:center">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+              <div>
+                <div style="font-size:11px;color:var(--text-muted)">以太坊主网（Uniswap 等）</div>
+                <div id="wwSwapCompareEth" style="font-weight:700;color:var(--text);margin-top:2px">—</div>
+              </div>
+              <span id="wwSwapCompareBadgeEth" style="font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bg3);color:var(--text-muted);align-self:center">—</span>
+            </div>
+          </div>
+          <div id="wwSwapCompareBest" style="font-size:11px;color:var(--gold);margin-top:10px;line-height:1.5"></div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.55">同额输入下两条链的<b>参考</b>预估到账；跨链需先桥接资产，实际以各 DEX 报价、滑点与 Gas 为准。</div>
         </div>
 
         <button class="btn-primary" onclick="doSwap()">⚡ 立即兑换</button>
@@ -2352,6 +3370,7 @@ body {
     <div id="pinUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
       <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">输入 PIN</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">已设置 6 位数字 PIN，用于保护钱包访问</div>
+      <div id="wwAntiPhishBadge" style="display:none;font-size:13px;font-weight:700;color:var(--gold);margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.38);line-height:1.4"></div>
       <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitPinUnlock()" />
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockBackspace()">⌫ 退格</button>
@@ -3003,6 +4022,7 @@ function loadWallet() {
     }
   } catch(e) {}
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
+  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
 }
 
 const WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
@@ -3414,7 +4434,40 @@ const WW_PAGE_SEO = {
   'page-hb-records': { title: '礼物记录 — WorldToken', description: '历史发送与领取记录。' },
   'page-faq': { title: '常见问题 — WorldToken', description: '助记词安全、钱包备份与恢复说明。' },
   'page-verify-success': { title: '验证成功 — WorldToken', description: '助记词验证通过，可以开始使用钱包。' },
-  'page-dapp': { title: 'DApp 浏览器 — WorldToken', description: '在应用内打开去中心化应用链接。' }
+  'page-social-recovery': { title: '社交恢复 — WorldToken', description: '本机登记可协助恢复的信任联系人（不上传）。' },
+  'page-spending-limits': { title: '支出限额 — WorldToken', description: '每日转出美元估值限额与 PIN 覆盖。' },
+  'page-whale-alerts': { title: '巨鲸提醒 — WorldToken', description: '监控地址大额链上活动浏览器通知。' },
+  'page-recovery-test': { title: '恢复演练 — WorldToken', description: '离线验证助记词是否与当前钱包一致（安全模式）。' },
+  'page-charts': { title: '行情 — WorldToken', description: 'K 线图表占位与高级行情分析入口。' },
+  'page-dapp': { title: 'DApp 浏览器 — WorldToken', description: '在应用内打开去中心化应用链接。' },
+  'page-bridge': { title: '跨链桥 — WorldToken', description: 'TRON 与以太坊之间跨链桥接示意与第三方入口。' },
+  'page-vesting': { title: '代币解锁 — WorldToken', description: '锁定与解锁代币进度时间线（本地示意）。' },
+  'page-dex-connect': { title: '连接 DEX — WorldToken', description: '跳转 Uniswap 等 DEX 并用 WalletConnect 连接钱包。' },
+  'page-hardware-wallet': { title: '硬件钱包 — WorldToken', description: 'Ledger / Trezor 连接说明与官方支持入口。' },
+  'page-tax-report': { title: '税务报表 — WorldToken', description: '导出交易历史 CSV 供税务申报参考。' },
+  'page-copy-trading': { title: '跟单交易 — WorldToken', description: '登记监控巨鲸地址（本地示意，非自动交易）。' },
+  'page-portfolio-insurance': { title: '资产保险 — WorldToken', description: '链上资产保险与承保入口说明（示意）。' },
+  'page-yield-optimizer': { title: '收益优化 — WorldToken', description: '根据持仓的 DeFi 收益策略参考。' },
+  'page-token-unlock-calendar': { title: '解锁日历 — WorldToken', description: '主流项目代币解锁日程示例。' },
+  'page-identity': { title: '链上身份 — WorldToken', description: 'ENS 与社交资料本地备注。' },
+  'page-analytics': { title: '数据洞察 — WorldToken', description: '支出模式与代币活跃度本地分析。' },
+  'page-recurring': { title: '定期转账 — WorldToken', description: '本机计划转账提醒（非自动扣款）。' },
+  'page-token-whitelist': { title: '转账白名单 — WorldToken', description: '仅允许向白名单地址转账。' },
+  'page-inheritance': { title: '继承备忘 — WorldToken', description: '受益人地址本机备忘。' },
+  'page-dao': { title: 'DAO 治理 — WorldToken', description: '治理提案与本地投票示意。' },
+  'page-reputation': { title: '钱包信誉分 — WorldToken', description: '基于本机活动与安全的参考评分。' },
+  'page-lending': { title: '借贷协议 — WorldToken', description: '存借利率与市场示意。' },
+  'page-perp-futures': { title: '永续合约 — WorldToken', description: '持仓与盈亏本地示意。' },
+  'page-options': { title: '期权 — WorldToken', description: '基础期权询价界面示意。' },
+  'page-yield-aggregator': { title: '收益聚合 — WorldToken', description: 'Aave、Compound、Venus 等 APY 对比示意。' },
+  'page-liquidation-alerts': { title: '清算预警 — WorldToken', description: '抵押率过低时的本地提醒与通知。' },
+  'page-launchpad': { title: 'Launchpad — WorldToken', description: 'IDO / IEO 项目占位与说明。' },
+  'page-social-leaderboard': { title: '社交跟单榜 — WorldToken', description: '演示排行榜与复制地址入口。' },
+  'page-auto-rebalance': { title: '自动再平衡 — WorldToken', description: '组合偏离检测与调仓提示。' },
+  'page-sentiment': { title: '舆情分析 — WorldToken', description: '代币情绪示意与行情联动。' },
+  'page-onchain-messaging': { title: '链上消息 — WorldToken', description: '本地加密消息载荷与转账配合说明。' },
+  'page-backup-qr': { title: '备份二维码 — WorldToken', description: '加密备份二维码导出。' },
+  'page-gasless': { title: '免 Gas — WorldToken', description: '元交易与中继偏好示意。' }
 };
 function applySeoForPage(pageId) {
   try {
@@ -3637,6 +4690,7 @@ function closeTotpUnlock() {
   const pinInp = document.getElementById('pinUnlockInput');
   if (pinInp) pinInp.value = '';
   if (pov) pov.classList.add('show');
+  try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
 }
 
 function goTo(pageId) {
@@ -3650,7 +4704,45 @@ function goTo(pageId) {
   if(pageId==='page-key') renderKeyGrid();
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
   if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
-  if(pageId==='page-settings') updateSettingsPage();
+  if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
+  if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
+  if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
+  if(pageId==='page-whale-alerts') { try { if(typeof wwWhalePopulate==='function') setTimeout(wwWhalePopulate, 40); } catch(_wh) {} }
+  if(pageId==='page-bridge') { try { setTimeout(function(){ if(typeof wwBridgeSyncTo==='function') wwBridgeSyncTo(); }, 0); } catch(_br) {} }
+  if(pageId==='page-vesting') { try { if(typeof wwVestingRender==='function') setTimeout(wwVestingRender, 40); } catch(_ve) {} }
+  if(pageId==='page-dex-connect') { try { if(typeof wwDexConnectPopulate==='function') setTimeout(wwDexConnectPopulate, 40); } catch(_dx) {} }
+  if(pageId==='page-hardware-wallet') { try { if(typeof wwHardwareWalletPopulate==='function') setTimeout(wwHardwareWalletPopulate, 40); } catch(_hw) {} }
+  if(pageId==='page-tax-report') { try { if(typeof wwTaxReportPopulate==='function') setTimeout(wwTaxReportPopulate, 40); } catch(_tr) {} }
+  if(pageId==='page-copy-trading') { try { if(typeof wwCopyTradingPopulate==='function') setTimeout(wwCopyTradingPopulate, 40); } catch(_cp) {} }
+  if(pageId==='page-portfolio-insurance') { try { if(typeof wwPortfolioInsurancePopulate==='function') setTimeout(wwPortfolioInsurancePopulate, 40); } catch(_pi) {} }
+  if(pageId==='page-yield-optimizer') { try { if(typeof wwYieldOptimizerPopulate==='function') setTimeout(wwYieldOptimizerPopulate, 40); } catch(_yo) {} }
+  if(pageId==='page-token-unlock-calendar') { try { if(typeof wwTokenUnlockCalendarPopulate==='function') setTimeout(wwTokenUnlockCalendarPopulate, 40); } catch(_uc) {} }
+  if(pageId==='page-identity') { try { if(typeof wwIdentityPopulate==='function') setTimeout(wwIdentityPopulate, 40); } catch(_id) {} }
+  if(pageId==='page-analytics') { try { if(typeof wwAnalyticsPopulate==='function') setTimeout(wwAnalyticsPopulate, 50); } catch(_an) {} }
+  if(pageId==='page-recurring') { try { if(typeof wwRecurringPopulate==='function') setTimeout(wwRecurringPopulate, 40); } catch(_re) {} }
+  if(pageId==='page-token-whitelist') { try { if(typeof wwWhitelistPopulate==='function') setTimeout(wwWhitelistPopulate, 40); } catch(_wl) {} }
+  if(pageId==='page-inheritance') { try { if(typeof wwInheritancePopulate==='function') setTimeout(wwInheritancePopulate, 40); } catch(_ih) {} }
+  if(pageId==='page-dao') { try { if(typeof wwDaoRender==='function') setTimeout(wwDaoRender, 40); } catch(_dao) {} }
+  if(pageId==='page-reputation') { try { if(typeof wwReputationPopulate==='function') setTimeout(wwReputationPopulate, 40); } catch(_rep) {} }
+  if(pageId==='page-lending') { try { if(typeof wwLendingPopulate==='function') setTimeout(wwLendingPopulate, 40); } catch(_ld) {} }
+  if(pageId==='page-perp-futures') { try { if(typeof wwPerpPopulate==='function') setTimeout(wwPerpPopulate, 40); } catch(_pf) {} }
+  if(pageId==='page-options') { try { if(typeof wwOptionsPopulate==='function') setTimeout(wwOptionsPopulate, 40); } catch(_op) {} }
+  if(pageId==='page-yield-aggregator') { try { if(typeof wwYieldAggPopulate==='function') setTimeout(wwYieldAggPopulate, 40); } catch(_ya) {} }
+  if(pageId==='page-liquidation-alerts') { try { if(typeof wwLiquidationPopulate==='function') setTimeout(wwLiquidationPopulate, 40); } catch(_lq) {} }
+  if(pageId==='page-launchpad') { try { if(typeof wwLaunchpadPopulate==='function') setTimeout(wwLaunchpadPopulate, 40); } catch(_lp) {} }
+  if(pageId==='page-social-leaderboard') { try { if(typeof wwSocialLeaderboardPopulate==='function') setTimeout(wwSocialLeaderboardPopulate, 40); } catch(_sl) {} }
+  if(pageId==='page-auto-rebalance') { try { if(typeof wwAutoRebalancePopulate==='function') setTimeout(wwAutoRebalancePopulate, 50); } catch(_ar) {} }
+  if(pageId==='page-sentiment') { try { if(typeof wwSentimentPopulate==='function') setTimeout(wwSentimentPopulate, 50); } catch(_sn) {} }
+  if(pageId==='page-onchain-messaging') { try { if(typeof wwOnchainMessagingPopulate==='function') setTimeout(wwOnchainMessagingPopulate, 40); } catch(_om) {} }
+  if(pageId==='page-backup-qr') { try { setTimeout(function(){ var c=document.getElementById('wwBackupQrCanvas'); if(c){ var x=c.getContext('2d'); if(x){ x.fillStyle='#f0f0f0'; x.fillRect(0,0,c.width,c.height); x.fillStyle='#999'; x.font='13px sans-serif'; x.textAlign='center'; x.fillText('点击下方生成', c.width/2, c.height/2); } } }, 0); } catch(_bq) {} }
+  if(pageId==='page-gasless') { try { if(typeof wwGaslessPopulate==='function') setTimeout(wwGaslessPopulate, 40); } catch(_gs) {} }
+  if(pageId==='page-charts') { try { if(typeof renderWwChartsPlaceholder==='function') setTimeout(renderWwChartsPlaceholder, 60); } catch(_cw) {} }
+  if(pageId==='page-settings') {
+    updateSettingsPage();
+    try { if(typeof wwAutoRebalanceSave==='function') wwAutoRebalanceSave(); } catch(_ar0) {}
+    try { if(typeof wwGaslessPopulate==='function') wwGaslessPopulate(); } catch(_gsp) {}
+    try { if(typeof wwGasManagerRender==='function') setTimeout(wwGasManagerRender, 30); } catch(_wg) {}
+  }
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
@@ -3688,6 +4780,7 @@ function goTo(pageId) {
     if(typeof initTransferFeeSpeedUI==='function') initTransferFeeSpeedUI();
     calcTransferFee();
     renderTransferContactsList();
+    try { if(typeof wwMevToggleInit==='function') wwMevToggleInit(); } catch(_wm) {}
   }
   if(pageId==='page-dapp') {
     setTimeout(function() {
@@ -3714,6 +4807,16 @@ function goTo(pageId) {
       }
     }
   } catch (e) {}
+}
+
+
+async function resolveENS(name) {
+  if (!name.endsWith('.eth')) return name;
+  try {
+    const provider = new ethers.providers.JsonRpcProvider('https://eth.llamarpc.com');
+    const addr = await provider.resolveName(name);
+    return addr || name;
+  } catch(e) { return name; }
 }
 
 function goTab(tabId) {
@@ -4455,6 +5558,7 @@ function wwTickIdleLock() {
     inp.value = '';
     if(err) err.style.display = 'none';
     pov.classList.add('show');
+    try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap3) {}
     setTimeout(function() { try { inp.focus(); } catch(e) {} }, 200);
   }
 }
@@ -4466,6 +5570,10 @@ const ETH_RPC = 'https://eth.llamarpc.com';
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
   const addr = document.getElementById('transferAddr').value.trim();
+  if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
+    showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
+    return false;
+  }
   const amt = parseFloat(document.getElementById('transferAmount').value);
   const coin = transferCoin.id;
 
@@ -4487,6 +5595,7 @@ async function broadcastRealTransfer() {
     }
 
     if(txHash) {
+      try { if (typeof wwRecordSpendAfterBroadcast === 'function') wwRecordSpendAfterBroadcast(amt); } catch (_rs) {}
       _safeEl('successTxHash') && ((_safeEl('successTxHash') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successTxHash fallback */.textContent = txHash);
       _safeEl('successTxLink') && (_safeEl('successTxLink').href =
         coin==='eth' ? 'https://etherscan.io/tx/'+txHash : 'https://tronscan.org/#/transaction/'+txHash);
@@ -4715,6 +5824,14 @@ async function refreshHomePriceTicker() {
     const eth = fmt(d.ethereum && d.ethereum.usd);
     const trx = fmt(d.tron && d.tron.usd);
     const ust = fmt(d.tether && d.tether.usd);
+    try {
+      window._wwLastCgUsd = {
+        btc: d.bitcoin && d.bitcoin.usd,
+        eth: d.ethereum && d.ethereum.usd,
+        trx: d.tron && d.tron.usd,
+        usdt: d.tether && d.tether.usd
+      };
+    } catch (_cg) {}
     const html = 'BTC <strong>$' + btc + '</strong> · ETH <strong>$' + eth + '</strong> · TRX <strong>$' + trx + '</strong> · USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
@@ -4723,8 +5840,930 @@ async function refreshHomePriceTicker() {
     if(!_wwTickerInterval) {
       _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 90000);
     }
+    try { if (typeof wwCheckPriceAlertsAfterTicker === 'function') wwCheckPriceAlertsAfterTicker(d); } catch (_pa) {}
   } catch(e) {}
 }
+
+function wwRequestPriceAlertPermission() {
+  try {
+    if (typeof Notification === 'undefined') {
+      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info');
+      return;
+    }
+    Notification.requestPermission().then(function (p) {
+      var msg = p === 'granted' ? '已授予通知权限' : ('权限：' + p);
+      if (typeof showToast === 'function') showToast(msg, 'info');
+    });
+  } catch (e) {}
+}
+
+function wwSavePriceAlertsFromUI() {
+  var keys = ['btc', 'eth', 'trx', 'usdt'];
+  var o = { enabled: !!(document.getElementById('wwAlertEnable') && document.getElementById('wwAlertEnable').checked) };
+  keys.forEach(function (k) {
+    var K = k.charAt(0).toUpperCase() + k.slice(1);
+    var a = parseFloat((document.getElementById('wwAlert' + K + 'Above') || {}).value || '');
+    var b = parseFloat((document.getElementById('wwAlert' + K + 'Below') || {}).value || '');
+    o[k] = { above: isFinite(a) && a > 0 ? a : 0, below: isFinite(b) && b > 0 ? b : 0 };
+  });
+  try { localStorage.setItem('ww_price_alerts_v1', JSON.stringify(o)); } catch (e) {}
+  if (typeof showToast === 'function') showToast('已保存价格提醒', 'success');
+}
+
+function wwPopulatePriceAlertForm() {
+  var o = {};
+  try { o = JSON.parse(localStorage.getItem('ww_price_alerts_v1') || '{}'); } catch (e) { o = {}; }
+  var en = document.getElementById('wwAlertEnable');
+  if (en) en.checked = !!o.enabled;
+  ['btc', 'eth', 'trx', 'usdt'].forEach(function (k) {
+    var K = k.charAt(0).toUpperCase() + k.slice(1);
+    var c = o[k] || {};
+    var a = document.getElementById('wwAlert' + K + 'Above');
+    var b = document.getElementById('wwAlert' + K + 'Below');
+    if (a) a.value = c.above && c.above > 0 ? String(c.above) : '';
+    if (b) b.value = c.below && c.below > 0 ? String(c.below) : '';
+  });
+}
+
+function wwCheckPriceAlertsAfterTicker(d) {
+  try {
+    var cfg = JSON.parse(localStorage.getItem('ww_price_alerts_v1') || '{}');
+    if (!cfg || !cfg.enabled) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    var map = [
+      { key: 'btc', name: 'BTC', get: function (z) { return z.bitcoin && z.bitcoin.usd; } },
+      { key: 'eth', name: 'ETH', get: function (z) { return z.ethereum && z.ethereum.usd; } },
+      { key: 'trx', name: 'TRX', get: function (z) { return z.tron && z.tron.usd; } },
+      { key: 'usdt', name: 'USDT', get: function (z) { return z.tether && z.tether.usd; } }
+    ];
+    var prev = window._wwAlertPricePrev || {};
+    map.forEach(function (m) {
+      var p = m.get(d);
+      if (p == null || !isFinite(p)) return;
+      var c = cfg[m.key] || {};
+      var pr = prev[m.key];
+      if (pr != null && isFinite(pr)) {
+        if (c.above > 0 && pr < c.above && p >= c.above) {
+          new Notification('WorldToken 价格提醒', { body: m.name + ' 已涨至 $' + Number(p).toFixed(4), tag: 'ww-pa-' + m.key + '-hi' });
+        }
+        if (c.below > 0 && pr > c.below && p <= c.below) {
+          new Notification('WorldToken 价格提醒', { body: m.name + ' 已跌至 $' + Number(p).toFixed(4), tag: 'ww-pa-' + m.key + '-lo' });
+        }
+      }
+      prev[m.key] = p;
+    });
+    window._wwAlertPricePrev = prev;
+  } catch (e) {}
+}
+
+function updateYieldFarmTracker(parts, total) {
+  var el = document.getElementById('wwYieldFarmBody');
+  if (!el) return;
+  if (!total || total <= 1e-9) {
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
+    return;
+  }
+  var apy = { USDT: 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var estYr = 0;
+  var rows = [];
+  parts.forEach(function (p) {
+    if (p.v <= 0) return;
+    var a = apy[p.l] != null ? apy[p.l] : 3.5;
+    estYr += p.v * (a / 100);
+    var dailyUsd = p.v * (a / 100) / 365;
+    var pct = total > 0 ? (100 * p.v / total).toFixed(1) : '0';
+    rows.push(
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)"><span>'
+        + p.l
+        + ' <span style="color:var(--text-muted);font-size:10px">参考 APY '
+        + a.toFixed(1)
+        + '%</span></span><span style="text-align:right;font-size:11px;color:var(--text)">日收益 ~$'
+        + dailyUsd.toFixed(4)
+        + '<br/><span style="font-size:10px;color:var(--text-muted)">占比 '
+        + pct
+        + '%</span></span></div>'
+    );
+  });
+  rows.unshift(
+    '<div style="font-size:11px;color:var(--green,#26a17b);margin-bottom:4px">组合参考年化（示意） ≈ $'
+      + estYr.toFixed(2)
+      + ' · 估算日收益 ≈ $'
+      + (estYr / 365).toFixed(4)
+      + '</div>'
+  );
+  el.innerHTML = rows.join('');
+}
+
+function wwNormalizeAddrForWhitelist(a) {
+  a = String(a || '').trim();
+  if (/^0x[0-9a-fA-F]{40}$/.test(a)) return a.toLowerCase();
+  return a;
+}
+
+function wwTransferWhitelistCheck(rawAddr) {
+  try {
+    var o = JSON.parse(localStorage.getItem('ww_transfer_whitelist_v1') || '{}');
+    if (!o || !o.enabled) return true;
+    var list = (Array.isArray(o.addresses) ? o.addresses : []).map(wwNormalizeAddrForWhitelist);
+    var n = wwNormalizeAddrForWhitelist(rawAddr);
+    return list.indexOf(n) >= 0;
+  } catch (e) { return true; }
+}
+
+function wwWhitelistPopulate() {
+  var en = document.getElementById('wwWhitelistEnabled');
+  var ta = document.getElementById('wwWhitelistTextarea');
+  try {
+    var o = JSON.parse(localStorage.getItem('ww_transfer_whitelist_v1') || '{}');
+    if (en) en.checked = !!o.enabled;
+    if (ta) ta.value = (Array.isArray(o.addresses) ? o.addresses : []).join('\n');
+  } catch (e2) {
+    if (en) en.checked = false;
+    if (ta) ta.value = '';
+  }
+}
+
+function wwWhitelistSave() {
+  var en = document.getElementById('wwWhitelistEnabled');
+  var ta = document.getElementById('wwWhitelistTextarea');
+  var lines = (ta && ta.value ? ta.value : '').split(/\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+  var o = { enabled: !!(en && en.checked), addresses: lines.slice(0, 200) };
+  try { localStorage.setItem('ww_transfer_whitelist_v1', JSON.stringify(o)); } catch (e) {}
+  if (typeof showToast === 'function') showToast('白名单已保存', 'success', 1800);
+}
+
+function wwRecurringLoad() {
+  try {
+    var j = JSON.parse(localStorage.getItem('ww_recurring_v1') || '[]');
+    return Array.isArray(j) ? j : [];
+  } catch (e) { return []; }
+}
+
+function wwRecurringSave(list) {
+  try { localStorage.setItem('ww_recurring_v1', JSON.stringify(list.slice(0, 50))); } catch (e) {}
+}
+
+function wwRecurringRenderList() {
+  var host = document.getElementById('wwRecurringList');
+  if (!host) return;
+  var list = wwRecurringLoad();
+  if (!list.length) {
+    host.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-muted);font-size:12px">暂无计划。添加后将在此显示下次提醒时间。</div>';
+    return;
+  }
+    host.innerHTML = list.map(function (it, idx) {
+    var next = it.nextAt ? new Date(it.nextAt).toLocaleString() : '—';
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="word-break:break-all;color:var(--text)"><b>' + (it.amt || '?') + '</b> → ' + (it.addr || '').replace(/</g, '') + '</div>' +
+      '<span style="color:var(--red);cursor:pointer;flex-shrink:0" onclick="wwRecurringRemove(' + idx + ')">删除</span></div>' +
+      '<div style="margin-top:6px;color:var(--text-muted);font-size:11px">间隔 ' + (it.days || '?') + ' 天 · 下次提醒 ' + next + ' · ' + (it.enabled ? '已启用' : '已暂停') + '</div></div>';
+  }).join('');
+}
+
+function wwRecurringPopulate() {
+  wwRecurringRenderList();
+}
+
+function wwRecurringAdd() {
+  var a = document.getElementById('wwRecurringAddr');
+  var m = document.getElementById('wwRecurringAmt');
+  var d = document.getElementById('wwRecurringDays');
+  var en = document.getElementById('wwRecurringEnabled');
+  var addr = a ? String(a.value || '').trim() : '';
+  var amt = m ? String(m.value || '').trim() : '';
+  var days = parseInt(d && d.value ? d.value : '7', 10);
+  if (!addr) { if (typeof showToast === 'function') showToast('请填写收款地址', 'error'); return; }
+  if (!days || days < 1) days = 7;
+  var list = wwRecurringLoad();
+  var nextAt = Date.now() + days * 86400000;
+  list.push({ id: String(Date.now()), addr: addr, amt: amt || '—', days: days, enabled: !!(en && en.checked), nextAt: nextAt });
+  wwRecurringSave(list);
+  wwRecurringRenderList();
+  if (a) a.value = '';
+  if (m) m.value = '';
+  if (typeof showToast === 'function') showToast('已加入计划列表', 'success', 2000);
+}
+
+function wwRecurringRemove(idx) {
+  var list = wwRecurringLoad();
+  list.splice(idx, 1);
+  wwRecurringSave(list);
+  wwRecurringRenderList();
+}
+
+function wwRecurringTick() {
+  var list = wwRecurringLoad();
+  var now = Date.now();
+  var ch = false;
+  list.forEach(function (it) {
+    if (!it || !it.enabled || !it.nextAt) return;
+    if (now < it.nextAt) return;
+    var days = Math.max(1, parseInt(it.days, 10) || 7);
+    it.nextAt = now + days * 86400000;
+    ch = true;
+    var title = 'WorldToken · 定期转账提醒';
+    var body = '计划：向 ' + String(it.addr || '').slice(0, 18) + '… 发送约 ' + (it.amt || '?') + '（请手动在转账页操作）';
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        new Notification(title, { body: body, tag: 'ww-recurring-' + (it.id || '') });
+      } else if (typeof showToast === 'function') {
+        showToast('📅 ' + body, 'warning', 6000);
+      }
+    } catch (e) {}
+  });
+  if (ch) wwRecurringSave(list);
+}
+
+function wwInheritancePopulate() {
+  try {
+    var o = JSON.parse(localStorage.getItem('ww_inheritance_v1') || '{}');
+    var b = document.getElementById('wwInheritanceBeneficiary');
+    var n = document.getElementById('wwInheritanceNote');
+    if (b) b.value = o.beneficiary || '';
+    if (n) n.value = o.note || '';
+  } catch (e) {}
+}
+
+function wwInheritanceSave() {
+  var b = document.getElementById('wwInheritanceBeneficiary');
+  var n = document.getElementById('wwInheritanceNote');
+  var o = {
+    beneficiary: b ? String(b.value || '').trim().slice(0, 256) : '',
+    note: n ? String(n.value || '').trim().slice(0, 2000) : ''
+  };
+  try { localStorage.setItem('ww_inheritance_v1', JSON.stringify(o)); } catch (e2) {}
+  if (typeof showToast === 'function') showToast('继承备忘已保存（本机）', 'success', 2200);
+}
+
+var WW_DAO_PROPOSALS = [
+  { id: 'p1', title: '是否将默认滑点提示调整为 0.5%？', summary: '减少新手因滑点过小导致的失败交易（示意）。' },
+  { id: 'p2', title: '是否在设置中默认开启隐私模式？', summary: '首屏隐藏余额，需长按或 PIN 查看（示意）。' },
+  { id: 'p3', title: '是否增加 TRX Gas 不足时的弹窗提醒？', summary: '当 TRX 余额低于阈值时强提醒（示意）。' }
+];
+
+function wwDaoGetVotes() {
+  try {
+    var j = JSON.parse(localStorage.getItem('ww_dao_votes_v1') || '{}');
+    return typeof j === 'object' && j ? j : {};
+  } catch (e) { return {}; }
+}
+
+function wwDaoSetVote(pid, choice) {
+  var v = wwDaoGetVotes();
+  v[pid] = choice;
+  try { localStorage.setItem('ww_dao_votes_v1', JSON.stringify(v)); } catch (e2) {}
+  wwDaoRender();
+  try { if(typeof wwReputationPopulate==='function') wwReputationPopulate(); } catch (_r) {}
+  try { if(typeof updateReputationSettingsRow==='function') updateReputationSettingsRow(); } catch (_s) {}
+  if (typeof showToast === 'function') showToast('投票已保存（本机）', 'success', 1800);
+}
+
+function wwDaoRender() {
+  var box = document.getElementById('wwDaoProposalList');
+  if (!box) return;
+  var votes = wwDaoGetVotes();
+  box.innerHTML = WW_DAO_PROPOSALS.map(function (pr) {
+    var cur = votes[pr.id] || '';
+    function btn(ch, label) {
+      var on = cur === ch ? 'background:rgba(200,168,75,0.25);border-color:var(--gold);color:var(--gold)' : 'background:var(--bg3);border-color:var(--border);color:var(--text)';
+      return '<button type="button" class="btn-secondary" style="flex:1;min-width:72px;padding:8px 6px;font-size:11px;' + on + '" onclick="wwDaoSetVote(\'' + pr.id + '\',\'' + ch + '\')">' + label + '</button>';
+    }
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">' +
+      '<div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">' + pr.title + '</div>' +
+      '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">' + pr.summary + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' + btn('yes', '赞成') + btn('no', '反对') + btn('abstain', '弃权') + '</div></div>';
+  }).join('');
+}
+
+function computeWalletReputationScore() {
+  var txs = (typeof window._wwTxHistoryCache !== 'undefined' && window._wwTxHistoryCache) ? window._wwTxHistoryCache : [];
+  var nTx = Array.isArray(txs) ? Math.min(txs.length, 200) : 0;
+  var sec = (typeof getWalletSecurityBreakdown === 'function') ? getWalletSecurityBreakdown() : { score: 0 };
+  var secScore = Math.min(100, Math.max(0, sec.score | 0));
+  var votes = wwDaoGetVotes();
+  var voteCount = 0;
+  try {
+    Object.keys(votes).forEach(function (k) { if (votes[k]) voteCount++; });
+  } catch (e) {}
+  var activityPts = Math.min(35, Math.floor(nTx * 1.2));
+  var securityPts = Math.round(secScore * 0.45);
+  var daoPts = Math.min(25, voteCount * 8);
+  var raw = activityPts + securityPts + daoPts;
+  var total = Math.min(100, Math.max(0, raw));
+  return { total: total, activityPts: activityPts, securityPts: securityPts, daoPts: daoPts, nTx: nTx, secScore: secScore, voteCount: voteCount };
+}
+
+function wwReputationPopulate() {
+  var r = computeWalletReputationScore();
+  var big = document.getElementById('wwReputationScoreBig');
+  var bar = document.getElementById('wwReputationBar');
+  var ex = document.getElementById('wwReputationExplain');
+  if (big) big.textContent = String(r.total);
+  if (bar) bar.style.width = r.total + '%';
+  if (ex) {
+    ex.textContent = '活跃度 +' + r.activityPts + ' / 安全 +' + r.securityPts + ' / 治理 +' + r.daoPts + '（交易 ' + r.nTx + ' 条，安全分 ' + r.secScore + '，已投 ' + r.voteCount + ' 票）。此为本地参考分。';
+  }
+  try { updateReputationSettingsRow(); } catch (e) {}
+}
+
+function updateReputationSettingsRow() {
+  var r = computeWalletReputationScore();
+  var el = document.getElementById('wwReputationSettingsValue');
+  if (el) el.textContent = r.total + ' 分';
+}
+
+function updateCrossChainSwapCompare() {
+  var amtIn = parseFloat((_safeEl('swapAmountIn') || {}).value) || 0;
+  var pFrom = (swapFrom && swapFrom.price) ? swapFrom.price : 1;
+  var pTo = (swapTo && swapTo.price) ? swapTo.price : 1;
+  var feeTron = amtIn * 0.003;
+  var feeEth = amtIn * 0.0028;
+  var slipEth = 0.9985;
+  var outTron = (pTo > 0) ? ((amtIn - feeTron) * pFrom / pTo) : 0;
+  var outEth = (pTo > 0) ? ((amtIn - feeEth) * pFrom / pTo) * slipEth : 0;
+  var ft = swapTo ? swapTo.name : '';
+  var elT = document.getElementById('wwSwapCompareTron');
+  var elE = document.getElementById('wwSwapCompareEth');
+  var bT = document.getElementById('wwSwapCompareBadgeTron');
+  var bE = document.getElementById('wwSwapCompareBadgeEth');
+  var best = document.getElementById('wwSwapCompareBest');
+  if (elT) elT.textContent = amtIn > 0 ? (outTron > 1 ? outTron.toFixed(4) : outTron.toFixed(8)) + ' ' + ft : '—';
+  if (elE) elE.textContent = amtIn > 0 ? (outEth > 1 ? outEth.toFixed(4) : outEth.toFixed(8)) + ' ' + ft : '—';
+  var better = '相近';
+  if (amtIn > 0 && outTron > outEth * 1.0001) { better = 'TRON 路径参考更优（预估多 ' + ((outTron - outEth) > 1 ? (outTron - outEth).toFixed(4) : (outTron - outEth).toFixed(8)) + ' ' + ft + '）'; if (bT) { bT.textContent = '较优'; bT.style.background = 'rgba(38,161,123,0.2)'; bT.style.color = '#26a17b'; } if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; } }
+  else if (amtIn > 0 && outEth > outTron * 1.0001) { better = '以太坊路径参考更优（预估多 ' + ((outEth - outTron) > 1 ? (outEth - outTron).toFixed(4) : (outEth - outTron).toFixed(8)) + ' ' + ft + '）'; if (bE) { bE.textContent = '较优'; bE.style.background = 'rgba(98,126,234,0.2)'; bE.style.color = '#627eea'; } if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; } }
+  else {
+    if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; }
+    if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; }
+  }
+  if (best) best.textContent = amtIn > 0 ? better : '';
+}
+
+var WW_LENDING_MARKETS = [
+  { asset: 'USDT', chain: 'TRON', supplyApy: '3.8%', borrowApr: '5.2%', color: '#26a17b' },
+  { asset: 'USDC', chain: 'Ethereum', supplyApy: '4.1%', borrowApr: '5.9%', color: '#2775ca' },
+  { asset: 'ETH', chain: 'Ethereum', supplyApy: '2.4%', borrowApr: '3.6%', color: '#627eea' },
+  { asset: 'TRX', chain: 'TRON', supplyApy: '1.9%', borrowApr: '4.0%', color: '#ff0013' }
+];
+
+function wwLendingMarketToast(el) {
+  var name = el && el.getAttribute ? el.getAttribute('data-asset') : '';
+  if (typeof showToast === 'function') showToast(String(name || '') + ' 市场为示意数据', 'info', 1800);
+}
+
+function wwLendingPopulate() {
+  var box = document.getElementById('wwLendingMarkets');
+  if (!box) return;
+  box.innerHTML = WW_LENDING_MARKETS.map(function (m) {
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px">' +
+      '<div><div style="font-weight:700;font-size:15px;color:var(--text)">' + m.asset + ' <span style="font-size:11px;color:var(--text-muted);font-weight:500">' + m.chain + '</span></div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">供应 APY / 借款 APR</div></div>' +
+      '<div style="text-align:right"><div style="font-size:16px;font-weight:700;color:' + m.color + '">' + m.supplyApy + ' <span style="color:var(--text-muted);font-weight:500">/</span> ' + m.borrowApr + '</div>' +
+      '<button type="button" class="btn-secondary" data-asset="' + m.asset + '" style="margin-top:8px;padding:6px 12px;font-size:11px" onclick="wwLendingMarketToast(this)">详情</button></div></div>';
+  }).join('');
+}
+
+function wwPerpGetPositions() {
+  try {
+    var j = JSON.parse(localStorage.getItem('ww_perp_demo_v1') || '[]');
+    return Array.isArray(j) ? j : [];
+  } catch (e) { return []; }
+}
+
+function wwPerpSetPositions(arr) {
+  try { localStorage.setItem('ww_perp_demo_v1', JSON.stringify(arr)); } catch (e2) {}
+}
+
+function wwPerpAddDemo() {
+  var side = Math.random() > 0.5 ? '多' : '空';
+  var sym = ['BTC','ETH','TRX'][Math.floor(Math.random() * 3)];
+  var entry = sym === 'BTC' ? 62000 + Math.random() * 2000 : sym === 'ETH' ? 3200 + Math.random() * 200 : 0.12 + Math.random() * 0.02;
+  var lev = [5, 10, 20][Math.floor(Math.random() * 3)];
+  var p = wwPerpGetPositions();
+  p.push({ id: 'p' + Date.now(), symbol: sym, side: side, entry: entry, size: (0.01 + Math.random() * 0.2).toFixed(4), leverage: lev, uPnl: (Math.random() * 200 - 80).toFixed(2) });
+  wwPerpSetPositions(p);
+  wwPerpPopulate();
+  if (typeof showToast === 'function') showToast('已添加示例持仓', 'success', 1600);
+}
+
+function wwPerpPopulate() {
+  var list = wwPerpGetPositions();
+  var host = document.getElementById('wwPerpPositions');
+  var pnlEl = document.getElementById('wwPerpUnrealizedPnl');
+  var cntEl = document.getElementById('wwPerpOpenCount');
+  var sum = 0;
+  list.forEach(function (x) { sum += parseFloat(x.uPnl) || 0; });
+  if (pnlEl) {
+    pnlEl.textContent = list.length ? (sum >= 0 ? '+' : '') + sum.toFixed(2) + ' USDT' : '—';
+    pnlEl.style.color = sum >= 0 ? '#26a17b' : '#e5484d';
+  }
+  if (cntEl) cntEl.textContent = String(list.length);
+  var srow = document.getElementById('wwPerpSettingsSummary');
+  if (srow) srow.textContent = list.length ? (list.length + ' 笔 · PnL ' + (sum >= 0 ? '+' : '') + sum.toFixed(0)) : '无持仓';
+  if (!host) return;
+  if (!list.length) {
+    host.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">暂无持仓，可点击添加示例数据</div>';
+    return;
+  }
+  host.innerHTML = list.map(function (p) {
+    var col = parseFloat(p.uPnl) >= 0 ? '#26a17b' : '#e5484d';
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-weight:700;font-size:15px">' + p.symbol + '-PERP</span>' +
+      '<span style="font-size:12px;padding:3px 8px;border-radius:8px;background:var(--bg3)">' + p.side + ' · ' + p.leverage + 'x</span></div>' +
+      '<div style="font-size:12px;color:var(--text-muted);line-height:1.7">开仓价 <b style="color:var(--text)">' + (p.entry > 20 ? p.entry.toFixed(2) : p.entry.toFixed(5)) + '</b> · 数量 ' + p.size +
+      '<br/>未实现 <b style="color:' + col + '">' + (parseFloat(p.uPnl) >= 0 ? '+' : '') + p.uPnl + '</b> USDT</div></div>';
+  }).join('');
+}
+
+function wwOptionsSpotPrice(u) {
+  var map = { ETH: 3200, BTC: 64000, TRX: 0.13 };
+  return map[u] || 1;
+}
+
+function wwOptionsPopulate() {
+  var uEl = document.getElementById('wwOptUnderlying');
+  var sEl = document.getElementById('wwOptSide');
+  var kEl = document.getElementById('wwOptStrike');
+  var dEl = document.getElementById('wwOptDays');
+  var qEl = document.getElementById('wwOptQty');
+  var prem = document.getElementById('wwOptPremiumEst');
+  var ex = document.getElementById('wwOptExplain');
+  var u = uEl ? String(uEl.value || 'ETH') : 'ETH';
+  var side = sEl ? String(sEl.value || 'call') : 'call';
+  var S = wwOptionsSpotPrice(u);
+  var K = parseFloat(kEl && kEl.value) || S;
+  var days = Math.max(1, parseInt(dEl && dEl.value, 10) || 30);
+  var qty = Math.max(0.001, parseFloat(qEl && qEl.value) || 1);
+  var t = days / 365;
+  var vol = 0.65;
+  var intrinsic = side === 'call' ? Math.max(0, S - K) : Math.max(0, K - S);
+  var timeVal = S * vol * Math.sqrt(t) * 0.4;
+  var unit = intrinsic + timeVal;
+  var total = unit * qty;
+  if (prem) prem.textContent = (total < 0.01 ? total.toFixed(6) : total.toFixed(2)) + ' USDT';
+  if (ex) ex.textContent = '现货参考 ' + (u === 'TRX' ? S.toFixed(5) : S.toLocaleString(undefined, { maximumFractionDigits: 2 })) + ' USD · 简化波动率模型，非 Deribit / 链上期权报价。';
+}
+
+var WW_YIELD_AGG_PROTOCOLS = ['Aave V3', 'Compound V3', 'Venus'];
+
+function wwYieldAggJitter(base) {
+  var b = parseFloat(base) || 3;
+  return (b + (Math.random() - 0.5) * 0.6).toFixed(2);
+}
+
+function wwYieldAggPopulate() {
+  var box = document.getElementById('wwYieldAggTable');
+  if (!box) return;
+  var assets = [
+    { sym: 'USDT', base: 4.2 },
+    { sym: 'USDC', base: 4.0 },
+    { sym: 'ETH', base: 2.8 },
+    { sym: 'TRX', base: 1.5 }
+  ];
+  var rows = [];
+  assets.forEach(function (a) {
+    var cells = WW_YIELD_AGG_PROTOCOLS.map(function (name) {
+      return '<td style="padding:8px 6px;text-align:right;font-weight:600;color:var(--gold)">' + wwYieldAggJitter(a.base) + '%</td>';
+    }).join('');
+    rows.push('<tr><td style="padding:8px 6px;font-weight:600;color:var(--text)">' + a.sym + '</td>' + cells + '</tr>');
+  });
+  box.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden"><thead><tr><th style="text-align:left;padding:10px 8px;color:var(--text-muted)">资产</th><th style="text-align:right;padding:10px 6px;color:var(--text-muted)">Aave</th><th style="text-align:right;padding:10px 6px;color:var(--text-muted)">Compound</th><th style="text-align:right;padding:10px 6px;color:var(--text-muted)">Venus</th></tr></thead><tbody>' + rows.join('') + '</tbody></table><p style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.5">供应 APY 为本地随机抖动示例，真实利率以各协议前端为准。</p>';
+}
+
+function wwYieldAggRefreshDemo() {
+  wwYieldAggPopulate();
+  if (typeof showToast === 'function') showToast('已刷新示例 APY', 'info', 1600);
+}
+
+function wwLiquidationGetThreshold() {
+  var v = parseFloat((document.getElementById('wwLiqThreshold') || {}).value);
+  if (!isFinite(v) || v <= 0) return 130;
+  return v;
+}
+
+function wwLiquidationSaveThreshold() {
+  try {
+    localStorage.setItem('ww_liq_threshold', String(wwLiquidationGetThreshold()));
+    var n = document.getElementById('wwLiqNotify');
+    localStorage.setItem('ww_liq_notify', n && n.checked ? '1' : '0');
+  } catch (e) {}
+  wwLiquidationPopulate();
+}
+
+function wwLiquidationLoad() {
+  try {
+    var t = localStorage.getItem('ww_liq_threshold');
+    var el = document.getElementById('wwLiqThreshold');
+    if (el && t) el.value = t;
+    var n = document.getElementById('wwLiqNotify');
+    if (n) n.checked = localStorage.getItem('ww_liq_notify') === '1';
+  } catch (e2) {}
+}
+
+function wwLiquidationDemoPositions() {
+  return [
+    { id: '1', asset: 'ETH', collateralUsd: 5000, debtUsd: 2800, ratio: 178 },
+    { id: '2', asset: 'TRX', collateralUsd: 1200, debtUsd: 950, ratio: 126 }
+  ];
+}
+
+function wwLiquidationScanDemo() {
+  wwLiquidationPopulate();
+  if (typeof showToast === 'function') showToast('已根据示例仓位检查抵押率', 'success', 2000);
+}
+
+function wwLiquidationMaybeNotify(ratio, threshold) {
+  if (ratio >= threshold) return;
+  try {
+    if (localStorage.getItem('ww_liq_notify') !== '1') return;
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      new Notification('WorldToken · 清算预警', { body: '抵押率 ' + ratio.toFixed(1) + '% 低于阈值 ' + threshold + '%（示意）' });
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+  } catch (e) {}
+}
+
+function wwLiquidationPopulate() {
+  wwLiquidationLoad();
+  var th = wwLiquidationGetThreshold();
+  var hint = document.getElementById('wwLiqSettingsHint');
+  if (hint) hint.textContent = '阈值 ' + th + '%';
+  var list = document.getElementById('wwLiquidationList');
+  if (!list) return;
+  var pos = wwLiquidationDemoPositions();
+  var html = pos.map(function (p) {
+    var danger = p.ratio < th;
+    if (danger) wwLiquidationMaybeNotify(p.ratio, th);
+    var bg = danger ? 'rgba(229,72,77,0.12)' : 'var(--bg2)';
+    var bor = danger ? '1px solid rgba(229,72,77,0.45)' : '1px solid var(--border)';
+    return '<div style="background:' + bg + ';border:' + bor + ';border-radius:14px;padding:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+      '<div><div style="font-weight:700;color:var(--text)">' + p.asset + ' 抵押</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">债务约 $' + p.debtUsd + '</div></div>' +
+      '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">抵押率</div><div style="font-size:18px;font-weight:800;color:' + (danger ? '#e5484d' : '#26a17b') + '">' + p.ratio + '%</div></div></div>';
+  }).join('');
+  list.innerHTML = html || '<div style="color:var(--text-muted);font-size:13px">暂无演示仓位</div>';
+}
+
+var WW_LAUNCHPAD_PROJECTS = [
+  { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 USDT', status: '即将开始' },
+  { name: 'TronBoost', chain: 'TRON', date: '2026-04-22', allocation: '2,000 TRX', status: '白名单' },
+  { name: 'MetaVault', chain: 'BSC', date: '2026-05-01', allocation: 'TBD', status: '筹备中' }
+];
+
+function wwLaunchpadIntentDemo() {
+  if (typeof showToast === 'function') showToast('演示：未连接链上申购', 'info', 2000);
+}
+
+function wwLaunchpadPopulate() {
+  var box = document.getElementById('wwLaunchpadList');
+  if (!box) return;
+  box.innerHTML = WW_LAUNCHPAD_PROJECTS.map(function (p) {
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
+      '<div><div style="font-weight:700;font-size:15px;color:var(--text)">' + p.name + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + p.chain + ' · ' + p.date + '</div></div>' +
+      '<span style="font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(200,168,75,0.15);color:var(--gold)">' + p.status + '</span></div>' +
+      '<div style="margin-top:10px;font-size:12px;color:var(--text-muted)">意向额度：<b style="color:var(--text)">' + p.allocation + '</b></div>' +
+      '<button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:10px;font-size:13px" onclick="wwLaunchpadIntentDemo()">登记意向（示意）</button></div>';
+  }).join('');
+}
+
+var WW_SOCIAL_LEADERBOARD_DEMO = [
+  { addr: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', label: 'AlphaVault', roi: 42.3, win: 68 },
+  { addr: 'TXYZopYRdj2D9XRtbG411XZZ3kMfsVk8Q6', label: 'TronWhale', roi: 28.1, win: 55 },
+  { addr: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', label: 'vitalik.eth', roi: 19.4, win: 52 }
+];
+
+function wwSocialLeaderboardCopyAt(i) {
+  var r = WW_SOCIAL_LEADERBOARD_DEMO[i];
+  if (!r) return;
+  wwSocialLeaderboardCopy(r.addr);
+}
+
+function wwSocialLeaderboardFillTransferAt(i) {
+  var r = WW_SOCIAL_LEADERBOARD_DEMO[i];
+  if (!r) return;
+  wwSocialLeaderboardFillTransfer(r.addr);
+}
+
+function wwSocialLeaderboardCopy(addr) {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(addr);
+    else {
+      var ta = document.createElement('textarea');
+      ta.value = addr;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    if (typeof showToast === 'function') showToast('已复制地址', 'success', 1600);
+  } catch (e) {}
+}
+
+function wwSocialLeaderboardFillTransfer(addr) {
+  try {
+    localStorage.setItem('ww_prefill_transfer_to', addr);
+    goTo('page-transfer');
+    setTimeout(function () {
+      var el = document.getElementById('transferTo') || document.querySelector('[id*="transfer"][id*="To"]');
+      if (el) { el.value = addr; el.dispatchEvent(new Event('input', { bubbles: true })); }
+    }, 120);
+  } catch (e2) {
+    goTo('page-transfer');
+  }
+}
+
+function wwSocialLeaderboardPopulate() {
+  var box = document.getElementById('wwSocialLeaderboardList');
+  if (!box) return;
+  box.innerHTML = WW_SOCIAL_LEADERBOARD_DEMO.map(function (r, i) {
+    var short = r.addr.length > 18 ? r.addr.slice(0, 10) + '…' + r.addr.slice(-8) : r.addr;
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
+      '<div><div style="font-size:12px;color:var(--text-muted)">#' + (i + 1) + ' · ' + r.label + '</div>' +
+      '<div style="font-weight:700;margin-top:4px;color:var(--text)">' + short + '</div></div>' +
+      '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">模拟 ROI</div>' +
+      '<div style="font-size:18px;font-weight:800;color:#26a17b">+' + r.roi.toFixed(1) + '%</div>' +
+      '<div style="font-size:11px;color:var(--text-muted)">胜率 ' + r.win + '%</div></div></div>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+      '<button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="wwSocialLeaderboardCopyAt(' + i + ')">复制地址</button>' +
+      '<button type="button" class="btn-primary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="wwSocialLeaderboardFillTransferAt(' + i + ')">填入转账</button></div></div>';
+  }).join('');
+}
+
+function wwAutoRebalanceSave() {
+  try {
+    var en = document.getElementById('wwAutoRebalEnable');
+    var th = document.getElementById('wwAutoRebalThreshold');
+    localStorage.setItem('ww_autorebal_enable', en && en.checked ? '1' : '0');
+    if (th) localStorage.setItem('ww_autorebal_threshold', String(parseInt(th.value, 10) || 8));
+  } catch (e) {}
+  var hint = document.getElementById('wwAutoRebalSettingsHint');
+  if (hint) {
+    try {
+      hint.textContent = localStorage.getItem('ww_autorebal_enable') === '1' ? '已启用' : '关闭';
+    } catch (e2) { hint.textContent = '—'; }
+  }
+}
+
+function wwAutoRebalanceLoad() {
+  try {
+    var en = document.getElementById('wwAutoRebalEnable');
+    var th = document.getElementById('wwAutoRebalThreshold');
+    if (en) en.checked = localStorage.getItem('ww_autorebal_enable') === '1';
+    if (th) {
+      var t = parseInt(localStorage.getItem('ww_autorebal_threshold') || '8', 10);
+      if (isFinite(t) && t > 0) th.value = String(t);
+    }
+  } catch (e) {}
+}
+
+function wwAutoRebalancePortfolioParts() {
+  var u = parseFloat((document.getElementById('valUsdt') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
+  var t = parseFloat((document.getElementById('valTrx') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
+  var e = parseFloat((document.getElementById('valEth') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
+  var b = parseFloat((document.getElementById('valBtc') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
+  var total = u + t + e + b;
+  if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }, { k: 'TRX', p: 0 }, { k: 'ETH', p: 0 }, { k: 'BTC', p: 0 }] };
+  return {
+    total: total,
+    parts: [
+      { k: 'USDT', p: 100 * u / total },
+      { k: 'TRX', p: 100 * t / total },
+      { k: 'ETH', p: 100 * e / total },
+      { k: 'BTC', p: 100 * b / total }
+    ]
+  };
+}
+
+function wwAutoRebalancePopulate() {
+  wwAutoRebalanceLoad();
+  var body = document.getElementById('wwAutoRebalanceBody');
+  if (!body) return;
+  var th = parseInt((document.getElementById('wwAutoRebalThreshold') || {}).value || '8', 10);
+  if (!isFinite(th) || th < 1) th = 8;
+  var target = { USDT: 40, TRX: 15, ETH: 30, BTC: 15 };
+  var data = wwAutoRebalancePortfolioParts();
+  if (!data.total) {
+    body.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无估值数据，请返回首页刷新余额后再试。</div>';
+    return;
+  }
+  var rows = data.parts.map(function (x) {
+    var tgt = target[x.k] || 25;
+    var drift = x.p - tgt;
+    var hit = Math.abs(drift) >= th;
+    return { k: x.k, p: x.p, tgt: tgt, drift: drift, hit: hit };
+  });
+  var any = rows.some(function (r) { return r.hit; });
+  body.innerHTML = rows.map(function (r) {
+    var col = r.hit ? '#e5484d' : 'var(--text-muted)';
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px">' +
+      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
+      '<span style="font-weight:700;color:var(--text)">' + r.k + '</span>' +
+      '<span style="font-size:12px;color:var(--text-muted)">当前 ' + r.p.toFixed(1) + '% · 目标 ' + r.tgt + '%</span></div>' +
+      '<div style="margin-top:6px;font-size:13px;color:' + col + '">偏离 ' + (r.drift >= 0 ? '+' : '') + r.drift.toFixed(1) + ' 百分点' + (r.hit ? '（超过阈值）' : '') + '</div></div>';
+  }).join('') + (any && localStorage.getItem('ww_autorebal_enable') === '1'
+    ? '<div style="background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:12px;font-size:12px;color:var(--text)">建议：通过转账或兑换向<b>权重不足</b>的资产倾斜；本应用不代您执行交易。</div>'
+    : '<div style="font-size:12px;color:var(--text-muted)">提示：可在设置中开启「偏离提醒」。</div>');
+}
+
+function wwSentimentHash(s) {
+  var h = 0;
+  for (var i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
+  return Math.abs(h);
+}
+
+function wwSentimentPopulate() {
+  var box = document.getElementById('wwSentimentList');
+  if (!box) return;
+  var coins = ['USDT', 'TRX', 'ETH', 'BTC'];
+  var els = ['chgUsdt', 'chgTrx', 'chgEth', 'chgBtc'];
+  var out = [];
+  for (var i = 0; i < coins.length; i++) {
+    var ch = (document.getElementById(els[i]) || {}).textContent || '';
+    var m = ch.match(/[\-+]?[0-9]+(?:\.[0-9]+)?/);
+    var px = m ? parseFloat(m[0]) : 0;
+    var h = wwSentimentHash(coins[i] + String(px));
+    var score = Math.max(-100, Math.min(100, Math.round(px * 12 + (h % 17) - 8)));
+    var lab = score >= 20 ? '偏多' : (score <= -20 ? '偏空' : '中性');
+    var bg = score >= 20 ? 'rgba(38,161,123,0.12)' : (score <= -20 ? 'rgba(229,72,77,0.12)' : 'var(--bg2)');
+    out.push('<div style="background:' + bg + ';border:1px solid var(--border);border-radius:14px;padding:14px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<div style="font-weight:800;font-size:16px;color:var(--text)">' + coins[i] + '</div>' +
+      '<span style="font-size:12px;padding:4px 10px;border-radius:999px;background:var(--bg3);color:var(--text-muted)">' + lab + '</span></div>' +
+      '<div style="margin-top:10px;display:flex;align-items:center;gap:10px">' +
+      '<div style="flex:1;height:8px;border-radius:8px;background:var(--bg3);overflow:hidden">' +
+      '<div style="height:100%;width:' + (50 + score / 2) + '%;background:linear-gradient(90deg,#e5484d,#c8a84b,#26a17b);border-radius:8px"></div></div>' +
+      '<div style="font-size:18px;font-weight:800;color:var(--gold);min-width:52px;text-align:right">' + score + '</div></div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">与首页涨跌幅示意联动 · 非新闻 NLP</div></div>');
+  }
+  box.innerHTML = out.join('');
+}
+
+function wwOnchainMessagingPopulate() {
+  var el = document.getElementById('wwOnchainMsgPreview');
+  if (el) el.textContent = '';
+}
+
+async function wwOnchainMsgEncrypt() {
+  var msg = (document.getElementById('wwOnchainMsgInput') || {}).value || '';
+  var pass = (document.getElementById('wwOnchainMsgPass') || {}).value || '';
+  if (!String(msg).trim()) { if (typeof showToast === 'function') showToast('请输入消息内容', 'warning'); return; }
+  if (!pass || String(pass).length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位加密密码', 'warning'); return; }
+  var enc = new TextEncoder();
+  var b64u8 = function(u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
+  try {
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 80000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+    var plain = JSON.stringify({ v: 1, kind: 'ww_onchain_msg', t: Date.now(), text: String(msg) });
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(plain));
+    var outObj = { v: 1, kind: 'ww_onchain_msg', salt: '', iv: '', data: '' };
+    if (typeof wwB64Bytes === 'function') {
+      outObj.salt = wwB64Bytes(salt);
+      outObj.iv = wwB64Bytes(iv);
+      outObj.data = wwB64Bytes(new Uint8Array(ct));
+    } else {
+      outObj.salt = b64u8(salt);
+      outObj.iv = b64u8(iv);
+      outObj.data = b64u8(new Uint8Array(ct));
+    }
+    var txt = JSON.stringify(outObj);
+    var prev = document.getElementById('wwOnchainMsgPreview');
+    if (prev) prev.textContent = txt.slice(0, 480) + (txt.length > 480 ? '…' : '');
+    try { localStorage.setItem('ww_onchain_msg_prefill', txt); } catch (e) {}
+    if (typeof showToast === 'function') showToast('已加密，可复制或前往转账页粘贴到备注', 'success');
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('加密失败', 'error');
+  }
+}
+
+function wwOnchainMsgCopy() {
+  try {
+    var b64 = localStorage.getItem('ww_onchain_msg_prefill') || '';
+    if (!b64) { if (typeof showToast === 'function') showToast('请先生成加密载荷', 'warning'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(b64);
+    else { var ta = document.createElement('textarea'); ta.value = b64; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+    if (typeof showToast === 'function') showToast('已复制密文', 'success');
+  } catch (e) {}
+}
+
+function wwOnchainMsgGoTransfer() {
+  try { goTo('page-transfer'); } catch (e) {}
+}
+
+async function wwBackupQrGenerate() {
+  var p = (document.getElementById('wwBackupQrPass') || {}).value || '';
+  if (!p || String(p).length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位导出密码', 'warning'); return; }
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
+  var enc = new TextEncoder();
+  try {
+    var payload = JSON.stringify({
+      v: 1,
+      t: Date.now(),
+      kind: 'ww_qr_backup',
+      eth: REAL_WALLET.ethAddress,
+      trx: REAL_WALLET.trxAddress || '',
+      btc: REAL_WALLET.btcAddress || '',
+      backed: !!REAL_WALLET.backedUp
+    });
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(p), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
+    var outObj = { v: 1, kind: 'ww_qr_backup', salt: '', iv: '', data: '' };
+    if (typeof wwB64Bytes === 'function') {
+      outObj.salt = wwB64Bytes(salt);
+      outObj.iv = wwB64Bytes(iv);
+      outObj.data = wwB64Bytes(new Uint8Array(ct));
+    } else {
+      var b64u8 = function(u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
+      outObj.salt = b64u8(salt);
+      outObj.iv = b64u8(iv);
+      outObj.data = b64u8(new Uint8Array(ct));
+    }
+    var txt = JSON.stringify(outObj);
+    var canvas = document.getElementById('wwBackupQrCanvas');
+    await loadQRCodeLib();
+    if (canvas && typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+      await QRCode.toCanvas(canvas, txt, { width: 200, margin: 1, color: { dark: '#0a0a12ff', light: '#ffffffff' } });
+      if (typeof showToast === 'function') showToast('已生成加密备份二维码（请妥善保管）', 'success');
+    } else if (typeof showToast === 'function') showToast('二维码库加载失败', 'error');
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('生成失败', 'error');
+  }
+}
+
+function wwGaslessPopulate() {
+  var cb = document.getElementById('wwGaslessEnable');
+  var rel = document.getElementById('wwGaslessRelay');
+  var hint = document.getElementById('wwGaslessSettingsHint');
+  try {
+    if (cb) cb.checked = localStorage.getItem('ww_gasless_meta') === '1';
+    if (rel) rel.value = localStorage.getItem('ww_gasless_relay') || '';
+  } catch (e) {}
+  if (hint) {
+    try { hint.textContent = localStorage.getItem('ww_gasless_meta') === '1' ? '已开启示意' : '关闭'; } catch (e2) { hint.textContent = '—'; }
+  }
+}
+
+function wwGaslessSave() {
+  var cb = document.getElementById('wwGaslessEnable');
+  var rel = document.getElementById('wwGaslessRelay');
+  var hint = document.getElementById('wwGaslessSettingsHint');
+  try {
+    localStorage.setItem('ww_gasless_meta', cb && cb.checked ? '1' : '0');
+    if (rel) localStorage.setItem('ww_gasless_relay', String(rel.value || '').trim().slice(0, 200));
+  } catch (e) {}
+  if (hint) {
+    try { hint.textContent = localStorage.getItem('ww_gasless_meta') === '1' ? '已开启示意' : '关闭'; } catch (e2) {}
+  }
+  if (typeof showToast === 'function') showToast('已保存免 Gas 偏好（示意）', 'success');
+}
+
+function wwRecoveryTestClear() {
+  try {
+    var t = document.getElementById('recoveryTestInput');
+    if (t) t.value = '';
+  } catch (e) {}
+}
+
+function wwRecoveryTestSubmit() {
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+    if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'error');
+    return;
+  }
+  var raw = (document.getElementById('recoveryTestInput') || {}).value || '';
+  if (!String(raw).trim()) {
+    if (typeof showToast === 'function') showToast('请输入助记词', 'error');
+    return;
+  }
+  var lang = typeof currentLang !== 'undefined' ? currentLang : 'en';
+  var enStr = raw.trim();
+  try {
+    if (typeof mnemonicFromLang === 'function') enStr = mnemonicFromLang(raw.trim(), lang);
+  } catch (e1) {}
+  var words = enStr.trim().split(/\s+/);
+  if (![12, 15, 18, 21, 24].includes(words.length)) {
+    if (typeof showToast === 'function') showToast('词数应为 12/15/18/21/24', 'error');
+    return;
+  }
+  try {
+    var w = ethers.Wallet.fromMnemonic(enStr.trim());
+    var match = REAL_WALLET.ethAddress && w.address && w.address.toLowerCase() === String(REAL_WALLET.ethAddress).toLowerCase();
+    if (match) {
+      if (typeof showToast === 'function') showToast('验证通过：助记词与当前钱包一致', 'success');
+    } else {
+      if (typeof showToast === 'function') showToast('与当前钱包不一致或助记词无效', 'error');
+    }
+  } catch (e2) {
+    if (typeof showToast === 'function') showToast('助记词无效或无法解析', 'error');
+  }
+}
+
 function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
   const card = document.getElementById('wwPortfolioPieCard');
   const c = document.getElementById('portfolioPieCanvas');
@@ -4737,7 +6776,8 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
     { v: Number(btcUsd) || 0, c: '#f7931a', l: 'BTC' }
   ];
   const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
-  if(total <= 1e-9) { card.style.display = 'none'; return; }
+  try { window._wwLastPortfolioParts = parts; window._wwLastPortfolioTotal = total; } catch (_wp) {}
+  if(total <= 1e-9) { card.style.display = 'none'; try { if(typeof updateRebalanceSuggestion==='function') updateRebalanceSuggestion([], 0); } catch(_r) {} try { if(typeof updateYieldFarmTracker==='function') updateYieldFarmTracker([], 0); } catch(_y0) {} return; }
   card.style.display = 'block';
   const ctx = c.getContext('2d');
   const w = c.width, h = c.height, cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 6;
@@ -4764,6 +6804,8 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
     htm += '<div><span><span class="ww-pie-dot" style="background:' + p.c + '"></span>' + p.l + '</span><span>' + pct + '%</span></div>';
   });
   leg.innerHTML = htm;
+  try { if (typeof updateRebalanceSuggestion === 'function') updateRebalanceSuggestion(parts, total); } catch (_rb) {}
+  try { if (typeof updateYieldFarmTracker === 'function') updateYieldFarmTracker(parts, total); } catch (_yf) {}
 }
 function getNetworkFeeEstimateLines(coinId) {
   const sp = typeof getTransferFeeSpeed === 'function' ? getTransferFeeSpeed() : 'normal';
@@ -5010,6 +7052,78 @@ function calcTransferFee() {
   const bal = Number(transferCoin.bal) || 0;
   if(amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
+  try { if(typeof wwUpdateTxSimulation==='function') wwUpdateTxSimulation(); } catch(_ws) {}
+}
+
+function wwMevToggleInit() {
+  var c = document.getElementById('wwMevToggle');
+  if(!c) return;
+  c.checked = (localStorage.getItem('ww_mev_private') === '1');
+}
+
+function wwMevSave() {
+  var c = document.getElementById('wwMevToggle');
+  if(!c) return;
+  localStorage.setItem('ww_mev_private', c.checked ? '1' : '0');
+  try { if(typeof wwUpdateTxSimulation==='function') wwUpdateTxSimulation(); } catch(e) {}
+  if(typeof showToast==='function') showToast(c.checked ? '已开启 MEV 保护（示意）' : '已使用公开内存池（示意）', 'info', 2200);
+}
+
+function wwGasSaveTargets() {
+  var a = document.getElementById('wwGasTrxTarget');
+  var b = document.getElementById('wwGasEthTarget');
+  if(a && a.value != null) localStorage.setItem('ww_gas_target_trx', String(a.value).trim());
+  if(b && b.value != null) localStorage.setItem('ww_gas_target_eth', String(b.value).trim());
+  try { wwGasManagerRender(); } catch(e) {}
+}
+
+function wwGasManagerRender() {
+  var trxCoin = (typeof COINS !== 'undefined' && COINS.find) ? COINS.find(function(c){ return c && c.id==='trx'; }) : null;
+  var ethCoin = (typeof COINS !== 'undefined' && COINS.find) ? COINS.find(function(c){ return c && c.id==='eth'; }) : null;
+  var tc = document.getElementById('wwGasTrxCurrent');
+  var ec = document.getElementById('wwGasEthCurrent');
+  if(tc) tc.textContent = trxCoin && trxCoin.bal != null ? Number(trxCoin.bal).toFixed(4) : '—';
+  if(ec) ec.textContent = ethCoin && ethCoin.bal != null ? Number(ethCoin.bal).toFixed(6) : '—';
+  var ti = document.getElementById('wwGasTrxTarget');
+  var ei = document.getElementById('wwGasEthTarget');
+  var st = localStorage.getItem('ww_gas_target_trx');
+  var se = localStorage.getItem('ww_gas_target_eth');
+  if(ti && (st==null || st==='')) { ti.value = '50'; localStorage.setItem('ww_gas_target_trx','50'); }
+  else if(ti && st) ti.value = st;
+  if(ei && (se==null || se==='')) { ei.value = '0.02'; localStorage.setItem('ww_gas_target_eth','0.02'); }
+  else if(ei && se) ei.value = se;
+  var tt = parseFloat(ti && ti.value) || 50;
+  var et = parseFloat(ei && ei.value) || 0.02;
+  var bt = trxCoin ? Number(trxCoin.bal) || 0 : 0;
+  var be = ethCoin ? Number(ethCoin.bal) || 0 : 0;
+  var stEl = document.getElementById('wwGasStatus');
+  if(stEl) {
+    var okT = bt >= tt * 0.85;
+    var okE = be >= et * 0.85;
+    stEl.textContent = okT && okE
+      ? '✓ Gas 代币储备相对目标充足（示意）。'
+      : '⚠ 建议保留更多 TRX/ETH 以应对拥堵与合约交互（示意）。 TRX: ' + bt.toFixed(2) + ' / 目标 ' + tt + ' · ETH: ' + be.toFixed(4) + ' / 目标 ' + et;
+    stEl.style.borderColor = okT && okE ? 'rgba(38,161,123,0.35)' : 'rgba(200,120,80,0.4)';
+  }
+}
+
+function wwUpdateTxSimulation() {
+  var host = document.getElementById('wwTxSimulateBody');
+  if(!host) return;
+  var amtEl = document.getElementById('transferAmount');
+  var addrEl = document.getElementById('transferAddr');
+  var amt = amtEl ? parseFloat(amtEl.value) || 0 : 0;
+  var addr = addrEl ? String(addrEl.value || '').trim() : '';
+  var coin = (typeof transferCoin !== 'undefined' && transferCoin) ? transferCoin : { name:'?', chain:'?' };
+  var nf = (typeof getNetworkFeeEstimateLines === 'function') ? getNetworkFeeEstimateLines(coin.id) : { line:'—', sub:'' };
+  var mev = (localStorage.getItem('ww_mev_private') === '1');
+  var lines = [];
+  lines.push('操作: 转账 ' + (amt > 0 ? amt : 0) + ' ' + (coin.name || '') + ' → ' + (addr || '（未填地址）'));
+  lines.push('网络: ' + (coin.chain || '—'));
+  lines.push('预估网络费: ' + nf.line + (nf.sub ? ' · ' + nf.sub : ''));
+  lines.push('MEV 路由: ' + (mev ? '私有中继（示意）' : '公开内存池'));
+  lines.push('风险: 请再次核对地址与金额；本预览不保证与链上结果一致。');
+  host.textContent = lines.join('\n');
 }
 
 function setTransferMax() {
@@ -5049,6 +7163,10 @@ function doTransfer() {
   if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
     showToast('📡 当前无网络，请联网后再发送', 'warning');
     return;
+  }
+  if (typeof wwSpendGateBeforeConfirm === 'function') {
+    var _g = wwSpendGateBeforeConfirm(amtNum);
+    if (_g === false) return;
   }
   const fee = (amtNum*0.003).toFixed(2);
   const actual = (amtNum - amtNum*0.003).toFixed(2);
@@ -5496,6 +7614,8 @@ function markBackupDone() {
   const el = document.getElementById('backupStatus');
   if(el) { el.textContent='已备份 ✓'; el.style.color='var(--green,#26a17b)'; }
   if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
+  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
+  if (typeof wwPopulatePriceAlertForm === 'function') wwPopulatePriceAlertForm();
 }
 
 function updateSettingsPage() {
@@ -5526,6 +7646,46 @@ function updateSettingsPage() {
   if(typeof wwApplyIdleLockLabel==='function') wwApplyIdleLockLabel();
   if (typeof updateReferralSettingsUI === 'function') updateReferralSettingsUI();
   if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
+  const apv = document.getElementById('settingsAntiPhishValue');
+  if (apv) {
+    var aw = '';
+    try { aw = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
+    apv.textContent = aw ? ('已设置 · ' + aw.slice(0, 6) + (aw.length > 6 ? '…' : '')) : '未设置';
+    apv.style.color = aw ? 'var(--green,#26a17b)' : 'var(--text-muted)';
+  }
+  var scv = document.getElementById('settingsSocialRecoveryValue');
+  if (scv) {
+    var n = 0;
+    try { var ar = JSON.parse(localStorage.getItem('ww_social_contacts_v1') || '[]'); n = Array.isArray(ar) ? ar.length : 0; } catch (e0) { n = 0; }
+    scv.textContent = n ? (n + ' 人') : '未添加';
+    scv.style.color = n ? 'var(--green,#26a17b)' : 'var(--text-muted)';
+  }
+  var slv = document.getElementById('settingsSpendLimitValue');
+  if (slv) {
+    var sp = {};
+    try { sp = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e1) { sp = {}; }
+    if (sp && sp.en && parseFloat(sp.dailyUsd) > 0) {
+      slv.textContent = '每日 $' + parseFloat(sp.dailyUsd).toFixed(0);
+      slv.style.color = 'var(--green,#26a17b)';
+    } else {
+      slv.textContent = '关闭';
+      slv.style.color = 'var(--text-muted)';
+    }
+  }
+  var whv = document.getElementById('settingsWhaleValue');
+  if (whv) {
+    var wh = {};
+    try { wh = JSON.parse(localStorage.getItem('ww_whale_v1') || '{}'); } catch (e2) { wh = {}; }
+    if (wh && wh.en) {
+      whv.textContent = '已开 · $' + (parseFloat(wh.thresholdUsd) > 0 ? parseFloat(wh.thresholdUsd).toFixed(0) : '—');
+      whv.style.color = 'var(--green,#26a17b)';
+    } else {
+      whv.textContent = '关闭';
+      whv.style.color = 'var(--text-muted)';
+    }
+  }
+  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
+  try { if (typeof updateReputationSettingsRow === 'function') updateReputationSettingsRow(); } catch (_rs) {}
 }
 
 /** 首次打开时请求浏览器通知权限（仅询问一次） */
@@ -5611,6 +7771,7 @@ function calcSwap() {
   const rate = pFrom / pTo;
   const rateEl = (_safeEl('swapRateInfo') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRateInfo fallback */;
   if(rateEl) rateEl.textContent = `1 ${swapFrom.name} ≈ ${rate > 1 ? rate.toFixed(4) : rate.toFixed(8)} ${swapTo.name}`;
+  try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc) {}
 }
 
 // 从 CoinGecko 拉实时价格
@@ -5624,6 +7785,7 @@ async function loadSwapPrices() {
     // 更新 COINS 价格
     COINS.forEach(coin => { if(priceMap[coin.id]) coin.price = priceMap[coin.id]; });
     calcSwap();
+    try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc2) {}
     console.log('兑换价格已更新');
   } catch(e) { console.log('价格加载失败，使用默认'); }
 }
@@ -6001,6 +8163,678 @@ function txHistoryEmptyHtml() {
   return txHistoryFriendlyHtml('📬', pack.title, pack.hint);
 }
 
+function filterTxHistoryList(txs, q) {
+  if (!txs || !txs.length) return [];
+  if (!q || !String(q).trim()) return txs.slice();
+  var s = String(q).trim().toLowerCase();
+  return txs.filter(function(tx) {
+    var coin = String(tx.coin || '').toLowerCase();
+    var addr = String(tx.addr || '').toLowerCase();
+    var hash = String(tx.hash || '').toLowerCase();
+    var typ = String(tx.type || '').toLowerCase();
+    var amt = String(tx.amount || '').toLowerCase();
+    return coin.indexOf(s) >= 0 || addr.indexOf(s) >= 0 || hash.indexOf(s) >= 0 || typ.indexOf(s) >= 0 || amt.indexOf(s) >= 0;
+  });
+}
+
+function txHistoryRowHtml(tx) {
+  return `
+      <div onclick="window.open((tx.coin==='eth'?'https://etherscan.io/tx/':'https://tronscan.org/#/transaction/')+tx.hash,'_blank')"
+        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
+        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
+          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
+          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
+        </div>
+      </div>
+    `;
+}
+
+function renderTxHistoryFromCache() {
+  var el = document.getElementById('txHistoryList');
+  if (!el) return;
+  var txs = window._wwTxHistoryCache || [];
+  var inp = document.getElementById('txHistoryFilter');
+  var q = inp ? inp.value : '';
+  var filtered = filterTxHistoryList(txs, q);
+  if (txs.length === 0) {
+    el.innerHTML = txHistoryEmptyHtml();
+    return;
+  }
+  if (filtered.length === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-muted);font-size:12px;line-height:1.6">无匹配记录<br/><span style="font-size:11px;opacity:0.9">试试缩短关键词或清空搜索框</span></div>';
+    return;
+  }
+  el.innerHTML = filtered.map(function(tx) { return txHistoryRowHtml(tx); }).join('');
+  try { if(typeof updateReputationSettingsRow==='function') updateReputationSettingsRow(); } catch(_rep2) {}
+}
+
+function applyTxHistoryFilter() {
+  renderTxHistoryFromCache();
+}
+
+function getWalletSecurityBreakdown() {
+  var pinOk = false;
+  try {
+    var p = localStorage.getItem('ww_unlock_pin');
+    pinOk = !!(p && String(p).length >= 4);
+  } catch (e) {}
+  var backed = false;
+  try {
+    if (REAL_WALLET && REAL_WALLET.backedUp) backed = true;
+    else {
+      var w = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      backed = !!w.backedUp;
+    }
+  } catch (e) {}
+  var pinPts = pinOk ? 50 : 0;
+  var backupPts = backed ? 50 : 0;
+  return { score: pinPts + backupPts, pinOk: pinOk, backed: backed, pinPts: pinPts, backupPts: backupPts };
+}
+
+function updateWalletSecurityScoreUI() {
+  var el = document.getElementById('wwSecurityScoreValue');
+  var bar = document.getElementById('wwSecurityScoreBar');
+  var hint = document.getElementById('wwSecurityScoreHint');
+  var badge = document.getElementById('wwSecurityScoreBadge');
+  if (!el || !bar || !hint) return;
+  var b = getWalletSecurityBreakdown();
+  el.textContent = String(b.score);
+  bar.style.width = b.score + '%';
+  var tips = [];
+  if (!b.pinOk) tips.push('未设置 PIN：他人拿到设备时可能直接打开钱包。');
+  if (!b.backed) tips.push('未确认备份助记词：设备丢失将无法恢复资产。');
+  if (b.pinOk && b.backed) tips.push('PIN 与备份均已就绪；请离线保管助记词，勿截图或泄露。');
+  hint.textContent = tips.length ? tips.join(' ') : '加载中…';
+  if (badge) {
+    if (b.score >= 100) { badge.textContent = '优秀'; badge.style.color = 'var(--green,#26a17b)'; }
+    else if (b.score >= 50) { badge.textContent = '一般'; badge.style.color = 'var(--gold)'; }
+    else { badge.textContent = '待加强'; badge.style.color = 'var(--red,#e74c3c)'; }
+  }
+}
+
+function updateRebalanceSuggestion(parts, total) {
+  var card = document.getElementById('wwRebalanceCard');
+  var txt = document.getElementById('wwRebalanceText');
+  if (!card || !txt) return;
+  if (!total || total <= 1e-9) { card.style.display = 'none'; return; }
+  var maxP = null;
+  var maxPct = 0;
+  parts.forEach(function(p) {
+    if (p.v <= 0) return;
+    var pct = 100 * p.v / total;
+    if (pct > maxPct) { maxPct = pct; maxP = p; }
+  });
+  if (!maxP || maxPct < 72) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  txt.textContent = maxP.l + ' 约占总估值 ' + maxPct.toFixed(0) + '%：单一资产占比过高时，可通过转账或兑换分散至其他币种以降低集中度。';
+}
+
+function wwNormAddr(s) {
+  if (!s) return '';
+  s = String(s).trim();
+  if (s.startsWith('0x')) return s.toLowerCase();
+  return s;
+}
+function wwUsdFromTxRow(tx) {
+  var amtN = 0;
+  try { amtN = Math.abs(parseFloat(String(tx.amount || '0').replace(/[^0-9.+-]/g, ''))); } catch (e) { amtN = 0; }
+  var cg = window._wwLastCgUsd || {};
+  var c = String(tx.coin || '').toUpperCase();
+  if (c === 'USDT') return amtN * (parseFloat(cg.usdt) || 1);
+  if (c === 'TRX') return amtN * (parseFloat(cg.trx) || 0.12);
+  if (c === 'ETH') return amtN * (parseFloat(cg.eth) || 2000);
+  if (c === 'BTC') return amtN * (parseFloat(cg.btc) || 60000);
+  return amtN;
+}
+function wwCheckWhaleTxHistory(txs) {
+  var cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('ww_whale_v1') || '{}'); } catch (e) { cfg = {}; }
+  if (!cfg || !cfg.en) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  var thr = parseFloat(cfg.thresholdUsd) || 10000;
+  if (!(thr > 0)) return;
+  var lines = String(cfg.addressesText || '').split(/\r?\n/).map(function (x) { return wwNormAddr(x); }).filter(Boolean);
+  var seen = {};
+  try { seen = JSON.parse(localStorage.getItem('ww_whale_seen_v1') || '{}'); } catch (e2) { seen = {}; }
+  var selfTron = '';
+  try { if (REAL_WALLET && REAL_WALLET.trxAddress) selfTron = wwNormAddr(REAL_WALLET.trxAddress); } catch (e3) {}
+  txs.forEach(function (tx) {
+    var h = tx.hash;
+    if (!h || seen[h]) return;
+    var usd = wwUsdFromTxRow(tx);
+    if (!(usd >= thr)) return;
+    var isOut = String(tx.amount || '').trim().startsWith('-');
+    var peer = wwNormAddr(tx.addr);
+    var hitPeer = lines.length > 0 && lines.indexOf(peer) >= 0;
+    var hitSelf = !!cfg.monitorSelf && selfTron && isOut;
+    if (!hitPeer && !hitSelf) return;
+    seen[h] = Date.now();
+    try {
+      new Notification('WorldToken 巨鲸提醒', { body: (tx.coin || '') + ' ' + (tx.amount || '') + ' · 约 $' + usd.toFixed(0), tag: 'ww-whale-' + h });
+    } catch (e4) {}
+  });
+  try { localStorage.setItem('ww_whale_seen_v1', JSON.stringify(seen)); } catch (e5) {}
+}
+function wwEstUsdForTransfer(amtNum) {
+  var c = transferCoin || {};
+  var id = c.id || 'usdt';
+  var p = 1;
+  try {
+    var coin = typeof COINS !== 'undefined' && COINS.find ? COINS.find(function (x) { return x.id === id; }) : null;
+    p = (coin && coin.price) || c.price || 1;
+  } catch (e) { p = c.price || 1; }
+  return Math.max(0, amtNum * (parseFloat(p) || 1));
+}
+function wwSpendGateBeforeConfirm(amtNum) {
+  var cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { cfg = {}; }
+  if (!cfg || !cfg.en) return true;
+  var d = new Date().toISOString().slice(0, 10);
+  if (cfg.day !== d) { cfg.day = d; cfg.usedUsd = 0; try { localStorage.setItem('ww_spend_limit_v1', JSON.stringify(cfg)); } catch (e2) {} }
+  var lim = parseFloat(cfg.dailyUsd) || 0;
+  if (!(lim > 0)) return true;
+  var est = wwEstUsdForTransfer(amtNum);
+  var used = parseFloat(cfg.usedUsd) || 0;
+  if (used + est <= lim + 1e-6) return true;
+  var pin = prompt('本笔约 $' + est.toFixed(2) + '，今日已累计约 $' + used.toFixed(2) + '，已超过每日限额 $' + lim.toFixed(2) + '。输入 6 位 PIN 以本次继续');
+  if (pin === null) return false;
+  var saved = '';
+  try { saved = localStorage.getItem('ww_unlock_pin') || ''; } catch (e3) { saved = ''; }
+  if (!saved || String(pin) !== saved) {
+    if (typeof showToast === 'function') showToast('PIN 不正确或未设置 PIN', 'error');
+    return false;
+  }
+  return true;
+}
+function wwRecordSpendAfterBroadcast(amtNum) {
+  var cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { cfg = {}; }
+  if (!cfg || !cfg.en) return;
+  var d = new Date().toISOString().slice(0, 10);
+  if (cfg.day !== d) { cfg.day = d; cfg.usedUsd = 0; }
+  cfg.usedUsd = (parseFloat(cfg.usedUsd) || 0) + wwEstUsdForTransfer(amtNum);
+  try { localStorage.setItem('ww_spend_limit_v1', JSON.stringify(cfg)); } catch (e2) {}
+}
+function wwSpendLimitPopulate() {
+  var o = {};
+  try { o = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { o = {}; }
+  var en = document.getElementById('wwSpendLimitEnable');
+  if (en) en.checked = !!o.en;
+  var du = document.getElementById('wwSpendLimitDailyUsd');
+  if (du) du.value = o.dailyUsd && parseFloat(o.dailyUsd) > 0 ? String(o.dailyUsd) : '';
+  var d = new Date().toISOString().slice(0, 10);
+  if (o.day !== d) { o.usedUsd = 0; }
+  var u = document.getElementById('wwSpendUsedDisplay');
+  if (u) u.textContent = '$' + (parseFloat(o.usedUsd) || 0).toFixed(2);
+}
+function wwSpendSaveFromUI() {
+  var en = !!(document.getElementById('wwSpendLimitEnable') && document.getElementById('wwSpendLimitEnable').checked);
+  var daily = parseFloat((document.getElementById('wwSpendLimitDailyUsd') || {}).value || '');
+  var o = {};
+  try { o = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { o = {}; }
+  o.en = en;
+  o.dailyUsd = isFinite(daily) && daily > 0 ? daily : 0;
+  var d = new Date().toISOString().slice(0, 10);
+  if (o.day !== d) { o.day = d; o.usedUsd = 0; }
+  try { localStorage.setItem('ww_spend_limit_v1', JSON.stringify(o)); } catch (e2) {}
+  if (typeof showToast === 'function') showToast('已保存支出限额', 'success');
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+  wwSpendLimitPopulate();
+}
+function wwWhalePopulate() {
+  var o = {};
+  try { o = JSON.parse(localStorage.getItem('ww_whale_v1') || '{}'); } catch (e) { o = {}; }
+  var en = document.getElementById('wwWhaleEnable');
+  if (en) en.checked = !!o.en;
+  var ms = document.getElementById('wwWhaleSelf');
+  if (ms) ms.checked = !!o.monitorSelf;
+  var th = document.getElementById('wwWhaleThreshold');
+  if (th) th.value = o.thresholdUsd && parseFloat(o.thresholdUsd) > 0 ? String(o.thresholdUsd) : '';
+  var ta = document.getElementById('wwWhaleAddresses');
+  if (ta) ta.value = o.addressesText || '';
+}
+function wwWhaleSaveFromUI() {
+  var o = {
+    en: !!(document.getElementById('wwWhaleEnable') && document.getElementById('wwWhaleEnable').checked),
+    monitorSelf: !!(document.getElementById('wwWhaleSelf') && document.getElementById('wwWhaleSelf').checked),
+    thresholdUsd: parseFloat((document.getElementById('wwWhaleThreshold') || {}).value || '') || 0,
+    addressesText: (document.getElementById('wwWhaleAddresses') || {}).value || ''
+  };
+  try { localStorage.setItem('ww_whale_v1', JSON.stringify(o)); } catch (e) {}
+  if (typeof showToast === 'function') showToast('已保存巨鲸提醒', 'success');
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+}
+function wwRequestWhaleNotifyPermission() {
+  try {
+    if (typeof Notification === 'undefined') {
+      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info');
+      return;
+    }
+    Notification.requestPermission().then(function (p) {
+      var msg = p === 'granted' ? '已授予通知权限' : ('权限：' + p);
+      if (typeof showToast === 'function') showToast(msg, 'info');
+    });
+  } catch (e) {}
+}
+
+function wwBridgeSyncTo() {
+  var f = document.getElementById('wwBridgeFrom');
+  var t = document.getElementById('wwBridgeTo');
+  if (!f || !t) return;
+  var v = f.value === 'trx' ? 'eth' : 'trx';
+  for (var i = 0; i < t.options.length; i++) {
+    if (t.options[i].value === v) { t.selectedIndex = i; break; }
+  }
+}
+
+function wwBridgeCopyRecvAddr() {
+  var f = document.getElementById('wwBridgeFrom');
+  var want = f && f.value === 'eth' ? 'eth' : 'trx';
+  var addr = '';
+  try {
+    if (REAL_WALLET) {
+      addr = want === 'eth' ? (REAL_WALLET.ethAddress || '') : (REAL_WALLET.trxAddress || '');
+    }
+  } catch (e) {}
+  if (!addr) {
+    if (typeof showToast === 'function') showToast('暂无钱包地址', 'info');
+    return;
+  }
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(addr).then(function () {
+        if (typeof showToast === 'function') showToast('已复制 ' + want.toUpperCase() + ' 地址', 'success');
+      });
+    } else {
+      prompt('复制地址', addr);
+    }
+  } catch (e2) {}
+}
+
+function wwBridgeOpenStargate() {
+  try {
+    if (typeof window !== 'undefined' && window.open) window.open('https://www.stargate.finance/', '_blank', 'noopener,noreferrer');
+    else location.href = 'https://www.stargate.finance/';
+  } catch (e) {}
+  if (typeof showToast === 'function') showToast('请在桥接站点选择网络与代币，并核对合约', 'info', 3200);
+}
+
+function wwBridgeOpenTronDocs() {
+  try {
+    if (typeof window !== 'undefined' && window.open) window.open('https://developers.tron.network/', '_blank', 'noopener,noreferrer');
+    else location.href = 'https://developers.tron.network/';
+  } catch (e) {}
+}
+
+function wwVestingRender() {
+  var host = document.getElementById('wwVestingTimeline');
+  if (!host) return;
+  var rows = null;
+  try { rows = JSON.parse(localStorage.getItem('ww_vesting_demo_v1') || 'null'); } catch (e) { rows = null; }
+  if (!rows || !Array.isArray(rows) || rows.length === 0) {
+    rows = [
+      { t: 'T0', unlockedPct: 0 },
+      { t: '第 3 月', unlockedPct: 25 },
+      { t: '第 6 月', unlockedPct: 60 },
+      { t: '第 12 月', unlockedPct: 100 }
+    ];
+  }
+  host.innerHTML = rows.map(function (r) {
+    var u = Math.max(0, Math.min(100, parseFloat(r.unlockedPct) || 0));
+    var lk = 100 - u;
+    var esc = function (s) { return String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+    return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text)">' + esc(r.t) + '</span><span style="color:var(--text-muted)">已解锁 ' + u.toFixed(0) + '% · 锁定 ' + lk.toFixed(0) + '%</span></div>' +
+      '<div style="height:10px;border-radius:8px;background:var(--bg3);overflow:hidden;display:flex">' +
+      '<div style="width:' + u + '%;background:linear-gradient(90deg,#26a17b,#4fd1a5)"></div>' +
+      '<div style="width:' + lk + '%;background:rgba(200,168,75,0.35)"></div></div></div>';
+  }).join('');
+}
+
+function wwVestingResetDemo() {
+  try { localStorage.removeItem('ww_vesting_demo_v1'); } catch (e) {}
+  wwVestingRender();
+  if (typeof showToast === 'function') showToast('已恢复示例进度', 'info');
+}
+
+function wwDexConnectPopulate() {
+  var el = document.getElementById('wwDexAddrHint');
+  if (!el) return;
+  try {
+    if (REAL_WALLET && REAL_WALLET.ethAddress && REAL_WALLET.trxAddress) {
+      el.innerHTML = '<div style="margin-bottom:6px;color:var(--text-muted)">ETH</div><div style="color:var(--text)">' + REAL_WALLET.ethAddress + '</div>' +
+        '<div style="margin:10px 0 6px;color:var(--text-muted)">TRX</div><div style="color:var(--text)">' + REAL_WALLET.trxAddress + '</div>';
+    } else {
+      el.textContent = '请先创建或导入钱包';
+    }
+  } catch (e) {
+    el.textContent = '—';
+  }
+}
+
+function wwHardwareWalletPopulate() {
+  var el = document.getElementById('wwHardwareAddrEcho');
+  if (!el) return;
+  try {
+    if (REAL_WALLET && REAL_WALLET.ethAddress && REAL_WALLET.trxAddress) {
+      el.innerHTML = '<div style="margin-bottom:6px;color:var(--text-muted)">与本钱包核对地址</div><div style="color:var(--text);font-size:12px">ETH: ' + REAL_WALLET.ethAddress + '</div><div style="color:var(--text);font-size:12px;margin-top:6px">TRX: ' + REAL_WALLET.trxAddress + '</div>';
+    } else {
+      el.textContent = '请先创建或导入钱包后再与硬件设备显示地址逐项核对。';
+    }
+  } catch (e) {
+    el.textContent = '—';
+  }
+}
+
+function wwOpenLedgerSupport() {
+  try { if (window.open) window.open('https://support.ledger.com/', '_blank', 'noopener,noreferrer'); } catch (e) {}
+  if (typeof showToast === 'function') showToast('请在官方支持页查看设备与链兼容说明', 'info', 2800);
+}
+
+function wwOpenTrezorSupport() {
+  try { if (window.open) window.open('https://trezor.io/learn/', '_blank', 'noopener,noreferrer'); } catch (e) {}
+}
+
+function wwTaxReportPopulate() {
+  var sum = document.getElementById('wwTaxReportSummary');
+  if (!sum) return;
+  var n = 0;
+  try {
+    if (window._wwTxHistoryCache && Array.isArray(window._wwTxHistoryCache)) n = window._wwTxHistoryCache.length;
+  } catch (e) { n = 0; }
+  sum.textContent = '当前可导出记录条数：' + n + '（来自首页交易历史缓存）';
+}
+
+function wwTaxExportCsv() {
+  var rows = [];
+  try {
+    if (window._wwTxHistoryCache && Array.isArray(window._wwTxHistoryCache)) rows = window._wwTxHistoryCache.slice();
+  } catch (e) { rows = []; }
+  if (!rows.length) {
+    if (typeof showToast === 'function') showToast('暂无缓存记录，请先在首页刷新交易历史', 'info', 3200);
+    return;
+  }
+  var esc = function (s) {
+    var t = String(s == null ? '' : s);
+    if (/[",\n\r]/.test(t)) return '"' + t.replace(/"/g, '""') + '"';
+    return t;
+  };
+  var lines = ['date,type,coin,amount,counterparty,tx_hash'];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i] || {};
+    lines.push([esc(r.time), esc(r.type), esc(r.coin), esc(r.amount), esc(r.addr), esc(r.hash)].join(','));
+  }
+  var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'worldwallet-tx-tax-' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { try { URL.revokeObjectURL(a.href); document.body.removeChild(a); } catch (e2) {} }, 800);
+  if (typeof showToast === 'function') showToast('已生成 CSV（请自行核对字段）', 'success', 2400);
+}
+
+function wwCopyTradingPopulate() {
+  var ta = document.getElementById('wwCopyWatchInput');
+  if (!ta) return;
+  try {
+    var raw = localStorage.getItem('ww_copy_watch_v1') || '';
+    var ar = [];
+    try { ar = JSON.parse(raw); } catch (e) { ar = []; }
+    if (Array.isArray(ar) && ar.length) {
+      ta.value = ar.map(function (x) { return (x && x.addr) ? String(x.addr) : ''; }).filter(Boolean).join('\n');
+    }
+  } catch (e2) {}
+  wwCopyTradingRenderList();
+}
+
+function wwCopyTradingSave() {
+  var ta = document.getElementById('wwCopyWatchInput');
+  if (!ta) return;
+  var lines = String(ta.value || '').split(/[\n,;\s]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+  var ar = lines.map(function (addr) { return { addr: addr }; });
+  try { localStorage.setItem('ww_copy_watch_v1', JSON.stringify(ar)); } catch (e) {}
+  wwCopyTradingRenderList();
+  if (typeof showToast === 'function') showToast('已保存 ' + ar.length + ' 个地址（本机）', 'success', 2200);
+}
+
+function wwCopyTradingRenderList() {
+  var host = document.getElementById('wwCopyWatchList');
+  if (!host) return;
+  var ar = [];
+  try { ar = JSON.parse(localStorage.getItem('ww_copy_watch_v1') || '[]'); } catch (e) { ar = []; }
+  if (!Array.isArray(ar) || !ar.length) {
+    host.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-muted);font-size:12px">暂无监控地址</div>';
+    return;
+  }
+  host.innerHTML = ar.map(function (c, i) {
+    var a = (c && c.addr) ? String(c.addr) : '';
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:11px;word-break:break-all;display:flex;justify-content:space-between;gap:8px;align-items:center"><span style="color:var(--text)">' + a.replace(/</g, '') + '</span><span style="color:var(--red);cursor:pointer;flex-shrink:0" onclick="if(typeof wwCopyTradingRemove==='function')wwCopyTradingRemove(' + i + ')">移除</span></div>';
+  }).join('');
+}
+
+function wwCopyTradingRemove(idx) {
+  var ar = [];
+  try { ar = JSON.parse(localStorage.getItem('ww_copy_watch_v1') || '[]'); } catch (e) { ar = []; }
+  if (!Array.isArray(ar) || idx < 0 || idx >= ar.length) return;
+  ar.splice(idx, 1);
+  try { localStorage.setItem('ww_copy_watch_v1', JSON.stringify(ar)); } catch (e2) {}
+  var ta = document.getElementById('wwCopyWatchInput');
+  if (ta) ta.value = ar.map(function (x) { return x.addr; }).join('\n');
+  wwCopyTradingRenderList();
+}
+
+function wwPortfolioInsurancePopulate() {
+  var host = document.getElementById('wwInsuranceBody');
+  if (!host) return;
+  var items = [
+    { t: 'Nexus Mutual', d: '去中心化互助承保（需了解 NXM 与 KYC 要求）', u: 'https://www.nexusmutual.io/' },
+    { t: 'InsurAce', d: '多链 DeFi 协议组合保险', u: 'https://www.insurace.io/' },
+    { t: '托管方条款', d: '若资产在交易所，请查阅其用户保护与保险说明', u: 'https://www.binance.com/en/support/faq' }
+  ];
+  host.innerHTML = items.map(function (it) {
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">' +
+      '<div style="font-weight:700;color:var(--text);font-size:14px">' + it.t + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);line-height:1.55">' + it.d + '</div>' +
+      '<button type="button" class="btn-secondary" style="align-self:flex-start;padding:8px 14px;font-size:12px" onclick="try{window.open(\'' + it.u + '\',\'_blank\',\'noopener,noreferrer\');}catch(e){}">了解详情</button></div>';
+  }).join('');
+}
+
+function wwYieldOptimizerPopulate() {
+  var body = document.getElementById('wwYieldOptimizerBody');
+  var hint = document.getElementById('wwYieldOptimizerHint');
+  if (!body || !hint) return;
+  var parts = [];
+  var total = 0;
+  try {
+    if (window._wwLastPortfolioParts && window._wwLastPortfolioTotal != null) {
+      parts = window._wwLastPortfolioParts;
+      total = Number(window._wwLastPortfolioTotal) || 0;
+    }
+  } catch (e) { parts = []; total = 0; }
+  if (!total || total <= 1e-9) {
+    hint.textContent = '暂无持仓估值：请返回首页等待余额加载后再查看策略建议。';
+    body.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">—</div>';
+    return;
+  }
+  var apy = { USDT: 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var top = null;
+  var bestA = 0;
+  parts.forEach(function (p) {
+    var a = apy[p.l] != null ? apy[p.l] : 3.5;
+    if (a > bestA && p.v > 0) { bestA = a; top = p.l; }
+  });
+  hint.innerHTML = '当前组合参考总市值约 <b style="color:var(--text)">$' + total.toFixed(2) + '</b>。' +
+    (top ? ' 占比最高的可优化资产侧重：<b style="color:var(--gold)">' + top + '</b>（参考 APY ' + bestA.toFixed(1) + '%）。' : '');
+  var strategies = [
+    { n: '稳定币理财 / 货币市场', apy: '3.5–5%', fit: 'USDT', note: '适合大额 USDT，注意合约与平台信用风险' },
+    { n: '原生链质押（ETH / TRX）', apy: '3–6%', fit: 'ETH,TRX', note: '流动性质押或节点委托，需解锁期与罚没规则' },
+    { n: '流动性挖矿（AMM）', apy: '变动大', fit: 'USDT,ETH', note: '无常损失与智能合约风险较高' }
+  ];
+  body.innerHTML = strategies.map(function (s) {
+    var ok = parts.some(function (p) { return p.v > 0 && s.fit.indexOf(p.l) >= 0; });
+    var badge = ok ? '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(200,168,75,0.2);color:var(--gold)">与持仓相关</span>' : '';
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">' +
+      '<span style="font-weight:700;color:var(--text);font-size:13px">' + s.n + '</span>' + badge + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);line-height:1.55">参考 APY ' + s.apy + ' · ' + s.note + '</div></div>';
+  }).join('');
+}
+
+function wwTokenUnlockCalendarPopulate() {
+  var host = document.getElementById('wwUnlockCalendarBody');
+  if (!host) return;
+  var rows = [
+    { proj: 'Arbitrum', tok: 'ARB', when: '2026-05-16', amt: '约 1.1B 代币', note: '团队与投资人解锁批次（示例）' },
+    { proj: 'Optimism', tok: 'OP', when: '2026-06-30', amt: '约 3.8 亿 OP', note: '治理金库释放（示例）' },
+    { proj: 'dYdX', tok: 'DYDX', when: '2026-08-01', amt: '投资人解锁', note: '请关注官方 changelog' },
+    { proj: 'WorldToken 生态', tok: 'WTK', when: '2026-09-15', amt: '社区激励', note: '占位示例，非真实解锁计划' }
+  ];
+  host.innerHTML = rows.map(function (r) {
+    return '<div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">' +
+      '<span style="font-weight:700;color:var(--text)">' + r.proj + ' <span style="color:var(--gold)">' + r.tok + '</span></span>' +
+      '<span style="font-size:12px;color:var(--green,#26a17b)">' + r.when + '</span></div>' +
+      '<div style="font-size:11px;color:var(--text-muted)">' + r.amt + ' · ' + r.note + '</div></div>';
+  }).join('');
+}
+
+function wwIdentityPopulate() {
+  var o = {};
+  try { o = JSON.parse(localStorage.getItem('ww_identity_v1') || '{}'); } catch (e) { o = {}; }
+  var a = document.getElementById('wwIdentityEns');
+  var b = document.getElementById('wwIdentityTwitter');
+  var c = document.getElementById('wwIdentitySocial2');
+  if (a) a.value = o.ens || '';
+  if (b) b.value = o.twitter || '';
+  if (c) c.value = o.social2 || '';
+}
+
+function wwIdentitySave() {
+  var a = document.getElementById('wwIdentityEns');
+  var b = document.getElementById('wwIdentityTwitter');
+  var c = document.getElementById('wwIdentitySocial2');
+  var o = {
+    ens: a ? String(a.value || '').trim().slice(0, 128) : '',
+    twitter: b ? String(b.value || '').trim().slice(0, 64) : '',
+    social2: c ? String(c.value || '').trim().slice(0, 128) : ''
+  };
+  try { localStorage.setItem('ww_identity_v1', JSON.stringify(o)); } catch (e2) {}
+  if (typeof showToast === 'function') showToast('链上身份已保存（本机）', 'success', 2200);
+}
+
+function wwAnalyticsPopulate() {
+  var heat = document.getElementById('wwAnalyticsHeatmap');
+  var topEl = document.getElementById('wwAnalyticsTopTokens');
+  var sumEl = document.getElementById('wwAnalyticsSummary');
+  if (!heat || !topEl || !sumEl) return;
+  var txs = [];
+  try { txs = window._wwTxHistoryCache || []; } catch (e) { txs = []; }
+  if (!Array.isArray(txs)) txs = [];
+  var days = ['一', '二', '三', '四', '五', '六', '日'];
+  var n = Math.max(1, txs.length);
+  heat.innerHTML = days.map(function (d, i) {
+    var h = Math.min(100, 18 + (n * (i + 3)) % 72);
+    return '<div style="text-align:center"><div style="height:' + h + 'px;border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.55),rgba(200,168,75,0.12));margin-bottom:4px"></div><div style="font-size:10px;color:var(--text-muted)">周' + d + '</div></div>';
+  }).join('');
+  var byCoin = {};
+  txs.forEach(function (tx) {
+    var k = String(tx.coin || '—');
+    byCoin[k] = (byCoin[k] || 0) + 1;
+  });
+  var sorted = Object.keys(byCoin).sort(function (a, b) { return (byCoin[b] || 0) - (byCoin[a] || 0); });
+  if (!sorted.length) {
+    topEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-muted);font-size:12px">暂无交易缓存：请返回首页并点击「刷新」加载最近交易。</div>';
+    sumEl.textContent = '';
+    return;
+  }
+  topEl.innerHTML = sorted.slice(0, 6).map(function (k) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">' +
+      '<span style="font-weight:600;color:var(--text)">' + k + '</span>' +
+      '<span style="font-size:12px;color:var(--gold)">' + byCoin[k] + ' 笔</span></div>';
+  }).join('');
+  var inC = 0, outC = 0;
+  txs.forEach(function (tx) {
+    var t = String(tx.type || '');
+    if (t.indexOf('入') >= 0 || t.indexOf('收') >= 0) inC++;
+    else if (t.indexOf('出') >= 0 || t.indexOf('转') >= 0) outC++;
+  });
+  sumEl.innerHTML = '共分析 <b style="color:var(--text)">' + txs.length + '</b> 条缓存记录。方向概览：转入类约 ' + inC + ' 条，转出类约 ' + outC + ' 条（基于类型文本启发式）。';
+}
+
+function wwOpenDexUniswap() {
+  try {
+    if (typeof window !== 'undefined' && window.open) window.open('https://app.uniswap.org/', '_blank', 'noopener,noreferrer');
+    else location.href = 'https://app.uniswap.org/';
+  } catch (e) {}
+  if (typeof showToast === 'function') showToast('在 Uniswap 使用 WalletConnect 连接与上述相同的地址', 'info', 3600);
+}
+
+function wwOpenDexSunswap() {
+  try {
+    if (typeof window !== 'undefined' && window.open) window.open('https://sunswap.com/#/home', '_blank', 'noopener,noreferrer');
+    else location.href = 'https://sunswap.com/#/home';
+  } catch (e) {}
+  if (typeof showToast === 'function') showToast('在 SunSwap 使用 TronLink / WalletConnect', 'info', 3200);
+}
+
+function wwOpenDexOneinch() {
+  try {
+    if (typeof window !== 'undefined' && window.open) window.open('https://app.1inch.io/', '_blank', 'noopener,noreferrer');
+    else location.href = 'https://app.1inch.io/';
+  } catch (e) {}
+}
+
+function wwSocialRecoveryRender() {
+  var list = document.getElementById('wwSocialContactsList');
+  if (!list) return;
+  var ar = [];
+  try { ar = JSON.parse(localStorage.getItem('ww_social_contacts_v1') || '[]'); } catch (e) { ar = []; }
+  if (!Array.isArray(ar) || ar.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-muted);font-size:12px">暂无联系人，点击下方添加</div>';
+    return;
+  }
+  list.innerHTML = ar.map(function (c, i) {
+    var name = (c && c.name) ? String(c.name) : '未命名';
+    var note = (c && c.note) ? String(c.note) : '';
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start">' +
+      '<div><div style="font-weight:700;color:var(--text);font-size:14px">' + name.replace(/</g, '') + '</div>' +
+      '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;word-break:break-all">' + note.replace(/</g, '') + '</div></div>' +
+      '<span style="font-size:12px;color:var(--red);cursor:pointer;flex-shrink:0" onclick="if(typeof wwSocialRemoveContact==='function')wwSocialRemoveContact(' + i + ')">删除</span></div>';
+  }).join('');
+}
+function wwSocialAddContactPrompt() {
+  var name = prompt('联系人称呼');
+  if (name === null) return;
+  var note = prompt('备注（电话 / 邮箱 / 线下约定等，仅本机）', '');
+  if (note === null) return;
+  var ar = [];
+  try { ar = JSON.parse(localStorage.getItem('ww_social_contacts_v1') || '[]'); } catch (e) { ar = []; }
+  if (!Array.isArray(ar)) ar = [];
+  ar.push({ name: String(name).trim() || '未命名', note: String(note || '').trim() });
+  try { localStorage.setItem('ww_social_contacts_v1', JSON.stringify(ar)); } catch (e2) {}
+  wwSocialRecoveryRender();
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+}
+function wwSocialRemoveContact(idx) {
+  var ar = [];
+  try { ar = JSON.parse(localStorage.getItem('ww_social_contacts_v1') || '[]'); } catch (e) { ar = []; }
+  if (!Array.isArray(ar) || idx < 0 || idx >= ar.length) return;
+  ar.splice(idx, 1);
+  try { localStorage.setItem('ww_social_contacts_v1', JSON.stringify(ar)); } catch (e2) {}
+  wwSocialRecoveryRender();
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+}
+function wwSocialSaveFromUI() {
+  if (typeof showToast === 'function') showToast('联系人已保存在本机', 'success');
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+}
+
 // ── 交易历史 ──────────────────────────────────────────────────
 async function loadTxHistory() {
   if(!REAL_WALLET) return;
@@ -6059,25 +8893,13 @@ async function loadTxHistory() {
     }
 
     if(txs.length === 0) {
+      try { window._wwTxHistoryCache = []; } catch (_c) {}
       el.innerHTML = txHistoryEmptyHtml();
       return;
     }
-
-    el.innerHTML = txs.map(tx => `
-      <div onclick="window.open((tx.coin==='eth'?'https://etherscan.io/tx/':'https://tronscan.org/#/transaction/')+tx.hash,'_blank')"
-        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
-        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
-          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
-        </div>
-      </div>
-    `).join('');
+    try { window._wwTxHistoryCache = txs; } catch (_c2) {}
+    try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(txs); } catch (_wh) {}
+    renderTxHistoryFromCache();
 
   } catch(e) {
     console.error('加载交易记录失败:', e);
@@ -6566,6 +9388,87 @@ function _resumeWalletAfterUnlock() {
   window._wwForceIdleLock = false;
   goTo('page-home');
 }
+function wwB64Bytes(u8) {
+  var s = '';
+  var chunk = 8192;
+  for (var i = 0; i < u8.length; i += chunk) {
+    s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + chunk, u8.length)));
+  }
+  return btoa(s);
+}
+function wwRefreshAntiPhishOnPinUnlock() {
+  var w = '';
+  try { w = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
+  var el = document.getElementById('wwAntiPhishBadge');
+  if (!el) return;
+  if (!w) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.textContent = '防钓鱼口令：' + w;
+}
+function wwOpenAntiPhishDialog() {
+  var cur = '';
+  try { cur = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
+  var t = prompt('设置防钓鱼口令（解锁界面会显示，用于识别仿冒应用）\n留空则清除', cur);
+  if (t === null) return;
+  t = String(t).trim();
+  if (t === '') {
+    try { localStorage.removeItem('ww_antiphish_word'); } catch (e) {}
+    if (typeof showToast === 'function') showToast('已清除防钓鱼口令', 'info');
+  } else {
+    try { localStorage.setItem('ww_antiphish_word', t.slice(0, 32)); } catch (e) {}
+    if (typeof showToast === 'function') showToast('已保存防钓鱼口令', 'success');
+  }
+  wwRefreshAntiPhishOnPinUnlock();
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+}
+async function wwExportEncryptedCloudBackup() {
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
+  var pass = prompt('设置加密密码（请牢记，用于解密此备份）');
+  if (!pass) return;
+  var enc = new TextEncoder();
+  try {
+    var payload = JSON.stringify({
+      v: 1,
+      t: Date.now(),
+      eth: REAL_WALLET.ethAddress,
+      trx: REAL_WALLET.trxAddress || '',
+      btc: REAL_WALLET.btcAddress || '',
+      backed: !!REAL_WALLET.backedUp
+    });
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
+    var out = { v: 1, kind: 'ww_cloud_backup', salt: wwB64Bytes(salt), iv: wwB64Bytes(iv), data: wwB64Bytes(new Uint8Array(ct)) };
+    var txt = JSON.stringify(out);
+    try {
+      await navigator.clipboard.writeText(txt);
+      if (typeof showToast === 'function') showToast('加密备份已复制到剪贴板，可粘贴到邮件或云笔记', 'success');
+    } catch (e) {
+      prompt('复制加密备份（手动全选复制）', txt);
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
+  }
+}
+function renderWwChartsPlaceholder() {
+  var host = document.getElementById('wwCandleBars');
+  if (!host) return;
+  host.innerHTML = '';
+  var n = 28;
+  for (var i = 0; i < n; i++) {
+    var h = 36 + Math.random() * 58;
+    var up = Math.random() > 0.42;
+    var col = up ? '#26a17b' : '#e74c3c';
+    var wick = 10 + Math.random() * 20;
+    var d = document.createElement('div');
+    d.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;flex:1;min-width:0;max-width:12px';
+    d.innerHTML = '<div style="width:2px;height:' + wick + '%;background:rgba(255,255,255,0.22);margin-bottom:2px"></div><div style="width:72%;height:' + h + '%;background:' + col + ';border-radius:2px;opacity:0.92"></div>';
+    host.appendChild(d);
+  }
+}
+
 function continueAfterPinCheck() {
   const pin = localStorage.getItem('ww_unlock_pin');
   if(!pin) { _resumeWalletAfterUnlock(); return; }
@@ -6576,6 +9479,7 @@ function continueAfterPinCheck() {
     inp.value = '';
     if(err) err.style.display = 'none';
     ov.classList.add('show');
+    try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap) {}
     setTimeout(() => { try { inp.focus(); } catch(e) {} }, 200);
   } else {
     _resumeWalletAfterUnlock();
@@ -6631,6 +9535,7 @@ function openPinSettingsDialog() {
   if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
   localStorage.setItem('ww_unlock_pin', t);
   showToast('PIN 已保存', 'success');
+  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
 }
 
@@ -6646,6 +9551,7 @@ try {
     document.addEventListener(ev, function() { wwResetActivityClock(); }, { capture: true, passive: true });
   });
   setInterval(function() { try { wwTickIdleLock(); } catch(e) {} }, 15000);
+  setInterval(function() { try { if (typeof wwRecurringTick === 'function') wwRecurringTick(); } catch(e) {} }, 60000);
   wwApplyIdleLockLabel();
 } catch(e) {}
 const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
@@ -6692,7 +9598,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 </script>
 
 
-<script>
+<script type="application/ld+json">
 
 
 {"@context":"https://schema.org","@type":"WebApplication","name":"WorldToken","applicationCategory":"FinanceApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"全球多语言加密钱包：万语地址、多链资产与转账。","url":"https://worldtoken.cc/wallet.html"}
@@ -6727,5 +9633,19 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   .page { display: block !important; position: static !important; }
 }
 </style>
+
+    <!-- 代币授权管理页 -->
+    <div id="page-allowance" class="page">
+      <div class="nav-bar">
+        <span class="nav-back" onclick="goTo('page-settings')">‹</span>
+        <span class="nav-title">代币授权管理</span>
+      </div>
+      <div style="padding:16px">
+        <div style="color:var(--text-muted);font-size:13px;margin-bottom:16px">管理 dApp 对你代币的访问权限</div>
+        <div id="allowanceList">
+          <div style="text-align:center;padding:40px;color:var(--text-muted)">暂无活跃授权</div>
+        </div>
+      </div>
+    </div>
 </body>
 </html>
