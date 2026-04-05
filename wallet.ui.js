@@ -26,7 +26,8 @@ function updateImportWordCount() {
   const badge = document.getElementById('importWordCountBadge');
   if(!badge) return;
   const n = countMnemonicWords(input ? input.value : '');
-  badge.textContent = n + '/12';
+  const cap = importGridWordCount || 12;
+  badge.textContent = n + '/' + cap;
 }
 
 function showWalletLoading() {
@@ -2083,6 +2084,118 @@ function syncImportPaste() {
   const paste = document.getElementById('importPaste');
   if(paste) paste.value = words.filter(w=>w).join(' ');
   updateImportWordCount();
+}
+
+/** 粘贴区变化时同步格子行数与内容 */
+function syncImportGrid(text) {
+  const words = String(text || '').trim().split(/[\s,]+/).filter(Boolean);
+  const validLengths = [12, 15, 18, 21, 24];
+  var targetLen = 12;
+  if (validLengths.indexOf(words.length) >= 0) targetLen = words.length;
+  else if (words.length > 24) targetLen = 24;
+  else if (words.length > 0) {
+    var found = validLengths.find(function(l) { return l >= words.length; });
+    targetLen = found != null ? found : 24;
+  }
+  initImportGrid(targetLen);
+  for (var i = 0; i < targetLen; i++) {
+    var inp = document.getElementById('iw_' + i);
+    if (inp) inp.value = words[i] || '';
+  }
+  syncImportPaste();
+}
+
+/** 汇总导入区助记词字符串（空格规范化） */
+function getMnemonicFromImport() {
+  try { syncImportPaste(); } catch (e) {}
+  var paste = document.getElementById('importPaste');
+  var t = paste && paste.value ? paste.value.trim() : '';
+  if (!t) {
+    var words = [];
+    var len = importGridWordCount || 12;
+    for (var i = 0; i < len; i++) {
+      var inp = document.getElementById('iw_' + i);
+      if (inp && inp.value.trim()) words.push(inp.value.trim());
+    }
+    t = words.join(' ');
+  }
+  return t.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * 导入钱包：使用 core/wallet.js 的 importWallet；成功写入 REAL_WALLET（仅公开地址）并加密保存（若已设 PIN）
+ */
+async function doImportWallet() {
+  var errEl = document.getElementById('importError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  var mnemonicRaw = getMnemonicFromImport();
+  if (!mnemonicRaw) {
+    showToast('❌ 请输入助记词', 'error');
+    return;
+  }
+  showWalletLoading();
+  try {
+    var result = typeof importWallet === 'function' ? importWallet(mnemonicRaw) : null;
+    if (!result) {
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '助记词无效，请检查后重试'; }
+      showToast('❌ 助记词无效，请检查后重试', 'error');
+      return;
+    }
+    var pin = '';
+    try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
+    window.REAL_WALLET = {
+      ethAddress: result.eth.address,
+      trxAddress: result.trx.address,
+      btcAddress: result.btc.address,
+      createdAt: result.createdAt,
+      hasEncrypted: !!pin,
+      backedUp: false
+    };
+    if (pin) {
+      var flatForStore = {
+        mnemonic: result.mnemonic,
+        enMnemonic: result.mnemonic,
+        words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
+        ethAddress: result.eth.address,
+        trxAddress: result.trx.address,
+        btcAddress: result.btc.address,
+        privateKey: result.eth.privateKey,
+        trxPrivateKey: result.trx.privateKey,
+        createdAt: result.createdAt,
+        backedUp: false
+      };
+      await saveWalletSecure(flatForStore, pin);
+    } else {
+      if (typeof _saveWalletPlainPublicOnly === 'function') {
+        _saveWalletPlainPublicOnly({
+          ethAddress: result.eth.address,
+          trxAddress: result.trx.address,
+          btcAddress: result.btc.address,
+          createdAt: result.createdAt,
+          backedUp: false
+        });
+      } else {
+        try {
+          localStorage.setItem('ww_wallet', JSON.stringify({
+            ethAddress: result.eth.address,
+            trxAddress: result.trx.address,
+            btcAddress: result.btc.address,
+            createdAt: result.createdAt,
+            backedUp: false
+          }));
+        } catch (e2) {}
+      }
+    }
+    try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
+    try { if (typeof updateAddr === 'function') updateAddr(); } catch (e4) {}
+    var tb = document.getElementById('tabBar');
+    if (tb) tb.style.display = 'flex';
+    setTimeout(function() { try { loadBalances(); } catch (e5) {} }, 500);
+    goTo('page-home');
+    showToast('✅ 钱包导入成功！', 'success');
+  } finally {
+    hideWalletLoading();
+  }
 }
 
 // ── 从导入格子获取助记词 ──────────────────────────────────────────
