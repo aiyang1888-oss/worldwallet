@@ -1240,21 +1240,23 @@ function goTo(pageId, opts) {
     var _s=document.getElementById('mnemonicLength');
     if(_s){_s.value='12';}
     showWalletLoading();
-    (function(){
-      var bytesMap={12:16,15:20,18:24,21:28,24:32};
+    try {
       var mn=ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
       var w0=ethers.Wallet.fromMnemonic(mn);
       var t0=ethers.Wallet.fromMnemonic(mn,"m/44'/195'/0'/0/0");
       var b0=ethers.Wallet.fromMnemonic(mn,"m/44'/0'/0'/0/0");
       var ta='T'+t0.address.slice(2,35);
       try{if(typeof TronWeb!=='undefined')ta=TronWeb.address.fromHex('41'+t0.address.slice(2));}catch(e){}
+      // 只存内存，不存 localStorage
       window.REAL_WALLET={ethAddress:w0.address,trxAddress:ta,btcAddress:b0.address,
         privateKey:w0.privateKey,enMnemonic:mn,mnemonic:mn,createdAt:Date.now()};
-      saveWallet(window.REAL_WALLET);
       hideWalletLoading();
       renderKeyGrid();
       if(typeof updateMnemonicStrengthIndicator==='function')updateMnemonicStrengthIndicator();
-    })();
+    } catch(e) {
+      hideWalletLoading();
+      console.error('page-key init error',e);
+    }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
 if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
@@ -5765,11 +5767,11 @@ async function changeMnemonicLength(n) {
     var wallet = ethers.Wallet.fromMnemonic(mnemonic);
     var trxW = ethers.Wallet.fromMnemonic(mnemonic,"m/44'/195'/0'/0/0");
     var btcW = ethers.Wallet.fromMnemonic(mnemonic,"m/44'/0'/0'/0/0");
-    var trxAddr = 'T'+trxW.address.slice(2,35);
-    try{ if(typeof TronWeb!=='undefined') trxAddr=TronWeb.address.fromHex('41'+trxW.address.slice(2)); }catch(e){}
-    window.REAL_WALLET = { ethAddress:wallet.address, trxAddress:trxAddr, btcAddress:btcW.address,
+    var ta = 'T'+trxW.address.slice(2,35);
+    try{ if(typeof TronWeb!=='undefined') ta=TronWeb.address.fromHex('41'+trxW.address.slice(2)); }catch(e){}
+    // 只更新内存，不存 localStorage（用户还没确认备份）
+    window.REAL_WALLET = { ethAddress:wallet.address, trxAddress:ta, btcAddress:btcW.address,
       privateKey:wallet.privateKey, enMnemonic:mnemonic, mnemonic:mnemonic, createdAt:Date.now() };
-    saveWallet(window.REAL_WALLET);
     renderKeyGrid();
   } catch(e) {
     showToast('生成失败: '+(e&&e.message||e),'error');
