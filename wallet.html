@@ -2,17 +2,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-<script>
-// 强制清除旧 Service Worker 和缓存
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-  caches.keys().then(keys => {
-    keys.forEach(k => caches.delete(k));
-  });
-}
-</script>
+
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
@@ -36,54 +26,9 @@ if ('serviceWorker' in navigator) {
 <!-- qrcode: on-demand loadQRCodeLib() -->
 <!-- ethers.js for real BIP39 wallet generation -->
 <!-- ethers.js - 钱包派生库，约800KB -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
-<!-- TronWeb 懒加载，仅转账时加载 -->
-<script>
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
-var _qrLoadPromise=null;
-function loadQRCodeLib(){
-  if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
-  if(_qrLoadPromise)return _qrLoadPromise;
-  _qrLoadPromise=new Promise(function(res,rej){
-    var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
-    s.async=true;
-    s.onload=function(){res();};
-    s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
-    document.head.appendChild(s);
-  });
-  return _qrLoadPromise;
-}
-function countMnemonicWords(text) {
-  return String(text || '').trim().split(/\s+/).filter(Boolean).length;
-}
-function updateImportWordCount() {
-  const input = document.getElementById('importPaste');
-  const badge = document.getElementById('importWordCountBadge');
-  if(!badge) return;
-  const n = countMnemonicWords(input ? input.value : '');
-  badge.textContent = n + '/12';
-}
-function setWalletCreateStep(n) {
-  const steps = document.getElementById('walletCreateSteps');
-  const text = document.getElementById('walletLoadingText');
-  const labels = ['正在生成钱包…', '1/3 生成密钥', '2/3 派生地址', '3/3 完成'];
-  if (text) text.textContent = (n >= 1 && n <= 3) ? labels[n] : labels[0];
-  if (!steps) return;
-  steps.querySelectorAll(');
-}
-function showWalletLoading() {
-  const el = document.getElementById('walletLoadingOverlay');
-  if(el) el.classList.add('show');
-  
-}
-function hideWalletLoading() {
-  const el = document.getElementById('walletLoadingOverlay');
-  if(el) el.classList.remove('show');
-  
-}
 
-</script>
+<!-- TronWeb 懒加载，仅转账时加载 -->
+
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -2178,7 +2123,225 @@ body {
 
 </div>
 
+
+
+    <!-- 兑换选币弹窗 -->
+    <div class="overlay" id="coinPickerOverlay" onclick="if(event.target===this)closeCoinPicker()">
+      <div class="overlay-sheet" style="padding:20px;max-height:70vh;overflow-y:auto">
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择代币</div>
+        <div id="coinPickerList"></div>
+      </div>
+    </div>
+
+    <!-- 兑换确认弹窗 -->
+    <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this)this.classList.remove('show')">
+      <div class="overlay-sheet" style="padding:24px">
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;text-align:center">确认兑换</div>
+        <div style="background:var(--bg2);border-radius:14px;padding:16px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <span style="color:var(--text-muted);font-size:13px">支付</span>
+            <span style="color:var(--text);font-weight:600" id="swapConfirmFrom">--</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <span style="color:var(--text-muted);font-size:13px">获得（约）</span>
+            <span style="color:var(--gold);font-weight:600" id="swapConfirmTo">--</span>
+          </div>
+          <div style="display:flex;justify-content:space-between">
+            <span style="color:var(--text-muted);font-size:13px">汇率</span>
+            <span style="color:var(--text-muted);font-size:12px" id="swapConfirmRate">--</span>
+          </div>
+        </div>
+        <div style="background:rgba(255,180,0,0.06);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#aa8844">
+          ⚡ 将跳转到 SunSwap / Uniswap 完成链上兑换
+        </div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-secondary" style="flex:1" onclick="const _ovswapCo2 = document.getElementById('swapConfirmOverlay'); if(_ovswapCo2) _ovswapCo2.classList.remove('show')">取消</button>
+          <button class="btn-primary" style="flex:1" onclick="openDex()">前往兑换 →</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- 礼物发送成功弹窗 -->
+    <div class="overlay" id="hbSuccessOverlay" style="display:none;flex-direction:column;align-items:center;justify-content:center">
+      <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
+        <div style="font-size:40px;margin-bottom:12px">🎁</div>
+        <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
+        <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
+        <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
+      </div>
+    </div>
+
+
+  
+
+  <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
+        <div class="pin-setup-panel" onclick="event.stopPropagation()">
+          <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
+          <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
+          <div class="pin-dots" id="pinDots"></div>
+          <div class="pin-keypad" id="pinKeypad"></div>
+          <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+        </div>
+      </div>
+
+
+<!-- wt-pad-0001 -->
+<!-- wt-pad-0002 -->
+<!-- wt-pad-0003 -->
+<!-- wt-pad-0004 -->
+<!-- wt-pad-0005 -->
+<!-- wt-pad-0006 -->
+<!-- wt-pad-0007 -->
+<!-- wt-pad-0008 -->
+<!-- wt-pad-0009 -->
+<!-- wt-pad-0010 -->
+<!-- wt-pad-0011 -->
+<!-- wt-pad-0012 -->
+<!-- wt-pad-0013 -->
+<!-- wt-pad-0014 -->
+<!-- wt-pad-0015 -->
+<!-- wt-pad-0016 -->
+<!-- wt-pad-0017 -->
+<!-- wt-pad-0018 -->
+<!-- wt-pad-0019 -->
+<!-- wt-pad-0020 -->
+<!-- wt-pad-0021 -->
+<!-- wt-pad-0022 -->
+<!-- wt-pad-0023 -->
+<!-- wt-pad-0024 -->
+<!-- wt-pad-0025 -->
+<!-- wt-pad-0026 -->
+<!-- wt-pad-0027 -->
+<!-- wt-pad-0028 -->
+<!-- wt-pad-0029 -->
+<!-- wt-pad-0030 -->
+<!-- wt-pad-0031 -->
+<!-- wt-pad-0032 -->
+<!-- wt-pad-0033 -->
+<!-- wt-pad-0034 -->
+<!-- wt-pad-0035 -->
+<!-- wt-pad-0036 -->
+<!-- wt-pad-0037 -->
+<!-- wt-pad-0038 -->
+<!-- wt-pad-0039 -->
+<!-- wt-pad-0040 -->
+<!-- wt-pad-0041 -->
+<!-- wt-pad-0042 -->
+<!-- wt-pad-0043 -->
+<!-- wt-pad-0044 -->
+<!-- wt-pad-0045 -->
+<!-- wt-pad-0046 -->
+<!-- wt-pad-0047 -->
+<!-- wt-pad-0048 -->
+<!-- wt-pad-0049 -->
+<!-- wt-pad-0050 -->
+<!-- wt-pad-0051 -->
+<!-- wt-pad-0052 -->
+<!-- wt-pad-0053 -->
+<!-- wt-pad-0054 -->
+<!-- wt-pad-0055 -->
+<!-- wt-pad-0056 -->
+<!-- wt-pad-0057 -->
+<!-- wt-pad-0058 -->
+<!-- wt-pad-0059 -->
+<!-- wt-pad-0060 -->
+<!-- wt-pad-0061 -->
+<!-- wt-pad-0062 -->
+<!-- wt-pad-0063 -->
+<!-- wt-pad-0064 -->
+<!-- wt-pad-0065 -->
+<!-- wt-pad-0066 -->
+<!-- wt-pad-0067 -->
+<!-- wt-pad-0068 -->
+<!-- wt-pad-0069 -->
+<!-- wt-pad-0070 -->
+<!-- wt-pad-0071 -->
+<!-- wt-pad-0072 -->
+<!-- wt-pad-0073 -->
+<!-- wt-pad-0074 -->
+<!-- wt-pad-0075 -->
+<!-- wt-pad-0076 -->
+<!-- wt-pad-0077 -->
+<!-- wt-pad-0078 -->
+<!-- wt-pad-0079 -->
+<!-- wt-pad-0080 -->
+<!-- wt-pad-0081 -->
+<!-- wt-pad-0082 -->
+<!-- wt-pad-0083 -->
+<!-- wt-pad-0084 -->
+<!-- wt-pad-0085 -->
+<!-- wt-pad-0086 -->
+<!-- wt-pad-0087 -->
+<!-- wt-pad-0088 -->
+<!-- wt-pad-0089 -->
+<!-- wt-pad-0090 -->
+<!-- wt-pad-0091 -->
+<!-- wt-pad-0092 -->
+<!-- wt-pad-0093 -->
+<!-- wt-pad-0094 -->
+<!-- wt-pad-0095 -->
+<!-- wt-pad-0096 -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
 <script>
+
+// 强制清除旧 Service Worker 和缓存
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+  caches.keys().then(keys => {
+    keys.forEach(k => caches.delete(k));
+  });
+}
+
+
+function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+var _qrLoadPromise=null;
+function loadQRCodeLib(){
+  if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
+  if(_qrLoadPromise)return _qrLoadPromise;
+  _qrLoadPromise=new Promise(function(res,rej){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
+    s.async=true;
+    s.onload=function(){res();};
+    s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
+    document.head.appendChild(s);
+  });
+  return _qrLoadPromise;
+}
+function countMnemonicWords(text) {
+  return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+}
+function updateImportWordCount() {
+  const input = document.getElementById('importPaste');
+  const badge = document.getElementById('importWordCountBadge');
+  if(!badge) return;
+  const n = countMnemonicWords(input ? input.value : '');
+  badge.textContent = n + '/12';
+}
+function setWalletCreateStep(n) {
+  const steps = document.getElementById('walletCreateSteps');
+  const text = document.getElementById('walletLoadingText');
+  const labels = ['正在生成钱包…', '1/3 生成密钥', '2/3 派生地址', '3/3 完成'];
+  if (text) text.textContent = (n >= 1 && n <= 3) ? labels[n] : labels[0];
+  if (!steps) return;
+  try { steps.querySelectorAll('[data-step]').forEach(function(el, i) { el.classList.toggle('active', (i + 1) === n); }); } catch (e) {}
+}
+function showWalletLoading() {
+  const el = document.getElementById('walletLoadingOverlay');
+  if(el) el.classList.add('show');
+  
+}
+function hideWalletLoading() {
+  const el = document.getElementById('walletLoadingOverlay');
+  if(el) el.classList.remove('show');
+  
+}
+
+
+
 const LANG_INFO = {
   zh:{name:'中文简体',flag:'🇨🇳'},        // 1. 中文简体 ~13亿
   'zh-TW':{name:'中文繁體（台灣）',flag:'🇹🇼'}, // 2a. 繁體中文台灣
@@ -5385,75 +5548,15 @@ function updateTime() {
 updateTime(); window._timeInterval = setInterval(updateTime,60000);
 const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
 try { applySeoForPage('page-welcome'); applyOfflineState(); window.addEventListener('online', applyOfflineState); window.addEventListener('offline', applyOfflineState); } catch(e) {}
-</script>
-
-    <!-- 兑换选币弹窗 -->
-    <div class="overlay" id="coinPickerOverlay" onclick="if(event.target===this)closeCoinPicker()">
-      <div class="overlay-sheet" style="padding:20px;max-height:70vh;overflow-y:auto">
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择代币</div>
-        <div id="coinPickerList"></div>
-      </div>
-    </div>
-
-    <!-- 兑换确认弹窗 -->
-    <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this)this.classList.remove('show')">
-      <div class="overlay-sheet" style="padding:24px">
-        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;text-align:center">确认兑换</div>
-        <div style="background:var(--bg2);border-radius:14px;padding:16px;margin-bottom:16px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-            <span style="color:var(--text-muted);font-size:13px">支付</span>
-            <span style="color:var(--text);font-weight:600" id="swapConfirmFrom">--</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-            <span style="color:var(--text-muted);font-size:13px">获得（约）</span>
-            <span style="color:var(--gold);font-weight:600" id="swapConfirmTo">--</span>
-          </div>
-          <div style="display:flex;justify-content:space-between">
-            <span style="color:var(--text-muted);font-size:13px">汇率</span>
-            <span style="color:var(--text-muted);font-size:12px" id="swapConfirmRate">--</span>
-          </div>
-        </div>
-        <div style="background:rgba(255,180,0,0.06);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#aa8844">
-          ⚡ 将跳转到 SunSwap / Uniswap 完成链上兑换
-        </div>
-        <div style="display:flex;gap:10px">
-          <button class="btn-secondary" style="flex:1" onclick="const _ovswapCo2 = document.getElementById('swapConfirmOverlay'); if(_ovswapCo2) _ovswapCo2.classList.remove('show')">取消</button>
-          <button class="btn-primary" style="flex:1" onclick="openDex()">前往兑换 →</button>
-        </div>
-      </div>
-    </div>
 
 
-    <!-- 礼物发送成功弹窗 -->
-    <div class="overlay" id="hbSuccessOverlay" style="display:none;flex-direction:column;align-items:center;justify-content:center">
-      <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
-        <div style="font-size:40px;margin-bottom:12px">🎁</div>
-        <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
-        <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
-        <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
-      </div>
-    </div>
-
-
-  <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
       });
     }
-  </script>
+  
 
-  <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
-        <div class="pin-setup-panel" onclick="event.stopPropagation()">
-          <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
-          <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
-          <div class="pin-dots" id="pinDots"></div>
-          <div class="pin-keypad" id="pinKeypad"></div>
-          <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
-        </div>
-      </div>
-
-<script>
 (function(){
   function run(){
     if(window._wwPaintBoot) return;
@@ -5467,102 +5570,7 @@ try { applySeoForPage('page-welcome'); applyOfflineState(); window.addEventListe
   if(document.readyState==='complete') run();
   else window.addEventListener('load', run);
 })();
+
 </script>
-<!-- wt-pad-0001 -->
-<!-- wt-pad-0002 -->
-<!-- wt-pad-0003 -->
-<!-- wt-pad-0004 -->
-<!-- wt-pad-0005 -->
-<!-- wt-pad-0006 -->
-<!-- wt-pad-0007 -->
-<!-- wt-pad-0008 -->
-<!-- wt-pad-0009 -->
-<!-- wt-pad-0010 -->
-<!-- wt-pad-0011 -->
-<!-- wt-pad-0012 -->
-<!-- wt-pad-0013 -->
-<!-- wt-pad-0014 -->
-<!-- wt-pad-0015 -->
-<!-- wt-pad-0016 -->
-<!-- wt-pad-0017 -->
-<!-- wt-pad-0018 -->
-<!-- wt-pad-0019 -->
-<!-- wt-pad-0020 -->
-<!-- wt-pad-0021 -->
-<!-- wt-pad-0022 -->
-<!-- wt-pad-0023 -->
-<!-- wt-pad-0024 -->
-<!-- wt-pad-0025 -->
-<!-- wt-pad-0026 -->
-<!-- wt-pad-0027 -->
-<!-- wt-pad-0028 -->
-<!-- wt-pad-0029 -->
-<!-- wt-pad-0030 -->
-<!-- wt-pad-0031 -->
-<!-- wt-pad-0032 -->
-<!-- wt-pad-0033 -->
-<!-- wt-pad-0034 -->
-<!-- wt-pad-0035 -->
-<!-- wt-pad-0036 -->
-<!-- wt-pad-0037 -->
-<!-- wt-pad-0038 -->
-<!-- wt-pad-0039 -->
-<!-- wt-pad-0040 -->
-<!-- wt-pad-0041 -->
-<!-- wt-pad-0042 -->
-<!-- wt-pad-0043 -->
-<!-- wt-pad-0044 -->
-<!-- wt-pad-0045 -->
-<!-- wt-pad-0046 -->
-<!-- wt-pad-0047 -->
-<!-- wt-pad-0048 -->
-<!-- wt-pad-0049 -->
-<!-- wt-pad-0050 -->
-<!-- wt-pad-0051 -->
-<!-- wt-pad-0052 -->
-<!-- wt-pad-0053 -->
-<!-- wt-pad-0054 -->
-<!-- wt-pad-0055 -->
-<!-- wt-pad-0056 -->
-<!-- wt-pad-0057 -->
-<!-- wt-pad-0058 -->
-<!-- wt-pad-0059 -->
-<!-- wt-pad-0060 -->
-<!-- wt-pad-0061 -->
-<!-- wt-pad-0062 -->
-<!-- wt-pad-0063 -->
-<!-- wt-pad-0064 -->
-<!-- wt-pad-0065 -->
-<!-- wt-pad-0066 -->
-<!-- wt-pad-0067 -->
-<!-- wt-pad-0068 -->
-<!-- wt-pad-0069 -->
-<!-- wt-pad-0070 -->
-<!-- wt-pad-0071 -->
-<!-- wt-pad-0072 -->
-<!-- wt-pad-0073 -->
-<!-- wt-pad-0074 -->
-<!-- wt-pad-0075 -->
-<!-- wt-pad-0076 -->
-<!-- wt-pad-0077 -->
-<!-- wt-pad-0078 -->
-<!-- wt-pad-0079 -->
-<!-- wt-pad-0080 -->
-<!-- wt-pad-0081 -->
-<!-- wt-pad-0082 -->
-<!-- wt-pad-0083 -->
-<!-- wt-pad-0084 -->
-<!-- wt-pad-0085 -->
-<!-- wt-pad-0086 -->
-<!-- wt-pad-0087 -->
-<!-- wt-pad-0088 -->
-<!-- wt-pad-0089 -->
-<!-- wt-pad-0090 -->
-<!-- wt-pad-0091 -->
-<!-- wt-pad-0092 -->
-<!-- wt-pad-0093 -->
-<!-- wt-pad-0094 -->
-<!-- wt-pad-0095 -->
-<!-- wt-pad-0096 -->
 </body>
 </html>
