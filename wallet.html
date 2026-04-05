@@ -791,6 +791,23 @@ body {
 }
 .offline-banner.show { display: flex; }
 
+
+/* 提取的通用样式类 */
+.u1 { font-size:24px }
+.u2 { flex:1;text-align:left }
+.u3 { opacity:0 }
+.u4 { flex:1 }
+.u5 { display:none }
+.u6 { text-align:right }
+.u7 { display:flex;align-items:center;gap:12px }
+.u8 { font-size:22px;line-height:1 }
+.u9 { display:flex;justify-content:space-between }
+.u10 { font-size:28px;margin-bottom:10px }
+.u11 { display:flex;align-items:center;gap:6px }
+.u12 { display:flex;flex-direction:column;gap:8px }
+.u13 { width:100%;padding:12px }
+.u14 { padding:16px 18px;flex:1;overflow-y:auto }
+.u15 { font-size:20px;margin-bottom:4px }
 </style>
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -827,139 +844,139 @@ body {
       <!-- 语言列表 可滑动 -->
       <div id="welcomeLangGrid">
         <div class="lang-row active" data-lang="zh" onclick="selectLang(this)">
-          <span style="font-size:24px">🇨🇳</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">中文</div><div style="font-size:10px;color:var(--text-muted)">Chinese · 11亿使用者</div></div>
+          <span class="u1">🇨🇳</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">中文</div><div style="font-size:10px;color:var(--text-muted)">Chinese · 11亿使用者</div></div>
           <span class="lang-check" style="opacity:1">✓</span>
         </div>
         <div class="lang-row" data-lang="en" onclick="selectLang(this)">
-          <span style="font-size:24px">🇺🇸</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">English</div><div style="font-size:10px;color:var(--text-muted)">English · 15亿使用者 · 公链标准</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇺🇸</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">English</div><div style="font-size:10px;color:var(--text-muted)">English · 15亿使用者 · 公链标准</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="hi" onclick="selectLang(this)">
-          <span style="font-size:24px">🇮🇳</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">हिन्दी</div><div style="font-size:10px;color:var(--text-muted)">Hindi · 6亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇮🇳</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">हिन्दी</div><div style="font-size:10px;color:var(--text-muted)">Hindi · 6亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="es" onclick="selectLang(this)">
-          <span style="font-size:24px">🇪🇸</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Español</div><div style="font-size:10px;color:var(--text-muted)">Spanish · 5亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇪🇸</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Español</div><div style="font-size:10px;color:var(--text-muted)">Spanish · 5亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="ar" onclick="selectLang(this)">
-          <span style="font-size:24px">🇸🇦</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">العربية</div><div style="font-size:10px;color:var(--text-muted)">Arabic · 4亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇸🇦</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">العربية</div><div style="font-size:10px;color:var(--text-muted)">Arabic · 4亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="fr" onclick="selectLang(this)">
-          <span style="font-size:24px">🇫🇷</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Français</div><div style="font-size:10px;color:var(--text-muted)">French · 3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇫🇷</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Français</div><div style="font-size:10px;color:var(--text-muted)">French · 3亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="bn" onclick="selectLang(this)">
-          <span style="font-size:24px">🇧🇩</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">বাংলা</div><div style="font-size:10px;color:var(--text-muted)">Bengali · 3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇧🇩</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">বাংলা</div><div style="font-size:10px;color:var(--text-muted)">Bengali · 3亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="pt" onclick="selectLang(this)">
-          <span style="font-size:24px">🇧🇷</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Português</div><div style="font-size:10px;color:var(--text-muted)">Portuguese · 2.5亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇧🇷</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Português</div><div style="font-size:10px;color:var(--text-muted)">Portuguese · 2.5亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="ur" onclick="selectLang(this)">
-          <span style="font-size:24px">🇵🇰</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">اردو</div><div style="font-size:10px;color:var(--text-muted)">Urdu · 2.3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇵🇰</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">اردو</div><div style="font-size:10px;color:var(--text-muted)">Urdu · 2.3亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="id" onclick="selectLang(this)">
-          <span style="font-size:24px">🇮🇩</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Indonesia</div><div style="font-size:10px;color:var(--text-muted)">Indonesian · 2亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇮🇩</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Indonesia</div><div style="font-size:10px;color:var(--text-muted)">Indonesian · 2亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="ru" onclick="selectLang(this)">
-          <span style="font-size:24px">🇷🇺</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Русский</div><div style="font-size:10px;color:var(--text-muted)">Russian · 1.5亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇷🇺</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Русский</div><div style="font-size:10px;color:var(--text-muted)">Russian · 1.5亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="sw" onclick="selectLang(this)">
-          <span style="font-size:24px">🇰🇪</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Kiswahili</div><div style="font-size:10px;color:var(--text-muted)">Swahili · 2亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇰🇪</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Kiswahili</div><div style="font-size:10px;color:var(--text-muted)">Swahili · 2亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="ja" onclick="selectLang(this)">
-          <span style="font-size:24px">🇯🇵</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">日本語</div><div style="font-size:10px;color:var(--text-muted)">Japanese · 1.3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇯🇵</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">日本語</div><div style="font-size:10px;color:var(--text-muted)">Japanese · 1.3亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="fa" onclick="selectLang(this)">
-          <span style="font-size:24px">🇮🇷</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">فارسی</div><div style="font-size:10px;color:var(--text-muted)">Persian · 1.1亿使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇮🇷</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">فارسی</div><div style="font-size:10px;color:var(--text-muted)">Persian · 1.1亿使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="vi" onclick="selectLang(this)">
-          <span style="font-size:24px">🇻🇳</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Tiếng Việt</div><div style="font-size:10px;color:var(--text-muted)">Vietnamese · 9千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇻🇳</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Tiếng Việt</div><div style="font-size:10px;color:var(--text-muted)">Vietnamese · 9千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="de" onclick="selectLang(this)">
-          <span style="font-size:24px">🇩🇪</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Deutsch</div><div style="font-size:10px;color:var(--text-muted)">German · 9千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇩🇪</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Deutsch</div><div style="font-size:10px;color:var(--text-muted)">German · 9千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="tr" onclick="selectLang(this)">
-          <span style="font-size:24px">🇹🇷</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Türkçe</div><div style="font-size:10px;color:var(--text-muted)">Turkish · 8千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇹🇷</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Türkçe</div><div style="font-size:10px;color:var(--text-muted)">Turkish · 8千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="ms" onclick="selectLang(this)">
-          <span style="font-size:24px">🇲🇾</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Bahasa Melayu</div><div style="font-size:10px;color:var(--text-muted)">Malay · 8千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇲🇾</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Bahasa Melayu</div><div style="font-size:10px;color:var(--text-muted)">Malay · 8千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="ko" onclick="selectLang(this)">
-          <span style="font-size:24px">🇰🇷</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">한국어</div><div style="font-size:10px;color:var(--text-muted)">Korean · 7700万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇰🇷</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">한국어</div><div style="font-size:10px;color:var(--text-muted)">Korean · 7700万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="th" onclick="selectLang(this)">
-          <span style="font-size:24px">🇹🇭</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">ภาษาไทย</div><div style="font-size:10px;color:var(--text-muted)">Thai · 7千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇹🇭</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">ภาษาไทย</div><div style="font-size:10px;color:var(--text-muted)">Thai · 7千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="it" onclick="selectLang(this)">
-          <span style="font-size:24px">🇮🇹</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Italiano</div><div style="font-size:10px;color:var(--text-muted)">Italian · 6500万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇮🇹</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Italiano</div><div style="font-size:10px;color:var(--text-muted)">Italian · 6500万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="pl" onclick="selectLang(this)">
-          <span style="font-size:24px">🇵🇱</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Polski</div><div style="font-size:10px;color:var(--text-muted)">Polish · 5千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇵🇱</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Polski</div><div style="font-size:10px;color:var(--text-muted)">Polish · 5千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="uk" onclick="selectLang(this)">
-          <span style="font-size:24px">🇺🇦</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Українська</div><div style="font-size:10px;color:var(--text-muted)">Ukrainian · 4500万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇺🇦</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Українська</div><div style="font-size:10px;color:var(--text-muted)">Ukrainian · 4500万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="nl" onclick="selectLang(this)">
-          <span style="font-size:24px">🇳🇱</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Nederlands</div><div style="font-size:10px;color:var(--text-muted)">Dutch · 3千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇳🇱</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Nederlands</div><div style="font-size:10px;color:var(--text-muted)">Dutch · 3千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="ro" onclick="selectLang(this)">
-          <span style="font-size:24px">🇷🇴</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Română</div><div style="font-size:10px;color:var(--text-muted)">Romanian · 2400万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇷🇴</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Română</div><div style="font-size:10px;color:var(--text-muted)">Romanian · 2400万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="el" onclick="selectLang(this)">
-          <span style="font-size:24px">🇬🇷</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Ελληνικά</div><div style="font-size:10px;color:var(--text-muted)">Greek · 1300万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇬🇷</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Ελληνικά</div><div style="font-size:10px;color:var(--text-muted)">Greek · 1300万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
         <div class="lang-row" data-lang="sv" onclick="selectLang(this)">
-          <span style="font-size:24px">🇸🇪</span>
-          <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Svenska</div><div style="font-size:10px;color:var(--text-muted)">Swedish · 1千万使用者</div></div>
-          <span class="lang-check" style="opacity:0">✓</span>
+          <span class="u1">🇸🇪</span>
+          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Svenska</div><div style="font-size:10px;color:var(--text-muted)">Swedish · 1千万使用者</div></div>
+          <span class="lang-check" class="u3">✓</span>
         </div>
       </div>
 
@@ -997,7 +1014,7 @@ body {
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo(window._keyBackPage||'page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">我的密钥</div>
-        <div class="nav-right" style="display:flex;align-items:center;gap:6px">
+        <div class="nav-right" class="u11">
           <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
           <select id="mnemonicLength" onchange="changeMnemonicLength(this.value)"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none">
@@ -1029,7 +1046,7 @@ body {
       <div class="qr-overlay" id="keyLangOverlay" onclick="closeKeyLangPicker()">
         <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 40px;max-height:75%;overflow-y:auto" onclick="event.stopPropagation()">
           <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择语言</div>
-          <div style="display:flex;flex-direction:column;gap:8px" id="keyLangList"></div>
+          <div class="u12" id="keyLangList"></div>
         </div>
       </div>
     </div>
@@ -1066,7 +1083,7 @@ body {
         <div class="home-greeting">总资产估值</div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
-        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" style="display:none">
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
           </div>
@@ -1096,10 +1113,10 @@ body {
         </div>
       </div>
       <div class="quick-btns">
-        <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">📤</div><div class="quick-btn-label">转账</div></div>
-        <div class="quick-btn" onclick="goTab('tab-addr')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">📥</div><div class="quick-btn-label">收款</div></div>
-        <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">💱</div><div class="quick-btn-label">兑换</div></div>
-        <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">🎁</div><div class="quick-btn-label">礼物</div></div>
+        <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon" class="u8">📤</div><div class="quick-btn-label">转账</div></div>
+        <div class="quick-btn" onclick="goTab('tab-addr')"><div class="quick-btn-icon" class="u8">📥</div><div class="quick-btn-label">收款</div></div>
+        <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" class="u8">💱</div><div class="quick-btn-label">兑换</div></div>
+        <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" class="u8">🎁</div><div class="quick-btn-label">礼物</div></div>
       </div>
       <div class="assets-section">
         <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -1133,7 +1150,7 @@ body {
             <div class="asset-change up" id="chgEth">+2.4%</div>
           </div>
         </div>
-        <div class="asset-item" id="btcAssetRow" style="display:none">
+        <div class="asset-item" id="btcAssetRow" class="u5">
           <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
           <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
           <div class="asset-right">
@@ -1170,7 +1187,7 @@ body {
         <!-- 万语地址卡 -->
         <div class="addr-native-card">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-            <div style="display:flex;align-items:center;gap:6px">
+            <div class="u11">
               <span style="font-size:13px">🌍</span>
               <span style="font-size:12px;font-weight:600;color:var(--gold)">万语地址</span>
             </div>
@@ -1223,7 +1240,7 @@ body {
             <!-- 第二层：诗句 中等 -->
             <div id="qrPart2" style="font-size:11px;color:var(--text);letter-spacing:1px;word-break:break-all;margin-bottom:4px"></div>
             <!-- 第三层：数字 最小最暗 -->
-            <div id="qrPart3" style="display:none"></div>
+            <div id="qrPart3" class="u5"></div>
           </div>
 
 
@@ -1266,7 +1283,7 @@ body {
       <div class="qr-overlay" id="addrLangOverlay" onclick="closeAddrLangPicker()">
         <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 40px;max-height:80%;overflow-y:auto" onclick="event.stopPropagation()">
           <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择地址语言</div>
-          <div style="display:flex;flex-direction:column;gap:8px" id="addrLangList"></div>
+          <div class="u12" id="addrLangList"></div>
         </div>
       </div>
 
@@ -1275,7 +1292,7 @@ body {
         <div class="qr-card" onclick="event.stopPropagation()">
           <div class="qr-placeholder">📱</div>
           <div class="qr-addr-main" id="qrAddrMain" style="font-size:11px;word-break:break-all;letter-spacing:1px">38294651龙桜서م春月БRกA92847361</div>
-          <div class="qr-addr-num" id="qrAddrNum" style="display:none"></div>
+          <div class="qr-addr-num" id="qrAddrNum" class="u5"></div>
           <div class="qr-chain" id="qrChainAddr">--</div>
           <button class="qr-close" onclick="hideQR()">关闭</button>
         </div>
@@ -1302,7 +1319,7 @@ body {
             <span id="addrTypeIcon" style="font-size:12px"></span>
             <span id="addrTypeName" style="font-size:11px;color:var(--text-muted)"></span>
           </div>
-          <div id="transferAddrBook" class="transfer-addr-dd" style="display:none" onclick="event.preventDefault()"></div>
+          <div id="transferAddrBook" class="transfer-addr-dd" class="u5" onclick="event.preventDefault()"></div>
         </div>
 
         <div class="transfer-contacts-card" id="transferContactsCard">
@@ -1313,13 +1330,13 @@ body {
           <div id="transferContactsList"></div>
           <div id="transferContactAddForm" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
             <input id="contactNickInput" type="text" placeholder="昵称（如：张三）" maxlength="32" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);margin-bottom:8px;font-size:14px;box-sizing:border-box" />
-            <button type="button" class="btn-primary" style="width:100%;padding:12px" onclick="saveContactFromForm()">保存当前收款地址</button>
+            <button type="button" class="btn-primary" class="u13" onclick="saveContactFromForm()">保存当前收款地址</button>
           </div>
         </div>
 
         <!-- 收款人信息（识别后显示）-->
         <div id="recipientCard" style="display:none;background:linear-gradient(135deg,#12120a,#1a1a08);border:1px solid rgba(200,168,75,0.3);border-radius:16px;padding:14px 16px;margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:12px">
+          <div class="u7">
             <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
             <div>
               <div style="font-size:11px;font-weight:700;color:var(--gold-light);word-break:break-all" id="recipientName"></div>
@@ -1369,7 +1386,7 @@ body {
           </div>
         </div>
 
-        <div style="flex:1"></div>
+        <div class="u4"></div>
 
         <!-- 发送按钮 -->
         <button class="btn-primary" id="transferBtn" onclick="doTransfer()" style="opacity:0.4;cursor:not-allowed" disabled>
@@ -1382,27 +1399,27 @@ body {
       <div class="qr-overlay" id="transferCoinOverlay" onclick="closeTransferCoinPicker()">
         <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 36px" onclick="event.stopPropagation()">
           <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择发送币种</div>
-          <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="u12">
             <!-- USDT -->
             <div onclick="selectTransferCoin('usdt')" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(200,168,75,0.1),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:12px;cursor:pointer">
               <div style="width:36px;height:36px;border-radius:50%;background:rgba(38,161,123,0.15);display:flex;align-items:center;justify-content:center;font-size:18px">💚</div>
-              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">USDT</div><div style="font-size:11px;color:var(--text-muted)">TRC-20 · Tron</div></div>
-              <div style="text-align:right"><div style="font-size:14px;color:var(--text)">8,500</div><div style="font-size:11px;color:var(--text-muted)">≈ $8,500</div></div>
+              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">USDT</div><div style="font-size:11px;color:var(--text-muted)">TRC-20 · Tron</div></div>
+              <div class="u6"><div style="font-size:14px;color:var(--text)">8,500</div><div style="font-size:11px;color:var(--text-muted)">≈ $8,500</div></div>
             </div>
             <div onclick="selectTransferCoin('trx')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
               <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,80,80,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🔴</div>
-              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">TRX</div><div style="font-size:11px;color:var(--text-muted)">Tron</div></div>
-              <div style="text-align:right"><div style="font-size:14px;color:var(--text)" id="transferTrxBal">--</div><div style="font-size:11px;color:var(--text-muted)" id="transferTrxVal">$--</div></div>
+              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">TRX</div><div style="font-size:11px;color:var(--text-muted)">Tron</div></div>
+              <div class="u6"><div style="font-size:14px;color:var(--text)" id="transferTrxBal">--</div><div style="font-size:11px;color:var(--text-muted)" id="transferTrxVal">$--</div></div>
             </div>
             <div onclick="selectTransferCoin('eth')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
               <div style="width:36px;height:36px;border-radius:50%;background:rgba(100,100,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🔷</div>
-              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">ETH</div><div style="font-size:11px;color:var(--text-muted)">Ethereum</div></div>
-              <div style="text-align:right"><div style="font-size:14px;color:var(--text)" id="transferEthBal">--</div><div style="font-size:11px;color:var(--text-muted)">$--</div></div>
+              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">ETH</div><div style="font-size:11px;color:var(--text-muted)">Ethereum</div></div>
+              <div class="u6"><div style="font-size:14px;color:var(--text)" id="transferEthBal">--</div><div style="font-size:11px;color:var(--text-muted)">$--</div></div>
             </div>
             <div onclick="selectTransferCoin('btc')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
               <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,165,0,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🟠</div>
-              <div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">BTC</div><div style="font-size:11px;color:var(--text-muted)">Bitcoin</div></div>
-              <div style="text-align:right"><div style="font-size:14px;color:var(--text)" id="transferBtcBal">--</div><div style="font-size:11px;color:var(--text-muted)">$--</div></div>
+              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">BTC</div><div style="font-size:11px;color:var(--text-muted)">Bitcoin</div></div>
+              <div class="u6"><div style="font-size:14px;color:var(--text)" id="transferBtcBal">--</div><div style="font-size:11px;color:var(--text-muted)">$--</div></div>
             </div>
           </div>
         </div>
@@ -1415,9 +1432,9 @@ body {
           <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 USDT</div>
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">→ <span id="confirmRecipient"></span></div>
           <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:var(--text-muted);text-align:left;line-height:2">
-            <div style="display:flex;justify-content:space-between"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 USDT</span></div>
-            <div style="display:flex;justify-content:space-between"><span>实际到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
-            <div style="display:flex;justify-content:space-between"><span>链路</span><span id="confirmChain">TRC-20</span></div>
+            <div class="u9"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 USDT</span></div>
+            <div class="u9"><span>实际到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
+            <div class="u9"><span>链路</span><span id="confirmChain">TRC-20</span></div>
           </div>
           <div style="display:flex;gap:10px">
             <button style="flex:1;background:var(--bg3);color:var(--text-muted);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;cursor:pointer" onclick="closeTransferConfirm()">取消</button>
@@ -1472,13 +1489,13 @@ body {
 
       <!-- 收件人（上方） -->
       <div id="swooshReceiver" style="width:280px;border:1.5px solid #252540;border-radius:20px;padding:14px 18px;background:#1a1a30;margin-bottom:40px;transition:all 0.3s">
-        <div style="display:flex;align-items:center;gap:12px">
+        <div class="u7">
           <div style="width:40px;height:40px;border-radius:50%;background:#111120;border:1px solid #2a2a40;display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
           <div>
             <div style="font-size:15px;font-weight:700;color:#c0c0d8" id="swooshToName">朝霞暮霭</div>
             <div style="font-size:10px;color:#444;margin-top:2px" id="swooshToAddr">江清月近人 · 9182736</div>
           </div>
-          <div style="margin-left:auto;font-size:18px" id="swooshCheck" style="opacity:0">✓</div>
+          <div style="margin-left:auto;font-size:18px" id="swooshCheck" class="u3">✓</div>
         </div>
       </div>
 
@@ -1500,7 +1517,7 @@ body {
 
       <!-- 发件人（下方） -->
       <div style="width:280px;border:1.5px solid rgba(200,168,75,0.2);border-radius:20px;padding:14px 18px;background:linear-gradient(135deg,rgba(200,168,75,0.06),transparent)">
-        <div style="display:flex;align-items:center;gap:12px">
+        <div class="u7">
           <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
           <div>
             <div style="display:flex;align-items:baseline;gap:5px">
@@ -1538,9 +1555,9 @@ body {
 
           <!-- 收件人（上） -->
           <div style="padding:14px 20px 10px;border-top:1px solid #1a1a30">
-            <div style="display:flex;align-items:center;gap:12px">
+            <div class="u7">
               <div style="width:38px;height:38px;border-radius:50%;background:#1a1a30;border:1.5px solid #2a2a44;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0" id="successToIcon">🌍</div>
-              <div style="flex:1">
+              <div class="u4">
                 <div style="font-size:15px;font-weight:700;color:#d0d0e8" id="successToName">朝霞暮霭</div>
                 <div style="font-size:11px;color:#444;margin-top:2px" id="successToAddr">江清月近人 · 9182736</div>
               </div>
@@ -1563,13 +1580,13 @@ body {
 
           <!-- 发件人（下） -->
           <div style="padding:10px 20px 16px;border-top:1px solid #1a1a30">
-            <div style="display:flex;align-items:center;gap:12px">
+            <div class="u7">
               <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌍</div>
-              <div style="flex:1">
+              <div class="u4">
                 <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap">
                   <span style="font-size:10px;font-weight:700;color:#f0d070;letter-spacing:0.5px;word-break:break-all" id="successFromPart1"></span>
                   <span style="font-size:10px;color:#a0a0b8" id="successFromPart2"></span>
-                  <span style="display:none" id="successFromPart3"></span>
+                  <span class="u5" id="successFromPart3"></span>
                 </div>
                 <div style="font-size:10px;color:#c8a84b;margin-top:3px;letter-spacing:1px" id="successFromLang">🇨🇳 中文 · WorldToken</div>
               </div>
@@ -1599,12 +1616,12 @@ body {
         <div class="nav-back"></div>
         <div class="nav-title">设置</div>
       </div>
-      <div style="padding:16px 18px;flex:1;overflow-y:auto">
+      <div class="u14">
 
         <!-- 钱包信息 -->
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
           <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌍</div>
-          <div style="flex:1">
+          <div class="u4">
             <div style="font-size:15px;font-weight:700;color:var(--text)">我的钱包</div>
             <div style="font-size:10px;color:var(--text-muted);margin-top:2px;word-break:break-all" id="settingsAddr"></div>
           </div>
@@ -1810,12 +1827,12 @@ body {
         <div class="nav-title">发礼物</div>
         <div class="nav-right" onclick="goTo('page-hb-records')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
       </div>
-      <div style="padding:16px 18px;flex:1;overflow-y:auto">
+      <div class="u14">
 
         <!-- 礼物文化预览 -->
         <div id="giftPreview" style="background:var(--bg2);border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;border:1px solid var(--border)">
-          <span id="giftIcon" style="font-size:24px">🎁</span>
-          <div style="flex:1">
+          <span id="giftIcon" class="u1">🎁</span>
+          <div class="u4">
             <div id="giftTitle" style="font-size:13px;font-weight:600;color:var(--gold)">礼物</div>
             <div id="giftSubtitle" style="font-size:11px;color:var(--text-muted)" id="giftFestival">春节·生日·节日</div>
           </div>
@@ -1846,7 +1863,7 @@ body {
         <!-- 个数 + 每人金额 -->
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:12px">
           <div style="display:flex;align-items:center;margin-bottom:14px">
-            <div style="flex:1">
+            <div class="u4">
               <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">礼物个数</div>
               <div style="font-size:15px;color:var(--text)" id="hbCountLabel">5 个</div>
             </div>
@@ -1917,15 +1934,15 @@ body {
         <!-- 操作按钮 -->
         <div style="display:flex;gap:10px;margin-bottom:14px">
           <div onclick="copyKw()" id="copyKwBtn" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.4);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer;transition:all 0.2s">
-            <div style="font-size:20px;margin-bottom:4px">📋</div>
+            <div class="u15">📋</div>
             <div style="font-size:12px;color:var(--gold)">复制口令</div>
           </div>
           <div onclick="shareKw()" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
-            <div style="font-size:20px;margin-bottom:4px">📤</div>
+            <div class="u15">📤</div>
             <div style="font-size:12px;color:var(--text-muted)">分享给朋友</div>
           </div>
           <div onclick="showHbQR()" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
-            <div style="font-size:20px;margin-bottom:4px">📱</div>
+            <div class="u15">📱</div>
             <div style="font-size:12px;color:var(--text-muted)">二维码</div>
           </div>
         </div>
@@ -2019,9 +2036,9 @@ body {
         <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
         <div class="nav-title">礼物记录</div>
       </div>
-      <div style="padding:16px 18px;flex:1;overflow-y:auto" id="hbRecordsList">
+      <div class="u14" id="hbRecordsList">
         <div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px">
-          <div style="font-size:28px;margin-bottom:10px">🎁</div>
+          <div class="u10">🎁</div>
           暂无礼物记录
         </div>
       </div>
@@ -2082,7 +2099,7 @@ body {
         <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
       </div>
       <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN 不正确</div>
-      <button class="btn-primary" style="width:100%;padding:12px" onclick="submitPinUnlock()">解锁</button>
+      <button class="btn-primary" class="u13" onclick="submitPinUnlock()">解锁</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
     </div>
   </div>
@@ -2094,7 +2111,7 @@ body {
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
       <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button class="btn-primary" style="width:100%;padding:12px" onclick="submitTotpUnlock()">验证并进入</button>
+      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
     </div>
   </div>
@@ -2114,7 +2131,7 @@ body {
 
 
   <!-- 底部导航 -->
-  <div class="tab-bar" id="tabBar" style="display:none">
+  <div class="tab-bar" id="tabBar" class="u5">
     <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
     <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
     <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
@@ -2146,7 +2163,7 @@ body {
             <span style="color:var(--text-muted);font-size:13px">获得（约）</span>
             <span style="color:var(--gold);font-weight:600" id="swapConfirmTo">--</span>
           </div>
-          <div style="display:flex;justify-content:space-between">
+          <div class="u9">
             <span style="color:var(--text-muted);font-size:13px">汇率</span>
             <span style="color:var(--text-muted);font-size:12px" id="swapConfirmRate">--</span>
           </div>
@@ -2155,8 +2172,8 @@ body {
           ⚡ 将跳转到 SunSwap / Uniswap 完成链上兑换
         </div>
         <div style="display:flex;gap:10px">
-          <button class="btn-secondary" style="flex:1" onclick="const _ovswapCo2 = document.getElementById('swapConfirmOverlay'); if(_ovswapCo2) _ovswapCo2.classList.remove('show')">取消</button>
-          <button class="btn-primary" style="flex:1" onclick="openDex()">前往兑换 →</button>
+          <button class="btn-secondary" class="u4" onclick="const _ovswapCo2 = document.getElementById('swapConfirmOverlay'); if(_ovswapCo2) _ovswapCo2.classList.remove('show')">取消</button>
+          <button class="btn-primary" class="u4" onclick="openDex()">前往兑换 →</button>
         </div>
       </div>
     </div>
@@ -4631,7 +4648,7 @@ function openCoinPicker(target) {
     if(coin.id===other.id) return; // 不能选同一个
     const div=document.createElement('div');
     div.style.cssText='display:flex;align-items:center;gap:12px;background:var(--bg3);border:1.5px solid '+(coin.id===current.id?'var(--gold)':'var(--border)')+';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
-    div.innerHTML=`<div style="width:36px;height:36px;border-radius:50%;background:${coin.bg};display:flex;align-items:center;justify-content:center;font-size:18px">${coin.icon}</div><div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">${coin.name}</div><div style="font-size:11px;color:var(--text-muted)">${coin.chain}</div></div><div style="text-align:right"><div style="font-size:14px;color:var(--text)">${coin.bal.toLocaleString()}</div></div>`;
+    div.innerHTML=`<div style="width:36px;height:36px;border-radius:50%;background:${coin.bg};display:flex;align-items:center;justify-content:center;font-size:18px">${coin.icon}</div><div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">${coin.name}</div><div style="font-size:11px;color:var(--text-muted)">${coin.chain}</div></div><div class="u6"><div style="font-size:14px;color:var(--text)">${coin.bal.toLocaleString()}</div></div>`;
     div.onclick=()=>{setSwapCoin(pickerTarget,coin);closeCoinPicker();};
     list.appendChild(div);
   });
@@ -4699,8 +4716,8 @@ function openKeyLangPicker() {
     const isCurrent = lang === currentLang;
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (isCurrent?'linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))':'var(--bg3)') + ';border:1.5px solid ' + (isCurrent?'var(--gold)':'var(--border)') + ';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
-    div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
-      '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
+    div.innerHTML = '<span class="u1">' + info.flag + '</span>' +
+      '<div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
       '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'BIP39 Standard Mnemonic' : ({zh:'地名助记词','zh-TW':'地名（繁體）','zh-HK':'地名（繁體）',en:'BIP39 Mnemonic',hi:'स्थान नाम',es:'Nombre de lugar',ar:'اسم المكان',pt:'Nome do lugar',bn:'স্থান নাম',ru:'Топоним',ja:'地名',vi:'Địa danh',fr:'Nom de lieu',id:'Nama tempat',de:'Ortsname',ko:'지명',tr:'Yer adı',it:'Nome del luogo',th:'ชื่อสถานที่',pl:'Nazwa miejsca',nl:'Plaatsnaam',fa:'نام مکان',uk:'Топонім',ms:'Nama tempat',sv:'Platsnamn',ro:'Nume de loc',el:'Τοπωνύμιο',sw:'Jina la mahali',ur:'جگہ کا نام'}[lang] || '地名助记词')) + '</div></div>' +
       (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
     div.onclick = () => {
@@ -4735,8 +4752,8 @@ function openAddrLangPicker() {
     const isCurrent = lang === currentLang;
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;align-items:center;gap:12px;background:' + (isCurrent?'linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))':'var(--bg3)') + ';border:1.5px solid ' + (isCurrent?'var(--gold)':'var(--border)') + ';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
-    div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
-      '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
+    div.innerHTML = '<span class="u1">' + info.flag + '</span>' +
+      '<div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
       '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'Blockchain Address (BIP39)' : ({zh:'万语地址',en:'World Address',hi:'विश्व पता',es:'Dirección mundial',ar:'عنوان عالمي',pt:'Endereço mundial',bn:'বিশ্ব ঠিকানা',ru:'Мировой адрес',ja:'ワールドアドレス',vi:'Địa chỉ thế giới',fr:'Adresse mondiale',id:'Alamat dunia',de:'Weltadresse',ko:'세계 주소',tr:'Dünya adresi',it:'Indirizzo mondiale',th:'ที่อยู่โลก',pl:'Adres światowy',nl:'Wereldadres',fa:'آدرس جهانی',uk:'Світова адреса',ms:'Alamat dunia',sv:'Världsadress',ro:'Adresă mondială',el:'Παγκόσμια διεύθυνση',sw:'Anwani ya dunia',ur:'عالمی پتہ'}[lang] || '万语地址')) + '</div></div>' +
       (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
     div.onclick = () => {
@@ -5043,7 +5060,7 @@ function loadHbRecords() {
   const list = Object.values(allHb).sort((a,b) => b.createdAt - a.createdAt);
 
   if(list.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px"><div style="font-size:28px;margin-bottom:10px">🎁</div>暂无礼物记录</div>';
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px"><div class="u10">🎁</div>暂无礼物记录</div>';
     return;
   }
 
@@ -5064,11 +5081,11 @@ function loadHbRecords() {
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:10px;opacity:${opacity}">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:${fullyClaimed||expired?'0':'10px'}">
           <span style="font-size:28px">🎁</span>
-          <div style="flex:1">
+          <div class="u4">
             <div style="font-size:14px;font-weight:600;color:var(--text)">${hb.keyword}</div>
             <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${typeLabel} · ${timeAgo}${expired?' · 已过期':''}</div>
           </div>
-          <div style="text-align:right">
+          <div class="u6">
             <div style="font-size:14px;font-weight:600;color:var(--gold)">${hb.totalAmount} USDT</div>
             <div style="font-size:11px;color:${statusColor}">${statusText}</div>
           </div>
@@ -5331,7 +5348,7 @@ async function loadNews() {
     return;
   }
   newsLoading = true;
-  list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">⏳</div><div style="font-size:13px">加载中...</div></div>';
+  list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div class="u10">⏳</div><div style="font-size:13px">加载中...</div></div>';
   try {
     // 使用 allorigins 代理绕过 CORS，抓取 CoinDesk RSS
     const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://www.coindesk.com/arc/outboundfeeds/rss/');
@@ -5351,7 +5368,7 @@ async function loadNews() {
     renderNews(newsCache);
   } catch(e) {
     console.log('News load failed:', e);
-    list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">😕</div><div style="font-size:13px;margin-bottom:16px">加载失败，请点下方链接阅读</div></div>';
+    list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted)"><div class="u10">😕</div><div style="font-size:13px;margin-bottom:16px">加载失败，请点下方链接阅读</div></div>';
   }
   newsLoading = false;
 }
@@ -5373,7 +5390,7 @@ function renderNews(items) {
     div.innerHTML = `
       <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:8px">${item.title}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-        <div style="display:flex;align-items:center;gap:6px">
+        <div class="u11">
           <span style="font-size:11px;color:var(--text-muted)">${source}</span>
           ${time ? '<span style="font-size:10px;color:var(--text-dim)">· ' + time + '</span>' : ''}
         </div>
