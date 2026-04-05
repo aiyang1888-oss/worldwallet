@@ -196,17 +196,18 @@ body {
 #welcomeLangGrid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   max-width: 380px;
-  max-height: min(52vh, 440px);
+  height: min(42vh, 320px);
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   padding: 4px 10px 10px;
   margin-top: 6px;
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: none;
+  scroll-snap-type: none;
   box-sizing: border-box;
 }
 #welcomeLangGrid .lang-row { align-items: center; min-height: 54px; }
