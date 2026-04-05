@@ -34,7 +34,7 @@ function loadQRCodeLib(){
   if(_qrLoadPromise)return _qrLoadPromise;
   _qrLoadPromise=new Promise(function(res,rej){
     var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+    s.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.js';
     s.async=true;
     s.onload=function(){res();};
     s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
