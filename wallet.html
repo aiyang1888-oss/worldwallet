@@ -679,6 +679,7 @@ body {
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
           <span>请抄写并妥善保管这<b id="warnWordCount">12</b>个词，任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
         </div>
+        <button class="btn-secondary" onclick="copyAllMnemonic(this)" style="margin-bottom:8px">📋 复制助记词</button>
         <button class="btn-primary" onclick="startVerify()">✅ 我已抄写，开始验证</button>
         <div onclick="goTo(window._keyBackPage||'page-settings')" style="margin-top:8px;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer">⏭️ 暂时忽略验证</div>
       </div>
@@ -3431,6 +3432,43 @@ function syncImportPaste() {
   const paste = document.getElementById('importPaste');
   if(paste) paste.value = words.filter(w=>w).join(' ');
 }
+
+function copyAllMnemonic(btn) {
+  const words = [];
+  const isEn = currentLang === 'en';
+  if(isEn) {
+    const mn = REAL_WALLET && REAL_WALLET.enMnemonic;
+    if(mn) mn.split(' ').forEach(w => words.push(w));
+  } else {
+    const wl = WT_WORDLISTS[currentLang];
+    const enMn = REAL_WALLET && REAL_WALLET.enMnemonic;
+    if(wl && enMn) {
+      enMn.split(' ').forEach(enW => {
+        const enIdx = WT_WORDLISTS.en.indexOf(enW);
+        words.push(enIdx >= 0 && wl[enIdx] ? wl[enIdx] : enW);
+      });
+    }
+  }
+  if(!words.length) return;
+  const text = words.join(' ');
+  navigator.clipboard.writeText(text).then(() => {
+    const prev = btn.textContent;
+    btn.textContent = '✅ 已复制';
+    setTimeout(() => { btn.textContent = prev; }, 2000);
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const prev = btn.textContent;
+    btn.textContent = '✅ 已复制';
+    setTimeout(() => { btn.textContent = prev; }, 2000);
+  });
+}
+
 
 
 // ── 从导入格子获取助记词 ──────────────────────────────────────────
