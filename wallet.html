@@ -331,10 +331,14 @@ body {
   justify-content: center;
   align-items: center;
   gap: 10px 14px;
-  margin-top: 6px;
-  padding: 4px 4px 8px;
+  margin-top: 4px;
+  padding: 12px 6px 10px;
   width: 100%;
   box-sizing: border-box;
+  border-top: 1px solid rgba(200, 168, 75, 0.22);
+}
+[data-theme="light"] .home-chain-strip {
+  border-top-color: rgba(168, 137, 53, 0.28);
 }
 .home-chain-strip.home-chain-strip--dim {
   opacity: 0.68;
@@ -352,8 +356,8 @@ body {
   border-radius: 999px;
   padding: 4px 10px 4px 6px;
 }
-.home-mini-icon { width: 26px; height: 26px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.home-mini-icon svg { display: block; width: 26px; height: 26px; }
+.home-mini-icon { width: 30px; height: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.home-mini-icon svg { display: block; width: 30px; height: 30px; }
 .home-chain-tag {
   font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
   color: rgba(232,200,80,0.95); flex-shrink: 0;
@@ -369,7 +373,7 @@ body {
   border: 1px dashed rgba(200,168,75,0.28);
   margin: 6px 0 4px;
 }
-.tx-empty-friendly .tx-empty-icon { font-size: 52px; margin-bottom: 16px; line-height: 1; opacity: 0.95; }
+.tx-empty-friendly .tx-empty-icon { font-size: 58px; margin-bottom: 18px; line-height: 1; opacity: 0.95; }
 .tx-empty-friendly .tx-empty-title { font-size: 17px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
 .tx-empty-friendly .tx-empty-hint { font-size: 12.5px; line-height: 1.8; color: var(--text-muted); max-width: 320px; margin: 0 auto; }
 .home-balance { font-size: 32px; font-weight: 800; color: var(--text); }
@@ -720,37 +724,44 @@ body {
   filter: none;
 }
 #welcomeLangGrid .lang-row.active {
-  border: 4px solid #e8c850;
-  outline: 2px solid rgba(232, 200, 80, 0.42);
+  border: 3px solid var(--gold);
+  outline: 2px solid rgba(200, 168, 75, 0.55);
   outline-offset: 0px;
   background: linear-gradient(160deg, rgba(52,44,20,0.99), rgba(24,20,10,0.99));
   box-shadow:
-    0 0 0 2px rgba(200, 168, 75, 0.7),
-    0 0 0 6px rgba(200, 168, 75, 0.2),
-    0 0 36px rgba(255, 210, 100, 0.5),
-    0 16px 42px rgba(200, 168, 75, 0.38);
+    0 0 0 3px rgba(200, 168, 75, 0.4),
+    0 0 0 1px var(--gold-light) inset,
+    0 0 44px rgba(255, 210, 100, 0.48),
+    0 18px 46px rgba(200, 168, 75, 0.36);
+}
+[data-theme="light"] #welcomeLangGrid .lang-row.active {
+  background: linear-gradient(165deg, rgba(255, 248, 228, 0.98), rgba(255, 240, 210, 0.96));
+  box-shadow:
+    0 0 0 3px rgba(168, 137, 53, 0.22),
+    0 0 0 1px rgba(212, 184, 92, 0.65) inset,
+    0 10px 32px rgba(168, 137, 53, 0.2);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 32px !important;
+  font-size: 44px !important;
   line-height: 1;
   font-weight: 900;
-  min-width: 48px;
+  min-width: 58px;
   flex-shrink: 0;
   text-align: center;
   color: #1a1508 !important;
   background: linear-gradient(135deg, #e8c850, #f8e8a8);
   border-radius: 999px;
-  width: 48px;
-  height: 48px;
+  width: 58px;
+  height: 58px;
   display: flex !important;
   align-items: center;
   justify-content: center;
   opacity: 1 !important;
   filter: none;
   transform: none;
-  box-shadow: 0 6px 22px rgba(200,168,75,0.78);
+  box-shadow: 0 8px 26px rgba(200,168,75,0.82);
 }
 
 @keyframes successPop {
@@ -1187,7 +1198,7 @@ body {
           <svg id="homeBalanceChartSvg" class="home-balance-chart-svg" viewBox="0 0 320 88" preserveAspectRatio="none" aria-hidden="true"></svg>
           <div class="home-balance-chart-foot" id="homeBalanceChartFoot"></div>
         </div>
-        <div class="home-addr-stack" style="display:flex;flex-direction:column;align-items:center;width:100%;gap:2px;margin-top:8px">
+        <div class="home-addr-stack" style="display:flex;flex-direction:column;align-items:center;width:100%;gap:10px;margin-top:8px">
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%">
           <span id="homeAddrChip" class="home-addr-chip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);min-height:36px;display:inline-flex;align-items:center;transition:background 0.2s,color 0.2s">复制地址</span>
@@ -1294,8 +1305,8 @@ body {
         <div id="txHistoryList">
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
-            <div class="tx-empty-title">还没有交易记录，一切从零开始</div>
-            <div class="tx-empty-hint">这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认偶尔需要几秒，若刚发出请点上方「刷新」或稍后再看。</div>
+            <div class="tx-empty-title">暂无交易记录</div>
+            <div class="tx-empty-hint">这里会列出你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认通常只要几秒——若刚发出，点上方「刷新」或稍后再看即可。</div>
           </div>
         </div>
       </div>
@@ -5859,8 +5870,8 @@ function txHistoryFriendlyHtml(icon, title, hint) {
 function txHistoryEmptyHtml() {
   const L = (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'zh';
   const M = {
-    en: { title: "No transactions yet — you're all set!", hint: "Send or receive once, and your latest activity will show up here. On-chain confirmations can take a few seconds — tap Refresh above if you just sent something." },
-    zh: { title: '还没有交易记录', hint: '这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认偶尔需要几秒，若刚发出请点上方「刷新」或稍后再看。' },
+    en: { title: "No transactions yet", hint: "After you send or receive once, your latest activity will appear here. On-chain confirmations usually take just a few seconds — tap Refresh above if you just sent something." },
+    zh: { title: '暂无交易记录', hint: '这里会列出你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认通常只要几秒——若刚发出，点上方「刷新」或稍后再看即可。' },
     'zh-TW': { title: '尚無交易紀錄', hint: '轉帳或收款後，最新活動會顯示在這裡。鏈上確認有時需要幾秒鐘，若剛送出請點上方「重新整理」或稍後再查看。' },
     ja: { title: 'まだ取引履歴がありません', hint: '送金や受取を一度行うと、直近のアクティビティがここに表示されます。オンチェーンの確定に数秒かかることがあります。送った直後は「更新」をタップしてください。' },
     ko: { title: '아직 거래 내역이 없어요', hint: '보내기·받기를 한 번 하면 최근 활동이 여기에 표시됩니다. 온체인 확인에 몇 초 걸릴 수 있어요. 방금 보냈다면 위의 새로고침을 눌러 보세요.' },
