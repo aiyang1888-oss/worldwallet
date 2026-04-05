@@ -4491,7 +4491,7 @@ function changeMnemonicLength(len) {
 
 
 // ── 助记词验证 ──────────────────────────────────────────────
-let verifyAnswers = {}; // {position: correctWord}
+var verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
   // 直接用 REAL_WALLET.words（由 renderKeyGrid 设置的当前显示词）
