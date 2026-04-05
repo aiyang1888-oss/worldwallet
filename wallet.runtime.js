@@ -1240,12 +1240,10 @@ function goTo(pageId) {
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
-    // 默认重置为 12 词（如果是新建钱包）
-    if(!REAL_WALLET || !REAL_WALLET.enMnemonic) {
-      currentMnemonicLength = 12;
-      var _sel = document.getElementById('mnemonicLength');
-      if(_sel) { _sel.value = '12'; }
-    }
+    // 永远默认 12 词
+    currentMnemonicLength = 12;
+    var _sel = document.getElementById('mnemonicLength');
+    if(_sel) { _sel.value = '12'; }
     renderKeyGrid();
   }
   if(pageId==='page-create') {
