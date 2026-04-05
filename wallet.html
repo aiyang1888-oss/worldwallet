@@ -1149,7 +1149,7 @@ body {
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(){showWalletLoading();try{const w=await createRealWallet();if(!w){showToast('创建失败：未完成密钥生成','error');return;}window.REAL_WALLET=w;saveWallet(w);if(typeof updateRealAddr==='function')updateRealAddr();hideWalletLoading();goTo('page-key');}catch(e){showToast(typeof formatWalletCreateError==='function'?formatWalletCreateError(e):(e&&e.message)||'创建失败','error');}finally{hideWalletLoading();}})()">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="createNewWallet()">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
