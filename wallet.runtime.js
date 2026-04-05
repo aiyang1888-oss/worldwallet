@@ -1236,18 +1236,25 @@ function goTo(pageId, opts) {
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
-    // 永远默认 12 词，生成全新钱包
     currentMnemonicLength = 12;
-    var _sel = document.getElementById('mnemonicLength');
-    if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
+    var _s=document.getElementById('mnemonicLength');
+    if(_s){_s.value='12';}
     showWalletLoading();
-    createRealWallet(currentMnemonicLength).then(function() {
-      if (typeof updateRealAddr === 'function') updateRealAddr();
+    (function(){
+      var bytesMap={12:16,15:20,18:24,21:28,24:32};
+      var mn=ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
+      var w0=ethers.Wallet.fromMnemonic(mn);
+      var t0=ethers.Wallet.fromMnemonic(mn,"m/44'/195'/0'/0/0");
+      var b0=ethers.Wallet.fromMnemonic(mn,"m/44'/0'/0'/0/0");
+      var ta='T'+t0.address.slice(2,35);
+      try{if(typeof TronWeb!=='undefined')ta=TronWeb.address.fromHex('41'+t0.address.slice(2));}catch(e){}
+      window.REAL_WALLET={ethAddress:w0.address,trxAddress:ta,btcAddress:b0.address,
+        privateKey:w0.privateKey,enMnemonic:mn,mnemonic:mn,createdAt:Date.now()};
+      saveWallet(window.REAL_WALLET);
       hideWalletLoading();
-      if (typeof renderKeyGrid === 'function') renderKeyGrid();
-    }).catch(function(e) {
-      hideWalletLoading();
-    });
+      renderKeyGrid();
+      if(typeof updateMnemonicStrengthIndicator==='function')updateMnemonicStrengthIndicator();
+    })();
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
 if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
@@ -5746,27 +5753,26 @@ function renderNews(items) {
 
 // 切换助记词词数：从熵重新生成全新 BIP39 助记词（不截断旧词），并立即刷新网格
 async function changeMnemonicLength(n) {
-  const wordCount = parseInt(n, 10) || 12;
-  if (![12, 15, 18, 21, 24].includes(wordCount)) return;
+  var wordCount = parseInt(n, 10) || 12;
+  if ([12,15,18,21,24].indexOf(wordCount) < 0) return;
   currentMnemonicLength = wordCount;
-  const sel = document.getElementById('mnemonicLength');
-  if (sel) { sel.value = String(wordCount); sel.selectedIndex = [12,15,18,21,24].indexOf(wordCount); }
+  var sel = document.getElementById('mnemonicLength');
+  if (sel) { sel.value = String(wordCount); }
   showWalletLoading();
   try {
-    const entropyBytesMap = {12:16,15:20,18:24,21:28,24:32};
-    const mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytesMap[wordCount]));
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic);
-    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-    const btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
-    let trxAddr = 'T' + trxWallet.address.slice(2, 35);
-    try { if (typeof TronWeb !== 'undefined') trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2)); } catch(e) {}
-    const w = { ethAddress: wallet.address, trxAddress: trxAddr, btcAddress: btcWallet.address,
-      privateKey: wallet.privateKey, enMnemonic: mnemonic, mnemonic: mnemonic, createdAt: Date.now() };
-    window.REAL_WALLET = w;
-    saveWallet(w);
-    if (typeof renderKeyGrid === 'function') renderKeyGrid();
+    var bytesMap = {12:16,15:20,18:24,21:28,24:32};
+    var mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(bytesMap[wordCount]));
+    var wallet = ethers.Wallet.fromMnemonic(mnemonic);
+    var trxW = ethers.Wallet.fromMnemonic(mnemonic,"m/44'/195'/0'/0/0");
+    var btcW = ethers.Wallet.fromMnemonic(mnemonic,"m/44'/0'/0'/0/0");
+    var trxAddr = 'T'+trxW.address.slice(2,35);
+    try{ if(typeof TronWeb!=='undefined') trxAddr=TronWeb.address.fromHex('41'+trxW.address.slice(2)); }catch(e){}
+    window.REAL_WALLET = { ethAddress:wallet.address, trxAddress:trxAddr, btcAddress:btcW.address,
+      privateKey:wallet.privateKey, enMnemonic:mnemonic, mnemonic:mnemonic, createdAt:Date.now() };
+    saveWallet(window.REAL_WALLET);
+    renderKeyGrid();
   } catch(e) {
-    if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
+    showToast('生成失败: '+(e&&e.message||e),'error');
   } finally { hideWalletLoading(); }
 }
 
