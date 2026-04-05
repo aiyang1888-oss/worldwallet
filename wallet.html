@@ -365,6 +365,16 @@ body {
   align-items: center; justify-content: center;
   z-index: 100;
 }
+
+@keyframes wtShake {
+  0%,100% { transform: translateX(0); }
+  15% { transform: translateX(-10px); }
+  30% { transform: translateX(10px); }
+  45% { transform: translateX(-8px); }
+  60% { transform: translateX(8px); }
+  75% { transform: translateX(-4px); }
+}
+.wt-shake-wrong { animation: wtShake 0.5s ease; }
 .overlay.show { display: flex !important; }
 .qr-overlay {
   position: absolute; inset: 0;
@@ -656,7 +666,7 @@ body {
       <div style="width:100%;flex-shrink:0;margin-top:40px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
           <button class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
-          <button class="btn-secondary" id="btnContinue" style="display:none;padding:14px 0;font-size:15px;width:72%;max-width:260px;margin-top:0" onclick="updateAddr();document.getElementById('tabBar').style.display='flex';setTimeout(loadBalances,500);goTo('page-home')">→ 继续使用钱包</button>
+          <button class="btn-secondary" id="btnContinue" style="display:none;padding:14px 0;font-size:15px;width:72%;max-width:260px;margin-top:0" onclick="continueAfterPinCheck()">→ 继续使用钱包</button>
           <button class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">📥 导入已有钱包</button>
         </div>
       </div>
@@ -718,6 +728,23 @@ body {
         <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 40px;max-height:75%;overflow-y:auto" onclick="event.stopPropagation()">
           <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择语言</div>
           <div style="display:flex;flex-direction:column;gap:8px" id="keyLangList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 助记词验证（抄写确认） -->
+    <div class="page" id="page-key-verify">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-key')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">验证助记词</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding-top:12px">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;text-align:center">请输入随机抽到的 3 个词，以确认你已抄写备份</div>
+        <div id="verifyShakeRoot">
+          <div id="verifyQuestions" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div id="verifyError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:var(--red)">词序或拼写不正确，请重试</div>
+          <button class="btn-primary" style="margin-top:18px;padding:14px 0;width:100%" onclick="checkVerify()">验证</button>
         </div>
       </div>
     </div>
@@ -1240,7 +1267,7 @@ body {
         <!-- 安全 -->
         <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">安全</div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
-          <div class="settings-row" onclick="showToast('🔐 请在手机设置中开启密码/指纹解锁', 'info')">
+          <div class="settings-row" onclick="openPinSettingsDialog()">
             <span class="settings-icon">🔐</span>
             <span class="settings-label">PIN码</span>
             <span class="settings-value">已开启</span>
@@ -1606,6 +1633,18 @@ body {
         🚀 开始使用
       </button>
     </div>
+
+  <!-- PIN 解锁（继续使用钱包） -->
+  <div class="overlay" id="pinUnlockOverlay" onclick="if(event.target===this)closePinUnlock()">
+    <div id="pinUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">输入 PIN</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">已设置 6 位数字 PIN，用于保护钱包访问</div>
+      <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')submitPinUnlock()" />
+      <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN 不正确</div>
+      <button class="btn-primary" style="width:100%;padding:12px" onclick="submitPinUnlock()">解锁</button>
+      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
+    </div>
+  </div>
 
   <!-- 底部导航 -->
   <div class="tab-bar" id="tabBar" style="display:none">
@@ -2042,7 +2081,7 @@ async function restoreWallet(mnemonic) {
     }
     const words = enMnemonicStr.split(' ');
     const wallet = ethers.Wallet.fromMnemonic(enMnemonicStr);
-    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/195'/0'/0/0");
+    const trxWallet = ethers.Wallet.fromMnemonic(enMnemonicStr, "m/44'/195'/0'/0/0");
     // 将 ETH 地址转换为正确的 TRX 地址（Base58Check）
     let trxAddr = '';
     try {
@@ -2055,7 +2094,7 @@ async function restoreWallet(mnemonic) {
     // BTC 地址（m/44'/0'/0'/0/0）
     let btcAddr2 = '';
     try {
-      const btcWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/0'/0'/0/0");
+      const btcWallet = ethers.Wallet.fromMnemonic(enMnemonicStr, "m/44'/0'/0'/0/0");
       // 简化：用 ETH 地址格式存储 BTC 未压缩公钥（实际BTC地址需更多处理）
       btcAddr2 = btcWallet.address; // 暂用ETH格式，后续可升级
     } catch(e) {}
@@ -4039,7 +4078,7 @@ function startVerify() {
   });
   
   _safeEl('verifyError').style.display = 'none';
-  goTo('page-verify-success');
+  goTo('page-key-verify');
   setTimeout(() => {
     const first = document.querySelector('#verifyQuestions input');
     if(first) first.focus();
@@ -4068,9 +4107,64 @@ function checkVerify() {
     // 用户手动点按钮进入首页（已移除自动跳转）
   } else {
     _safeEl('verifyError').style.display = 'block';
+    const vroot = document.getElementById('verifyShakeRoot');
+    if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
   }
 }
 
+
+function _resumeWalletAfterUnlock() {
+  updateAddr();
+  const tb = document.getElementById('tabBar');
+  if(tb) tb.style.display = 'flex';
+  setTimeout(loadBalances, 500);
+  goTo('page-home');
+}
+function continueAfterPinCheck() {
+  const pin = localStorage.getItem('ww_unlock_pin');
+  if(!pin) { _resumeWalletAfterUnlock(); return; }
+  const ov = document.getElementById('pinUnlockOverlay');
+  const inp = document.getElementById('pinUnlockInput');
+  const err = document.getElementById('pinUnlockError');
+  if(ov && inp) {
+    inp.value = '';
+    if(err) err.style.display = 'none';
+    ov.classList.add('show');
+    setTimeout(() => { try { inp.focus(); } catch(e) {} }, 200);
+  } else {
+    _resumeWalletAfterUnlock();
+  }
+}
+function submitPinUnlock() {
+  const want = localStorage.getItem('ww_unlock_pin') || '';
+  const inp = document.getElementById('pinUnlockInput');
+  const got = inp ? inp.value.trim() : '';
+  const ov = document.getElementById('pinUnlockOverlay');
+  const err = document.getElementById('pinUnlockError');
+  const panel = document.getElementById('pinUnlockPanel');
+  if(got === want) {
+    if(ov) ov.classList.remove('show');
+    _resumeWalletAfterUnlock();
+  } else {
+    if(err) err.style.display = 'block';
+    if(panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+    if(inp) inp.value = '';
+  }
+}
+function closePinUnlock() {
+  const ov = document.getElementById('pinUnlockOverlay');
+  if(ov) ov.classList.remove('show');
+}
+function openPinSettingsDialog() {
+  const cur = localStorage.getItem('ww_unlock_pin') || '';
+  const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
+  if(a === null) return;
+  const t = a.trim();
+  if(t === '') { localStorage.removeItem('ww_unlock_pin'); showToast('已清除 PIN', 'success'); return; }
+  if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
+  localStorage.setItem('ww_unlock_pin', t);
+  showToast('PIN 已保存', 'success');
+}
 
 // 时钟
 function updateTime() {
