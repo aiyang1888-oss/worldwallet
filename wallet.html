@@ -592,6 +592,15 @@ body {
 }
 .tab-item.active { color: var(--gold); }
 .tab-icon { font-size: 22px; }
+.tab-icon svg { width: 22px; height: 22px; display: block; }
+.tab-item .tab-icon svg { color: inherit; }
+#page-faq .faq-body { padding: 0 16px 32px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
+#page-faq .faq-block { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+#page-faq .faq-block h3 { font-size: 15px; font-weight: 700; color: var(--gold); margin: 0 0 8px; }
+#page-faq .faq-block p { font-size: 13px; color: var(--text-muted); line-height: 1.65; margin: 0; }
+.nav-help-btn { flex-shrink: 0; background: rgba(200,168,75,0.12); border: 1px solid rgba(200,168,75,0.35); border-radius: 10px; color: var(--gold); font-size: 12px; font-weight: 700; padding: 4px 9px; cursor: pointer; line-height: 1.2; }
+.nav-help-btn:active { opacity: 0.85; }
+
 
 @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
 .fade-up { animation: fadeUp 0.3s ease both; }
@@ -1009,7 +1018,8 @@ body {
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo(window._keyBackPage||'page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">我的密钥</div>
-        <div class="nav-right">
+        <div class="nav-right" style="display:flex;align-items:center;gap:6px">
+          <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
           <select id="mnemonicLength" onchange="changeMnemonicLength(this.value)"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none">
             <option value="12">12词</option>
@@ -2040,6 +2050,38 @@ body {
 
 
 
+    <!-- 常见问题 FAQ -->
+    <div class="page" id="page-faq">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-key')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">常见问题</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="faq-body key-content" style="padding-top:12px">
+        <div class="faq-block">
+          <h3>助记词是什么？有多重要？</h3>
+          <p>助记词是一组按固定顺序排列的单词（常见为 12 或 24 个），由钱包在本地根据密码学规则生成，相当于您钱包的「主密钥」。<b>任何获得完整助记词的人都能转走您的资产</b>，请务必视为与银行卡密码同级甚至更高保密级别。</p>
+        </div>
+        <div class="faq-block">
+          <h3>如何安全备份助记词？</h3>
+          <p>请用纸笔手抄，存放在只有您本人可接触的安全位置；可制作多份分开放置。<b>不要截图、不要存网盘、不要发邮件或聊天软件、不要保存在可被同步的相册中。</b>数字形式一旦联网或备份到云端，被窃取的风险会显著增加。</p>
+        </div>
+        <div class="faq-block">
+          <h3>忘记助记词或丢失备份怎么办？</h3>
+          <p>去中心化钱包不托管您的密钥，<b>我们无法为您找回助记词</b>。若既无备份又无法回忆，对应地址上的资产将无法再被控制。若您仍持有助记词备份，可在本应用选择「导入已有钱包」按顺序输入单词恢复。</p>
+        </div>
+        <div class="faq-block">
+          <h3>如何恢复（导入）钱包？</h3>
+          <p>在欢迎页或创建流程中选择「导入已有钱包」，按界面提示输入您的助记词（需与创建时语言、词数一致）。验证通过后，将重新派生出与您备份时相同的链上地址。导入仅在本地进行，请确保设备环境安全。</p>
+        </div>
+        <div class="faq-block">
+          <h3>还需要注意什么？</h3>
+          <p>官方不会向您索要助记词；任何「客服」「链接领空投」索要助记词的都是诈骗。设置 PIN 与二次验证可保护应用内操作，但<b>无法替代助记词本身</b>——助记词仍是恢复钱包的最终凭据。</p>
+        </div>
+      </div>
+    </div>
+
+
     <!-- 验证成功页 -->
     <div class="page" id="page-verify-success" style="flex-direction:column;align-items:center;justify-content:center;background:var(--bg)">
       <div style="font-size:80px;margin-bottom:20px;animation:pulse 0.6s ease">✅</div>
@@ -2094,10 +2136,10 @@ body {
 
   <!-- 底部导航 -->
   <div class="tab-bar" id="tabBar" style="display:none">
-    <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon">🏠</span><span>资产</span></div>
-    <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon">🏷️</span><span>地址</span></div>
-    <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon">💱</span><span>兑换</span></div>
-    <div class="tab-item" id="tab-settings" onclick="goTab('tab-settings')"><span class="tab-icon">⚙️</span><span>设置</span></div>
+    <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
+    <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
+    <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
+    <div class="tab-item" id="tab-settings" onclick="goTab('tab-settings')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.06-.7-1.66-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.66.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.06.7 1.66.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.66-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span>设置</span></div>
   </div>
 
 </div>
@@ -2720,6 +2762,7 @@ const WW_PAGE_SEO = {
   'page-claim': { title: '领取礼物 — WorldToken', description: '输入口令领取链上礼物。' },
   'page-claimed': { title: '已领取 — WorldToken', description: '礼物领取完成。' },
   'page-hb-records': { title: '礼物记录 — WorldToken', description: '历史发送与领取记录。' },
+  'page-faq': { title: '常见问题 — WorldToken', description: '助记词安全、钱包备份与恢复说明。' },
   'page-verify-success': { title: '验证成功 — WorldToken', description: '助记词验证通过，可以开始使用钱包。' }
 };
 function applySeoForPage(pageId) {
