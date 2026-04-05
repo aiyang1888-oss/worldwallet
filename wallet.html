@@ -208,18 +208,17 @@ body {
 #welcomeLangGrid {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   max-width: 380px;
-  height: min(42vh, 320px);
+  max-height: min(52vh, 440px);
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
   padding: 4px 10px 10px;
   margin-top: 6px;
-  flex: none;
-  scroll-snap-type: none;
+  flex: 1 1 auto;
+  min-height: 0;
   box-sizing: border-box;
 }
 #welcomeLangGrid .lang-row { align-items: center; min-height: 54px; }
@@ -347,8 +346,8 @@ body {
   border-radius: 999px;
   padding: 4px 10px 4px 6px;
 }
-.home-mini-icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.home-mini-icon svg { display: block; width: 22px; height: 22px; }
+.home-mini-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.home-mini-icon svg { display: block; width: 20px; height: 20px; }
 .home-chain-tag {
   font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
   color: rgba(232,200,80,0.95); flex-shrink: 0;
@@ -367,145 +366,6 @@ body {
 .tx-empty-friendly .tx-empty-icon { font-size: 42px; margin-bottom: 14px; line-height: 1; opacity: 0.92; }
 .tx-empty-friendly .tx-empty-title { font-size: 16px; font-weight: 600; color: var(--text-dim); margin-bottom: 10px; }
 .tx-empty-friendly .tx-empty-hint { font-size: 12px; line-height: 1.75; color: var(--text-muted); max-width: 300px; margin: 0 auto; }
-
-/* 欢迎页：首次使用步骤（图标 + 文案） */
-.welcome-setup-steps {
-  width: 100%;
-  max-width: 340px;
-  margin: 8px auto 0;
-  padding: 14px 16px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(200,168,75,0.22);
-  border-radius: 16px;
-  text-align: left;
-}
-.welcome-setup-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--gold);
-  letter-spacing: 1px;
-  margin-bottom: 12px;
-  text-align: center;
-}
-.welcome-setup-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 10px;
-  font-size: 13px;
-  color: var(--text);
-  line-height: 1.45;
-}
-.welcome-setup-row:last-child { margin-bottom: 0; }
-.welcome-setup-ico {
-  font-size: 22px;
-  line-height: 1.2;
-  flex-shrink: 0;
-  width: 28px;
-  text-align: center;
-}
-.welcome-setup-row small {
-  display: block;
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 3px;
-  font-weight: 400;
-}
-
-/* 首页：尚未创建钱包时的引导 */
-.home-no-wallet-panel {
-  flex: 1;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 28px 20px 36px;
-  min-height: 0;
-}
-.home-no-wallet-card {
-  width: 100%;
-  max-width: 320px;
-  background: linear-gradient(165deg, rgba(30,28,20,0.95), rgba(14,14,22,0.98));
-  border: 1px solid rgba(200,168,75,0.35);
-  border-radius: 20px;
-  padding: 26px 22px 24px;
-  text-align: center;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.35);
-}
-.home-no-wallet-hero {
-  font-size: 48px;
-  line-height: 1;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 4px 12px rgba(200,168,75,0.35));
-}
-.home-no-wallet-title {
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 8px;
-  letter-spacing: 0.3px;
-}
-.home-no-wallet-sub {
-  font-size: 13px;
-  color: var(--text-muted);
-  line-height: 1.65;
-  margin-bottom: 18px;
-}
-.home-no-wallet-steps {
-  text-align: left;
-  margin-bottom: 20px;
-  padding: 12px 14px;
-  background: rgba(0,0,0,0.25);
-  border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.home-no-wallet-step {
-  font-size: 12px;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  line-height: 1.4;
-}
-.home-no-wallet-step:last-child { margin-bottom: 0; }
-.home-no-wallet-step span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(200,168,75,0.2);
-  color: var(--gold);
-  font-size: 11px;
-  font-weight: 800;
-  flex-shrink: 0;
-}
-.home-no-wallet-cta { width: 100%; padding: 14px 0; font-size: 15px; margin-bottom: 10px; }
-.home-no-wallet-cta2 { width: 100%; padding: 13px 0; font-size: 14px; }
-.home-wallet-body { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-
-.key-danger-banner {
-  background: linear-gradient(180deg, rgba(160,28,28,0.98), rgba(95,12,12,0.96));
-  border: 2px solid rgba(255,90,90,0.65);
-  border-radius: 14px;
-  padding: 14px 16px 16px;
-  margin-bottom: 16px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #ffecec;
-  font-weight: 600;
-  box-shadow: 0 8px 24px rgba(120,20,20,0.45);
-}
-.key-danger-banner strong {
-  display: block;
-  font-size: 16px;
-  color: #ffb4b4;
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
-}
-
 .home-balance { font-size: 32px; font-weight: 800; color: var(--text); }
 .home-balance-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .home-balance-chart-wrap { margin: 14px 0 6px; padding: 0 2px; }
@@ -793,25 +653,25 @@ body {
   filter: none;
 }
 #welcomeLangGrid .lang-row.active {
-  border: 4px solid #f5d76a;
-  background: linear-gradient(145deg, rgba(52,44,16,0.99), rgba(24,22,8,0.99));
+  border: 3px solid #f0d070;
+  background: linear-gradient(145deg, rgba(48,42,14,0.98), rgba(28,26,10,0.99));
   box-shadow:
-    0 0 0 1px rgba(255,235,160,0.85),
-    0 0 0 8px rgba(200,168,75,0.38),
-    0 16px 44px rgba(200,168,75,0.48);
+    0 0 0 1px rgba(255,230,140,0.75),
+    0 0 0 6px rgba(200,168,75,0.32),
+    0 14px 40px rgba(200,168,75,0.42);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 56px !important;
-  line-height: 0.95;
+  font-size: 42px !important;
+  line-height: 1;
   font-weight: 900;
-  min-width: 56px;
+  min-width: 48px;
   flex-shrink: 0;
   text-align: center;
-  color: #ffe9a0 !important;
-  filter: drop-shadow(0 0 22px rgba(255,220,100,1));
-  transform: scale(1.04);
+  color: #f5dc78 !important;
+  filter: drop-shadow(0 0 18px rgba(232,200,80,0.95));
+  transform: scale(1.02);
 }
 
 @keyframes successPop {
@@ -1136,15 +996,6 @@ body {
         </div>
       </div>
 
-      <!-- 首次使用步骤（图标引导） -->
-      <div id="welcomeSetupSteps" class="welcome-setup-steps" aria-label="Wallet setup">
-        <div class="welcome-setup-title">首次使用 · 简单四步</div>
-        <div class="welcome-setup-row"><span class="welcome-setup-ico" aria-hidden="true">🌐</span><span><b>选择界面语言</b><small>界面与助记词展示语言</small></span></div>
-        <div class="welcome-setup-row"><span class="welcome-setup-ico" aria-hidden="true">🚀</span><span><b>创建或导入钱包</b><small>新钱包生成密钥，或输入已有助记词</small></span></div>
-        <div class="welcome-setup-row"><span class="welcome-setup-ico" aria-hidden="true">🔐</span><span><b>抄写并验证助记词</b><small>纸笔离线保存，勿截图或联网</small></span></div>
-        <div class="welcome-setup-row"><span class="welcome-setup-ico" aria-hidden="true">💰</span><span><b>查看资产与转账</b><small>TRX / ETH / BTC 多链地址与余额</small></span></div>
-      </div>
-
       <!-- 按钮区 -->
       <div style="width:100%;flex-shrink:0;margin-top:40px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
@@ -1192,10 +1043,6 @@ body {
         </div>
       </div>
       <div class="key-content">
-        <div class="key-danger-banner" role="alert">
-          <strong>安全警告</strong>
-          助记词等同于您的全部资产。任何人获得完整助记词即可转走资金。请勿截图、勿存网盘、勿通过聊天或邮件发送给他人。
-        </div>
         <div class="key-lang-row">
           <span id="keyLangFlag" style="font-size:22px">🇨🇳</span>
           <span id="keyLangName" style="font-size:14px;font-weight:600;color:var(--text);flex:1">中文</span>
@@ -1239,21 +1086,6 @@ body {
 
     <!-- 首页 -->
     <div class="page" id="page-home">
-      <div id="homeNoWalletPanel" class="home-no-wallet-panel" style="display:none">
-        <div class="home-no-wallet-card">
-          <div class="home-no-wallet-hero" aria-hidden="true">🌍</div>
-          <div class="home-no-wallet-title">还没有钱包</div>
-          <div class="home-no-wallet-sub">创建新钱包或导入已有助记词后，即可在此查看多链资产、地址与交易记录。</div>
-          <div class="home-no-wallet-steps">
-            <div class="home-no-wallet-step"><span>1</span> 欢迎页选择语言</div>
-            <div class="home-no-wallet-step"><span>2</span> 创建新钱包或导入助记词</div>
-            <div class="home-no-wallet-step"><span>3</span> 安全备份并验证助记词</div>
-          </div>
-          <button type="button" class="btn-primary home-no-wallet-cta" onclick="goTo('page-create')">🚀 创建新钱包</button>
-          <button type="button" class="btn-secondary home-no-wallet-cta2" onclick="goTo('page-import')">📥 导入已有钱包</button>
-        </div>
-      </div>
-      <div id="homeWalletBody" class="home-wallet-body">
       <div class="home-header" style="position:relative">
         <div style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px">
           <div onclick="promptWalletNotifications()" title="通知" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer;font-size:18px;line-height:1">🔔</div>
@@ -1359,7 +1191,6 @@ body {
             <div class="tx-empty-hint">这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认偶尔需要几秒，若刚发出请点上方「刷新」或稍后再看。</div>
           </div>
         </div>
-      </div>
       </div>
     </div>
 
@@ -3205,7 +3036,6 @@ function goTo(pageId) {
       document.getElementById('tabBar').style.display = 'flex';
     }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
-    if(typeof updateHomeNoWalletPanel==='function') updateHomeNoWalletPanel();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
   }
   if(pageId==='page-transfer') {
@@ -3337,16 +3167,6 @@ function updateHomeChainStrip() {
   if (btcWrap) btcWrap.style.display = 'flex';
   strip.classList.remove('home-chain-strip--dim');
 }
-
-function updateHomeNoWalletPanel() {
-  const hasWallet = !!(REAL_WALLET && REAL_WALLET.ethAddress);
-  const panel = document.getElementById('homeNoWalletPanel');
-  const body = document.getElementById('homeWalletBody');
-  if (!panel || !body) return;
-  panel.style.display = hasWallet ? 'none' : 'flex';
-  body.style.display = hasWallet ? '' : 'none';
-}
-
 
 function updateAddr() {
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
