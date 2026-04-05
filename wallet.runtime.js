@@ -14,7 +14,7 @@ function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
 }
 document.addEventListener('click', function(ev) {
-  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
+  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
   if (!el) return;
   tapHaptic(12);
 }, true);
@@ -172,8 +172,7 @@ const WW_WORDS_EXTRA = {
 function updateRealAddr() {
   // 英语模式下更新地址显示为公链地址
   if(REAL_WALLET && REAL_WALLET.ethAddress) {
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) chip.textContent = REAL_WALLET.trxAddress || REAL_WALLET.ethAddress;
+    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
     const sa = document.getElementById('settingsAddr');
     if(sa) sa.textContent = REAL_WALLET.ethAddress;
   }
@@ -238,6 +237,79 @@ function randLang() {
   return allLangs[Math.floor(Math.random()*allLangs.length)];
 }
 
+function _wwEsc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function _wwSeedRng(seedStr) {
+  var s = 2166136261;
+  var i = 0;
+  for (; i < seedStr.length; i++) s = Math.imul(s ^ seedStr.charCodeAt(i), 16777619);
+  return function next() {
+    s ^= s << 13; s ^= s >>> 17; s ^= s << 5;
+    return ((s >>> 0) % 10000000) / 10000000;
+  };
+}
+function _wwNavigatorLangBucket() {
+  var raw = '';
+  try {
+    if (navigator.languages && navigator.languages.length) raw = String(navigator.languages[0] || '');
+    else if (navigator.language) raw = String(navigator.language);
+  } catch (e) {}
+  raw = raw.toLowerCase();
+  if (raw.startsWith('zh')) return 'zh';
+  if (raw.startsWith('ja')) return 'ja';
+  if (raw.startsWith('ko')) return 'ko';
+  if (raw.startsWith('ar')) return 'ar';
+  if (raw.startsWith('ru')) return 'ru';
+  if (raw.startsWith('hi')) return 'hi';
+  if (raw.startsWith('th')) return 'th';
+  if (raw.startsWith('vi')) return 'vi';
+  if (raw.startsWith('en')) return 'en';
+  return 'en';
+}
+var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star','wind','rain','snow','mist','dawn','dusk','hill','vale','lake','stone','gold','jade','ruby','pearl','coral','ivory','amber','ember','flame','frost','cloud','river','meadow','forest','brook','azure','shadow','silver','bronze','cobalt','sable','crimson','violet','indigo','cerulean','scarlet','coral','topaz','garnet','opal','onyx','jade','sage','birch','cedar','pine','willow','maple','acacia','cypress','olive','lotus','orchid','lilac','jasmine','iris','daisy','rose','lily','fern','moss','reed','cliff','cove','peak','ridge','delta','fjord','glade','haven','isle','knoll','marsh','oasis','prairie','reef','savanna','tundra','valley','wave','zenith'];
+function _wwGoldMiddleTenFromNavigator(seedStr) {
+  var rnd = _wwSeedRng(String(seedStr || '') + '|navGoldMid');
+  var bucket = _wwNavigatorLangBucket();
+  if (bucket === 'en') {
+    var out = [];
+    var i;
+    for (i = 0; i < 10; i++) out.push(EN_HOME_MID_WORDS[Math.floor(rnd() * EN_HOME_MID_WORDS.length)]);
+    return out.join('\u00b7');
+  }
+  var map = { zh: SINGLE_CHARS.zh, ja: SINGLE_CHARS.ja, ko: SINGLE_CHARS.ko, ar: SINGLE_CHARS.ar, ru: SINGLE_CHARS.ru, hi: SINGLE_CHARS.hi, th: SINGLE_CHARS.th, vi: SINGLE_CHARS.vi };
+  var chars = map[bucket] || SINGLE_CHARS.zh;
+  var s = '';
+  var j;
+  for (j = 0; j < 10; j++) s += chars[Math.floor(rnd() * chars.length)];
+  return s;
+}
+function renderHomeAddrChip() {
+  var chip = document.getElementById('homeAddrChip');
+  if (!chip) return;
+  var isEn = currentLang === 'en';
+  var seed = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') + '|' + ((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : ''));
+  var midGold = _wwGoldMiddleTenFromNavigator(seed);
+  var goldStyle = 'color:#C8A84B;font-weight:700;letter-spacing:0.5px;';
+  var dimStyle = 'color:rgba(255,255,255,0.45);font-size:10px;';
+  if (isEn) {
+    var ca = String((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '--'));
+    if (ca.length > 14 && ca !== '--') {
+      var pre = ca.slice(0, 5);
+      var suf = ca.slice(-5);
+      chip.innerHTML = '<span style="' + dimStyle + '">' + _wwEsc(pre) + '</span><span style="' + goldStyle + '">' + _wwEsc(midGold) + '</span><span style="' + dimStyle + '">' + _wwEsc(suf) + '</span>';
+    } else {
+      chip.innerHTML = '<span style="' + goldStyle + '">' + _wwEsc(midGold) + '</span>';
+    }
+    chip.style.cssText = 'font-size:11px;letter-spacing:0.5px;color:#C8A84B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(100%,260px);text-align:center;display:block';
+    return;
+  }
+  var prefix = (document.getElementById('addrPrefix') && document.getElementById('addrPrefix').textContent || '38294651').replace(/\D/g, '').substring(0, 8);
+  var suffix = (document.getElementById('addrSuffix') && document.getElementById('addrSuffix').textContent || '92847361').replace(/\D/g, '').substring(0, 8);
+  chip.innerHTML = '<span style="' + dimStyle + '">' + _wwEsc(prefix) + '</span><span style="' + goldStyle + '">' + _wwEsc(midGold) + '</span><span style="' + dimStyle + '">' + _wwEsc(suffix) + '</span>';
+  chip.style.cssText = 'font-size:11px;letter-spacing:0.5px;color:#C8A84B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(100%,260px);text-align:center;display:block';
+}
+
 function initAddrWords() {
   ADDR_WORDS.length = 0;
   for(let i=0;i<10;i++) {
@@ -253,17 +325,8 @@ function initAddrWords() {
     const addr = getNativeAddr();
     // 统一样式：单行 + 居中
     const ADDR_STYLE = 'font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;display:block';
-    // 首页芯片
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) {
-      const pre = addr.substring(0, 8);
-      const mid = addr.substring(8, 18);
-      const suf = addr.substring(18);
-      chip.innerHTML = '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + pre + '</span>' +
-        '<span style="color:#f0d070;font-weight:700;font-size:13px;letter-spacing:1px">' + mid + '</span>' +
-        '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + suf + '</span>';
-      chip.style.cssText += ';text-align:center;display:block';
-    }
+    // 首页芯片（中间段为 navigator 语言相关的 10 字/词，金色）
+    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
     // QR大字（居中 + 高亮）
     const qp1 = document.getElementById('qrPart1');
     const qp2 = document.getElementById('qrPart2');
@@ -1634,9 +1697,6 @@ function getMnemonicStrengthDisplay() {
   if (window.TEMP_WALLET && window.TEMP_WALLET.enMnemonic) {
     var wct = window.TEMP_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
     if ([12, 15, 18, 21, 24].includes(wct)) n = wct;
-  } else if (REAL_WALLET && REAL_WALLET.enMnemonic) {
-    var wc = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
-    if ([12, 15, 18, 21, 24].includes(wc)) n = wc;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
   }
@@ -1673,9 +1733,8 @@ function updateAddr() {
   // 获取完整万语地址
   const nativeAddr = getNativeAddr();
   const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
-  // 首页芯片
-  const chip = document.getElementById('homeAddrChip');
-  if(chip) chip.textContent = isEn ? CHAIN_ADDR : nativeAddr;
+  // 首页芯片（中间段金色随机展示，见 renderHomeAddrChip）
+  if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
   // QR 二维码区大字显示
   const qp1 = document.getElementById('qrPart1');
   const qp2 = document.getElementById('qrPart2');
@@ -1719,9 +1778,14 @@ function getNativeAddr() {
   return prefix + words + suffix;
 }
 
+function editHomeAddr() {
+  tapHaptic(12);
+  if (typeof goTab === 'function') goTab('tab-addr');
+}
+
 function copyHomeAddr() {
   const addr = getNativeAddr();
-  const btn = document.getElementById('homeCopyBtn');
+  const btn = document.getElementById('homeCopyAddrBtn');
   const done = () => {
     if(btn) {
       btn.textContent = '✅ 已复制';

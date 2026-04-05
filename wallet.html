@@ -1243,9 +1243,12 @@ body {
           <div class="home-balance-chart-foot" id="homeBalanceChartFoot"></div>
         </div>
         <div class="home-addr-stack" style="display:flex;flex-direction:column;align-items:center;width:100%;gap:10px;margin-top:8px">
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%">
-          <span id="homeAddrChip" class="home-addr-chip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
-          <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);min-height:36px;display:inline-flex;align-items:center;transition:background 0.2s,color 0.2s">复制地址</span>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%">
+          <span id="homeAddrChip" class="home-addr-chip" style="font-size:11px;letter-spacing:0.5px;color:#C8A84B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(100%,260px);text-align:center"></span>
+          <div class="home-addr-actions" style="display:flex;gap:8px;justify-content:center;width:100%;flex-wrap:wrap">
+            <button type="button" id="homeCopyAddrBtn" onclick="copyHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">复制地址</button>
+            <button type="button" id="homeEditAddrBtn" onclick="editHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">修改地址</button>
+          </div>
         </div>
         <div id="homeChainStrip" class="home-chain-strip home-chain-strip--dim">
           <div class="home-mini-chain" title="Tron (TRX)">
