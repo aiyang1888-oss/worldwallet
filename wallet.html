@@ -474,6 +474,7 @@ body {
 .transfer-contact-empty { font-size: 12px; color: var(--text-muted); padding: 8px 4px; }
 .transfer-addr-dd-item .contact-nick-mark { color: var(--gold); font-weight: 600; margin-right: 6px; }
 .quick-btns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px; }
+#wwCandleChartHost { box-shadow: inset 0 0 0 1px rgba(200,168,75,0.08); }
 .quick-btn {
   flex: 1 1 18%; min-width: 56px; background: var(--bg2);
   border: 1px solid var(--border); border-radius: 14px;
@@ -1273,6 +1274,7 @@ body {
         <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" class="u8">💱</div><div class="quick-btn-label">兑换</div></div>
         <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" class="u8">🎁</div><div class="quick-btn-label">礼物</div></div>
         <div class="quick-btn" onclick="goTo('page-dapp')"><div class="quick-btn-icon" class="u8">🌐</div><div class="quick-btn-label">DApp</div></div>
+        <div class="quick-btn" onclick="goTo('page-charts')"><div class="quick-btn-icon" class="u8">📈</div><div class="quick-btn-label">行情</div></div>
       </div>
       <div id="wwPortfolioPieCard" class="ww-portfolio-pie-card" style="display:none">
         <div class="ww-portfolio-pie-title">资产占比</div>
@@ -1862,6 +1864,12 @@ body {
           <div style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.55" id="wwSecurityScoreHint">根据本机 PIN 与助记词备份状态估算（满分 100）。</div>
         </div>
 
+        <div id="wwCloudBackupHint" style="background:rgba(80,120,200,0.08);border:1px solid rgba(80,120,200,0.35);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">☁️ 云端备份提示</div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">可将<b>加密后的备份文本</b>发到自有邮箱或保存到云盘；请勿明文发送助记词。下列导出仅含地址与备份标记，经您输入的密码加密（AES-GCM）。</div>
+          <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwExportEncryptedCloudBackup==='function')wwExportEncryptedCloudBackup()">复制加密备份到剪贴板</button>
+        </div>
+
         <!-- 安全 -->
         <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">安全</div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
@@ -1911,6 +1919,13 @@ body {
             <span class="settings-icon">🧪</span>
             <span class="settings-label">恢复演练</span>
             <span class="settings-value" style="font-size:11px;color:var(--text-muted)">安全模式</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof wwOpenAntiPhishDialog==='function')wwOpenAntiPhishDialog()">
+            <span class="settings-icon">🪪</span>
+            <span class="settings-label">防钓鱼口令</span>
+            <span class="settings-value" id="settingsAntiPhishValue" style="font-size:11px;color:var(--text-muted)">未设置</span>
             <span class="settings-arrow">›</span>
           </div>
         </div>
@@ -2011,6 +2026,30 @@ body {
         <textarea id="recoveryTestInput" rows="5" placeholder="空格分隔的 12 / 15 / 18 / 21 / 24 个词…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;resize:vertical"></textarea>
         <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:14px" onclick="if(typeof wwRecoveryTestSubmit==='function')wwRecoveryTestSubmit()">验证是否与当前钱包一致</button>
         <button type="button" class="btn-secondary" style="width:100%;margin-top:10px;padding:12px" onclick="if(typeof wwRecoveryTestClear==='function')wwRecoveryTestClear()">清除输入</button>
+      </div>
+    </div>
+
+    <!-- K线 / 行情（图表示意） -->
+    <div class="page" id="page-charts">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">行情</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 32px">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1H</button>
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">4H</button>
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1D</button>
+          <button type="button" class="btn-secondary" style="padding:8px 12px;font-size:12px">1W</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.55">TradingView 风格 K 线占位（本地示意，非实时行情源）。</div>
+        <div id="wwCandleChartHost" style="height:220px;border-radius:14px;border:1px solid var(--border);background:linear-gradient(180deg,#0e1218 0%,#0a0a12 100%);position:relative;overflow:hidden">
+          <div style="position:absolute;inset:0;opacity:0.22;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:28px 22px"></div>
+          <div id="wwCandleBars" style="position:absolute;left:0;right:0;bottom:24px;top:16px;display:flex;align-items:flex-end;justify-content:space-around;gap:2px;padding:0 8px"></div>
+          <div style="position:absolute;bottom:6px;left:10px;font-size:10px;color:var(--text-muted)">OHLC · 示意</div>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.6">完整图表可接入 TradingView Widget 或自建行情；此处仅展示布局与蜡烛占位。</p>
       </div>
     </div>
 
@@ -2424,6 +2463,7 @@ body {
     <div id="pinUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
       <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">输入 PIN</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">已设置 6 位数字 PIN，用于保护钱包访问</div>
+      <div id="wwAntiPhishBadge" style="display:none;font-size:13px;font-weight:700;color:var(--gold);margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.38);line-height:1.4"></div>
       <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitPinUnlock()" />
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockBackspace()">⌫ 退格</button>
@@ -3488,6 +3528,7 @@ const WW_PAGE_SEO = {
   'page-faq': { title: '常见问题 — WorldToken', description: '助记词安全、钱包备份与恢复说明。' },
   'page-verify-success': { title: '验证成功 — WorldToken', description: '助记词验证通过，可以开始使用钱包。' },
   'page-recovery-test': { title: '恢复演练 — WorldToken', description: '离线验证助记词是否与当前钱包一致（安全模式）。' },
+  'page-charts': { title: '行情 — WorldToken', description: 'K 线图表占位与高级行情分析入口。' },
   'page-dapp': { title: 'DApp 浏览器 — WorldToken', description: '在应用内打开去中心化应用链接。' }
 };
 function applySeoForPage(pageId) {
@@ -3711,6 +3752,7 @@ function closeTotpUnlock() {
   const pinInp = document.getElementById('pinUnlockInput');
   if (pinInp) pinInp.value = '';
   if (pov) pov.classList.add('show');
+  try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
 }
 
 function goTo(pageId) {
@@ -3725,6 +3767,7 @@ function goTo(pageId) {
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
   if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
+  if(pageId==='page-charts') { try { if(typeof renderWwChartsPlaceholder==='function') setTimeout(renderWwChartsPlaceholder, 60); } catch(_cw) {} }
   if(pageId==='page-settings') updateSettingsPage();
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
@@ -4540,6 +4583,7 @@ function wwTickIdleLock() {
     inp.value = '';
     if(err) err.style.display = 'none';
     pov.classList.add('show');
+    try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap3) {}
     setTimeout(function() { try { inp.focus(); } catch(e) {} }, 200);
   }
 }
@@ -5767,6 +5811,13 @@ function updateSettingsPage() {
   if(typeof wwApplyIdleLockLabel==='function') wwApplyIdleLockLabel();
   if (typeof updateReferralSettingsUI === 'function') updateReferralSettingsUI();
   if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
+  const apv = document.getElementById('settingsAntiPhishValue');
+  if (apv) {
+    var aw = '';
+    try { aw = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
+    apv.textContent = aw ? ('已设置 · ' + aw.slice(0, 6) + (aw.length > 6 ? '…' : '')) : '未设置';
+    apv.style.color = aw ? 'var(--green,#26a17b)' : 'var(--text-muted)';
+  }
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
 }
 
@@ -6906,6 +6957,87 @@ function _resumeWalletAfterUnlock() {
   window._wwForceIdleLock = false;
   goTo('page-home');
 }
+function wwB64Bytes(u8) {
+  var s = '';
+  var chunk = 8192;
+  for (var i = 0; i < u8.length; i += chunk) {
+    s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + chunk, u8.length)));
+  }
+  return btoa(s);
+}
+function wwRefreshAntiPhishOnPinUnlock() {
+  var w = '';
+  try { w = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
+  var el = document.getElementById('wwAntiPhishBadge');
+  if (!el) return;
+  if (!w) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.textContent = '防钓鱼口令：' + w;
+}
+function wwOpenAntiPhishDialog() {
+  var cur = '';
+  try { cur = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
+  var t = prompt('设置防钓鱼口令（解锁界面会显示，用于识别仿冒应用）\n留空则清除', cur);
+  if (t === null) return;
+  t = String(t).trim();
+  if (t === '') {
+    try { localStorage.removeItem('ww_antiphish_word'); } catch (e) {}
+    if (typeof showToast === 'function') showToast('已清除防钓鱼口令', 'info');
+  } else {
+    try { localStorage.setItem('ww_antiphish_word', t.slice(0, 32)); } catch (e) {}
+    if (typeof showToast === 'function') showToast('已保存防钓鱼口令', 'success');
+  }
+  wwRefreshAntiPhishOnPinUnlock();
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+}
+async function wwExportEncryptedCloudBackup() {
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
+  var pass = prompt('设置加密密码（请牢记，用于解密此备份）');
+  if (!pass) return;
+  var enc = new TextEncoder();
+  try {
+    var payload = JSON.stringify({
+      v: 1,
+      t: Date.now(),
+      eth: REAL_WALLET.ethAddress,
+      trx: REAL_WALLET.trxAddress || '',
+      btc: REAL_WALLET.btcAddress || '',
+      backed: !!REAL_WALLET.backedUp
+    });
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
+    var out = { v: 1, kind: 'ww_cloud_backup', salt: wwB64Bytes(salt), iv: wwB64Bytes(iv), data: wwB64Bytes(new Uint8Array(ct)) };
+    var txt = JSON.stringify(out);
+    try {
+      await navigator.clipboard.writeText(txt);
+      if (typeof showToast === 'function') showToast('加密备份已复制到剪贴板，可粘贴到邮件或云笔记', 'success');
+    } catch (e) {
+      prompt('复制加密备份（手动全选复制）', txt);
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
+  }
+}
+function renderWwChartsPlaceholder() {
+  var host = document.getElementById('wwCandleBars');
+  if (!host) return;
+  host.innerHTML = '';
+  var n = 28;
+  for (var i = 0; i < n; i++) {
+    var h = 36 + Math.random() * 58;
+    var up = Math.random() > 0.42;
+    var col = up ? '#26a17b' : '#e74c3c';
+    var wick = 10 + Math.random() * 20;
+    var d = document.createElement('div');
+    d.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;flex:1;min-width:0;max-width:12px';
+    d.innerHTML = '<div style="width:2px;height:' + wick + '%;background:rgba(255,255,255,0.22);margin-bottom:2px"></div><div style="width:72%;height:' + h + '%;background:' + col + ';border-radius:2px;opacity:0.92"></div>';
+    host.appendChild(d);
+  }
+}
+
 function continueAfterPinCheck() {
   const pin = localStorage.getItem('ww_unlock_pin');
   if(!pin) { _resumeWalletAfterUnlock(); return; }
@@ -6916,6 +7048,7 @@ function continueAfterPinCheck() {
     inp.value = '';
     if(err) err.style.display = 'none';
     ov.classList.add('show');
+    try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap) {}
     setTimeout(() => { try { inp.focus(); } catch(e) {} }, 200);
   } else {
     _resumeWalletAfterUnlock();
