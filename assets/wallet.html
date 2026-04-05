@@ -23,10 +23,53 @@
 .tx-status.ok { background:rgba(74,200,74,0.12); color:var(--green); border:1px solid rgba(74,200,74,0.25); }
 .tx-status.pending { background:rgba(200,168,75,0.12); color:var(--gold); border:1px solid rgba(200,168,75,0.25); }
 .tx-status.fail { background:rgba(255,96,96,0.1); color:var(--red); border:1px solid rgba(255,96,96,0.2); }
-.tx-history-empty { text-align:center; font-size:13px; color:var(--text-muted); padding:40px 20px; }
+.tx-history-empty { text-align:center; font-size:13px; color:var(--text-muted); padding:48px 22px 56px; line-height:1.6; max-width:320px; margin:0 auto; }
+.tx-history-empty-ico { font-size:52px; line-height:1; margin-bottom:16px; filter:drop-shadow(0 4px 14px rgba(200,168,75,0.2)); opacity:0.95; }
+.tx-history-empty-title { font-size:16px; color:var(--text-dim); font-weight:700; margin-bottom:10px; letter-spacing:0.3px; }
+.tx-history-empty-hint { font-size:13px; color:var(--text-muted); line-height:1.75; opacity:0.95; }
+#page-welcome .lang-row.active { border-width:2.5px !important; border-style:solid !important; border-color:var(--gold) !important; background:linear-gradient(145deg,rgba(200,168,75,0.12),rgba(24,24,8,0.95)) !important; box-shadow:0 0 0 1px rgba(240,208,112,0.35),0 8px 28px rgba(200,168,75,0.25); }
+#page-welcome .lang-row.active .lang-check { font-size:36px !important; font-weight:900; line-height:1; min-width:36px; text-align:center; text-shadow:0 0 14px rgba(240,208,112,0.45); color:var(--gold-light) !important; }
+.lang-row.active { border-width:2px !important; border-style:solid !important; border-color:var(--gold-light) !important; box-shadow:0 0 0 2px rgba(200,168,75,0.25),0 6px 22px rgba(200,168,75,0.22); }
+.lang-row.active .lang-check { font-size:30px !important; font-weight:900; line-height:1; text-shadow:0 0 12px rgba(240,208,112,0.35); }
+.home-chain-mini-row { display:none; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px; margin-top:12px; width:100%; }
+.home-mini-addr { display:inline-flex; align-items:center; gap:5px; background:rgba(20,20,38,0.9); border:1px solid var(--border); border-radius:999px; padding:3px 8px 3px 4px; font-size:10px; }
+.home-mini-addr .chain-badge { margin:0; flex-shrink:0; }
+.home-mini-hash { font-family:ui-monospace,monospace; color:var(--text-dim); font-size:10px; letter-spacing:0.2px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.home-chain-ico { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; line-height:1; }
+.home-chain-ico.trx { background:rgba(255,100,100,0.28); border:1px solid rgba(255,120,120,0.45); color:#ffb0b0; }
+.home-chain-ico.eth { background:rgba(100,100,255,0.22); border:1px solid rgba(130,130,255,0.4); color:#c8c8ff; }
+.home-chain-ico.btc { background:rgba(255,165,0,0.2); border:1px solid rgba(255,180,80,0.45); color:#ffd080; }
+.ww-hint-ico { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; margin-left:4px; border-radius:50%; font-size:11px; line-height:1; color:var(--gold); background:rgba(200,168,75,0.12); border:1px solid rgba(200,168,75,0.25); cursor:help; vertical-align:middle; flex-shrink:0; -webkit-user-select:none; user-select:none; }
+.ww-hint-ico:active { background:rgba(200,168,75,0.22); }
+.tooltip, #wwTooltip { position:fixed; z-index:300; max-width:280px; padding:12px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:12px; font-size:12px; color:var(--text-dim); line-height:1.55; pointer-events:none; opacity:0; visibility:hidden; transition:opacity .18s ease; box-shadow:0 12px 32px rgba(0,0,0,0.55); }
+.tooltip.show, #wwTooltip.show { opacity:1; visibility:visible; }
+.ww-onboard-overlay { position:absolute; inset:0; z-index:260; background:rgba(0,0,0,0.82); display:none; flex-direction:column; align-items:center; justify-content:center; padding:24px 18px; }
+.ww-onboard-overlay.show { display:flex; }
+.ww-onboard-card { width:100%; max-width:320px; background:var(--bg2); border:1px solid var(--border); border-radius:20px; padding:22px 18px 18px; box-shadow:0 16px 48px rgba(0,0,0,0.5); }
+.ww-onboard-card h3 { font-size:17px; font-weight:700; color:var(--text); margin-bottom:10px; }
+.ww-onboard-card p { font-size:13px; color:var(--text-dim); line-height:1.65; margin:0; }
+.ww-onboard-actions { display:flex; gap:10px; margin-top:20px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
+.ww-onboard-skip { background:transparent; border:none; color:var(--text-muted); font-size:14px; cursor:pointer; padding:8px 10px; }
+.ww-onboard-next { padding:10px 20px; font-size:14px; border-radius:14px; border:none; cursor:pointer; min-width:120px; }
+.ww-onboard-dots { display:flex; gap:8px; justify-content:center; margin-top:14px; }
+.ww-onboard-dots span { width:7px; height:7px; border-radius:50%; background:var(--border); transition:background .2s; }
+.ww-onboard-dots span.active { background:var(--gold); }
+.ww-wallet-hero-wrap { display:flex; justify-content:center; margin-bottom:16px; }
+.ww-wallet-hero-svg { width:112px; height:92px; max-width:100%; filter:drop-shadow(0 10px 28px rgba(200,168,75,0.28)); }
+.ww-stepbar { text-align:center; padding:4px 16px 10px; flex-shrink:0; }
+.ww-stepbar-text { font-size:12px; font-weight:700; color:var(--gold); letter-spacing:0.5px; }
+.ww-stepbar-dots { display:flex; gap:7px; justify-content:center; margin-top:8px; align-items:center; }
+.ww-stepbar-dots span { width:26px; height:4px; border-radius:2px; background:var(--border); transition:background .2s; }
+.ww-stepbar[data-step="1"] .ww-stepbar-dots span:nth-child(1) { background:linear-gradient(90deg,var(--gold),var(--gold-light)); }
+.ww-stepbar[data-step="2"] .ww-stepbar-dots span:nth-child(1) { background:rgba(200,168,75,0.42); }
+.ww-stepbar[data-step="2"] .ww-stepbar-dots span:nth-child(2) { background:linear-gradient(90deg,var(--gold),var(--gold-light)); }
+.ww-stepbar[data-step="3"] .ww-stepbar-dots span:nth-child(1),
+.ww-stepbar[data-step="3"] .ww-stepbar-dots span:nth-child(2) { background:rgba(200,168,75,0.42); }
+.ww-stepbar[data-step="3"] .ww-stepbar-dots span:nth-child(3) { background:linear-gradient(90deg,var(--gold),var(--gold-light)); }
+.wallet-loading-overlay .ww-stepbar { margin-top:4px; padding-bottom:0; }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
-<script src="wordlists.js"></script>
+
+
 </head>
 <body>
 <div class="phone">
@@ -53,156 +96,191 @@
         <div class="lang-row active" data-lang="zh" onclick="selectLang(this)">
           <span style="font-size:24px">🇨🇳</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">中文</div><div style="font-size:10px;color:var(--text-muted)">Chinese · 11亿使用者</div></div>
-          <span class="lang-check" style="opacity:1;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:1;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="en" onclick="selectLang(this)">
           <span style="font-size:24px">🇺🇸</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">English</div><div style="font-size:10px;color:var(--text-muted)">English · 15亿使用者 · 公链标准</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="hi" onclick="selectLang(this)">
           <span style="font-size:24px">🇮🇳</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">हिन्दी</div><div style="font-size:10px;color:var(--text-muted)">Hindi · 6亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="es" onclick="selectLang(this)">
           <span style="font-size:24px">🇪🇸</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Español</div><div style="font-size:10px;color:var(--text-muted)">Spanish · 5亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="ar" onclick="selectLang(this)">
           <span style="font-size:24px">🇸🇦</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">العربية</div><div style="font-size:10px;color:var(--text-muted)">Arabic · 4亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="fr" onclick="selectLang(this)">
           <span style="font-size:24px">🇫🇷</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Français</div><div style="font-size:10px;color:var(--text-muted)">French · 3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="bn" onclick="selectLang(this)">
           <span style="font-size:24px">🇧🇩</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">বাংলা</div><div style="font-size:10px;color:var(--text-muted)">Bengali · 3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="pt" onclick="selectLang(this)">
           <span style="font-size:24px">🇧🇷</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Português</div><div style="font-size:10px;color:var(--text-muted)">Portuguese · 2.5亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="ur" onclick="selectLang(this)">
           <span style="font-size:24px">🇵🇰</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">اردو</div><div style="font-size:10px;color:var(--text-muted)">Urdu · 2.3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="id" onclick="selectLang(this)">
           <span style="font-size:24px">🇮🇩</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Indonesia</div><div style="font-size:10px;color:var(--text-muted)">Indonesian · 2亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="ru" onclick="selectLang(this)">
           <span style="font-size:24px">🇷🇺</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Русский</div><div style="font-size:10px;color:var(--text-muted)">Russian · 1.5亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="sw" onclick="selectLang(this)">
           <span style="font-size:24px">🇰🇪</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Kiswahili</div><div style="font-size:10px;color:var(--text-muted)">Swahili · 2亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="ja" onclick="selectLang(this)">
           <span style="font-size:24px">🇯🇵</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">日本語</div><div style="font-size:10px;color:var(--text-muted)">Japanese · 1.3亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="fa" onclick="selectLang(this)">
           <span style="font-size:24px">🇮🇷</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">فارسی</div><div style="font-size:10px;color:var(--text-muted)">Persian · 1.1亿使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="vi" onclick="selectLang(this)">
           <span style="font-size:24px">🇻🇳</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Tiếng Việt</div><div style="font-size:10px;color:var(--text-muted)">Vietnamese · 9千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="de" onclick="selectLang(this)">
           <span style="font-size:24px">🇩🇪</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Deutsch</div><div style="font-size:10px;color:var(--text-muted)">German · 9千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="tr" onclick="selectLang(this)">
           <span style="font-size:24px">🇹🇷</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Türkçe</div><div style="font-size:10px;color:var(--text-muted)">Turkish · 8千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="ms" onclick="selectLang(this)">
           <span style="font-size:24px">🇲🇾</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Bahasa Melayu</div><div style="font-size:10px;color:var(--text-muted)">Malay · 8千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="ko" onclick="selectLang(this)">
           <span style="font-size:24px">🇰🇷</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">한국어</div><div style="font-size:10px;color:var(--text-muted)">Korean · 7700万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="th" onclick="selectLang(this)">
           <span style="font-size:24px">🇹🇭</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">ภาษาไทย</div><div style="font-size:10px;color:var(--text-muted)">Thai · 7千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="it" onclick="selectLang(this)">
           <span style="font-size:24px">🇮🇹</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Italiano</div><div style="font-size:10px;color:var(--text-muted)">Italian · 6500万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="pl" onclick="selectLang(this)">
           <span style="font-size:24px">🇵🇱</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Polski</div><div style="font-size:10px;color:var(--text-muted)">Polish · 5千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="uk" onclick="selectLang(this)">
           <span style="font-size:24px">🇺🇦</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Українська</div><div style="font-size:10px;color:var(--text-muted)">Ukrainian · 4500万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="nl" onclick="selectLang(this)">
           <span style="font-size:24px">🇳🇱</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Nederlands</div><div style="font-size:10px;color:var(--text-muted)">Dutch · 3千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="ro" onclick="selectLang(this)">
           <span style="font-size:24px">🇷🇴</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Română</div><div style="font-size:10px;color:var(--text-muted)">Romanian · 2400万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="el" onclick="selectLang(this)">
           <span style="font-size:24px">🇬🇷</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Ελληνικά</div><div style="font-size:10px;color:var(--text-muted)">Greek · 1300万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
         <div class="lang-row" data-lang="sv" onclick="selectLang(this)">
           <span style="font-size:24px">🇸🇪</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">Svenska</div><div style="font-size:10px;color:var(--text-muted)">Swedish · 1千万使用者</div></div>
-          <span class="lang-check" style="opacity:0;color:var(--gold);font-size:14px">✓</span>
+          <span class="lang-check" style="opacity:0;color:var(--gold)">✓</span>
         </div>
       </div>
 
       <!-- 按钮区 -->
       <div style="width:100%;flex-shrink:0;margin-top:40px">
+        <div class="ww-wallet-hero-wrap" aria-hidden="true">
+          <svg class="ww-wallet-hero-svg" viewBox="0 0 120 96" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="wwWalletGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#c8a84b"/>
+                <stop offset="100%" stop-color="#f0d070"/>
+              </linearGradient>
+            </defs>
+            <rect x="10" y="34" width="100" height="54" rx="14" fill="#12121c" stroke="url(#wwWalletGrad)" stroke-width="2"/>
+            <rect x="10" y="34" width="100" height="18" rx="14" fill="url(#wwWalletGrad)" opacity="0.22"/>
+            <rect x="10" y="46" width="100" height="6" fill="url(#wwWalletGrad)" opacity="0.12"/>
+            <circle cx="86" cy="59" r="9" fill="none" stroke="url(#wwWalletGrad)" stroke-width="2"/>
+            <circle cx="86" cy="59" r="3" fill="url(#wwWalletGrad)" opacity="0.85"/>
+            <path d="M14 34V26c0-7 6-12 15-12h62c9 0 15 5 15 12v8" fill="none" stroke="url(#wwWalletGrad)" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px">
           <button class="btn-primary" onclick="goTo('page-create')" style="padding:10px 32px;font-size:14px;width:auto;min-width:160px">🚀 开始使用</button>
           <button class="btn-secondary" onclick="goTo('page-import')" style="padding:8px 24px;font-size:13px;width:auto;min-width:140px">📥 导入已有钱包</button>
         </div>
       </div>
     </div>
+
+    <!-- 引导页（showOnboarding()） -->
+    <div class="page" id="page-onboarding">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
+        <div class="nav-title">新手指引</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;text-align:center">
+        <div style="font-size:56px;line-height:1;margin-bottom:14px" aria-hidden="true">🌍</div>
+        <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:10px">欢迎使用 WorldWallet</div>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.65;max-width:300px;margin-bottom:22px">选择语言后，可创建新钱包或导入助记词。首页会展示各公链地址摘要；转账与收款记录可在对应入口查看。</div>
+        <button type="button" class="btn-primary" style="max-width:260px" onclick="goTo('page-welcome')">进入欢迎页</button>
+      </div>
+    </div>
+
     <!-- 创建页 -->
     <div class="page" id="page-create">
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
         <div class="nav-title">设置钱包</div>
       </div>
+      <div class="ww-stepbar" data-step="1" role="status" aria-label="创建进度 第 1 步，共 3 步">
+        <div class="ww-stepbar-text">1 / 3</div>
+        <div class="ww-stepbar-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async () => { const el = document.getElementById('walletCreateLoading'); if(el) el.classList.add('show'); try { const w = await createRealWallet(); if(w) { updateKeyDisplay(w.words); } goTo('page-key'); } finally { if(el) el.classList.remove('show'); } })()" >
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async () => { WW_KEY_PAGE_CONTEXT='create'; const el = document.getElementById('walletCreateLoading'); if(el) el.classList.add('show'); try { const w = await createRealWallet(); if(w) { updateKeyDisplay(w.words); } goTo('page-key'); } finally { if(el) el.classList.remove('show'); } })()" >
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
@@ -219,8 +297,12 @@
     <div class="page" id="page-key">
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo('page-create')">‹</div>
-        <div class="nav-title">我的密钥</div>
+        <div class="nav-title" style="display:flex;align-items:center;justify-content:center;gap:4px">我的密钥<span class="ww-hint-ico" data-ww-hint="助记词是由 12 个按固定顺序排列的单词组成的备份，用于生成并恢复钱包私钥。任何人获得完整助记词即可控制你的资产；请用纸笔离线抄写并妥善保管，切勿截图、聊天或网盘传输。" tabindex="0" role="button" aria-label="助记词说明">ⓘ</span></div>
         <div class="nav-right" onclick="goTo('page-home')">完成</div>
+      </div>
+      <div id="keyStepBar" class="ww-stepbar" data-step="3" style="display:none" role="status" aria-label="创建进度 第 3 步，共 3 步">
+        <div class="ww-stepbar-text">3 / 3</div>
+        <div class="ww-stepbar-dots" aria-hidden="true"><span></span><span></span><span></span></div>
       </div>
       <div class="key-content">
         <div class="key-security-banner" role="alert">
@@ -268,6 +350,11 @@
           <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.5)">复制</span>
         </div>
+        <div id="homeChainMiniRow" class="home-chain-mini-row" aria-label="公链地址摘要">
+          <div class="home-mini-addr" title="Tron · TRX"><span class="home-chain-ico trx" aria-hidden="true">T</span><span id="homeShortTrx" class="home-mini-hash">—</span><span class="ww-hint-ico" data-ww-hint="TRX 地址属于 Tron（波场）网络，用于接收 TRX 与 TRC-20 代币（如 USDT）。请仅向他人提供「收款」页展示的对应地址，避免转错链导致资产丢失。" tabindex="0" role="button" aria-label="TRX 说明">ⓘ</span></div>
+          <div class="home-mini-addr" title="Ethereum · ETH"><span class="home-chain-ico eth" aria-hidden="true">Ξ</span><span id="homeShortEth" class="home-mini-hash">—</span><span class="ww-hint-ico" data-ww-hint="ETH 地址属于以太坊网络，用于接收 ETH 与兼容的 ERC-20 代币。请确认对方网络与代币类型一致后再转账。" tabindex="0" role="button" aria-label="ETH 说明">ⓘ</span></div>
+          <div class="home-mini-addr" title="Bitcoin · BTC"><span class="home-chain-ico btc" aria-hidden="true">₿</span><span id="homeShortBtc" class="home-mini-hash">—</span><span class="ww-hint-ico" data-ww-hint="BTC 地址用于比特币网络收款。不同地址格式（如 bc1…）对应同一钱包的不同展示，请按页面所示复制完整地址。" tabindex="0" role="button" aria-label="BTC 说明">ⓘ</span></div>
+        </div>
       </div>
       <div class="quick-btns">
         <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon">📤</div><div class="quick-btn-label">转账</div></div>
@@ -306,7 +393,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
             <div style="display:flex;align-items:center;gap:6px">
               <span style="font-size:13px">🌍</span>
-              <span style="font-size:12px;font-weight:600;color:var(--gold)">万语地址</span>
+              <span style="font-size:12px;font-weight:600;color:var(--gold);display:flex;align-items:center">万语地址<span class="ww-hint-ico" data-ww-hint="万语地址是 WorldWallet 中便于记忆与分享的母语展示形式，并与下方 TRX、ETH、BTC 公链地址绑定到同一钱包。向他人展示时，对方可用万语地址或对应公链地址向你付款。" tabindex="0" role="button" aria-label="万语地址说明">ⓘ</span></span>
             </div>
             
           </div>
@@ -418,7 +505,7 @@
         <div class="addr-chain-card">
           <div class="addr-chain-badge">⛓️ 公链地址</div>
           <div class="chain-row">
-            <span class="chain-badge trx">TRX</span>
+            <span style="display:flex;align-items:center;gap:4px;flex-shrink:0"><span class="chain-badge trx">TRX</span><span class="ww-hint-ico" style="width:16px;height:16px;font-size:10px" data-ww-hint="此为 Tron 网络收款地址，用于 TRX 与 TRC-20（如 USDT）。请仅复制本页展示的真实地址给他人。" tabindex="0" role="button" aria-label="TRX 说明">ⓘ</span></span>
             <span class="chain-hash">TQn4Hj8mKx3fR7vL2pN9sW5d</span>
             <span class="chain-copy-btn" onclick="copySingle('TQn4Hj8mKx3fR7vL2pN9sW5d', this)">📋</span>
           </div>
@@ -464,7 +551,7 @@
     <div class="page" id="page-transfer">
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
-        <div class="nav-title">转账</div>
+        <div class="nav-title" style="display:flex;align-items:center;justify-content:center;gap:4px">转账<span class="ww-hint-ico" data-ww-hint="请粘贴对方的万语地址，或 Tron / 以太坊 / 比特币公链地址。系统会识别地址类型；请确认币种与网络（如 TRC-20 USDT）与对方一致，错误网络可能导致资产不可找回。" tabindex="0" role="button" aria-label="转账说明">ⓘ</span></div>
         <div class="nav-right" style="font-size:13px;color:var(--gold);cursor:pointer" onclick="goTo('page-tx-history')">记录</div>
       </div>
       <div style="padding:20px 18px;flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0">
@@ -755,7 +842,7 @@
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="goTo('page-key')">
+          <div class="settings-row" onclick="WW_KEY_PAGE_CONTEXT='settings';goTo('page-key')">
             <span class="settings-icon">📋</span>
             <span class="settings-label">备份密钥</span>
             <span class="settings-value" style="color:var(--red)">未备份</span>
@@ -903,8 +990,9 @@
       </div>
       <div style="padding:20px;flex:1">
         <div class="import-header-row">
-          <div style="font-size:13px;color:var(--text-muted);line-height:1.7;flex:1;min-width:0">
-            输入12个助记词（空格分隔）<br>支持9种语言格式和BIP39英文格式
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.7;flex:1;min-width:0;display:flex;align-items:flex-start;gap:6px">
+            <span style="flex:1;min-width:0">输入12个助记词（空格分隔）<br>支持9种语言格式和BIP39英文格式</span>
+            <span class="ww-hint-ico" style="margin-left:0;margin-top:2px;flex-shrink:0" data-ww-hint="助记词是恢复钱包的唯一依据：请按创建时的语言与顺序输入 12 个词，词与词之间用空格分隔。支持本应用的多语言词表或标准英文 BIP39。输入错误将无法恢复同一钱包。" tabindex="0" role="button" aria-label="导入说明">ⓘ</span>
           </div>
           <span class="import-word-badge" id="importWordCountBadge">0/12</span>
         </div>
@@ -1168,11 +1256,156 @@
   <div class="wallet-loading-overlay" id="walletCreateLoading">
     <div class="wallet-loading-spinner"></div>
     <div class="wallet-loading-text">正在创建钱包…</div>
+    <div class="ww-stepbar" data-step="2" role="status" aria-label="创建进度 第 2 步，共 3 步">
+      <div class="ww-stepbar-text">2 / 3</div>
+      <div class="ww-stepbar-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div id="wwTooltip" class="tooltip" role="tooltip" aria-hidden="true"></div>
+
+  <div id="wwOnboarding" class="ww-onboard-overlay" onclick="if(event.target===this) closeWwOnboarding(true)">
+    <div class="ww-onboard-card" onclick="event.stopPropagation()">
+      <div id="wwOnboardBody"></div>
+      <div class="ww-onboard-actions">
+        <button type="button" class="ww-onboard-skip" onclick="closeWwOnboarding(true)">跳过</button>
+        <button type="button" class="btn-primary ww-onboard-next" id="wwOnboardNext" onclick="wwOnboardingNext()">下一步</button>
+      </div>
+      <div class="ww-onboard-dots" id="wwOnboardDots"><span class="active"></span><span></span><span></span></div>
+    </div>
   </div>
 
 </div>
 
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+<script src="wordlists.js"></script>
 <script>
+
+function wwLog(type, data) { console.log('[WW]', type, data != null ? data : ''); }
+
+/** 通用气泡提示：anchorEl 为参照元素（如按钮），文本定位在其附近 */
+function showTooltip(text, anchorEl) {
+  var tip = document.getElementById('wwTooltip');
+  if (!tip || anchorEl == null) return;
+  tip.textContent = text || '';
+  tip.setAttribute('aria-hidden', 'false');
+  tip.classList.add('show');
+  var r = anchorEl.getBoundingClientRect();
+  var maxW = 280;
+  tip.style.maxWidth = maxW + 'px';
+  var left = r.left + r.width / 2 - maxW / 2;
+  left = Math.max(10, Math.min(left, window.innerWidth - maxW - 10));
+  var estH = 100;
+  var top = r.bottom + 8;
+  if (top + estH > window.innerHeight - 8) top = Math.max(8, r.top - estH - 8);
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+function hideTooltip() {
+  var tip = document.getElementById('wwTooltip');
+  if (!tip) return;
+  tip.classList.remove('show');
+  tip.setAttribute('aria-hidden', 'true');
+}
+
+/** 打开独立引导页（与首次启动的弹窗式引导可并存） */
+function showOnboarding() {
+  goTo('page-onboarding');
+}
+
+var wwOnboardStep = 0;
+var WW_ONBOARD_TEXTS = [
+  { title: '欢迎使用 WorldWallet', body: '请先选择熟悉的语言，再通过「创建新钱包」或「导入已有钱包」进入应用。同一助记词可恢复同一钱包，请仅在安全环境下操作。' },
+  { title: '助记词是唯一的恢复凭证', body: '12 个助记词等同于钱包私钥。请用纸笔离线抄写并保管；切勿截图、聊天、邮件或网盘传输。任何向你索要助记词的行为都可能是诈骗。' },
+  { title: '万语地址与公链地址', body: '「收款」页可查看万语地址及 TRX、ETH、BTC 等公链地址，它们绑定同一钱包。转账时请确认网络与币种与对方一致，以免资产发送到错误网络。' }
+];
+
+function renderWwOnboardingStep() {
+  var body = document.getElementById('wwOnboardBody');
+  var next = document.getElementById('wwOnboardNext');
+  var dots = document.querySelectorAll('#wwOnboardDots span');
+  var t = WW_ONBOARD_TEXTS[wwOnboardStep];
+  if (!body || !t) return;
+  body.innerHTML = '<h3>' + t.title + '</h3><p>' + t.body + '</p>';
+  if (next) next.textContent = wwOnboardStep >= 2 ? '开始使用' : '下一步';
+  for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('active', i === wwOnboardStep);
+}
+
+function wwOnboardingNext() {
+  if (wwOnboardStep < 2) { wwOnboardStep++; renderWwOnboardingStep(); }
+  else closeWwOnboarding(true);
+}
+
+function closeWwOnboarding(done) {
+  var el = document.getElementById('wwOnboarding');
+  if (el) { el.classList.remove('show'); wwOnboardStep = 0; }
+  if (done) { try { localStorage.setItem('ww_onboarding_v1', '1'); } catch (e) {} }
+}
+
+function maybeShowWwOnboarding() {
+  try { if (localStorage.getItem('ww_onboarding_v1')) return; } catch (e) { return; }
+  var el = document.getElementById('wwOnboarding');
+  if (!el) return;
+  wwOnboardStep = 0;
+  renderWwOnboardingStep();
+  el.classList.add('show');
+}
+
+function initWwHints() {
+  var tip = document.getElementById('wwTooltip');
+  if (!tip) return;
+  var canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  function showTip(el, text) {
+    tip.textContent = text;
+    tip.setAttribute('aria-hidden', 'false');
+    var r = el.getBoundingClientRect();
+    var maxW = 280;
+    tip.style.maxWidth = maxW + 'px';
+    tip.style.width = 'auto';
+    var left = r.left + r.width / 2 - maxW / 2;
+    left = Math.max(10, Math.min(left, window.innerWidth - maxW - 10));
+    var estH = 120;
+    var top = r.bottom + 8;
+    if (top + estH > window.innerHeight - 8) top = Math.max(8, r.top - estH - 8);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    tip.classList.add('show');
+  }
+  function hideTip() {
+    tip.classList.remove('show');
+    tip.setAttribute('aria-hidden', 'true');
+  }
+
+  document.querySelectorAll('.ww-hint-ico').forEach(function(el) {
+    var text = el.getAttribute('data-ww-hint') || '';
+    if (!text) return;
+    if (canHover) {
+      el.addEventListener('mouseenter', function() { showTip(el, text); });
+      el.addEventListener('mouseleave', hideTip);
+    } else {
+      var lp = null;
+      el.addEventListener('touchstart', function() {
+        lp = setTimeout(function() { showTip(el, text); setTimeout(hideTip, 3800); }, 520);
+      }, { passive: true });
+      el.addEventListener('touchend', function() { if (lp) clearTimeout(lp); });
+      el.addEventListener('touchmove', function() { if (lp) clearTimeout(lp); });
+    }
+    el.addEventListener('focus', function() { showTip(el, text); });
+    el.addEventListener('blur', hideTip);
+  });
+}
+
+function initWwAnalyticsClicks() {
+  document.addEventListener('click', function(e) {
+    var t = e.target.closest('button, .btn-primary, .btn-secondary, .quick-btn, .tab-item, .nav-back, .nav-right, .addr-action-btn, .lang-row, .asset-item, .settings-row');
+    if (!t || t.closest('#wwOnboarding')) return;
+    var label = (t.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 48);
+    wwLog('click', { tag: t.tagName, id: t.id || '', className: (t.className && t.className.toString) ? String(t.className).slice(0, 100) : '', label: label });
+  }, true);
+}
+
 // ── 真实钱包数据 ──────────────────────────────────────────────
 let REAL_WALLET = JSON.parse(localStorage.getItem('ww_real_wallet') || 'null');
 
@@ -1435,17 +1668,48 @@ const CHAIN_ADDR = 'TQn4Hj8mKx3fR7vL2pN9sW5d';
 const ETH_ADDR   = '0x7f3a9b2c4d8e1f5a6b3c7d2e';
 const BTC_ADDR   = 'bc1q7f3a9b2c4d8e1f5a6b3c7';
 
+function shortAddrStr(addr, head, tail) {
+  if (!addr || typeof addr !== 'string') return '—';
+  var h = head == null ? 5 : head;
+  var t = tail == null ? 4 : tail;
+  if (addr.length <= h + t + 1) return addr;
+  return addr.slice(0, h) + '…' + addr.slice(-t);
+}
+
+function updateHomeChainMini() {
+  var row = document.getElementById('homeChainMiniRow');
+  if (!row) return;
+  if (!REAL_WALLET) {
+    row.style.display = 'none';
+    return;
+  }
+  row.style.display = 'flex';
+  var trx = document.getElementById('homeShortTrx');
+  var eth = document.getElementById('homeShortEth');
+  var btc = document.getElementById('homeShortBtc');
+  if (trx) trx.textContent = shortAddrStr(REAL_WALLET.trxAddress, 5, 4);
+  if (eth) eth.textContent = shortAddrStr(REAL_WALLET.ethAddress, 5, 4);
+  if (btc) btc.textContent = shortAddrStr(BTC_ADDR, 5, 4);
+}
+
 let currentLang = 'zh';
+var WW_KEY_PAGE_CONTEXT = '';
 const MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
 const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
 
 function goTo(pageId) {
+  wwLog('page_view', { page: pageId });
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   const activePage=document.getElementById(pageId);
   activePage.classList.add('active');
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
-  if(pageId==='page-key') renderKeyGrid();
+  if(pageId==='page-key') {
+    renderKeyGrid();
+    var ks = document.getElementById('keyStepBar');
+    if (ks) ks.style.display = (WW_KEY_PAGE_CONTEXT === 'create') ? '' : 'none';
+  }
+  if(pageId==='page-home') WW_KEY_PAGE_CONTEXT = '';
   if(pageId==='page-settings') updateSettingsPage();
   if(pageId==='page-import') updateImportWordCount();
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} }
@@ -1553,6 +1817,7 @@ function updateAddr() {
   updateQRDisplay();
   // 同步礼金UI
   if(typeof updateGiftUI==='function') updateGiftUI();
+  updateHomeChainMini();
 }
 
 function getNativeAddr() {
@@ -2346,7 +2611,7 @@ function openKeyLangPicker() {
     div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
       '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
       '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? 'BIP39 公链标准密钥' : '地名助记词') + '</div></div>' +
-      (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
+      (isCurrent ? '<span style="color:var(--gold)">✓</span>' : '');
     div.onclick = () => {
       currentLang = lang;
       renderKeyGrid();
@@ -2382,7 +2647,7 @@ function openAddrLangPicker() {
     div.innerHTML = '<span style="font-size:24px">' + info.flag + '</span>' +
       '<div style="flex:1"><div style="font-size:15px;font-weight:600;color:var(--text)">' + info.name + '</div>' +
       '<div style="font-size:10px;color:var(--text-muted);margin-top:2px">' + (isEn ? '公链地址（BIP39）' : '母语诗句地址') + '</div></div>' +
-      (isCurrent ? '<span style="color:var(--gold);font-size:14px">✓</span>' : '');
+      (isCurrent ? '<span style="color:var(--gold)">✓</span>' : '');
     div.onclick = () => {
       currentLang = lang;
       const info2 = LANG_INFO[lang];
@@ -2447,7 +2712,10 @@ function renderTxHistory() {
   const typeLabels = { send: '转账', receive: '收款', swap: '兑换', gift: '礼物' };
   const icons = { send: '📤', receive: '📥', swap: '💱', gift: '🎁' };
   if (!items.length) {
-    container.innerHTML = '<div class="tx-history-empty">暂无转账记录<br><span style="font-size:12px;opacity:0.8">完成转账后将显示在这里</span></div>';
+    container.innerHTML = '<div class="tx-history-empty" role="status">' +
+      '<div class="tx-history-empty-ico" aria-hidden="true">📜</div>' +
+      '<div class="tx-history-empty-title">这里还空空如也</div>' +
+      '<div class="tx-history-empty-hint">完成一笔转账或收款后，记录会自动出现在这里。新钱包从零开始很正常，随时欢迎你的第一笔足迹。</div></div>';
     return;
   }
   container.innerHTML = items.map(function(tx) {
@@ -2544,7 +2812,16 @@ async function loadBalances() {
 
   document.getElementById('totalBalanceUSD') && (document.getElementById('totalBalanceUSD').textContent = '$' + totalUSD.toFixed(2));
   document.getElementById('totalBalanceCNY') && (document.getElementById('totalBalanceCNY').textContent = '≈ ' + (totalUSD * 7.2).toFixed(0) + ' CNY');
+  updateHomeChainMini();
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  var first = document.querySelector('.page.active');
+  wwLog('page_view', { page: first ? first.id : 'unknown', initial: true });
+  initWwHints();
+  initWwAnalyticsClicks();
+  maybeShowWwOnboarding();
+});
 
 window.addEventListener('load', () => {
   setTimeout(() => {
@@ -2554,6 +2831,7 @@ window.addEventListener('load', () => {
     if (REAL_WALLET) loadBalances();
   }, 90000);
 });
+
 </script>
 </body>
 </html>

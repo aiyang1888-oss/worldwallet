@@ -1,7 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const root = __dirname;
-const html = fs.readFileSync(path.join(root, 'assets', 'wallet.html'), 'utf-8');
+const htmlPath = process.argv[2] || path.join(root, 'dist', 'wallet.html');
+const html = fs.readFileSync(htmlPath, 'utf-8');
+console.log('HTML:', htmlPath);
 const wordlists = fs.readFileSync(path.join(root, 'assets', 'wordlists.js'), 'utf-8');
 
 // 提取最大 inline script
