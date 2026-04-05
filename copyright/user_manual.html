@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WorldToken 多语言数字钱包系统 V1.0 - 用户手册</title>
+<style>
+  body { font-family: "SimSun", "宋体", serif; font-size: 11pt; line-height: 1.8; margin: 2.5cm; color: #000; }
+  h1 { font-size: 18pt; text-align: center; margin-bottom: 5px; }
+  h2 { font-size: 14pt; border-bottom: 2px solid #000; padding-bottom: 5px; margin-top: 30px; }
+  h3 { font-size: 12pt; margin-top: 20px; }
+  .cover { text-align: center; padding: 100px 0; }
+  .cover p { font-size: 13pt; margin: 10px 0; }
+  .page-break { page-break-before: always; }
+  table { border-collapse: collapse; width: 100%; margin: 15px 0; }
+  th, td { border: 1px solid #000; padding: 8px 12px; }
+  th { background: #f0f0f0; font-weight: bold; }
+  .note { background: #f9f9f9; border-left: 3px solid #666; padding: 10px; margin: 10px 0; }
+  ol, ul { margin: 10px 0 10px 20px; }
+  li { margin: 5px 0; }
+</style>
+</head>
+<body>
+
+<!-- 封面 -->
+<div class="cover">
+  <h1>WorldToken 多语言数字钱包系统 V1.0</h1>
+  <p style="font-size:16pt; margin-top:20px;">用户操作手册</p>
+  <p style="margin-top:60px;">软件名称：WorldToken 多语言数字钱包系统 V1.0</p>
+  <p>版本号：V1.0</p>
+  <p>著作权人：郭军超</p>
+  <p>文档编写日期：2026年4月</p>
+  <p>适用范围：数字资产管理用户</p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- 目录 -->
+<h2>目录</h2>
+<ol>
+  <li>软件概述</li>
+  <li>系统要求</li>
+  <li>安装与启动</li>
+  <li>创建钱包</li>
+  <li>导入已有钱包</li>
+  <li>资产管理</li>
+  <li>转账功能</li>
+  <li>多语言助记词</li>
+  <li>礼物口令功能</li>
+  <li>安全注意事项</li>
+  <li>常见问题解答</li>
+  <li>技术规格</li>
+  <li>版权声明</li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- 第一章 -->
+<h2>第一章 软件概述</h2>
+
+<h3>1.1 软件简介</h3>
+<p>WorldToken 多语言数字钱包系统（以下简称"本软件"）是一款基于区块链技术的去中心化数字资产管理工具，其核心创新在于采用汉字作为助记词，实现了数字钱包密钥的中文本地化表达。</p>
+
+<p>本软件支持以太坊（ETH）、波场（TRX/USDT-TRC20）、比特币（BTC）三条主流公链，提供创建钱包、导入钱包、查询余额、资产转账等完整功能。软件以单一HTML文件形式交付，无需安装，在本地浏览器中运行，私钥从不上传服务器，保障用户资产安全。</p>
+
+<h3>1.2 主要特点</h3>
+<ul>
+  <li><strong>汉字助记词</strong>：全球首创以汉字城市名为助记词的钱包标准，用户可用母语记忆私钥</li>
+  <li><strong>多链支持</strong>：一套助记词同时派生 ETH、TRX、BTC 三链地址</li>
+  <li><strong>11种语言</strong>：支持中文、英文、日文、韩文、西班牙文、法文、阿拉伯文、俄文、葡萄牙文、印地文等词库切换</li>
+  <li><strong>完全本地化</strong>：无服务器依赖，所有操作在用户设备本地完成</li>
+  <li><strong>零安装</strong>：单HTML文件，支持手机、电脑浏览器直接运行</li>
+</ul>
+
+<h3>1.3 技术架构</h3>
+<table>
+  <tr><th>模块</th><th>技术实现</th></tr>
+  <tr><td>助记词生成</td><td>SHA-256哈希 + 汉字词库映射，符合BIP39安全标准</td></tr>
+  <tr><td>密钥派生</td><td>BIP32/BIP44分层确定性钱包协议</td></tr>
+  <tr><td>以太坊支持</td><td>ethers.js v5.7 库</td></tr>
+  <tr><td>波场支持</td><td>TronWeb v5.3.2 库（懒加载）</td></tr>
+  <tr><td>余额查询</td><td>TronGrid API / ETH公共节点 / mempool.space</td></tr>
+  <tr><td>前端界面</td><td>HTML5 + CSS3 + Vanilla JavaScript</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- 第二章 -->
+<h2>第二章 系统要求</h2>
+
+<h3>2.1 硬件要求</h3>
+<table>
+  <tr><th>配置项</th><th>最低要求</th><th>推荐配置</th></tr>
+  <tr><td>处理器</td><td>Intel Core i3 或同等</td><td>Intel Core i5 及以上</td></tr>
+  <tr><td>内存</td><td>4GB RAM</td><td>8GB RAM 及以上</td></tr>
+  <tr><td>存储空间</td><td>100MB 可用空间</td><td>500MB 及以上</td></tr>
+  <tr><td>网络</td><td>互联网连接（余额查询）</td><td>稳定宽带连接</td></tr>
+  <tr><td>显示分辨率</td><td>1366×768</td><td>1920×1080 及以上</td></tr>
+</table>
+
+<h3>2.2 软件要求</h3>
+<table>
+  <tr><th>软件</th><th>版本要求</th></tr>
+  <tr><td>Google Chrome</td><td>90.0 及以上（推荐）</td></tr>
+  <tr><td>Mozilla Firefox</td><td>88.0 及以上</td></tr>
+  <tr><td>Microsoft Edge</td><td>90.0 及以上</td></tr>
+  <tr><td>Safari（iOS/macOS）</td><td>14.0 及以上</td></tr>
+  <tr><td>移动端浏览器</td><td>支持 Chrome/Safari 移动版</td></tr>
+</table>
+
+<h3>2.3 操作系统支持</h3>
+<ul>
+  <li>Windows 10/11 64位</li>
+  <li>macOS 11.0（Big Sur）及以上</li>
+  <li>iOS 14.0 及以上</li>
+  <li>Android 8.0 及以上</li>
+  <li>Linux（Ubuntu 18.04 及以上）</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- 第三章 -->
+<h2>第三章 安装与启动</h2>
+
+<h3>3.1 获取软件</h3>
+<p>本软件通过以下方式获取：</p>
+<ol>
+  <li>访问官方网站：<strong>www.worldtoken.cc</strong></li>
+  <li>点击导航栏中的"进入钱包"按钮</li>
+  <li>也可直接访问：<strong>www.worldtoken.cc/wallet.html</strong></li>
+</ol>
+
+<h3>3.2 本地部署（可选）</h3>
+<p>用户可将 wallet.html 文件下载到本地，无需网络即可使用钱包基础功能（余额查询、转账需要网络）。</p>
+<ol>
+  <li>在浏览器中按 Ctrl+S（Mac：Command+S）保存完整网页</li>
+  <li>保存为 wallet.html 单文件</li>
+  <li>双击打开即可在本地浏览器运行</li>
+</ol>
+
+<h3>3.3 首次启动</h3>
+<p>打开软件后，界面将显示欢迎页面，提供以下选项：</p>
+<ul>
+  <li><strong>🚀 创建新钱包</strong>：生成全新密钥对</li>
+  <li><strong>📥 导入已有钱包</strong>：通过助记词恢复已有钱包</li>
+</ul>
+
+<div class="note">
+  <strong>注意：</strong>首次使用请务必仔细阅读安全提示，妥善保管助记词，任何人获得助记词即可控制您的资产。
+</div>
+
+<div class="page-break"></div>
+
+<!-- 第四章 -->
+<h2>第四章 创建钱包</h2>
+
+<h3>4.1 创建流程</h3>
+<ol>
+  <li>点击首页"🚀 创建新钱包"按钮</li>
+  <li>在弹出的选项中选择"✨ 创建新钱包"</li>
+  <li>系统自动生成12个汉字助记词（可选12/15/18/21/24词）</li>
+  <li>仔细抄写助记词，建议手写在纸上，一字不差</li>
+  <li>点击"✅ 我已抄写，开始验证"进行验证</li>
+  <li>按提示顺序输入指定位置的词，通过验证后钱包创建完成</li>
+</ol>
+
+<h3>4.2 助记词选择</h3>
+<p>软件提供5种助记词长度，安全性随长度增加而提升：</p>
+<table>
+  <tr><th>长度</th><th>熵值</th><th>安全强度</th><th>适用场景</th></tr>
+  <tr><td>12词</td><td>128位</td><td>2¹²⁸</td><td>日常使用，小额资产</td></tr>
+  <tr><td>15词</td><td>160位</td><td>2¹⁶⁰</td><td>一般使用</td></tr>
+  <tr><td>18词</td><td>192位</td><td>2¹⁹²</td><td>较高安全需求</td></tr>
+  <tr><td>21词</td><td>224位</td><td>2²²⁴</td><td>高价值资产</td></tr>
+  <tr><td>24词</td><td>256位</td><td>2²⁵⁶</td><td>最高安全级别</td></tr>
+</table>
+
+<h3>4.3 派生地址说明</h3>
+<p>创建钱包后，系统将自动生成以下三条链的地址：</p>
+<ul>
+  <li><strong>ETH 地址</strong>：以"0x"开头，42位十六进制字符串，用于接收 ETH 及 ERC-20 代币</li>
+  <li><strong>TRX 地址</strong>：以"T"开头，34位 Base58 字符串，用于接收 TRX 及 USDT-TRC20</li>
+  <li><strong>BTC 地址</strong>：以"1"或"bc1"开头，用于接收比特币</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- 第五章 -->
+<h2>第五章 导入已有钱包</h2>
+
+<h3>5.1 通过助记词导入</h3>
+<ol>
+  <li>点击首页"📥 导入已有钱包"</li>
+  <li>在文本框中输入助记词，词与词之间用空格分隔</li>
+  <li>支持12/15/18/21/24个词的助记词</li>
+  <li>支持标准BIP39英文助记词（兼容MetaMask、imToken等主流钱包）</li>
+  <li>支持本软件生成的汉字助记词</li>
+  <li>点击"✅ 导入钱包"完成导入</li>
+</ol>
+
+<h3>5.2 兼容性说明</h3>
+<table>
+  <tr><th>钱包类型</th><th>是否兼容</th><th>说明</th></tr>
+  <tr><td>MetaMask 助记词</td><td>✅ 完全兼容</td><td>标准BIP39英文助记词</td></tr>
+  <tr><td>imToken 助记词</td><td>✅ 完全兼容</td><td>标准BIP39英文助记词</td></tr>
+  <tr><td>OKX Wallet 助记词</td><td>✅ 完全兼容</td><td>标准BIP39英文助记词</td></tr>
+  <tr><td>本软件汉字助记词</td><td>✅ 完全兼容</td><td>WorldToken 专属标准</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- 第六章 -->
+<h2>第六章 资产管理</h2>
+
+<h3>6.1 查看资产</h3>
+<p>创建或导入钱包后，进入主界面可查看：</p>
+<ul>
+  <li>USDT-TRC20 余额（波场链）</li>
+  <li>TRX 余额（波场链）</li>
+  <li>ETH 余额（以太坊链）</li>
+  <li>BTC 余额（比特币链）</li>
+  <li>各资产当前法币价值（美元计价）</li>
+  <li>资产总价值汇总</li>
+</ul>
+
+<h3>6.2 收款地址</h3>
+<ol>
+  <li>点击底部导航"地址"标签</li>
+  <li>选择收款链（TRX/ETH/BTC）</li>
+  <li>系统显示对应链的收款地址及二维码</li>
+  <li>点击地址可一键复制</li>
+  <li>将二维码展示给付款方扫描即可收款</li>
+</ol>
+
+<h3>6.3 交易记录</h3>
+<p>系统通过 TronGrid API 自动获取 TRX/USDT-TRC20 的链上交易历史，显示：</p>
+<ul>
+  <li>交易时间</li>
+  <li>交易金额</li>
+  <li>交易方向（收入/支出）</li>
+  <li>对方地址</li>
+  <li>交易哈希（可在区块链浏览器查询）</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- 第七章 -->
+<h2>第七章 转账功能</h2>
+
+<h3>7.1 转账操作步骤</h3>
+<ol>
+  <li>进入主界面，点击"📤 转账"按钮</li>
+  <li>选择转账币种（USDT-TRC20 / TRX / ETH）</li>
+  <li>输入收款地址（或扫描对方二维码）</li>
+  <li>输入转账金额</li>
+  <li>确认手续费信息</li>
+  <li>点击"确认转账"，系统在本地完成私钥签名</li>
+  <li>签名后广播到对应区块链网络</li>
+  <li>等待区块链确认（TRX约3秒，ETH约15秒，BTC约10分钟）</li>
+</ol>
+
+<h3>7.2 手续费说明</h3>
+<table>
+  <tr><th>币种</th><th>手续费类型</th><th>收取方</th></tr>
+  <tr><td>USDT-TRC20</td><td>消耗 TRX 带宽/能量</td><td>波场网络</td></tr>
+  <tr><td>TRX</td><td>消耗 TRX 带宽</td><td>波场网络</td></tr>
+  <tr><td>ETH</td><td>Gas 费（ETH计价）</td><td>以太坊网络</td></tr>
+</table>
+
+<div class="note">
+  <strong>重要提示：</strong>转账前请仔细核对收款地址，区块链转账一旦广播无法撤回。建议首次向新地址转账时先发送小额测试。
+</div>
+
+<div class="page-break"></div>
+
+<!-- 第八章 -->
+<h2>第八章 多语言助记词</h2>
+
+<h3>8.1 支持语言列表</h3>
+<table>
+  <tr><th>语言代码</th><th>语言名称</th><th>词库来源</th></tr>
+  <tr><td>zh</td><td>中文简体</td><td>全球城市汉字名称</td></tr>
+  <tr><td>en</td><td>English</td><td>BIP39 标准英文词库</td></tr>
+  <tr><td>ja</td><td>日本語</td><td>日本历史城市名</td></tr>
+  <tr><td>ko</td><td>한국어</td><td>朝鲜半岛历史地名</td></tr>
+  <tr><td>es</td><td>Español</td><td>西班牙及拉丁美洲城市</td></tr>
+  <tr><td>fr</td><td>Français</td><td>法国及法语非洲城市</td></tr>
+  <tr><td>ar</td><td>العربية</td><td>阿拉伯语城市词汇</td></tr>
+  <tr><td>ru</td><td>Русский</td><td>俄罗斯历史古城</td></tr>
+  <tr><td>pt</td><td>Português</td><td>巴西及葡萄牙城市</td></tr>
+  <tr><td>hi</td><td>हिन्दी</td><td>印度圣地梵语词汇</td></tr>
+</table>
+
+<h3>8.2 切换语言</h3>
+<ol>
+  <li>在"我的密钥"页面点击"切换语言"</li>
+  <li>从语言列表中选择目标语言</li>
+  <li>助记词展示将切换为对应语言词汇</li>
+  <li>注意：切换语言仅改变展示形式，底层私钥不变</li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- 第九章 -->
+<h2>第九章 礼物口令功能</h2>
+
+<h3>9.1 功能简介</h3>
+<p>礼物口令功能允许用户生成一个加密口令，通过任何社交媒体分享给指定收款人，对方输入口令后即可领取相应数字资产。</p>
+
+<h3>9.2 发送礼物</h3>
+<ol>
+  <li>点击底部导航"🎁 礼物"标签</li>
+  <li>选择礼物类型（固定金额/随机）</li>
+  <li>输入礼物金额</li>
+  <li>设置有效期（1-72小时）</li>
+  <li>点击"🎁 生成礼物口令"</li>
+  <li>复制口令分享给收款人</li>
+</ol>
+
+<h3>9.3 领取礼物</h3>
+<ol>
+  <li>收到口令后，打开 WorldToken 钱包</li>
+  <li>点击"🎊 领取礼物"按钮</li>
+  <li>输入口令</li>
+  <li>点击"立即领取"完成领取</li>
+</ol>
+
+<div class="page-break"></div>
+
+<!-- 第十章 -->
+<h2>第十章 安全注意事项</h2>
+
+<h3>10.1 助记词安全</h3>
+<div class="note">
+⚠️ <strong>极其重要：</strong>助记词是您数字资产的唯一凭证，等同于银行密码+账号的总和。
+</div>
+<ul>
+  <li>✅ 手写在纸上，保存于安全位置</li>
+  <li>✅ 制作多份备份，存放于不同地点</li>
+  <li>✅ 考虑使用防水防火的金属助记词板</li>
+  <li>❌ 切勿截图保存（手机被盗或入侵即损失资产）</li>
+  <li>❌ 切勿发送到任何聊天软件或邮件</li>
+  <li>❌ 切勿输入到任何不信任的网站或软件</li>
+  <li>❌ 切勿告知任何人，包括官方客服</li>
+</ul>
+
+<h3>10.2 使用环境安全</h3>
+<ul>
+  <li>避免在公共WiFi网络下进行转账操作</li>
+  <li>确保设备无恶意软件和键盘记录程序</li>
+  <li>使用完毕后及时关闭钱包页面</li>
+  <li>不在他人设备上登录自己的钱包</li>
+</ul>
+
+<h3>10.3 防诈骗提示</h3>
+<ul>
+  <li>官方永远不会索要您的助记词或私钥</li>
+  <li>任何要求您输入助记词的网站均为钓鱼网站</li>
+  <li>官方域名仅为 <strong>worldtoken.cc</strong>，请仔细辨别</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- 第十一章 -->
+<h2>第十一章 常见问题解答</h2>
+
+<h3>Q1：我的资产存在哪里？软件会保管我的资产吗？</h3>
+<p>您的资产存储在区块链上，本软件不保管任何资产。私钥（助记词）由您自己保管，本软件仅提供界面操作工具。</p>
+
+<h3>Q2：软件停止运营会影响我的资产吗？</h3>
+<p>不会。区块链是去中心化网络，即使本软件停止运营，您持有助记词，即可通过任何兼容BIP39标准的钱包（如MetaMask）恢复资产。</p>
+
+<h3>Q3：忘记助记词怎么办？</h3>
+<p>助记词无法找回。这是区块链去中心化的核心特性，没有任何中心机构能帮您重置。因此备份助记词极为重要。</p>
+
+<h3>Q4：为什么余额查询有时失败？</h3>
+<p>余额查询依赖第三方API接口，偶发的网络波动或接口限流可能导致查询失败。刷新后重试或稍后再查即可。</p>
+
+<h3>Q5：汉字助记词与英文助记词的钱包地址是否相同？</h3>
+<p>不相同。不同词库生成的助记词对应不同的私钥，因此地址也不同。请勿混淆使用。</p>
+
+<h3>Q6：手机能使用吗？</h3>
+<p>可以。本软件已针对移动设备进行优化，支持 iOS Safari 和 Android Chrome 浏览器正常使用。</p>
+
+<div class="page-break"></div>
+
+<!-- 第十二章 -->
+<h2>第十二章 技术规格</h2>
+
+<h3>12.1 密码学规格</h3>
+<table>
+  <tr><th>参数</th><th>规格</th></tr>
+  <tr><td>随机数生成</td><td>Web Crypto API（CSPRNG）</td></tr>
+  <tr><td>助记词标准</td><td>BIP39兼容（英文）/ WorldToken标准（其他语言）</td></tr>
+  <tr><td>密钥派生</td><td>BIP32 HMAC-SHA512</td></tr>
+  <tr><td>路径规范</td><td>BIP44（m/44'/coin_type'/0'/0/0）</td></tr>
+  <tr><td>ETH签名</td><td>ECDSA secp256k1</td></tr>
+  <tr><td>TRX地址</td><td>Base58Check编码</td></tr>
+  <tr><td>BTC地址</td><td>P2PKH（Legacy）</td></tr>
+</table>
+
+<h3>12.2 词库规格</h3>
+<table>
+  <tr><th>语言</th><th>词库大小</th><th>最小熵（12词）</th></tr>
+  <tr><td>中文</td><td>2048词</td><td>132位</td></tr>
+  <tr><td>英文（BIP39）</td><td>2048词</td><td>128位</td></tr>
+  <tr><td>其他语言</td><td>2048词</td><td>132位</td></tr>
+</table>
+
+<h3>12.3 依赖库</h3>
+<table>
+  <tr><th>库名称</th><th>版本</th><th>用途</th></tr>
+  <tr><td>ethers.js</td><td>5.7.2</td><td>以太坊密钥派生与签名</td></tr>
+  <tr><td>TronWeb</td><td>5.3.2</td><td>波场链交互（懒加载）</td></tr>
+  <tr><td>QRCode.js</td><td>1.5.3</td><td>收款二维码生成</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- 第十三章 -->
+<h2>第十三章 版权声明</h2>
+
+<p>本软件（WorldToken 多语言数字钱包系统 V1.0）的著作权归 <strong>郭军超</strong> 所有。</p>
+
+<p>未经著作权人书面许可，任何单位或个人不得以任何形式复制、传播、修改或二次开发本软件的全部或部分内容。</p>
+
+<p>本软件依据相关法律法规在中国版权保护中心完成软件著作权登记。</p>
+
+<table>
+  <tr><th>项目</th><th>内容</th></tr>
+  <tr><td>软件名称</td><td>WorldToken 多语言数字钱包系统 V1.0</td></tr>
+  <tr><td>著作权人</td><td>郭军超</td></tr>
+  <tr><td>开发完成时间</td><td>2026年4月</td></tr>
+  <tr><td>发表时间</td><td>2026年4月</td></tr>
+  <tr><td>官方网站</td><td>www.worldtoken.cc</td></tr>
+  <tr><td>联系邮箱</td><td>784215810@qq.com</td></tr>
+</table>
+
+<br><br>
+<p style="text-align:center; margin-top:60px;">
+  <strong>WorldToken 多语言数字钱包系统 V1.0 用户操作手册</strong><br>
+  版权所有 © 2026 郭军超 保留所有权利
+</p>
+
+</body>
+</html>
