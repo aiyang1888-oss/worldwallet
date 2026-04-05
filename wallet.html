@@ -2610,6 +2610,7 @@ function renderKeyGrid() {
       return;
     }
     words = enMnemonic.split(' ');
+    if (REAL_WALLET) REAL_WALLET.words = words;
   } else {
     // 非英文：把真实英文助记词转换为目标语言（索引对应BIP39，双向可逆）
     const enMnemonic = REAL_WALLET && REAL_WALLET.enMnemonic;
@@ -2625,6 +2626,7 @@ function renderKeyGrid() {
     if (REAL_WALLET) {
       REAL_WALLET.displayLang = currentLang;
       REAL_WALLET.displayWords = words;
+      REAL_WALLET.words = words;  // 同步 words 字段供 startVerify 使用
     }
   }
   const grid = document.getElementById('keyWordGrid');
