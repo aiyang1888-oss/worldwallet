@@ -256,9 +256,9 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 8px 12px;
-  margin-top: 6px;
-  padding: 0 4px 10px;
+  gap: 10px 14px;
+  margin-top: 12px;
+  padding: 0 4px 12px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -274,13 +274,13 @@ body {
   border-radius: 999px;
   padding: 4px 10px 4px 6px;
 }
-.home-mini-icon { width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.home-mini-icon svg { display: block; width: 22px; height: 22px; }
+.home-mini-icon { width: 26px; height: 26px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.home-mini-icon svg { display: block; width: 26px; height: 26px; }
 .home-chain-tag {
   font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
   color: rgba(232,200,80,0.95); flex-shrink: 0;
 }
-.home-short-addr { font-size: 11px; font-family: ui-monospace, monospace; color: rgba(255,255,255,0.55); letter-spacing: 0.3px; }
+.home-short-addr { font-size: 12px; font-family: ui-monospace, monospace; color: rgba(255,255,255,0.62); letter-spacing: 0.35px; }
 .tx-empty-friendly {
   text-align: center;
   padding: 32px 20px 28px;
@@ -550,22 +550,28 @@ body {
   box-shadow: 0 0 0 1px rgba(200,168,75,0.55), 0 8px 28px rgba(200,168,75,0.2);
 }
 /* Welcome: gold border on selected language + large checkmark */
+#welcomeLangGrid .lang-row:not(.active) .lang-check {
+  font-size: 14px !important;
+  min-width: 0;
+  filter: none;
+}
 #welcomeLangGrid .lang-row.active {
-  border: 3.5px solid #e8c850;
+  border: 4px solid #e8c850;
   box-shadow:
-    0 0 0 1px rgba(232,200,80,0.55),
-    0 0 0 4px rgba(200,168,75,0.22),
-    0 12px 36px rgba(200,168,75,0.32);
+    0 0 0 1px rgba(255,220,120,0.45),
+    0 0 0 5px rgba(200,168,75,0.28),
+    0 14px 40px rgba(200,168,75,0.38);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 46px !important;
-  line-height: 1;
+  font-size: 54px !important;
+  line-height: 0.95;
   font-weight: 900;
-  min-width: 44px;
+  min-width: 52px;
   text-align: center;
-  filter: drop-shadow(0 0 14px rgba(232,200,80,0.75));
+  color: #f0d070 !important;
+  filter: drop-shadow(0 0 16px rgba(232,200,80,0.85));
 }
 
 @keyframes successPop {
@@ -1000,7 +1006,7 @@ body {
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
             <div class="tx-empty-title">还没有任何交易</div>
-            <div class="tx-empty-hint">这里会列出你的最近转账与收款。完成一笔后稍等片刻；若刚发出，点右上角「刷新」即可看到记录。</div>
+            <div class="tx-empty-hint">这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里；链上确认有时需要几秒，若刚发出请点上方「刷新」再看一下。</div>
           </div>
         </div>
       </div>
@@ -3920,10 +3926,10 @@ function updateQRCode() {
 
 function txHistoryEmptyHtml() {
   const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
-  const title = en ? 'No transactions yet' : '还没有任何交易';
+  const title = en ? 'Nothing here yet' : '还没有任何交易';
   const hint = en
-    ? 'Your recent sends and receives will show up here. After a transfer, wait a moment — or tap Refresh above and try again in a few seconds.'
-    : '这里会列出你的最近转账与收款。完成一笔后稍等片刻；若刚发出，点右上角「刷新」即可看到记录。';
+    ? 'This is where your recent sends and receives show up. Make a transfer or ask someone to send to you — blockchain confirmations can take a few seconds. Tap Refresh above if you just sent one.'
+    : '这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里；链上确认有时需要几秒，若刚发出请点上方「刷新」再看一下。';
   return '<div class="tx-empty-friendly"><div class="tx-empty-icon" aria-hidden="true">📬</div><div class="tx-empty-title">' + title + '</div><div class="tx-empty-hint">' + hint + '</div></div>';
 }
 
