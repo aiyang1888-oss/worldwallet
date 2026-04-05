@@ -154,6 +154,23 @@ body {
   text-align: center;
   overflow: hidden;
 }
+#welcomeLangGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 380px;
+  max-height: min(52vh, 440px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 10px 10px;
+  margin-top: 6px;
+  flex: 1 1 auto;
+  min-height: 0;
+  box-sizing: border-box;
+}
+#welcomeLangGrid .lang-row { align-items: center; min-height: 54px; }
 .welcome-logo {
   width: 52px; height: 52px;
   background: linear-gradient(135deg, #b8982a, #f0d070);
@@ -274,8 +291,8 @@ body {
   border-radius: 999px;
   padding: 4px 10px 4px 6px;
 }
-.home-mini-icon { width: 26px; height: 26px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.home-mini-icon svg { display: block; width: 26px; height: 26px; }
+.home-mini-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.home-mini-icon svg { display: block; width: 20px; height: 20px; }
 .home-chain-tag {
   font-size: 9px; font-weight: 800; letter-spacing: 0.5px;
   color: rgba(232,200,80,0.95); flex-shrink: 0;
@@ -556,22 +573,24 @@ body {
   filter: none;
 }
 #welcomeLangGrid .lang-row.active {
-  border: 4px solid #e8c850;
+  border: 4px solid var(--gold);
+  background: linear-gradient(145deg, rgba(40,36,12,0.95), rgba(24,22,8,0.98));
   box-shadow:
-    0 0 0 1px rgba(255,220,120,0.45),
-    0 0 0 5px rgba(200,168,75,0.28),
-    0 14px 40px rgba(200,168,75,0.38);
+    0 0 0 1px rgba(255,220,120,0.5),
+    0 0 0 6px rgba(200,168,75,0.22),
+    0 14px 40px rgba(200,168,75,0.35);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 54px !important;
-  line-height: 0.95;
+  font-size: 48px !important;
+  line-height: 1;
   font-weight: 900;
-  min-width: 52px;
+  min-width: 56px;
+  flex-shrink: 0;
   text-align: center;
-  color: #f0d070 !important;
-  filter: drop-shadow(0 0 16px rgba(232,200,80,0.85));
+  color: #f5dc78 !important;
+  filter: drop-shadow(0 0 18px rgba(232,200,80,0.95));
 }
 
 @keyframes successPop {
@@ -687,7 +706,7 @@ body {
       <div style="font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:12px;flex-shrink:0">One wallet, every language.</div>
 
       <!-- 语言列表 可滑动 -->
-      <div id="welcomeLangGrid" style="display:none">
+      <div id="welcomeLangGrid">
         <div class="lang-row active" data-lang="zh" onclick="selectLang(this)">
           <span style="font-size:24px">🇨🇳</span>
           <div style="flex:1;text-align:left"><div style="font-size:14px;font-weight:600;color:var(--text)">中文</div><div style="font-size:10px;color:var(--text-muted)">Chinese · 11亿使用者</div></div>
@@ -3924,13 +3943,16 @@ function updateQRCode() {
 
 
 
+function txHistoryFriendlyHtml(icon, title, hint) {
+  return '<div class="tx-empty-friendly"><div class="tx-empty-icon" aria-hidden="true">' + icon + '</div><div class="tx-empty-title">' + title + '</div><div class="tx-empty-hint">' + hint + '</div></div>';
+}
 function txHistoryEmptyHtml() {
   const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
   const title = en ? 'Nothing here yet' : '还没有任何交易';
   const hint = en
     ? 'This is where your recent sends and receives show up. Make a transfer or ask someone to send to you — blockchain confirmations can take a few seconds. Tap Refresh above if you just sent one.'
     : '这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里；链上确认有时需要几秒，若刚发出请点上方「刷新」再看一下。';
-  return '<div class="tx-empty-friendly"><div class="tx-empty-icon" aria-hidden="true">📬</div><div class="tx-empty-title">' + title + '</div><div class="tx-empty-hint">' + hint + '</div></div>';
+  return txHistoryFriendlyHtml('📬', title, hint);
 }
 
 // ── 交易历史 ──────────────────────────────────────────────────
@@ -4013,7 +4035,12 @@ async function loadTxHistory() {
 
   } catch(e) {
     console.error('加载交易记录失败:', e);
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">加载失败，请稍后重试</div>';
+    const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
+    el.innerHTML = txHistoryFriendlyHtml(
+      '📡',
+      en ? 'Couldn\'t load activity' : '暂时无法加载记录',
+      en ? 'Check your connection and tap Refresh above to try again.' : '请检查网络后点上方「刷新」重试。若网络正常仍无记录，稍等片刻再试。'
+    );
   }
 }
 
