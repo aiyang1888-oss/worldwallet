@@ -2216,7 +2216,7 @@ function generateLocalMnemonic() {
   return words.join(' ');
 }
 
-async function createRealWallet() {
+async async function createRealWallet() {
   try {
     // ✅ 使用 ethers.js 真实 BIP39 派生（安全）
     if(typeof ethers === 'undefined') {
@@ -2251,7 +2251,7 @@ async function createRealWallet() {
       trxPrivateKey: trxWallet.privateKey,
       createdAt: Date.now()
     };
-    REAL_WALLET = w;
+    window.REAL_WALLET = w;
     saveWallet(w);
     return w;
   } catch(e) {
