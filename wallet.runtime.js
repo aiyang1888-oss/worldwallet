@@ -1250,7 +1250,7 @@ function offerTotpAfterPinSave() {
   }, 120);
 }
 function openTotpSettingsRow() {
-  const pin = localStorage.getItem('ww_unlock_pin');
+  const pin = localStorage.getItem('ww_pin');
   if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
   if (wwTotpEnabled()) {
     if (!confirm('确定要关闭两步验证吗？')) return;
@@ -1263,7 +1263,7 @@ function openTotpSettingsRow() {
   startTotpSetup();
 }
 function startTotpSetup() {
-  const pin = localStorage.getItem('ww_unlock_pin');
+  const pin = localStorage.getItem('ww_pin');
   if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
   const secretB32 = wwGenerateTotpSecretB32();
   window._wwTotpPendingSecret = secretB32;
@@ -1353,7 +1353,6 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
@@ -2224,7 +2223,7 @@ function wwResetActivityClock() {
 function wwTickIdleLock() {
   var mins = wwGetIdleLockMinutes();
   if(!mins) return;
-  if(!localStorage.getItem('ww_unlock_pin')) return;
+  if(!localStorage.getItem('ww_pin')) return;
   if(!REAL_WALLET) return;
   var pov = document.getElementById('pinUnlockOverlay');
   var tov = document.getElementById('totpUnlockOverlay');
@@ -4831,7 +4830,7 @@ function applyTxHistoryFilter() {
 function getWalletSecurityBreakdown() {
   var pinOk = false;
   try {
-    var p = localStorage.getItem('ww_unlock_pin');
+    var p = localStorage.getItem('ww_pin');
     pinOk = !!(p && String(p).length >= 4);
   } catch (e) {}
   var backed = false;
@@ -4955,7 +4954,7 @@ function wwSpendGateBeforeConfirm(amtNum) {
   var pin = prompt('本笔约 $' + est.toFixed(2) + '，今日已累计约 $' + used.toFixed(2) + '，已超过每日限额 $' + lim.toFixed(2) + '。输入 6 位 PIN 以本次继续');
   if (pin === null) return false;
   var saved = '';
-  try { saved = localStorage.getItem('ww_unlock_pin') || ''; } catch (e3) { saved = ''; }
+  try { saved = localStorage.getItem('ww_pin') || ''; } catch (e3) { saved = ''; }
   if (!saved || String(pin) !== saved) {
     if (typeof showToast === 'function') showToast('PIN 不正确或未设置 PIN', 'error');
     return false;
@@ -6141,7 +6140,7 @@ function renderWwChartsPlaceholder() {
 }
 
 function continueAfterPinCheck() {
-  const pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin');
+  const pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin');
   if(!pin) { _resumeWalletAfterUnlock(); return; }
   const ov = document.getElementById('pinUnlockOverlay');
   const inp = document.getElementById('pinUnlockInput');
@@ -6158,7 +6157,7 @@ function continueAfterPinCheck() {
 }
 function submitPageRestorePin() {
   var want = '';
-  try { want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || ''; } catch (e) {}
+  try { want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || ''; } catch (e) {}
   const inp = document.getElementById('pinRestorePageInput');
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
@@ -6185,7 +6184,7 @@ function submitPageRestorePin() {
   }
 }
 function submitPinUnlock() {
-  const want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
+  const want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || '';
   const inp = document.getElementById('pinUnlockInput');
   const got = inp ? inp.value.trim() : '';
   const ov = document.getElementById('pinUnlockOverlay');
@@ -6226,13 +6225,13 @@ function checkWwAirdrop() {
 }
 
 function openPinSettingsDialog() {
-  const cur = localStorage.getItem('ww_unlock_pin') || '';
+  const cur = localStorage.getItem('ww_pin') || '';
   const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
   if(a === null) return;
   const t = a.trim();
-  if(t === '') { localStorage.removeItem('ww_unlock_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
+  if(t === '') { localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
   if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
-  localStorage.setItem('ww_unlock_pin', t);
+  localStorage.setItem('ww_pin', t);
   showToast('PIN 已保存', 'success');
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
