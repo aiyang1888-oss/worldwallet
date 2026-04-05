@@ -7,6 +7,8 @@ node_modules/
 .expo/
 dist/
 web-build/
+# Generated from dist/assets by scripts/sync-public-wallet.js
+public/wallet.html
 expo-env.d.ts
 
 # Native
