@@ -24,18 +24,19 @@
 .tx-status.pending { background:rgba(200,168,75,0.12); color:var(--gold); border:1px solid rgba(200,168,75,0.25); }
 .tx-status.fail { background:rgba(255,96,96,0.1); color:var(--red); border:1px solid rgba(255,96,96,0.2); }
 .tx-history-empty { text-align:center; font-size:13px; color:var(--text-muted); padding:48px 22px 56px; line-height:1.6; max-width:320px; margin:0 auto; }
-.tx-history-empty-ico { font-size:52px; line-height:1; margin-bottom:16px; filter:drop-shadow(0 4px 14px rgba(200,168,75,0.2)); opacity:0.95; }
+.tx-history-empty-ico { font-size:52px; line-height:1; margin-bottom:12px; filter:drop-shadow(0 4px 14px rgba(200,168,75,0.2)); opacity:0.95; }
+.tx-history-empty-tag { font-size:11px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(200,168,75,0.75); margin-bottom:8px; }
 .tx-history-empty-title { font-size:16px; color:var(--text-dim); font-weight:700; margin-bottom:10px; letter-spacing:0.3px; }
 .tx-history-empty-hint { font-size:13px; color:var(--text-muted); line-height:1.75; opacity:0.95; }
-#page-welcome .lang-row.active { border-width:2.5px !important; border-style:solid !important; border-color:var(--gold) !important; background:linear-gradient(145deg,rgba(200,168,75,0.12),rgba(24,24,8,0.95)) !important; box-shadow:0 0 0 1px rgba(240,208,112,0.35),0 8px 28px rgba(200,168,75,0.25); }
-#page-welcome .lang-row.active .lang-check { font-size:36px !important; font-weight:900; line-height:1; min-width:36px; text-align:center; text-shadow:0 0 14px rgba(240,208,112,0.45); color:var(--gold-light) !important; }
+#page-welcome .lang-row.active { border-width:4px !important; border-style:solid !important; border-color:var(--gold-light) !important; background:linear-gradient(145deg,rgba(200,168,75,0.2),rgba(24,24,8,0.96)) !important; box-shadow:0 0 0 3px rgba(240,208,112,0.55),inset 0 0 0 1px rgba(240,208,112,0.35),0 0 32px rgba(200,168,75,0.42),0 14px 40px rgba(200,168,75,0.28); }
+#page-welcome .lang-row.active .lang-check { font-size:72px !important; font-weight:900; line-height:1; min-width:64px; text-align:center; text-shadow:0 0 24px rgba(240,208,112,0.85),0 2px 0 rgba(120,90,20,0.35); color:var(--gold-light) !important; transform:translateY(-1px); }
 .lang-row.active { border-width:2px !important; border-style:solid !important; border-color:var(--gold-light) !important; box-shadow:0 0 0 2px rgba(200,168,75,0.25),0 6px 22px rgba(200,168,75,0.22); }
 .lang-row.active .lang-check { font-size:30px !important; font-weight:900; line-height:1; text-shadow:0 0 12px rgba(240,208,112,0.35); }
-.home-chain-mini-row { display:none; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px; margin-top:12px; width:100%; }
+.home-chain-mini-row { display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:10px; margin-top:10px; width:100%; }
 .home-mini-addr { display:inline-flex; align-items:center; gap:5px; background:rgba(20,20,38,0.9); border:1px solid var(--border); border-radius:999px; padding:3px 8px 3px 4px; font-size:10px; }
 .home-mini-addr .chain-badge { margin:0; flex-shrink:0; }
 .home-mini-hash { font-family:ui-monospace,monospace; color:var(--text-dim); font-size:10px; letter-spacing:0.2px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.home-chain-ico { width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; line-height:1; }
+.home-chain-ico { width:26px; height:26px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0; line-height:1; }
 .home-chain-ico.trx { background:rgba(255,100,100,0.28); border:1px solid rgba(255,120,120,0.45); color:#ffb0b0; }
 .home-chain-ico.eth { background:rgba(100,100,255,0.22); border:1px solid rgba(130,130,255,0.4); color:#c8c8ff; }
 .home-chain-ico.btc { background:rgba(255,165,0,0.2); border:1px solid rgba(255,180,80,0.45); color:#ffd080; }
@@ -346,14 +347,16 @@
         <div class="home-greeting">我的资产</div>
         <div class="home-balance" id="totalBalanceUSD">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceCNY">正在加载余额...</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
-          <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
-          <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.5)">复制</span>
-        </div>
-        <div id="homeChainMiniRow" class="home-chain-mini-row" aria-label="公链地址摘要">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px;width:100%">
+          <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;width:100%">
+            <span id="homeAddrChip" class="home-addr-chip" style="font-size:11px;letter-spacing:0.5px;max-width:min(280px,88vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:0"></span>
+            <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.5)">复制</span>
+          </div>
+          <div id="homeChainMiniRow" class="home-chain-mini-row" aria-label="公链地址摘要">
           <div class="home-mini-addr" title="Tron · TRX"><span class="home-chain-ico trx" aria-hidden="true">T</span><span id="homeShortTrx" class="home-mini-hash">—</span><span class="ww-hint-ico" data-ww-hint="TRX 地址属于 Tron（波场）网络，用于接收 TRX 与 TRC-20 代币（如 USDT）。请仅向他人提供「收款」页展示的对应地址，避免转错链导致资产丢失。" tabindex="0" role="button" aria-label="TRX 说明">ⓘ</span></div>
           <div class="home-mini-addr" title="Ethereum · ETH"><span class="home-chain-ico eth" aria-hidden="true">Ξ</span><span id="homeShortEth" class="home-mini-hash">—</span><span class="ww-hint-ico" data-ww-hint="ETH 地址属于以太坊网络，用于接收 ETH 与兼容的 ERC-20 代币。请确认对方网络与代币类型一致后再转账。" tabindex="0" role="button" aria-label="ETH 说明">ⓘ</span></div>
           <div class="home-mini-addr" title="Bitcoin · BTC"><span class="home-chain-ico btc" aria-hidden="true">₿</span><span id="homeShortBtc" class="home-mini-hash">—</span><span class="ww-hint-ico" data-ww-hint="BTC 地址用于比特币网络收款。不同地址格式（如 bc1…）对应同一钱包的不同展示，请按页面所示复制完整地址。" tabindex="0" role="button" aria-label="BTC 说明">ⓘ</span></div>
+        </div>
         </div>
       </div>
       <div class="quick-btns">
@@ -1679,16 +1682,14 @@ function shortAddrStr(addr, head, tail) {
 function updateHomeChainMini() {
   var row = document.getElementById('homeChainMiniRow');
   if (!row) return;
-  if (!REAL_WALLET) {
-    row.style.display = 'none';
-    return;
-  }
   row.style.display = 'flex';
   var trx = document.getElementById('homeShortTrx');
   var eth = document.getElementById('homeShortEth');
   var btc = document.getElementById('homeShortBtc');
-  if (trx) trx.textContent = shortAddrStr(REAL_WALLET.trxAddress, 5, 4);
-  if (eth) eth.textContent = shortAddrStr(REAL_WALLET.ethAddress, 5, 4);
+  var trxAddr = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : CHAIN_ADDR;
+  var ethAddr = (REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : ETH_ADDR;
+  if (trx) trx.textContent = shortAddrStr(trxAddr, 5, 4);
+  if (eth) eth.textContent = shortAddrStr(ethAddr, 5, 4);
   if (btc) btc.textContent = shortAddrStr(BTC_ADDR, 5, 4);
 }
 
@@ -2712,10 +2713,16 @@ function renderTxHistory() {
   const typeLabels = { send: '转账', receive: '收款', swap: '兑换', gift: '礼物' };
   const icons = { send: '📤', receive: '📥', swap: '💱', gift: '🎁' };
   if (!items.length) {
+    var emptyTitle = currentLang === 'en' ? 'No transactions yet' : '暂无交易记录';
+    var emptyHint = currentLang === 'en'
+      ? 'When you send or receive, everything shows up here—time, amount, and status. Your wallet is ready; your story starts with the next tap.'
+      : '转账或收款成功后，时间、金额和状态都会保存在这里。钱包已就绪，下一笔操作就是你的第一条记录。';
+    var emptyTag = currentLang === 'en' ? 'All quiet for now' : '一切就绪';
     container.innerHTML = '<div class="tx-history-empty" role="status">' +
-      '<div class="tx-history-empty-ico" aria-hidden="true">📜</div>' +
-      '<div class="tx-history-empty-title">这里还空空如也</div>' +
-      '<div class="tx-history-empty-hint">完成一笔转账或收款后，记录会自动出现在这里。新钱包从零开始很正常，随时欢迎你的第一笔足迹。</div></div>';
+      '<div class="tx-history-empty-ico" aria-hidden="true">📋</div>' +
+      '<div class="tx-history-empty-tag">' + escTx(emptyTag) + '</div>' +
+      '<div class="tx-history-empty-title">' + escTx(emptyTitle) + '</div>' +
+      '<div class="tx-history-empty-hint">' + escTx(emptyHint) + '</div></div>';
     return;
   }
   container.innerHTML = items.map(function(tx) {
@@ -2821,6 +2828,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initWwHints();
   initWwAnalyticsClicks();
   maybeShowWwOnboarding();
+  updateHomeChainMini();
 });
 
 window.addEventListener('load', () => {
