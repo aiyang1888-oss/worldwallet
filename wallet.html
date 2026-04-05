@@ -333,6 +333,22 @@ body {
 .tx-empty-friendly .tx-empty-hint { font-size: 12px; line-height: 1.75; color: var(--text-muted); max-width: 300px; margin: 0 auto; }
 .home-balance { font-size: 32px; font-weight: 800; color: var(--text); }
 .home-balance-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.home-balance-chart-wrap { margin: 14px 0 6px; padding: 0 2px; }
+.home-balance-chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.home-balance-chart-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+.home-balance-chart-svg { width: 100%; height: 88px; display: block; }
+.home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
+.transfer-contacts-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; }
+.transfer-contacts-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.transfer-contacts-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+.transfer-contact-add { font-size: 12px; color: var(--gold); cursor: pointer; user-select: none; }
+.transfer-contact-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: var(--bg3); margin-bottom: 6px; border: 1px solid var(--border); cursor: pointer; }
+.transfer-contact-row:last-child { margin-bottom: 0; }
+.transfer-contact-nick { font-size: 13px; font-weight: 600; color: var(--text); flex: 0 1 auto; max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.transfer-contact-addr { font-size: 10px; color: var(--text-muted); font-family: ui-monospace, monospace; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.transfer-contact-del { font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 4px 6px; flex-shrink: 0; user-select: none; }
+.transfer-contact-empty { font-size: 12px; color: var(--text-muted); padding: 8px 4px; }
+.transfer-addr-dd-item .contact-nick-mark { color: var(--gold); font-weight: 600; margin-right: 6px; }
 .quick-btns { display: flex; gap: 8px; padding: 14px 20px; }
 .quick-btn {
   flex: 1; background: var(--bg2);
@@ -1019,6 +1035,13 @@ body {
         <div class="home-greeting">我的资产</div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" style="display:none">
+          <div class="home-balance-chart-head">
+            <span class="home-balance-chart-title">近7日总资产（示意）</span>
+          </div>
+          <svg id="homeBalanceChartSvg" class="home-balance-chart-svg" viewBox="0 0 320 88" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="home-balance-chart-foot" id="homeBalanceChartFoot"></div>
+        </div>
         <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">
           <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);min-height:36px;display:inline-flex;align-items:center;transition:background 0.2s,color 0.2s">复制地址</span>
@@ -1251,6 +1274,18 @@ body {
           <div id="transferAddrBook" class="transfer-addr-dd" style="display:none" onclick="event.preventDefault()"></div>
         </div>
 
+        <div class="transfer-contacts-card" id="transferContactsCard">
+          <div class="transfer-contacts-head">
+            <span class="transfer-contacts-title">常用联系人</span>
+            <span class="transfer-contact-add" onclick="toggleContactAddForm()">添加</span>
+          </div>
+          <div id="transferContactsList"></div>
+          <div id="transferContactAddForm" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+            <input id="contactNickInput" type="text" placeholder="昵称（如：张三）" maxlength="32" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);margin-bottom:8px;font-size:14px;box-sizing:border-box" />
+            <button type="button" class="btn-primary" style="width:100%;padding:12px" onclick="saveContactFromForm()">保存当前收款地址</button>
+          </div>
+        </div>
+
         <!-- 收款人信息（识别后显示）-->
         <div id="recipientCard" style="display:none;background:linear-gradient(135deg,#12120a,#1a1a08);border:1px solid rgba(200,168,75,0.3);border-radius:16px;padding:14px 16px;margin-bottom:14px">
           <div style="display:flex;align-items:center;gap:12px">
@@ -1286,16 +1321,20 @@ body {
         <!-- 手续费 -->
         <div id="transferFeeRow" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:20px">
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-            <span style="color:var(--text-muted)">手续费</span>
+            <span style="color:var(--text-muted)">手续费（约0.3%）</span>
             <span style="color:var(--text)" id="transferFee">0.30 USDT</span>
           </div>
           <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
             <span style="color:var(--text-muted)">实际到账</span>
             <span style="color:var(--gold-light);font-weight:600" id="transferActual">—</span>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
             <span style="color:var(--text-muted)">链路</span>
             <span style="color:var(--text)" id="transferChain">TRC-20 · 约30秒</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;align-items:flex-start;gap:10px;padding-top:8px;border-top:1px solid var(--border)">
+            <span style="color:var(--text-muted);flex-shrink:0">预估网络费</span>
+            <span style="color:var(--text);text-align:right;font-size:11px;line-height:1.45;word-break:break-word" id="transferNetworkFee">—</span>
           </div>
         </div>
 
