@@ -259,10 +259,32 @@ const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb
 
 /** 仅内存 window.TEMP_WALLET：密钥页展示用，不调用 saveWallet / localStorage */
 
+/** @param {number} wordCount */
+async function applyCreateWalletToTemp(wordCount) {
+  var w = await createWallet(wordCount);
+  var words = w.mnemonic.trim().split(/\s+/).filter(Boolean);
+  window.TEMP_WALLET = {
+    mnemonic: w.mnemonic,
+    wordCount: w.wordCount,
+    enMnemonic: w.mnemonic,
+    words: words,
+    eth: w.eth,
+    trx: w.trx,
+    btc: w.btc,
+    ethAddress: w.eth.address,
+    trxAddress: w.trx.address,
+    btcAddress: w.btc.address,
+    privateKey: w.eth.privateKey,
+    trxPrivateKey: w.trx.privateKey,
+    createdAt: w.createdAt
+  };
+  return window.TEMP_WALLET;
+}
+
 async function createNewWallet() {
   showWalletLoading();
   try {
-    await generateTempWallet(12);
+    await applyCreateWalletToTemp(12);
     goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
     if (typeof showToast === 'function')
@@ -629,7 +651,7 @@ function goTo(pageId, opts) {
       var _sel = document.getElementById('mnemonicLength');
       if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
       showWalletLoading();
-      generateTempWallet(12).then(function() {
+      applyCreateWalletToTemp(12).then(function() {
         hideWalletLoading();
         if (typeof renderKeyGrid === 'function') renderKeyGrid();
       }).catch(function(e) {
@@ -2351,7 +2373,7 @@ async function changeMnemonicLength(n) {
   // 重新生成指定词数的钱包
   showWalletLoading();
   try {
-    await generateTempWallet(wordCount);
+    await applyCreateWalletToTemp(wordCount);
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
   } catch(e) {
     if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
