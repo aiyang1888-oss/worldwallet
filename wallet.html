@@ -1328,7 +1328,7 @@ body {
         <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s;position:relative" id="transferAddrBox">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">收款地址</div>
           <div style="display:flex;align-items:center;gap:10px">
-            <textarea id="transferAddr" rows="2" placeholder="输入万语地址或公链地址" oninput="detectAddrType();updateTransferAddrBook()" onfocus="updateTransferAddrBook()" onblur="setTimeout(hideTransferAddrBook,180)" autocomplete="off" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
+            <textarea id="transferAddr" rows="2" placeholder="输入万语地址或公链地址" oninput="detectAddrType();updateTransferAddrBook()" onfocus="detectAddrType();if(document.getElementById('transferAddr').value.trim())updateTransferAddrBook()" onblur="setTimeout(hideTransferAddrBook,180)" autocomplete="off" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
           </div>
           <!-- 地址识别标签 -->
           <div id="addrTypeTag" style="margin-top:8px;display:none">
@@ -3624,22 +3624,24 @@ function updateTransferAddrBook() {
   const ta = document.getElementById('transferAddr');
   if(!box || !ta) return;
   const q = ta.value.trim().toLowerCase();
+  if(!q.length) {
+    box.innerHTML = '';
+    box.style.display = 'none';
+    return;
+  }
   const contacts = getTransferContacts();
   const recent = getRecentTransferAddrs();
   const contactSet = new Set(contacts.map(c => c.addr.trim().toLowerCase()));
   const matchedContacts = contacts.filter(c => {
     const al = c.addr.toLowerCase();
     const nl = (c.nick || '').toLowerCase();
-    return !q || al.includes(q) || nl.includes(q);
+    return al.includes(q) || nl.includes(q);
   });
   const matchedRecent = recent.filter(a => {
     const al = a.toLowerCase();
-    return !contactSet.has(al) && (!q || al.includes(q));
+    return !contactSet.has(al) && al.includes(q);
   });
-  const items = [];
-  matchedContacts.forEach(c => items.push({ kind: 'contact', addr: c.addr, nick: c.nick }));
-  matchedRecent.forEach(a => items.push({ kind: 'recent', addr: a }));
-  if(!items.length) {
+  if(!matchedContacts.length && !matchedRecent.length) {
     box.innerHTML = '';
     const empty = document.createElement('div');
     empty.className = 'transfer-addr-dd-empty';
@@ -3649,22 +3651,48 @@ function updateTransferAddrBook() {
     return;
   }
   box.innerHTML = '';
-  items.slice(0, 16).forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'transfer-addr-dd-item';
-    if(item.kind === 'contact') {
+  const appendHdr = function(lbl) {
+    const h = document.createElement('div');
+    h.className = 'transfer-addr-dd-hdr';
+    h.textContent = lbl;
+    box.appendChild(h);
+  };
+  const addContactItems = function(list) {
+    list.forEach(function(item) {
+      const div = document.createElement('div');
+      div.className = 'transfer-addr-dd-item';
       const span = document.createElement('span');
       span.className = 'contact-nick-mark';
       span.textContent = item.nick + ' · ';
       div.appendChild(span);
       div.appendChild(document.createTextNode(addrBookShort(item.addr)));
       div.title = item.addr;
-    } else {
-      div.textContent = item.addr;
-    }
-    div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(item.addr); };
-    box.appendChild(div);
-  });
+      div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(item.addr); };
+      box.appendChild(div);
+    });
+  };
+  const addRecentItems = function(list) {
+    list.forEach(function(addr) {
+      const div = document.createElement('div');
+      div.className = 'transfer-addr-dd-item recent-item';
+      const ico = document.createElement('span');
+      ico.className = 'recent-ico';
+      ico.textContent = '\u231b ';
+      div.appendChild(ico);
+      div.appendChild(document.createTextNode(addr));
+      div.title = '\u6700\u8fd1\u8f6c\u8d26: ' + addr;
+      div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(addr); };
+      box.appendChild(div);
+    });
+  };
+  if(matchedContacts.length) {
+    appendHdr('\u8054\u7cfb\u4eba');
+    addContactItems(matchedContacts.slice(0, 12));
+  }
+  if(matchedRecent.length) {
+    appendHdr('\u6700\u8fd1\u8f6c\u8d26');
+    addRecentItems(matchedRecent.slice(0, 12));
+  }
   box.style.display = 'block';
 }
 function shakeTransferAmountTooHigh() {
