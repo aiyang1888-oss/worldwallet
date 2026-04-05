@@ -295,8 +295,12 @@ body {
   width: 100%;
   box-sizing: border-box;
 }
-.home-chain-strip.home-chain-strip--off {
-  display: none !important;
+.home-chain-strip.home-chain-strip--dim {
+  opacity: 0.52;
+  filter: saturate(0.88);
+}
+.home-chain-strip.home-chain-strip--dim .home-short-addr {
+  color: rgba(255,255,255,0.38);
 }
 .home-mini-chain {
   display: flex;
@@ -589,24 +593,24 @@ body {
   filter: none;
 }
 #welcomeLangGrid .lang-row.active {
-  border: 4px solid var(--gold);
+  border: 3px solid #e8c850;
   background: linear-gradient(145deg, rgba(40,36,12,0.95), rgba(24,22,8,0.98));
   box-shadow:
-    0 0 0 1px rgba(255,220,120,0.5),
-    0 0 0 6px rgba(200,168,75,0.22),
-    0 14px 40px rgba(200,168,75,0.35);
+    0 0 0 1px rgba(255,220,120,0.65),
+    0 0 0 5px rgba(200,168,75,0.28),
+    0 12px 36px rgba(200,168,75,0.38);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 48px !important;
+  font-size: 36px !important;
   line-height: 1;
   font-weight: 900;
-  min-width: 56px;
+  min-width: 44px;
   flex-shrink: 0;
   text-align: center;
   color: #f5dc78 !important;
-  filter: drop-shadow(0 0 18px rgba(232,200,80,0.95));
+  filter: drop-shadow(0 0 14px rgba(232,200,80,0.85));
 }
 
 @keyframes successPop {
@@ -1019,7 +1023,7 @@ body {
           <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);min-height:36px;display:inline-flex;align-items:center;transition:background 0.2s,color 0.2s">复制地址</span>
         </div>
-        <div id="homeChainStrip" class="home-chain-strip home-chain-strip--off">
+        <div id="homeChainStrip" class="home-chain-strip home-chain-strip--dim">
           <div class="home-mini-chain" title="Tron (TRX)">
             <span class="home-mini-icon" aria-hidden="true"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#FF0013"/><path fill="#fff" d="M10.5 9h11v2.8h-3.8v10.2h-3.4V11.8h-3.8V9z"/></svg></span>
             <span class="home-chain-tag">TRX</span>
@@ -1096,8 +1100,8 @@ body {
         <div id="txHistoryList">
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
-            <div class="tx-empty-title">还没有任何交易</div>
-            <div class="tx-empty-hint">这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里；链上确认有时需要几秒，若刚发出请点上方「刷新」再看一下。</div>
+            <div class="tx-empty-title">还没有交易记录，一切从零开始</div>
+            <div class="tx-empty-hint">这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认偶尔需要几秒，若刚发出请点上方「刷新」或稍后再看。</div>
           </div>
         </div>
       </div>
@@ -2675,7 +2679,11 @@ function updateHomeChainStrip() {
   const btcWrap = document.getElementById('homeMiniBtcWrap');
   if (!strip || !trxEl || !ethEl) return;
   if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
-    strip.classList.add('home-chain-strip--off');
+    trxEl.textContent = '—';
+    ethEl.textContent = '—';
+    if (btcEl) btcEl.textContent = '—';
+    if (btcWrap) btcWrap.style.display = 'flex';
+    strip.classList.add('home-chain-strip--dim');
     return;
   }
   const trx = REAL_WALLET.trxAddress || '';
@@ -2689,7 +2697,7 @@ function updateHomeChainStrip() {
     btcEl.textContent = '—';
   }
   if (btcWrap) btcWrap.style.display = 'flex';
-  strip.classList.remove('home-chain-strip--off');
+  strip.classList.remove('home-chain-strip--dim');
 }
 
 function updateAddr() {
@@ -4055,10 +4063,10 @@ function txHistoryFriendlyHtml(icon, title, hint) {
 }
 function txHistoryEmptyHtml() {
   const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
-  const title = en ? 'Nothing here yet' : '还没有任何交易';
+  const title = en ? 'No transactions yet — all good!' : '还没有交易记录，一切从零开始';
   const hint = en
-    ? 'This is where your recent sends and receives show up. Make a transfer or ask someone to send to you — blockchain confirmations can take a few seconds. Tap Refresh above if you just sent one.'
-    : '这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里；链上确认有时需要几秒，若刚发出请点上方「刷新」再看一下。';
+    ? 'When you send or receive crypto, your latest activity will show up here. First transfer? It may take a few seconds on-chain — tap Refresh above if you just sent one.'
+    : '这里会显示你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认偶尔需要几秒，若刚发出请点上方「刷新」或稍后再看。';
   return txHistoryFriendlyHtml('📬', title, hint);
 }
 
