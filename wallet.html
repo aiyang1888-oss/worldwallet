@@ -477,11 +477,17 @@ body {
 }
 .lang-row:hover { border-color: rgba(200,168,75,0.4); background: #161616; }
 .lang-row.active {
-  border-color: var(--gold);
+  border: 2px solid var(--gold);
   background: linear-gradient(135deg,#181808,#1c1c0a);
+  box-shadow: 0 0 0 1px rgba(200,168,75,0.45), 0 6px 22px rgba(200,168,75,0.14);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
+#welcomeLangGrid .lang-row.active .lang-check {
+  font-size: 22px !important;
+  line-height: 1;
+  font-weight: 800;
+}
 
 @keyframes successPop {
   0% { transform: scale(0.3); opacity: 0; }
@@ -765,6 +771,20 @@ body {
           <span id="homeAddrChip" style="font-size:11px;letter-spacing:0.5px;color:rgba(255,255,255,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
           <span id="homeCopyBtn" onclick="copyHomeAddr()" style="flex-shrink:0;background:rgba(255,255,255,0.08);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.65);min-height:36px;display:inline-flex;align-items:center;transition:background 0.2s,color 0.2s">复制地址</span>
         </div>
+        <div id="homeChainStrip" style="display:none;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 14px;margin-top:10px;padding:0 12px 2px">
+          <div class="home-mini-chain" title="Tron (TRX)" style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:15px;line-height:1">🔴</span>
+            <span id="homeShortTrx" style="font-size:10px;font-family:ui-monospace,monospace;color:rgba(255,255,255,0.42);letter-spacing:0.3px">--</span>
+          </div>
+          <div class="home-mini-chain" title="Ethereum (ETH)" style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:15px;line-height:1">🔷</span>
+            <span id="homeShortEth" style="font-size:10px;font-family:ui-monospace,monospace;color:rgba(255,255,255,0.42);letter-spacing:0.3px">--</span>
+          </div>
+          <div id="homeMiniBtcWrap" class="home-mini-chain" title="Bitcoin (BTC)" style="display:none;align-items:center;gap:5px">
+            <span style="font-size:15px;line-height:1">🟠</span>
+            <span id="homeShortBtc" style="font-size:10px;font-family:ui-monospace,monospace;color:rgba(255,255,255,0.42);letter-spacing:0.3px">--</span>
+          </div>
+        </div>
       </div>
       <div class="quick-btns">
         <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">📤</div><div class="quick-btn-label">转账</div></div>
@@ -823,9 +843,10 @@ body {
           <span onclick="loadTxHistory()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
         </div>
         <div id="txHistoryList">
-          <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">
-            <div style="font-size:24px;margin-bottom:8px">📋</div>
-            暂无交易记录
+          <div class="tx-empty-friendly" style="text-align:center;padding:26px 18px 24px;color:var(--text-muted);font-size:13px">
+            <div style="font-size:34px;margin-bottom:10px;line-height:1">📭</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-dim);margin-bottom:8px">还没有链上交易</div>
+            <div style="font-size:12px;line-height:1.65;color:var(--text-muted);max-width:280px;margin:0 auto">转出、收款或兑换成功后，记录会出现在这里。若刚完成一笔，可点右上角「刷新」稍后再试。</div>
           </div>
         </div>
       </div>
@@ -2347,6 +2368,38 @@ function renderKeyGrid() {
   });
 }
 
+function shortChainAddr(addr) {
+  if (!addr || addr === '--') return '—';
+  const t = String(addr).trim();
+  if (t.length <= 12) return t;
+  return t.slice(0, 5) + '…' + t.slice(-4);
+}
+function updateHomeChainStrip() {
+  const strip = document.getElementById('homeChainStrip');
+  const trxEl = document.getElementById('homeShortTrx');
+  const ethEl = document.getElementById('homeShortEth');
+  const btcEl = document.getElementById('homeShortBtc');
+  const btcWrap = document.getElementById('homeMiniBtcWrap');
+  if (!strip || !trxEl || !ethEl) return;
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+    strip.style.display = 'none';
+    return;
+  }
+  const trx = REAL_WALLET.trxAddress || '';
+  const eth = REAL_WALLET.ethAddress || '';
+  const btc = REAL_WALLET.btcAddress || '';
+  trxEl.textContent = shortChainAddr(trx || '--');
+  ethEl.textContent = shortChainAddr(eth || '--');
+  if (btc && btc.length > 2 && btc !== '--') {
+    btcEl.textContent = shortChainAddr(btc);
+    if (btcWrap) { btcWrap.style.display = 'flex'; }
+  } else {
+    btcEl.textContent = '—';
+    if (btcWrap) { btcWrap.style.display = 'none'; }
+  }
+  strip.style.display = 'flex';
+}
+
 function updateAddr() {
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
   const isEn = currentLang==='en';
@@ -2391,6 +2444,7 @@ function updateAddr() {
   updateQRDisplay();
   // 同步礼金UI
   if(typeof updateGiftUI==='function') updateGiftUI();
+  updateHomeChainStrip();
 }
 
 function getNativeAddr() {
@@ -3672,7 +3726,7 @@ async function loadTxHistory() {
     }
 
     if(txs.length === 0) {
-      el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px"><div style="font-size:24px;margin-bottom:8px">📋</div>暂无交易记录</div>';
+      el.innerHTML = '<div class="tx-empty-friendly" style="text-align:center;padding:26px 18px 24px;color:var(--text-muted);font-size:13px"><div style="font-size:34px;margin-bottom:10px;line-height:1">📭</div><div style="font-size:14px;font-weight:600;color:var(--text-dim);margin-bottom:8px">还没有链上交易</div><div style="font-size:12px;line-height:1.65;color:var(--text-muted);max-width:280px;margin:0 auto">转出、收款或兑换成功后，记录会出现在这里。若刚完成一笔，可点右上角「刷新」稍后再试。</div></div>';
       return;
     }
 
