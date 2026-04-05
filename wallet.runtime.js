@@ -524,19 +524,166 @@ let currentMnemonicLength = 12;
 let importGridWordCount = 12;
 
 // ⚠️ 注意：私钥存储于 localStorage，仅供演示，生产环境应加密
-function saveWallet(w) {
+// ── 钱包加密存储模块 ───────────────────────────────────────────
+
+/**
+ * 从 PIN 派生 AES-GCM 密钥
+ * @param {string} pin - 用户 PIN
+ * @param {Uint8Array} salt - 16字节盐
+ * @returns {Promise<CryptoKey>}
+ */
+async function deriveKeyFromPin(pin, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+/**
+ * AES-GCM 加密
+ * @param {string} plaintext - 明文 JSON 字符串
+ * @param {string} pin - 用户 PIN
+ * @returns {Promise<{salt:string, iv:string, data:string}>} Base64 编码
+ */
+async function encryptWithPin(plaintext, pin) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKeyFromPin(pin, salt);
+  const enc = new TextEncoder();
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(plaintext)
+  );
+  return {
+    salt: btoa(String.fromCharCode(...salt)),
+    iv: btoa(String.fromCharCode(...iv)),
+    data: btoa(String.fromCharCode(...new Uint8Array(encrypted)))
+  };
+}
+
+/**
+ * AES-GCM 解密
+ * @param {{salt:string, iv:string, data:string}} bundle - 加密包
+ * @param {string} pin - 用户 PIN
+ * @returns {Promise<string>} 解密后的明文
+ */
+async function decryptWithPin(bundle, pin) {
+  const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
+  const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
+  const data = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
+  const key = await deriveKeyFromPin(pin, salt);
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv }, key, data
+  );
+  return new TextDecoder().decode(decrypted);
+}
+
+/**
+ * 保存钱包（敏感数据加密）
+ * @param {object} w - 完整钱包对象
+ * @param {string} pin - 用户 PIN（无 PIN 则不存敏感数据）
+ */
+async function saveWalletSecure(w, pin) {
   try {
-    // 存储时不包含私钥（安全起见只存公开信息）
-    // 助记词需要用户自行备份
-    const safe = {
-      mnemonic: w.mnemonic,  // 用户需要备份
-      enMnemonic: w.enMnemonic || w.mnemonic,
-      words: w.words,
+    // 公开信息（始终明文存储）
+    var safe = {
       ethAddress: w.ethAddress,
       trxAddress: w.trxAddress,
       btcAddress: w.btcAddress || '',
-      privateKey: w.privateKey,      // 仍需存储用于签名
-      trxPrivateKey: w.trxPrivateKey,
+      createdAt: w.createdAt,
+      backedUp: w.backedUp || false
+    };
+    // 有 PIN → 加密敏感数据
+    if (pin) {
+      var sensitive = JSON.stringify({
+        mnemonic: w.mnemonic,
+        enMnemonic: w.enMnemonic || w.mnemonic,
+        words: w.words,
+        privateKey: w.privateKey,
+        trxPrivateKey: w.trxPrivateKey
+      });
+      safe.encrypted = await encryptWithPin(sensitive, pin);
+    }
+    localStorage.setItem('ww_wallet', JSON.stringify(safe));
+  } catch (e) {
+    console.error('[saveWalletSecure] error:', e);
+  }
+}
+
+/**
+ * 加载钱包（只加载公开信息到 REAL_WALLET）
+ */
+function loadWalletPublic() {
+  try {
+    var d = localStorage.getItem('ww_wallet');
+    if (d) {
+      var parsed = JSON.parse(d);
+      // 只加载公开信息，不加载敏感数据
+      window.REAL_WALLET = {
+        ethAddress: parsed.ethAddress,
+        trxAddress: parsed.trxAddress,
+        btcAddress: parsed.btcAddress || '',
+        createdAt: parsed.createdAt,
+        backedUp: parsed.backedUp || false,
+        hasEncrypted: !!parsed.encrypted
+      };
+    }
+  } catch (e) {
+    console.error('[loadWalletPublic] error:', e);
+  }
+}
+
+/**
+ * 解密敏感数据（需要时调用，用完清除）
+ * @param {string} pin - 用户 PIN
+ * @returns {Promise<{mnemonic,enMnemonic,privateKey,trxPrivateKey}|null>}
+ */
+async function decryptSensitive(pin) {
+  try {
+    var d = localStorage.getItem('ww_wallet');
+    if (!d) return null;
+    var parsed = JSON.parse(d);
+    if (!parsed.encrypted) return null;
+    var plaintext = await decryptWithPin(parsed.encrypted, pin);
+    return JSON.parse(plaintext);
+  } catch (e) {
+    console.error('[decryptSensitive] error:', e);
+    return null;
+  }
+}
+
+
+// ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
+function saveWallet(w) {
+  // 如果有 PIN，使用加密存储；否则只存公开信息
+  var pin = '';
+  try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
+  if (pin) {
+    saveWalletSecure(w, pin).catch(function(e) {
+      console.error('[saveWallet] 加密存储失败，降级明文:', e);
+      _saveWalletPlainPublicOnly(w);
+    });
+  } else {
+    // 无 PIN：只存公开信息，不存敏感数据
+    _saveWalletPlainPublicOnly(w);
+  }
+}
+
+/** 只存公开信息（无 PIN 降级方案） */
+function _saveWalletPlainPublicOnly(w) {
+  try {
+    var safe = {
+      ethAddress: w.ethAddress,
+      trxAddress: w.trxAddress,
+      btcAddress: w.btcAddress || '',
       createdAt: w.createdAt,
       backedUp: w.backedUp || false
     };
@@ -545,13 +692,10 @@ function saveWallet(w) {
 }
 
 function loadWallet() {
-  try {
-    const d = localStorage.getItem('ww_wallet');
-    if(d) REAL_WALLET = JSON.parse(d);
-    if (REAL_WALLET && REAL_WALLET.ethAddress) {
-      try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
-    }
-  } catch(e) {}
+  loadWalletPublic();
+  if (REAL_WALLET && REAL_WALLET.ethAddress) {
+    try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
+  }
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
   try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
 }
@@ -6010,6 +6154,20 @@ function checkVerify() {
 
 
 function _resumeWalletAfterUnlock() {
+  // 解密敏感数据并临时注入 REAL_WALLET
+  var pin = '';
+  try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
+  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
+    decryptSensitive(pin).then(function(sensitive) {
+      if (sensitive && REAL_WALLET) {
+        REAL_WALLET.privateKey = sensitive.privateKey;
+        REAL_WALLET.trxPrivateKey = sensitive.trxPrivateKey;
+        REAL_WALLET.mnemonic = sensitive.mnemonic;
+        REAL_WALLET.enMnemonic = sensitive.enMnemonic;
+        REAL_WALLET.words = sensitive.words;
+      }
+    }).catch(function(e) { console.error('[unlock decrypt]', e); });
+  }
   updateAddr();
   const tb = document.getElementById('tabBar');
   if(tb) tb.style.display = 'flex';
