@@ -6828,26 +6828,6 @@ function wwPredictionPick(symbol, side) {
     wwPredictionPopulate();
   } catch (e) {}
 }
-function wwLotteryPopulate() {
-  var st = document.getElementById('wwLotteryStatus');
-  var hint = document.getElementById('wwLotterySettingsHint');
-  var today = new Date().toISOString().slice(0, 10);
-  try {
-    var d = localStorage.getItem('ww_lottery_day');
-    if (st) st.textContent = d === today ? '今日已参与抽签（示意）' : '今日可参与（示意）';
-    if (hint) hint.textContent = d === today ? '已抽' : '可抽';
-  } catch (e) {
-    if (st) st.textContent = '—';
-  }
-}
-function wwLotteryEnter() {
-  try {
-    localStorage.setItem('ww_lottery_day', new Date().toISOString().slice(0, 10));
-    var r = Math.floor(Math.random() * 100000);
-    if (typeof showToast === 'function') showToast('抽签号 #' + r + '（示意，无真实开奖与扣款）', 'success');
-    wwLotteryPopulate();
-  } catch (e) {}
-}
 function wwCharityPopulate() {
   var el = document.getElementById('wwCharityTotal');
   if (el) {
