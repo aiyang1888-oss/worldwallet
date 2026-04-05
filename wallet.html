@@ -70,23 +70,17 @@ function setWalletCreateStep(n) {
   const labels = ['正在生成钱包…', '1/3 生成密钥', '2/3 派生地址', '3/3 完成'];
   if (text) text.textContent = (n >= 1 && n <= 3) ? labels[n] : labels[0];
   if (!steps) return;
-  steps.querySelectorAll('.wcs-step').forEach(function(el) {
-    const s = parseInt(el.getAttribute('data-step'), 10);
-    el.classList.remove('active', 'done');
-    if (n <= 0) return;
-    if (s < n) el.classList.add('done');
-    else if (s === n) el.classList.add('active');
-  });
+  steps.querySelectorAll(');
 }
 function showWalletLoading() {
   const el = document.getElementById('walletLoadingOverlay');
   if(el) el.classList.add('show');
-  setWalletCreateStep(1);
+  
 }
 function hideWalletLoading() {
   const el = document.getElementById('walletLoadingOverlay');
   if(el) el.classList.remove('show');
-  setWalletCreateStep(0);
+  
 }
 
 </script>
@@ -777,45 +771,13 @@ body {
   text-align: center;
   padding: 0 20px;
 }
-.wallet-create-steps {
-  margin-top: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 100%;
-  max-width: 280px;
-  padding: 0 16px;
-}
-.wcs-step {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 12px;
-  color: rgba(255,255,255,0.38);
-  transition: color 0.2s;
-}
-.wcs-step .wcs-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.2);
-  flex-shrink: 0;
-  transition: background 0.2s, box-shadow 0.2s;
-}
-.wcs-step.done { color: rgba(200,168,75,0.85); }
-.wcs-step.done .wcs-dot {
-  background: var(--gold);
-  box-shadow: 0 0 8px rgba(200,168,75,0.45);
-}
-.wcs-step.active {
-  color: #fff;
-  font-weight: 700;
-}
-.wcs-step.active .wcs-dot {
-  background: var(--gold);
-  box-shadow: 0 0 12px rgba(200,168,75,0.65);
-  animation: wcs-pulse 1s ease-in-out infinite;
-}
+
+
+
+
+
+
+
 @keyframes wcs-pulse {
   50% { opacity: 0.75; transform: scale(1.05); }
 }
@@ -895,11 +857,7 @@ body {
   <div class="wallet-loading-overlay" id="walletLoadingOverlay">
     <div class="wallet-loading-spinner"></div>
     <div class="wallet-loading-text" id="walletLoadingText">正在生成钱包…</div>
-    <div class="wallet-create-steps" id="walletCreateSteps">
-      <div class="wcs-step" data-step="1"><span class="wcs-dot"></span><span class="wcs-label">1/3 生成密钥</span></div>
-      <div class="wcs-step" data-step="2"><span class="wcs-dot"></span><span class="wcs-label">2/3 派生地址</span></div>
-      <div class="wcs-step" data-step="3"><span class="wcs-dot"></span><span class="wcs-label">3/3 完成</span></div>
-    </div>
+    
   </div>
 
   <div class="status-bar">
@@ -2602,7 +2560,7 @@ async function createRealWallet() {
   if (typeof ethers === 'undefined') {
     throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
   }
-  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(1);
+  if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
   let mnemonic, wallet, trxWallet, btcWallet, trxAddr;
   try {
@@ -2612,7 +2570,7 @@ async function createRealWallet() {
     console.error('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
   }
-  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(2);
+  if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
   try {
     trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
@@ -2632,7 +2590,7 @@ async function createRealWallet() {
   } catch (e2) {
     trxAddr = 'T' + trxWallet.address.slice(2, 35);
   }
-  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(3);
+  if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
   const w = {
     mnemonic: mnemonic,
