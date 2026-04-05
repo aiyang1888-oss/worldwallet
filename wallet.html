@@ -12,13 +12,27 @@
 <meta property="og:description" content="支持120+种语言的万语地址加密钱包">
 <link rel="manifest" href="manifest.json">
 <!-- QR Code Generator -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- qrcode: on-demand loadQRCodeLib() -->
 <!-- ethers.js for real BIP39 wallet generation -->
 <!-- ethers.js - 钱包派生库，约800KB -->
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
 <!-- TronWeb 懒加载，仅转账时加载 -->
 <script>
 function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+var _qrLoadPromise=null;
+function loadQRCodeLib(){
+  if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
+  if(_qrLoadPromise)return _qrLoadPromise;
+  _qrLoadPromise=new Promise(function(res,rej){
+    var s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+    s.async=true;
+    s.onload=function(){res();};
+    s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
+    document.head.appendChild(s);
+  });
+  return _qrLoadPromise;
+}
 function countMnemonicWords(text) {
   return String(text || '').trim().split(/\s+/).filter(Boolean).length;
 }
@@ -296,8 +310,8 @@ body {
   box-sizing: border-box;
 }
 .home-chain-strip.home-chain-strip--dim {
-  opacity: 0.52;
-  filter: saturate(0.88);
+  opacity: 0.68;
+  filter: saturate(0.92);
 }
 .home-chain-strip.home-chain-strip--dim .home-short-addr {
   color: rgba(255,255,255,0.38);
@@ -609,24 +623,25 @@ body {
   filter: none;
 }
 #welcomeLangGrid .lang-row.active {
-  border: 3px solid #e8c850;
-  background: linear-gradient(145deg, rgba(40,36,12,0.95), rgba(24,22,8,0.98));
+  border: 3px solid #f0d070;
+  background: linear-gradient(145deg, rgba(48,42,14,0.98), rgba(28,26,10,0.99));
   box-shadow:
-    0 0 0 1px rgba(255,220,120,0.65),
-    0 0 0 5px rgba(200,168,75,0.28),
-    0 12px 36px rgba(200,168,75,0.38);
+    0 0 0 1px rgba(255,230,140,0.75),
+    0 0 0 6px rgba(200,168,75,0.32),
+    0 14px 40px rgba(200,168,75,0.42);
 }
 .lang-row.active .lang-check { opacity: 1 !important; }
 .lang-check { font-size: 16px; color: var(--gold); font-weight: 700; }
 #welcomeLangGrid .lang-row.active .lang-check {
-  font-size: 36px !important;
+  font-size: 42px !important;
   line-height: 1;
   font-weight: 900;
-  min-width: 44px;
+  min-width: 48px;
   flex-shrink: 0;
   text-align: center;
   color: #f5dc78 !important;
-  filter: drop-shadow(0 0 14px rgba(232,200,80,0.85));
+  filter: drop-shadow(0 0 18px rgba(232,200,80,0.95));
+  transform: scale(1.02);
 }
 
 @keyframes successPop {
@@ -3733,19 +3748,18 @@ function shareKw() {
 
 function showHbQR() {
   if(!currentKeyword) return;
-  // 生成礼物口令二维码
   const url = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(currentKeyword);
-  const qrOverlay = document.getElementById('swapConfirmOverlay');
-  // 复用确认弹窗显示二维码
-  if(typeof QRCode !== 'undefined') {
-    const canvas = document.createElement('canvas');
-    QRCode.toCanvas(canvas, url, {width:200,margin:1}, () => {
-      const img = canvas.toDataURL();
-      showToast('💬 请截图分享口令：' + currentKeyword, 'info', 4000);
-    });
-  } else {
-    showToast('✅ 口令已复制：' + currentKeyword, 'success');
-  }
+  loadQRCodeLib().then(function(){
+    if(typeof QRCode !== 'undefined') {
+      const canvas = document.createElement('canvas');
+      QRCode.toCanvas(canvas, url, {width:200,margin:1}, function() {
+        canvas.toDataURL();
+        showToast('💬 请截图分享口令：' + currentKeyword, 'info', 4000);
+      });
+    } else {
+      showToast('✅ 口令已复制：' + currentKeyword, 'success');
+    }
+  }).catch(function(){ showToast('✅ 口令已复制：' + currentKeyword, 'success'); });
 }
 
 function copyShareText() {
@@ -4286,24 +4300,38 @@ function doImportWallet() {
 function generateQRCode(text, canvasId) {
   const canvas = document.getElementById(canvasId || 'qrCanvas');
   if(!canvas) return;
-  
-  if(typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-    // qrcode.js
-    QRCode.toCanvas(canvas, text || 'worldtoken', {
-      width: 130,
-      margin: 1,
-      color: { dark: '#000000', light: '#ffffff' }
-    }, function(err) {
-      if(err) console.error('QR error:', err);
-    });
-  } else {
-    // fallback：用 Google Charts API
-    const img = document.createElement('img');
-    img.src = `https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=${encodeURIComponent(text)}&choe=UTF-8`;
-    img.style.width = '130px';
-    img.style.height = '130px';
-    canvas.parentNode.replaceChild(img, canvas);
-  }
+  loadQRCodeLib().then(function(){
+    if(typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+      QRCode.toCanvas(canvas, text || 'worldtoken', {
+        width: 130,
+        margin: 1,
+        color: { dark: '#000000', light: '#ffffff' }
+      }, function(err) {
+        if(err) console.error('QR error:', err);
+      });
+    } else {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.alt = '';
+      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
+      img.style.width = '130px';
+      img.style.height = '130px';
+      canvas.parentNode.replaceChild(img, canvas);
+    }
+  }).catch(function(e){
+    console.error('QR lib:', e);
+    try {
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.alt = '';
+      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
+      img.style.width = '130px';
+      img.style.height = '130px';
+      canvas.parentNode.replaceChild(img, canvas);
+    } catch(e2) { console.error(e2); }
+  });
 }
 
 // 更新二维码（当地址改变时调用）
@@ -4995,5 +5023,22 @@ const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
           <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
         </div>
       </div>
+
+<script>
+(function(){
+  function run(){
+    if(window._wwPaintBoot) return;
+    window._wwPaintBoot = true;
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        try { if(typeof updateHomeChainStrip==='function') updateHomeChainStrip(); } catch(e) {}
+      });
+    });
+  }
+  if(document.readyState==='complete') run();
+  else window.addEventListener('load', run);
+})();
+</script>
+
 </body>
 </html>
