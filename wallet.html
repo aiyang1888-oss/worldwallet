@@ -1731,6 +1731,22 @@ body {
 
 
 
+        <!-- 邀请 -->
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">邀请</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:14px;font-weight:600;color:var(--text)">推荐好友</span>
+            <span style="font-size:13px;color:var(--gold)">已邀请 <span id="settingsRefCount">0</span> 人</span>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);word-break:break-all;line-height:1.5;margin-bottom:10px" id="settingsRefLink">—</div>
+          <div style="display:flex;gap:10px">
+            <div onclick="copyReferralLink()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;font-size:12px;color:var(--text);cursor:pointer">复制链接</div>
+            <div onclick="shareReferralLink()" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.08));border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:10px;text-align:center;font-size:12px;color:var(--gold);cursor:pointer">分享</div>
+          </div>
+        </div>
+
+
+
         <!-- 关于 -->
         <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">关于</div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
@@ -2823,8 +2839,119 @@ function loadWallet() {
   try {
     const d = localStorage.getItem('ww_wallet');
     if(d) REAL_WALLET = JSON.parse(d);
+    if (REAL_WALLET && REAL_WALLET.ethAddress) {
+      try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
+    }
   } catch(e) {}
 }
+
+const WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
+function getRefInvitesMap() {
+  try { return JSON.parse(localStorage.getItem(WW_REF_INVITES_KEY) || '{}'); } catch (e) { return {}; }
+}
+function saveRefInvitesMap(m) {
+  try { localStorage.setItem(WW_REF_INVITES_KEY, JSON.stringify(m)); } catch (e) {}
+}
+function normalizeRefCode(s) {
+  if (!s || typeof s !== 'string') return '';
+  s = s.trim().replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  return s.slice(0, 32);
+}
+function captureReferralFromUrl() {
+  try {
+    var u = new URL(location.href);
+    var r = u.searchParams.get('ref');
+    if (r) {
+      r = normalizeRefCode(r);
+      if (r.length >= 6) {
+        sessionStorage.setItem('ww_ref_pending', r);
+        u.searchParams.delete('ref');
+        history.replaceState({}, '', u.pathname + (u.search || '') + (u.hash || ''));
+      }
+    }
+  } catch (e) {}
+}
+function getMyReferralCodeForWallet(w) {
+  if (!w || !w.ethAddress) return '';
+  var addr = String(w.ethAddress).toLowerCase();
+  try {
+    if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.keccak256) {
+      var h = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('wwref:' + addr));
+      return h.slice(2, 12);
+    }
+  } catch (e) {}
+  return addr.replace(/^0x/, '').slice(0, 10);
+}
+function getMyReferralCode() {
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) return '';
+  return getMyReferralCodeForWallet(REAL_WALLET);
+}
+function getInviteCountForCode(code) {
+  var m = getRefInvitesMap();
+  var n = m[code];
+  return typeof n === 'number' && !isNaN(n) ? n : 0;
+}
+function applyReferralCredit() {
+  try {
+    if (localStorage.getItem('ww_ref_install_credited') === '1') return;
+    var pending = sessionStorage.getItem('ww_ref_pending');
+    if (!pending) return;
+    if (!REAL_WALLET || !REAL_WALLET.ethAddress) return;
+    var myCode = getMyReferralCodeForWallet(REAL_WALLET);
+    if (pending === myCode) return;
+    var map = getRefInvitesMap();
+    map[pending] = (map[pending] || 0) + 1;
+    saveRefInvitesMap(map);
+    localStorage.setItem('ww_ref_install_credited', '1');
+    sessionStorage.removeItem('ww_ref_pending');
+    if (typeof updateReferralSettingsUI === 'function') updateReferralSettingsUI();
+  } catch (e) {}
+}
+function getReferralShareUrl() {
+  var code = getMyReferralCode();
+  if (!code) return '';
+  try {
+    var u = new URL(location.href);
+    u.searchParams.set('ref', code);
+    return u.toString().split('#')[0];
+  } catch (e) {
+    return 'https://worldtoken.cc/wallet.html?ref=' + encodeURIComponent(code);
+  }
+}
+function updateReferralSettingsUI() {
+  var linkEl = document.getElementById('settingsRefLink');
+  var countEl = document.getElementById('settingsRefCount');
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+    if (linkEl) linkEl.textContent = '创建或导入钱包后生成邀请链接';
+    if (countEl) countEl.textContent = '—';
+    return;
+  }
+  var code = getMyReferralCode();
+  var link = getReferralShareUrl();
+  if (linkEl) linkEl.textContent = link.length > 56 ? link.slice(0, 54) + '…' : link;
+  if (countEl) countEl.textContent = String(getInviteCountForCode(code));
+}
+function copyReferralLink() {
+  var u = getReferralShareUrl();
+  if (!u) { showToast('请先创建或导入钱包', 'info'); return; }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(u).then(function() { showToast('邀请链接已复制', 'success'); }).catch(function() { showToast('复制失败', 'error'); });
+  } else {
+    showToast(u, 'info', 4000);
+  }
+}
+function shareReferralLink() {
+  var u = getReferralShareUrl();
+  if (!u) { showToast('请先创建或导入钱包', 'info'); return; }
+  var title = 'WorldToken 钱包邀请';
+  var text = '使用我的链接打开 WorldToken 钱包：';
+  if (navigator.share) {
+    navigator.share({ title: title, text: text, url: u }).catch(function() { copyReferralLink(); });
+  } else {
+    copyReferralLink();
+  }
+}
+
 
 // 内置 BIP39 词表（前128个，生成演示助记词）
 // BIP39 fallback 词表（仅128词，实际创建钱包由 ethers.js 生成完整2048词）
@@ -2909,6 +3036,7 @@ async function createRealWallet() {
   };
   window.REAL_WALLET = w;
   saveWallet(w);
+  applyReferralCredit();
   return w;
 }
 
@@ -2970,6 +3098,7 @@ async function restoreWallet(mnemonic) {
     };
     REAL_WALLET = w;
     saveWallet(w);
+    applyReferralCredit();
     return w;
   } catch(e) {
     showToast('❌ 助记词无效，请检查后重试', 'error');
@@ -2978,6 +3107,7 @@ async function restoreWallet(mnemonic) {
 }
 
 // 页面加载时恢复钱包（只恢复数据，不跳转）
+captureReferralFromUrl();
 loadWallet();
 // 钱包昵称 localStorage（仅本机）
 try { if (localStorage.getItem('ww_wallet_nickname') == null) localStorage.setItem('ww_wallet_nickname', ''); } catch (_wn) {}
@@ -4921,6 +5051,7 @@ function deleteWallet() {
   // 清除所有钱包数据
   localStorage.removeItem('ww_wallet');
   localStorage.removeItem('ww_hongbaos');
+  try { localStorage.removeItem('ww_ref_install_credited'); } catch (_x) {}
   REAL_WALLET = null;
   // 跳回欢迎页
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -4963,6 +5094,7 @@ function updateSettingsPage() {
     tv.style.color = on ? 'var(--green,#26a17b)' : 'var(--text-muted)';
   }
   if(typeof wwApplyIdleLockLabel==='function') wwApplyIdleLockLabel();
+  if (typeof updateReferralSettingsUI === 'function') updateReferralSettingsUI();
 }
 
 /** 首次打开时请求浏览器通知权限（仅询问一次） */
