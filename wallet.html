@@ -462,6 +462,10 @@ body {
   to { stroke-dashoffset: 0; }
 }
 </style>
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WorldToken">
 </head>
 <body>
 <div class="phone">
@@ -4098,6 +4102,15 @@ const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
         <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
       </div>
     </div>
+
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
 
 </body>
 </html>
