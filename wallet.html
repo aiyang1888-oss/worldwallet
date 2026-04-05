@@ -1289,6 +1289,12 @@ body {
           <button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:8px;font-size:12px" onclick="goTab('tab-swap')">去兑换</button>
         </div>
       </div>
+      <div id="wwYieldFarmCard" style="margin:0 16px 12px;padding:12px 14px;background:rgba(38,161,123,0.07);border:1px solid rgba(38,161,123,0.28);border-radius:14px;font-size:12px;line-height:1.55;color:var(--text)">
+        <div style="font-weight:700;margin-bottom:6px;color:var(--text)">🌾 收益追踪（示意）</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">参考常见质押 / 理财 APY，按当前持仓美元估值估算日收益与年化（本地统计，非链上合约）。</div>
+        <div id="wwYieldFarmBody" style="display:flex;flex-direction:column;gap:8px"></div>
+        <div style="margin-top:8px;font-size:10px;color:var(--text-muted)">APY 为示例值，实际收益以各平台与链上数据为准。</div>
+      </div>
       <div class="assets-section">
         <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <span>我的资产</span>
@@ -1900,8 +1906,32 @@ body {
             <span class="settings-value" id="backupStatus" style="color:var(--red)">未备份</span>
             <span class="settings-arrow">›</span>
           </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-recovery-test')">
+            <span class="settings-icon">🧪</span>
+            <span class="settings-label">恢复演练</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">安全模式</span>
+            <span class="settings-arrow">›</span>
+          </div>
         </div>
 
+
+        <div id="wwPriceAlertSection" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">🔔 价格提醒</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.55">使用浏览器 Web Notifications。价格与首页行情同源（约 90 秒刷新）。保存后需在系统中允许通知。</div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:10px;cursor:pointer;user-select:none">
+            <input type="checkbox" id="wwAlertEnable" style="accent-color:var(--gold);width:16px;height:16px" />
+            启用价格提醒
+          </label>
+          <button type="button" class="btn-secondary" style="width:100%;padding:10px;margin-bottom:12px;font-size:13px" onclick="if(typeof wwRequestPriceAlertPermission==='function')wwRequestPriceAlertPermission()">请求通知权限</button>
+          <div style="display:grid;gap:10px;font-size:12px">
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">BTC</span> 美元价 — 高于 <input id="wwAlertBtcAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertBtcBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">ETH</span> 美元价 — 高于 <input id="wwAlertEthAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertEthBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">TRX</span> 美元价 — 高于 <input id="wwAlertTrxAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertTrxBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0"><span style="font-weight:600">USDT</span> 美元价 — 高于 <input id="wwAlertUsdtAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertUsdtBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+          </div>
+          <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;font-size:13px" onclick="if(typeof wwSavePriceAlertsFromUI==='function')wwSavePriceAlertsFromUI()">保存提醒条件</button>
+        </div>
 
 
         <!-- 邀请 -->
@@ -1963,6 +1993,24 @@ body {
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- 恢复演练（安全模式） -->
+    <div class="page" id="page-recovery-test">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-settings')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">恢复演练</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 20px 40px">
+        <div style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.3);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.65;color:var(--text-muted)">
+          <b style="color:var(--gold)">安全模式</b>：仅在设备本地校验助记词派生地址是否与当前钱包一致，不会上传网络。请在私密环境操作，完成后请清除输入。
+        </div>
+        <div style="font-size:14px;color:var(--text);margin-bottom:10px;font-weight:600">输入助记词（与备份语言一致）</div>
+        <textarea id="recoveryTestInput" rows="5" placeholder="空格分隔的 12 / 15 / 18 / 21 / 24 个词…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;resize:vertical"></textarea>
+        <button type="button" class="btn-primary" style="width:100%;margin-top:14px;padding:14px" onclick="if(typeof wwRecoveryTestSubmit==='function')wwRecoveryTestSubmit()">验证是否与当前钱包一致</button>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:10px;padding:12px" onclick="if(typeof wwRecoveryTestClear==='function')wwRecoveryTestClear()">清除输入</button>
       </div>
     </div>
 
@@ -3439,6 +3487,7 @@ const WW_PAGE_SEO = {
   'page-hb-records': { title: '礼物记录 — WorldToken', description: '历史发送与领取记录。' },
   'page-faq': { title: '常见问题 — WorldToken', description: '助记词安全、钱包备份与恢复说明。' },
   'page-verify-success': { title: '验证成功 — WorldToken', description: '助记词验证通过，可以开始使用钱包。' },
+  'page-recovery-test': { title: '恢复演练 — WorldToken', description: '离线验证助记词是否与当前钱包一致（安全模式）。' },
   'page-dapp': { title: 'DApp 浏览器 — WorldToken', description: '在应用内打开去中心化应用链接。' }
 };
 function applySeoForPage(pageId) {
@@ -3675,6 +3724,7 @@ function goTo(pageId) {
   if(pageId==='page-key') renderKeyGrid();
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
   if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
+  if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-settings') updateSettingsPage();
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
@@ -4758,8 +4808,160 @@ async function refreshHomePriceTicker() {
     if(!_wwTickerInterval) {
       _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 90000);
     }
+    try { if (typeof wwCheckPriceAlertsAfterTicker === 'function') wwCheckPriceAlertsAfterTicker(d); } catch (_pa) {}
   } catch(e) {}
 }
+
+function wwRequestPriceAlertPermission() {
+  try {
+    if (typeof Notification === 'undefined') {
+      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info');
+      return;
+    }
+    Notification.requestPermission().then(function (p) {
+      var msg = p === 'granted' ? '已授予通知权限' : ('权限：' + p);
+      if (typeof showToast === 'function') showToast(msg, 'info');
+    });
+  } catch (e) {}
+}
+
+function wwSavePriceAlertsFromUI() {
+  var keys = ['btc', 'eth', 'trx', 'usdt'];
+  var o = { enabled: !!(document.getElementById('wwAlertEnable') && document.getElementById('wwAlertEnable').checked) };
+  keys.forEach(function (k) {
+    var K = k.charAt(0).toUpperCase() + k.slice(1);
+    var a = parseFloat((document.getElementById('wwAlert' + K + 'Above') || {}).value || '');
+    var b = parseFloat((document.getElementById('wwAlert' + K + 'Below') || {}).value || '');
+    o[k] = { above: isFinite(a) && a > 0 ? a : 0, below: isFinite(b) && b > 0 ? b : 0 };
+  });
+  try { localStorage.setItem('ww_price_alerts_v1', JSON.stringify(o)); } catch (e) {}
+  if (typeof showToast === 'function') showToast('已保存价格提醒', 'success');
+}
+
+function wwPopulatePriceAlertForm() {
+  var o = {};
+  try { o = JSON.parse(localStorage.getItem('ww_price_alerts_v1') || '{}'); } catch (e) { o = {}; }
+  var en = document.getElementById('wwAlertEnable');
+  if (en) en.checked = !!o.enabled;
+  ['btc', 'eth', 'trx', 'usdt'].forEach(function (k) {
+    var K = k.charAt(0).toUpperCase() + k.slice(1);
+    var c = o[k] || {};
+    var a = document.getElementById('wwAlert' + K + 'Above');
+    var b = document.getElementById('wwAlert' + K + 'Below');
+    if (a) a.value = c.above && c.above > 0 ? String(c.above) : '';
+    if (b) b.value = c.below && c.below > 0 ? String(c.below) : '';
+  });
+}
+
+function wwCheckPriceAlertsAfterTicker(d) {
+  try {
+    var cfg = JSON.parse(localStorage.getItem('ww_price_alerts_v1') || '{}');
+    if (!cfg || !cfg.enabled) return;
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    var map = [
+      { key: 'btc', name: 'BTC', get: function (z) { return z.bitcoin && z.bitcoin.usd; } },
+      { key: 'eth', name: 'ETH', get: function (z) { return z.ethereum && z.ethereum.usd; } },
+      { key: 'trx', name: 'TRX', get: function (z) { return z.tron && z.tron.usd; } },
+      { key: 'usdt', name: 'USDT', get: function (z) { return z.tether && z.tether.usd; } }
+    ];
+    var prev = window._wwAlertPricePrev || {};
+    map.forEach(function (m) {
+      var p = m.get(d);
+      if (p == null || !isFinite(p)) return;
+      var c = cfg[m.key] || {};
+      var pr = prev[m.key];
+      if (pr != null && isFinite(pr)) {
+        if (c.above > 0 && pr < c.above && p >= c.above) {
+          new Notification('WorldToken 价格提醒', { body: m.name + ' 已涨至 $' + Number(p).toFixed(4), tag: 'ww-pa-' + m.key + '-hi' });
+        }
+        if (c.below > 0 && pr > c.below && p <= c.below) {
+          new Notification('WorldToken 价格提醒', { body: m.name + ' 已跌至 $' + Number(p).toFixed(4), tag: 'ww-pa-' + m.key + '-lo' });
+        }
+      }
+      prev[m.key] = p;
+    });
+    window._wwAlertPricePrev = prev;
+  } catch (e) {}
+}
+
+function updateYieldFarmTracker(parts, total) {
+  var el = document.getElementById('wwYieldFarmBody');
+  if (!el) return;
+  if (!total || total <= 1e-9) {
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
+    return;
+  }
+  var apy = { USDT: 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var estYr = 0;
+  var rows = [];
+  parts.forEach(function (p) {
+    if (p.v <= 0) return;
+    var a = apy[p.l] != null ? apy[p.l] : 3.5;
+    estYr += p.v * (a / 100);
+    var dailyUsd = p.v * (a / 100) / 365;
+    var pct = total > 0 ? (100 * p.v / total).toFixed(1) : '0';
+    rows.push(
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)"><span>'
+        + p.l
+        + ' <span style="color:var(--text-muted);font-size:10px">参考 APY '
+        + a.toFixed(1)
+        + '%</span></span><span style="text-align:right;font-size:11px;color:var(--text)">日收益 ~$'
+        + dailyUsd.toFixed(4)
+        + '<br/><span style="font-size:10px;color:var(--text-muted)">占比 '
+        + pct
+        + '%</span></span></div>'
+    );
+  });
+  rows.unshift(
+    '<div style="font-size:11px;color:var(--green,#26a17b);margin-bottom:4px">组合参考年化（示意） ≈ $'
+      + estYr.toFixed(2)
+      + ' · 估算日收益 ≈ $'
+      + (estYr / 365).toFixed(4)
+      + '</div>'
+  );
+  el.innerHTML = rows.join('');
+}
+
+function wwRecoveryTestClear() {
+  try {
+    var t = document.getElementById('recoveryTestInput');
+    if (t) t.value = '';
+  } catch (e) {}
+}
+
+function wwRecoveryTestSubmit() {
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+    if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'error');
+    return;
+  }
+  var raw = (document.getElementById('recoveryTestInput') || {}).value || '';
+  if (!String(raw).trim()) {
+    if (typeof showToast === 'function') showToast('请输入助记词', 'error');
+    return;
+  }
+  var lang = typeof currentLang !== 'undefined' ? currentLang : 'en';
+  var enStr = raw.trim();
+  try {
+    if (typeof mnemonicFromLang === 'function') enStr = mnemonicFromLang(raw.trim(), lang);
+  } catch (e1) {}
+  var words = enStr.trim().split(/\s+/);
+  if (![12, 15, 18, 21, 24].includes(words.length)) {
+    if (typeof showToast === 'function') showToast('词数应为 12/15/18/21/24', 'error');
+    return;
+  }
+  try {
+    var w = ethers.Wallet.fromMnemonic(enStr.trim());
+    var match = REAL_WALLET.ethAddress && w.address && w.address.toLowerCase() === String(REAL_WALLET.ethAddress).toLowerCase();
+    if (match) {
+      if (typeof showToast === 'function') showToast('验证通过：助记词与当前钱包一致', 'success');
+    } else {
+      if (typeof showToast === 'function') showToast('与当前钱包不一致或助记词无效', 'error');
+    }
+  } catch (e2) {
+    if (typeof showToast === 'function') showToast('助记词无效或无法解析', 'error');
+  }
+}
+
 function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
   const card = document.getElementById('wwPortfolioPieCard');
   const c = document.getElementById('portfolioPieCanvas');
@@ -4772,7 +4974,7 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
     { v: Number(btcUsd) || 0, c: '#f7931a', l: 'BTC' }
   ];
   const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
-  if(total <= 1e-9) { card.style.display = 'none'; try { if(typeof updateRebalanceSuggestion==='function') updateRebalanceSuggestion([], 0); } catch(_r) {} return; }
+  if(total <= 1e-9) { card.style.display = 'none'; try { if(typeof updateRebalanceSuggestion==='function') updateRebalanceSuggestion([], 0); } catch(_r) {} try { if(typeof updateYieldFarmTracker==='function') updateYieldFarmTracker([], 0); } catch(_y0) {} return; }
   card.style.display = 'block';
   const ctx = c.getContext('2d');
   const w = c.width, h = c.height, cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 6;
@@ -4800,6 +5002,7 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
   });
   leg.innerHTML = htm;
   try { if (typeof updateRebalanceSuggestion === 'function') updateRebalanceSuggestion(parts, total); } catch (_rb) {}
+  try { if (typeof updateYieldFarmTracker === 'function') updateYieldFarmTracker(parts, total); } catch (_yf) {}
 }
 function getNetworkFeeEstimateLines(coinId) {
   const sp = typeof getTransferFeeSpeed === 'function' ? getTransferFeeSpeed() : 'normal';
@@ -5533,6 +5736,7 @@ function markBackupDone() {
   if(el) { el.textContent='已备份 ✓'; el.style.color='var(--green,#26a17b)'; }
   if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
+  if (typeof wwPopulatePriceAlertForm === 'function') wwPopulatePriceAlertForm();
 }
 
 function updateSettingsPage() {
