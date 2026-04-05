@@ -262,21 +262,12 @@ const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb
 /** @param {number} wordCount */
 async function applyCreateWalletToTemp(wordCount) {
   var w = await createWallet(wordCount);
-  var words = w.mnemonic.trim().split(/\s+/).filter(Boolean);
   window.TEMP_WALLET = {
     mnemonic: w.mnemonic,
     wordCount: w.wordCount,
-    enMnemonic: w.mnemonic,
-    words: words,
     eth: w.eth,
     trx: w.trx,
-    btc: w.btc,
-    ethAddress: w.eth.address,
-    trxAddress: w.trx.address,
-    btcAddress: w.btc.address,
-    privateKey: w.eth.privateKey,
-    trxPrivateKey: w.trx.privateKey,
-    createdAt: w.createdAt
+    btc: w.btc
   };
   return window.TEMP_WALLET;
 }
@@ -847,7 +838,7 @@ function renderKeyGrid() {
   let words;
   const isEn = currentLang === 'en';
   const tw = window.TEMP_WALLET;
-  const enMnemonic = tw && tw.enMnemonic;
+  const enMnemonic = tw && tw.mnemonic;
   if (!enMnemonic) {
     goTo('page-create');
     return;
@@ -855,14 +846,8 @@ function renderKeyGrid() {
   const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
   if (isEn) {
     words = enWords;
-    if (tw) tw.words = words;
   } else {
     words = enWordsToLangKeyTableWords(enWords, currentLang);
-    if (tw) {
-      tw.displayLang = currentLang;
-      tw.displayWords = words;
-      tw.words = words;
-    }
   }
   try {
     // 只更新警告文字，不覆盖用户选择的词数
@@ -895,9 +880,6 @@ function renderKeyGrid() {
     d.innerHTML=`<div class="word-num">${String(i+1).padStart(2,'0')}</div><div class="word-val" style="font-size:${isSmall?'11px':'13px'}">${w}</div>`;
     grid.appendChild(d);
   });
-  if (tw) {
-    tw.words = words.slice();
-  }
   if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
 }
 
@@ -946,8 +928,11 @@ function updateHomeBackupBanner() {
 function getMnemonicStrengthDisplay() {
   var n = 12;
   // 密钥页以 TEMP_WALLET 词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
-  if (window.TEMP_WALLET && window.TEMP_WALLET.enMnemonic) {
-    var wct = window.TEMP_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    var wct = window.TEMP_WALLET.wordCount;
+    if (![12, 15, 18, 21, 24].includes(wct)) {
+      wct = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean).length;
+    }
     if ([12, 15, 18, 21, 24].includes(wct)) n = wct;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
@@ -2386,35 +2371,43 @@ async function changeMnemonicLength(n) {
 var verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  // 优先 TEMP_WALLET.words（密钥页仅内存助记词）
+  // 优先 TEMP_WALLET.mnemonic（密钥页仅内存助记词，展示词与 renderKeyGrid 一致）
   let words;
-  if (window.TEMP_WALLET && window.TEMP_WALLET.words && window.TEMP_WALLET.words.length >= 12) {
-    words = window.TEMP_WALLET.words.slice();
-  } else if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
-    words = REAL_WALLET.words.slice();
-  } else {
-    // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
-    var nPick = 12;
-    if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
-      nPick = currentMnemonicLength;
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    const enWords = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+    if (enWords.length >= 12) {
+      words = currentLang === 'en'
+        ? enWords.slice()
+        : enWordsToLangKeyTableWords(enWords, currentLang);
+    }
+  }
+  if (!words || words.length < 12) {
+    if (REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
+      words = REAL_WALLET.words.slice();
     } else {
-      var _selV = document.getElementById('mnemonicLength');
-      if (_selV && _selV.value) {
-        var _pv = parseInt(_selV.value, 10);
-        if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
+      // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
+      var nPick = 12;
+      if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
+        nPick = currentMnemonicLength;
+      } else {
+        var _selV = document.getElementById('mnemonicLength');
+        if (_selV && _selV.value) {
+          var _pv = parseInt(_selV.value, 10);
+          if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
+        }
       }
+      const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+      const indices = [];
+      while(indices.length < nPick) {
+        const idx = Math.floor(Math.random() * pool.length);
+        if(!indices.includes(idx)) indices.push(idx);
+      }
+      words = indices.map(i => pool[i]);
+      if(!REAL_WALLET) REAL_WALLET = {};
+      REAL_WALLET.words = words;
+      REAL_WALLET.mnemonic = words.join(' ');
+      saveWallet(REAL_WALLET);
     }
-    const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
-    const indices = [];
-    while(indices.length < nPick) {
-      const idx = Math.floor(Math.random() * pool.length);
-      if(!indices.includes(idx)) indices.push(idx);
-    }
-    words = indices.map(i => pool[i]);
-    if(!REAL_WALLET) REAL_WALLET = {};
-    REAL_WALLET.words = words;
-    REAL_WALLET.mnemonic = words.join(' ');
-    saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   
