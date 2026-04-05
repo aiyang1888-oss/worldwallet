@@ -19,12 +19,23 @@
 <!-- TronWeb 懒加载，仅转账时加载 -->
 <script>
 function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+function countMnemonicWords(text) {
+  return String(text || '').trim().split(/\s+/).filter(Boolean).length;
+}
 function updateImportWordCount() {
-  const input = document.getElementById('importInput');
+  const input = document.getElementById('importPaste');
   const badge = document.getElementById('importWordCountBadge');
-  if(!input || !badge) return;
-  const n = countMnemonicWords(input.value);
+  if(!badge) return;
+  const n = countMnemonicWords(input ? input.value : '');
   badge.textContent = n + '/12';
+}
+function showWalletLoading() {
+  const el = document.getElementById('walletLoadingOverlay');
+  if(el) el.classList.add('show');
+}
+function hideWalletLoading() {
+  const el = document.getElementById('walletLoadingOverlay');
+  if(el) el.classList.remove('show');
 }
 
 </script>
@@ -764,7 +775,7 @@ body {
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(btn){btn.disabled=true;btn.style.opacity='0.5';try{const w=await createRealWallet();if(w){window.REAL_WALLET=w;saveWallet(w);if(typeof updateRealAddr==='function')updateRealAddr();goTo('page-key');}else{showToast('创建失败，请重试','error');}}catch(e){showToast(e.message||'创建失败','error');}finally{btn.disabled=false;btn.style.opacity='1';}})(this)">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(){showWalletLoading();try{const w=await createRealWallet();if(w){window.REAL_WALLET=w;saveWallet(w);if(typeof updateRealAddr==='function')updateRealAddr();goTo('page-key');}else{showToast('创建失败，请重试','error');}}catch(e){showToast(e.message||'创建失败','error');}finally{hideWalletLoading();}})()">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
@@ -1482,7 +1493,7 @@ body {
         <div id="importGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
 
         <!-- 或者粘贴 -->
-        <div style="text-align:center;margin-bottom:12px;font-size:12px;color:var(--text-muted)">— 或者直接粘贴 —</div>
+        <div style="text-align:center;margin-bottom:12px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">— 或者直接粘贴 — <span id="importWordCountBadge" style="font-size:11px;color:var(--gold)">0/12</span></div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px">
           <textarea id="importPaste" rows="3" placeholder="在此粘贴全部助记词（12/15/18/21/24个词，空格分隔）..." 
             style="width:100%;background:none;border:none;outline:none;font-size:13px;color:var(--text);resize:none;line-height:1.6;font-family:inherit"
@@ -2332,7 +2343,7 @@ function goTo(pageId) {
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') renderKeyGrid();
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-  if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; }
+  if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-settings') updateSettingsPage();
   if(pageId==='page-swap') { loadNews(); setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
@@ -3622,6 +3633,7 @@ function syncImportGrid(text) {
     const inp = document.getElementById('iw_' + i);
     if(inp) inp.value = words[i] || '';
   }
+  updateImportWordCount();
 }
 
 function syncImportPaste() {
@@ -3633,6 +3645,7 @@ function syncImportPaste() {
   }
   const paste = document.getElementById('importPaste');
   if(paste) paste.value = words.filter(w=>w).join(' ');
+  updateImportWordCount();
 }
 
 function copyAllMnemonic(btn) {
