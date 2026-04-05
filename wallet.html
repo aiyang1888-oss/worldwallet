@@ -19,6 +19,14 @@
 <!-- TronWeb 懒加载，仅转账时加载 -->
 <script>
 function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+function updateImportWordCount() {
+  const input = document.getElementById('importInput');
+  const badge = document.getElementById('importWordCountBadge');
+  if(!input || !badge) return;
+  const n = countMnemonicWords(input.value);
+  badge.textContent = n + '/12';
+}
+
 </script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -502,6 +510,74 @@ body {
 @keyframes drawCheck {
   to { stroke-dashoffset: 0; }
 }
+
+.wallet-loading-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.72);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 200;
+}
+.wallet-loading-overlay.show { display: flex; }
+.wallet-loading-spinner {
+  width: 44px; height: 44px;
+  border: 3px solid rgba(200,168,75,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: wallet-spin 0.75s linear infinite;
+}
+@keyframes wallet-spin { to { transform: rotate(360deg); }
+
+/* PIN 设置键盘 */
+.pin-setup-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.88);
+  display: none; flex-direction: column;
+  align-items: center; justify-content: flex-end;
+  z-index: 120;
+  padding-bottom: 24px;
+}
+.pin-setup-overlay.show { display: flex; }
+.pin-setup-panel {
+  width: 100%; max-width: 360px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 18px 28px;
+}
+.pin-setup-title { font-size: 16px; font-weight: 700; color: var(--text); text-align: center; margin-bottom: 6px; }
+.pin-setup-hint { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 18px; }
+.pin-dots {
+  display: flex; justify-content: center; gap: 12px; margin-bottom: 22px;
+}
+.pin-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pin-dot.filled { background: var(--gold); border-color: var(--gold); }
+.pin-keypad {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  max-width: 280px; margin: 0 auto;
+}
+.pin-key {
+  aspect-ratio: 1.6;
+  border: none; border-radius: 14px;
+  background: var(--bg3);
+  color: var(--text);
+  font-size: 22px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pin-key:active { background: var(--border); }
+.pin-key.pin-key-sub { font-size: 15px; color: var(--text-dim); }
+.pin-setup-cancel {
+  margin-top: 14px; text-align: center;
+  font-size: 14px; color: var(--gold); cursor: pointer;
+}
+
+
 </style>
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -510,6 +586,10 @@ body {
 </head>
 <body>
 <div class="phone">
+  <div class="wallet-loading-overlay" id="walletLoadingOverlay">
+    <div class="wallet-loading-spinner"></div>
+    <div class="wallet-loading-text">正在生成钱包…</div>
+  </div>
 
   <div class="status-bar">
     <span class="status-time" id="statusTime">04:39</span>
@@ -4285,5 +4365,14 @@ const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
     }
   </script>
 
+  <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
+        <div class="pin-setup-panel" onclick="event.stopPropagation()">
+          <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
+          <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
+          <div class="pin-dots" id="pinDots"></div>
+          <div class="pin-keypad" id="pinKeypad"></div>
+          <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+        </div>
+      </div>
 </body>
 </html>
