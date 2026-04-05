@@ -1118,147 +1118,9 @@ body {
       <div style="font-size:28px;font-weight:800;background:linear-gradient(135deg,#c8a84b,#f0d070);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px;margin-bottom:4px;flex-shrink:0">WorldToken</div>
       <div style="font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:12px;flex-shrink:0">One wallet, every language.</div>
 
-      <!-- 语言列表 可滑动 -->
-      <div id="welcomeLangGrid">
-        <div class="lang-row active" data-lang="zh" onclick="selectLang(this)">
-          <span class="u1">🇨🇳</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">中文</div><div style="font-size:10px;color:var(--text-muted)">Chinese · 11亿使用者</div></div>
-          <span class="lang-check" style="opacity:1">✓</span>
-        </div>
-        <div class="lang-row" data-lang="en" onclick="selectLang(this)">
-          <span class="u1">🇺🇸</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">English</div><div style="font-size:10px;color:var(--text-muted)">English · 15亿使用者 · 公链标准</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="hi" onclick="selectLang(this)">
-          <span class="u1">🇮🇳</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">हिन्दी</div><div style="font-size:10px;color:var(--text-muted)">Hindi · 6亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="es" onclick="selectLang(this)">
-          <span class="u1">🇪🇸</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Español</div><div style="font-size:10px;color:var(--text-muted)">Spanish · 5亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="ar" onclick="selectLang(this)">
-          <span class="u1">🇸🇦</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">العربية</div><div style="font-size:10px;color:var(--text-muted)">Arabic · 4亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="fr" onclick="selectLang(this)">
-          <span class="u1">🇫🇷</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Français</div><div style="font-size:10px;color:var(--text-muted)">French · 3亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="bn" onclick="selectLang(this)">
-          <span class="u1">🇧🇩</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">বাংলা</div><div style="font-size:10px;color:var(--text-muted)">Bengali · 3亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="pt" onclick="selectLang(this)">
-          <span class="u1">🇧🇷</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Português</div><div style="font-size:10px;color:var(--text-muted)">Portuguese · 2.5亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="ur" onclick="selectLang(this)">
-          <span class="u1">🇵🇰</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">اردو</div><div style="font-size:10px;color:var(--text-muted)">Urdu · 2.3亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="id" onclick="selectLang(this)">
-          <span class="u1">🇮🇩</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Indonesia</div><div style="font-size:10px;color:var(--text-muted)">Indonesian · 2亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="ru" onclick="selectLang(this)">
-          <span class="u1">🇷🇺</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Русский</div><div style="font-size:10px;color:var(--text-muted)">Russian · 1.5亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="sw" onclick="selectLang(this)">
-          <span class="u1">🇰🇪</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Kiswahili</div><div style="font-size:10px;color:var(--text-muted)">Swahili · 2亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="ja" onclick="selectLang(this)">
-          <span class="u1">🇯🇵</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">日本語</div><div style="font-size:10px;color:var(--text-muted)">Japanese · 1.3亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="fa" onclick="selectLang(this)">
-          <span class="u1">🇮🇷</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">فارسی</div><div style="font-size:10px;color:var(--text-muted)">Persian · 1.1亿使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="vi" onclick="selectLang(this)">
-          <span class="u1">🇻🇳</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Tiếng Việt</div><div style="font-size:10px;color:var(--text-muted)">Vietnamese · 9千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="de" onclick="selectLang(this)">
-          <span class="u1">🇩🇪</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Deutsch</div><div style="font-size:10px;color:var(--text-muted)">German · 9千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="tr" onclick="selectLang(this)">
-          <span class="u1">🇹🇷</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Türkçe</div><div style="font-size:10px;color:var(--text-muted)">Turkish · 8千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="ms" onclick="selectLang(this)">
-          <span class="u1">🇲🇾</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Bahasa Melayu</div><div style="font-size:10px;color:var(--text-muted)">Malay · 8千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="ko" onclick="selectLang(this)">
-          <span class="u1">🇰🇷</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">한국어</div><div style="font-size:10px;color:var(--text-muted)">Korean · 7700万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="th" onclick="selectLang(this)">
-          <span class="u1">🇹🇭</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">ภาษาไทย</div><div style="font-size:10px;color:var(--text-muted)">Thai · 7千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="it" onclick="selectLang(this)">
-          <span class="u1">🇮🇹</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Italiano</div><div style="font-size:10px;color:var(--text-muted)">Italian · 6500万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="pl" onclick="selectLang(this)">
-          <span class="u1">🇵🇱</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Polski</div><div style="font-size:10px;color:var(--text-muted)">Polish · 5千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="uk" onclick="selectLang(this)">
-          <span class="u1">🇺🇦</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Українська</div><div style="font-size:10px;color:var(--text-muted)">Ukrainian · 4500万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="nl" onclick="selectLang(this)">
-          <span class="u1">🇳🇱</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Nederlands</div><div style="font-size:10px;color:var(--text-muted)">Dutch · 3千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="ro" onclick="selectLang(this)">
-          <span class="u1">🇷🇴</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Română</div><div style="font-size:10px;color:var(--text-muted)">Romanian · 2400万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="el" onclick="selectLang(this)">
-          <span class="u1">🇬🇷</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Ελληνικά</div><div style="font-size:10px;color:var(--text-muted)">Greek · 1300万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-        <div class="lang-row" data-lang="sv" onclick="selectLang(this)">
-          <span class="u1">🇸🇪</span>
-          <div class="u2"><div style="font-size:14px;font-weight:600;color:var(--text)">Svenska</div><div style="font-size:10px;color:var(--text-muted)">Swedish · 1千万使用者</div></div>
-          <span class="lang-check" class="u3">✓</span>
-        </div>
-      </div>
 
       <!-- 按钮区 -->
-      <div style="width:100%;flex-shrink:0;margin-top:40px">
+      <div style="width:100%;flex-shrink:0;margin-top:28px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
           <button class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
           <button class="btn-secondary" id="btnContinue" style="display:none;padding:14px 0;font-size:15px;width:72%;max-width:260px;margin-top:0" onclick="continueAfterPinCheck()">→ 继续使用钱包</button>
@@ -4545,7 +4407,7 @@ const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-
 
 const WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
 const WW_PAGE_SEO = {
-  'page-welcome': { title: '欢迎 — WorldToken 多语言钱包', description: '选择语言，创建或导入钱包：万语地址与多链资产管理。' },
+  'page-welcome': { title: '欢迎 — WorldToken 多语言钱包', description: '创建或导入钱包：万语地址与多链资产管理。' },
   'page-create': { title: '创建钱包 — WorldToken', description: '生成 BIP39 助记词，派生 TRX、ETH、BTC 地址。' },
   'page-key': { title: '备份助记词 — WorldToken', description: '请安全抄写并离线保存助记词，勿截图或上传网络。' },
   'page-key-verify': { title: '验证助记词 — WorldToken', description: '按提示输入助记词以确认您已正确备份。' },
