@@ -1123,9 +1123,32 @@ body {
       <div style="width:100%;flex-shrink:0;margin-top:28px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
           <button class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
+          <button class="btn-secondary" onclick="goTo('page-password-restore')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔑 用密码恢复钱包</button>
           <button class="btn-secondary" id="btnContinue" style="display:none;padding:14px 0;font-size:15px;width:72%;max-width:260px;margin-top:0" onclick="continueAfterPinCheck()">→ 继续使用钱包</button>
           <button class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">📥 导入已有钱包</button>
         </div>
+      </div>
+    </div>
+
+    <!-- ══ 密码恢复钱包 ══ -->
+    <div class="page" id="page-password-restore">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">密码恢复</div>
+        <div class="nav-right"></div>
+      </div>
+      <div style="padding:20px 18px;flex:1;overflow-y:auto">
+        <div style="text-align:center;margin-bottom:18px">
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.75">粘贴在<b>设置</b>中导出的「含助记词加密备份」JSON，并输入创建备份时设置的密码。</div>
+        </div>
+        <label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:8px">加密备份文本（JSON）</label>
+        <textarea id="wwPwdRestoreJson" rows="6" placeholder='{"v":1,"kind":"ww_key_backup",...}' autocomplete="off" autocorrect="off" spellcheck="false" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;line-height:1.5;font-family:ui-monospace,monospace;resize:vertical;margin-bottom:14px"></textarea>
+        <label style="display:block;font-size:11px;color:var(--text-muted);margin-bottom:8px">解密密码</label>
+        <input id="wwPwdRestorePass" type="password" placeholder="至少 4 位" autocomplete="off" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:16px" />
+        <div style="background:rgba(80,120,200,0.08);border:1px solid rgba(80,120,200,0.35);border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:11px;color:var(--text-muted);line-height:1.65">
+          <b style="color:var(--text)">说明</b>：仅含地址的旧版云端加密备份无法恢复完整钱包，请使用助记词导入或在设置中导出「含助记词加密备份」。
+        </div>
+        <button type="button" class="btn-primary" style="padding:14px 0;font-size:15px;width:100%" onclick="if(typeof wwPasswordRestoreRun==='function')wwPasswordRestoreRun()">🔓 解密并恢复钱包</button>
       </div>
     </div>
     <!-- 创建页 -->
@@ -1890,8 +1913,9 @@ body {
 
         <div id="wwCloudBackupHint" style="background:rgba(80,120,200,0.08);border:1px solid rgba(80,120,200,0.35);border-radius:16px;padding:14px 16px;margin-bottom:16px">
           <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">☁️ 云端备份提示</div>
-          <div style="font-size:11px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">可将<b>加密后的备份文本</b>发到自有邮箱或保存到云盘；请勿明文发送助记词。下列导出仅含地址与备份标记，经您输入的密码加密（AES-GCM）。</div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">可将<b>加密后的备份文本</b>发到自有邮箱或保存到云盘；请勿明文发送助记词。第一按钮仅含地址；若需欢迎页「用密码恢复钱包」，请用下方「含助记词加密备份」（AES-GCM，与密码分存）。</div>
           <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwExportEncryptedCloudBackup==='function')wwExportEncryptedCloudBackup()">复制加密备份到剪贴板</button>
+          <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px;margin-top:10px" onclick="if(typeof wwExportEncryptedKeyBackup==='function')wwExportEncryptedKeyBackup()">复制含助记词加密备份（慎用）</button>
         </div>
 
         <!-- 安全 -->
@@ -4419,6 +4443,7 @@ const WW_PAGE_SEO = {
   'page-settings': { title: '设置 — WorldToken', description: 'PIN、两步验证、备份与隐私相关选项。' },
   'page-swap': { title: '兑换 — WorldToken', description: '通过 SunSwap / Uniswap 等 DEX 兑换代币。' },
   'page-swap-records': { title: '兑换记录 — WorldToken', description: '历史兑换与路由记录。' },
+  'page-password-restore': { title: '密码恢复 — WorldToken', description: '粘贴含助记词的加密备份并用密码解密恢复。' },
   'page-import': { title: '导入钱包 — WorldToken', description: '使用 12 词助记词恢复钱包。' },
   'page-hongbao': { title: '礼物 — WorldToken', description: '创建或领取口令礼物。' },
   'page-hb-keyword': { title: '礼物口令 — WorldToken', description: '查看或分享礼物关键词。' },
@@ -4696,7 +4721,7 @@ function goTo(pageId) {
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') renderKeyGrid();
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-  if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
+if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
@@ -9390,6 +9415,25 @@ function wwB64Bytes(u8) {
   }
   return btoa(s);
 }
+function wwBytesFromB64(b64) {
+  var s = String(b64 || '').trim().replace(/\s/g, '');
+  var bin = atob(s);
+  var u8 = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return u8;
+}
+async function wwDecryptAesGcmBackupJson(pass, saltB64, ivB64, dataB64) {
+  var enc = new TextEncoder();
+  var dec = new TextDecoder();
+  var salt = wwBytesFromB64(saltB64);
+  var iv = wwBytesFromB64(ivB64);
+  var ct = wwBytesFromB64(dataB64);
+  var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+  var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  var pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+  return JSON.parse(dec.decode(pt));
+}
+
 function wwRefreshAntiPhishOnPinUnlock() {
   var w = '';
   try { w = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
@@ -9445,6 +9489,81 @@ async function wwExportEncryptedCloudBackup() {
   } catch (e) {
     if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
   }
+}
+async function wwExportEncryptedKeyBackup() {
+  if (!REAL_WALLET || !REAL_WALLET.enMnemonic) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
+  if (!window.confirm('将导出含助记词的加密文本。若密码泄露，资产将面临风险。仅保存到可信位置，切勿与密码同存一处。确定继续？')) return;
+  var pass = prompt('设置加密密码（请牢记，用于「用密码恢复钱包」）');
+  if (!pass) return;
+  if (String(pass).length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位密码', 'warning'); return; }
+  var enc = new TextEncoder();
+  try {
+    var payload = JSON.stringify({
+      v: 1,
+      t: Date.now(),
+      kind: 'ww_key_payload',
+      enMnemonic: REAL_WALLET.enMnemonic,
+      eth: REAL_WALLET.ethAddress,
+      trx: REAL_WALLET.trxAddress || '',
+      btc: REAL_WALLET.btcAddress || '',
+      backed: !!REAL_WALLET.backedUp
+    });
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
+    var out = { v: 1, kind: 'ww_key_backup', salt: wwB64Bytes(salt), iv: wwB64Bytes(iv), data: wwB64Bytes(new Uint8Array(ct)) };
+    var txt = JSON.stringify(out);
+    try {
+      await navigator.clipboard.writeText(txt);
+      if (typeof showToast === 'function') showToast('含助记词加密备份已复制，请离线妥善保管', 'success');
+    } catch (e) {
+      prompt('复制加密备份（手动全选复制）', txt);
+    }
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
+  }
+}
+async function wwPasswordRestoreRun() {
+  var ta = document.getElementById('wwPwdRestoreJson');
+  var passEl = document.getElementById('wwPwdRestorePass');
+  var raw = (ta && ta.value || '').trim();
+  var pass = passEl ? String(passEl.value || '') : '';
+  if (!raw) { if (typeof showToast === 'function') showToast('请粘贴加密备份 JSON', 'warning'); return; }
+  if (pass.length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位解密密码', 'warning'); return; }
+  var obj;
+  try { obj = JSON.parse(raw); } catch (e1) { if (typeof showToast === 'function') showToast('JSON 格式无效', 'error'); return; }
+  if (!obj || typeof obj.kind !== 'string' || !obj.salt || !obj.iv || !obj.data) {
+    if (typeof showToast === 'function') showToast('不是有效的 WorldToken 加密备份', 'error');
+    return;
+  }
+  var plain;
+  try {
+    plain = await wwDecryptAesGcmBackupJson(pass, obj.salt, obj.iv, obj.data);
+  } catch (e2) {
+    if (typeof showToast === 'function') showToast('解密失败：密码错误或数据损坏', 'error');
+    return;
+  }
+  if (obj.kind === 'ww_cloud_backup' || obj.kind === 'ww_qr_backup') {
+    if (typeof showToast === 'function') showToast('此备份仅含地址信息，无法恢复完整钱包。请使用助记词导入，或在设置中导出「含助记词加密备份」。', 'warning');
+    return;
+  }
+  if (obj.kind !== 'ww_key_backup' || !plain || plain.kind !== 'ww_key_payload' || !plain.enMnemonic) {
+    if (typeof showToast === 'function') showToast('备份中未找到助记词数据', 'error');
+    return;
+  }
+  var w = await restoreWallet(String(plain.enMnemonic));
+  if (!w) return;
+  if (typeof plain.backed === 'boolean') { REAL_WALLET.backedUp = plain.backed; saveWallet(REAL_WALLET); }
+  if (typeof updateRealAddr === 'function') updateRealAddr();
+  if (typeof updateAddr === 'function') updateAddr();
+  var tb = document.getElementById('tabBar');
+  if (tb) tb.style.display = 'flex';
+  setTimeout(function() { try { loadBalances(); } catch (lb) {} }, 500);
+  goTo('page-home');
+  if (typeof showToast === 'function') showToast('已通过密码恢复钱包', 'success');
+  try { if (ta) ta.value = ''; if (passEl) passEl.value = ''; } catch (clr) {}
 }
 function renderWwChartsPlaceholder() {
   var host = document.getElementById('wwCandleBars');
