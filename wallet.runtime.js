@@ -649,18 +649,7 @@ function getTargetMnemonicWordCount() {
   } catch (e) {}
   let n = typeof currentMnemonicLength === 'number' ? currentMnemonicLength : 12;
   if (![12, 15, 18, 21, 24].includes(n)) n = 12;
-  try {
-    const activePage = document.querySelector('.page.active');
-    const aid = activePage && activePage.id;
-    // 仅当用户正在密钥页时，才用 #mnemonicLength 的值（避免浏览器恢复表单后下拉仍为 15/24 却误用于其他页）
-    if (aid === 'page-key') {
-      const sel = document.getElementById('mnemonicLength');
-      if (sel && sel.value) {
-        const v = parseInt(sel.value, 10);
-        if ([12, 15, 18, 21, 24].includes(v)) n = v;
-      }
-    }
-  } catch (e) {}
+  // 不读 #mnemonicLength DOM：浏览器可能恢复上次的选中项，导致词数与内存/钱包不一致
   return n;
 }
 /** 密钥页下拉：与 currentMnemonicLength 同步 */
@@ -836,18 +825,22 @@ function toggleWwTheme() {
   applyWwTheme();
 }
 applyWwTheme();
-// 页面加载完成（再次固定下拉为 12；setTimeout 0 尽量晚于部分浏览器的表单恢复）
+// 页面加载完成（多次固定下拉为 12，晚于部分浏览器的表单/会话恢复）
 window.addEventListener('load', () => {
   try { initMnemonicLengthSelectors(); } catch (_iml2) {}
   setTimeout(function () {
     try { initMnemonicLengthSelectors(); } catch (_iml4) {}
   }, 0);
+  setTimeout(function () {
+    try { initMnemonicLengthSelectors(); } catch (_iml5) {}
+  }, 50);
+  setTimeout(function () {
+    try { initMnemonicLengthSelectors(); } catch (_iml6) {}
+  }, 200);
   if (typeof requestPushPermissionOnFirstLaunch === 'function') requestPushPermissionOnFirstLaunch();
 });
-window.addEventListener('pageshow', function (ev) {
-  if (ev && ev.persisted) {
-    try { initMnemonicLengthSelectors(); } catch (_iml3) {}
-  }
+window.addEventListener('pageshow', function () {
+  try { initMnemonicLengthSelectors(); } catch (_iml3) {}
 });
 // 强刷后进入应用最开始的页面（欢迎页），不恢复 URL hash 深链
 document.querySelectorAll('.page').forEach(p => {
@@ -1249,7 +1242,7 @@ function goTo(pageId, opts) {
         if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
       } catch (_pk) {}
     } else {
-      // 每次进入密钥页（非从验证页返回）：固定 12 词默认，下拉与内存一致；不根据钱包词数设置下拉
+      // 每次进入密钥页（非从验证页返回）：强制 12 词默认；下拉与内存仅设为 12（不根据钱包词数设下拉）
       currentMnemonicLength = 12;
       var _sel = document.getElementById('mnemonicLength');
       if (_sel) {
@@ -1597,10 +1590,10 @@ function updateHomeBackupBanner() {
 
 function getMnemonicStrengthDisplay() {
   var n = 12;
-  var sel = document.getElementById('mnemonicLength');
-  if (sel && sel.value) {
-    var v = parseInt(sel.value, 10);
-    if ([12, 15, 18, 21, 24].includes(v)) n = v;
+  // 以真实助记词词数为准（不依赖可能被浏览器恢复的下拉框）
+  if (REAL_WALLET && REAL_WALLET.enMnemonic) {
+    var wc = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
+    if ([12, 15, 18, 21, 24].includes(wc)) n = wc;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
   }
@@ -5786,61 +5779,26 @@ function renderNews(items) {
 }
 
 
-// 切换助记词词数：始终从熵重新生成全新 BIP39 助记词（不截断/沿用旧钱包词），并立即刷新网格
-async function changeMnemonicLength(len) {
-  const newLen = parseInt(len, 10) || 12;
-  if (![12, 15, 18, 21, 24].includes(newLen)) return;
-  const prevLen = [12, 15, 18, 21, 24].includes(currentMnemonicLength) ? currentMnemonicLength : 12;
-  currentMnemonicLength = newLen;
-  try {
-    const sel0 = document.getElementById('mnemonicLength');
-    if (sel0) {
-      sel0.value = String(newLen);
-      var _optIdx = [12, 15, 18, 21, 24].indexOf(newLen);
-      if (_optIdx >= 0) sel0.selectedIndex = _optIdx;
-    }
-  } catch (e) {}
-  if (!REAL_WALLET || !REAL_WALLET.enMnemonic) {
-    if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning');
-    currentMnemonicLength = prevLen;
-    try {
-      const s = document.getElementById('mnemonicLength');
-      if (s) {
-        s.value = String(prevLen);
-        var _pi = [12, 15, 18, 21, 24].indexOf(prevLen);
-        if (_pi >= 0) s.selectedIndex = _pi;
-      }
-    } catch (_e) {}
-    return;
+// 切换助记词词数：从熵重新生成全新 BIP39 助记词（不截断旧词），并立即刷新网格
+async function changeMnemonicLength(n) {
+  currentMnemonicLength = parseInt(n, 10) || 12;
+  if (![12, 15, 18, 21, 24].includes(currentMnemonicLength)) return;
+  var sel = document.getElementById('mnemonicLength');
+  if (sel) {
+    sel.value = String(currentMnemonicLength);
+    var _oi = [12, 15, 18, 21, 24].indexOf(currentMnemonicLength);
+    if (_oi >= 0) sel.selectedIndex = _oi;
   }
   showWalletLoading();
   try {
-    await createRealWallet(newLen);
+    await createRealWallet(currentMnemonicLength);
     if (typeof updateRealAddr === 'function') updateRealAddr();
-    currentMnemonicLength = newLen;
-    try {
-      const sel1 = document.getElementById('mnemonicLength');
-      if (sel1) {
-        sel1.value = String(newLen);
-        var _oi = [12, 15, 18, 21, 24].indexOf(newLen);
-        if (_oi >= 0) sel1.selectedIndex = _oi;
-      }
-    } catch (_s) {}
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
     if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
   } catch (e) {
     if (typeof showToast === 'function') {
       showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
     }
-    currentMnemonicLength = prevLen;
-    try {
-      const sel = document.getElementById('mnemonicLength');
-      if (sel) {
-        sel.value = String(prevLen);
-        var _pj = [12, 15, 18, 21, 24].indexOf(prevLen);
-        if (_pj >= 0) sel.selectedIndex = _pj;
-      }
-    } catch (_e2) {}
   } finally {
     hideWalletLoading();
   }
@@ -5856,14 +5814,16 @@ function startVerify() {
   if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
     words = REAL_WALLET.words.slice();
   } else {
-    // fallback：从当前语言演示词库随机取词（词数与密钥页下拉一致，不读钱包助记词词数）
+    // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
     var nPick = 12;
-    var _selV = document.getElementById('mnemonicLength');
-    if (_selV && _selV.value) {
-      var _pv = parseInt(_selV.value, 10);
-      if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
-    } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
+    if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
       nPick = currentMnemonicLength;
+    } else {
+      var _selV = document.getElementById('mnemonicLength');
+      if (_selV && _selV.value) {
+        var _pv = parseInt(_selV.value, 10);
+        if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
+      }
     }
     const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
     const indices = [];
