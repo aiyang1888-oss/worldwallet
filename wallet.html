@@ -381,6 +381,20 @@ body {
 .home-balance-chart-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
 .home-balance-chart-svg { width: 100%; height: 88px; display: block; }
 .home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
+.ww-price-ticker-bar { overflow: hidden; width: 100%; background: linear-gradient(90deg, rgba(18,14,28,0.98), rgba(26,22,40,0.95)); border-bottom: 1px solid var(--border); padding: 9px 0; margin: 0 0 0 0; }
+.ww-price-ticker-marquee { display: flex; width: max-content; animation: wwTickerScroll 32s linear infinite; }
+.ww-price-ticker-marquee:hover { animation-play-state: paused; }
+@keyframes wwTickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+.ww-ticker-text { display: inline-block; padding-right: 56px; font-size: 12px; color: rgba(255,255,255,0.82); letter-spacing: 0.25px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ww-ticker-text strong { color: var(--gold-light); font-weight: 700; margin-left: 5px; }
+.ww-portfolio-pie-card { margin: 0 16px 12px; padding: 14px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; }
+.ww-portfolio-pie-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 10px; }
+.ww-portfolio-pie-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.ww-portfolio-pie-legend { flex: 1; min-width: 140px; font-size: 12px; line-height: 1.65; color: var(--text); }
+.ww-portfolio-pie-legend div { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ww-pie-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; display: inline-block; }
+.ww-speed-btn { flex: 1; min-width: 0; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg3); color: var(--text-muted); font-size: 12px; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; }
+.ww-speed-btn--active { border-color: rgba(200,168,75,0.65); background: rgba(200,168,75,0.12); color: var(--gold-light); font-weight: 600; }
 .transfer-contacts-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; }
 .transfer-contacts-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .transfer-contacts-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
@@ -1097,6 +1111,12 @@ body {
 
     <!-- 首页 -->
     <div class="page" id="page-home">
+      <div class="ww-price-ticker-bar" id="wwPriceTickerBar">
+        <div class="ww-price-ticker-marquee">
+          <span class="ww-ticker-text" id="wwTickerTextA">BTC <strong id="tickBtc">—</strong> · ETH <strong id="tickEth">—</strong> · TRX <strong id="tickTrx">—</strong> · USDT <strong id="tickUsdt">—</strong></span>
+          <span class="ww-ticker-text" id="wwTickerTextB" aria-hidden="true">BTC <strong>—</strong> · ETH <strong>—</strong> · TRX <strong>—</strong> · USDT <strong>—</strong></span>
+        </div>
+      </div>
       <div class="home-header" style="position:relative">
         <div style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px">
           <div onclick="promptWalletNotifications()" title="通知" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer;font-size:18px;line-height:1">🔔</div>
@@ -1155,6 +1175,13 @@ body {
         <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" class="u8">💱</div><div class="quick-btn-label">兑换</div></div>
         <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" class="u8">🎁</div><div class="quick-btn-label">礼物</div></div>
         <div class="quick-btn" onclick="goTo('page-dapp')"><div class="quick-btn-icon" class="u8">🌐</div><div class="quick-btn-label">DApp</div></div>
+      </div>
+      <div id="wwPortfolioPieCard" class="ww-portfolio-pie-card" style="display:none">
+        <div class="ww-portfolio-pie-title">资产占比</div>
+        <div class="ww-portfolio-pie-row">
+          <canvas id="portfolioPieCanvas" width="168" height="168" style="flex-shrink:0;display:block"></canvas>
+          <div class="ww-portfolio-pie-legend" id="portfolioPieLegend"></div>
+        </div>
       </div>
       <div class="assets-section">
         <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -1422,8 +1449,15 @@ body {
           </div>
         </div>
 
-
-
+        <div id="transferSpeedRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:12px 16px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.5px">交易速度（网络费档位）</div>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="ww-speed-btn" data-speed="slow" onclick="setTransferFeeSpeed('slow')">慢</button>
+            <button type="button" class="ww-speed-btn" data-speed="normal" onclick="setTransferFeeSpeed('normal')">标准</button>
+            <button type="button" class="ww-speed-btn" data-speed="fast" onclick="setTransferFeeSpeed('fast')">快</button>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.45">链上实际费用以网络为准；较快档位会提高能量 / Gas 上限以优先确认。</div>
+        </div>
 
         <!-- 手续费 -->
         <div id="transferFeeRow" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:20px">
@@ -3522,8 +3556,10 @@ function goTo(pageId) {
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
     if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
+    if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
   }
   if(pageId==='page-transfer') {
+    if(typeof initTransferFeeSpeedUI==='function') initTransferFeeSpeedUI();
     calcTransferFee();
     renderTransferContactsList();
   }
@@ -4222,7 +4258,7 @@ async function sendUSDT_TRC20(toAddr, amount) {
   const tx = await tw.transactionBuilder.triggerSmartContract(
     USDT_TRC20,
     'transfer(address,uint256)',
-    { feeLimit: 20000000 },
+    { feeLimit: (typeof getTronFeeLimitUsdt==='function' ? getTronFeeLimitUsdt() : 20000000) },
     [
       { type: 'address', value: toAddr },
       { type: 'uint256', value: amtSun }
@@ -4240,7 +4276,7 @@ async function sendTRX(toAddr, amount) {
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
   const amtSun = Math.floor(amount * 1e6);
-  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress);
+  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
   const signed = await tw.trx.sign(tx);
   const result = await tw.trx.sendRawTransaction(signed);
   if(result.result) return result.txid;
@@ -4250,11 +4286,22 @@ async function sendTRX(toAddr, amount) {
 async function sendETH(toAddr, amount) {
   const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
   const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
-  const tx = await wallet.sendTransaction({
+  const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
+  const mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
+  const fd = await provider.getFeeData();
+  const txReq = {
     to: toAddr,
     value: ethers.utils.parseEther(amount.toString()),
-    gasLimit: 21000  // 标准 ETH 转账 gas
-  });
+    gasLimit: 21000
+  };
+  const m = Math.round(mult * 100);
+  if(fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
+    txReq.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);
+    txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(m).div(100);
+  } else if(fd.gasPrice) {
+    txReq.gasPrice = fd.gasPrice.mul(m).div(100);
+  }
+  const tx = await wallet.sendTransaction(txReq);
   await tx.wait(1);
   return tx.hash;
 }
@@ -4365,14 +4412,138 @@ function addrBookShort(addr) {
   if(s.length <= 16) return s;
   return s.slice(0, 8) + '…' + s.slice(-6);
 }
-function getNetworkFeeEstimateLines(coinId) {
-  const map = {
-    usdt: { line: '≈ 8.5 TRX · 合约能量（示意）', sub: '约 30 秒内确认' },
-    trx: { line: '≈ 1.0 TRX · 带宽消耗（示意）', sub: '约 1 分钟内确认' },
-    eth: { line: '≈ 0.0012 ETH · Gas ~35 Gwei（示意）', sub: '约 2–5 分钟确认' },
-    btc: { line: '≈ 1.2k sat/vB · 费率档（示意）', sub: '约 20–60 分钟确认' }
+function getTransferFeeSpeed() {
+  try {
+    const s = localStorage.getItem('ww_transfer_fee_speed');
+    if(s === 'slow' || s === 'normal' || s === 'fast') return s;
+  } catch(e) {}
+  return 'normal';
+}
+function setTransferFeeSpeed(speed) {
+  if(speed !== 'slow' && speed !== 'normal' && speed !== 'fast') speed = 'normal';
+  try { localStorage.setItem('ww_transfer_fee_speed', speed); } catch(e) {}
+  document.querySelectorAll('.ww-speed-btn').forEach(function(b) {
+    const on = b.getAttribute('data-speed') === speed;
+    b.classList.toggle('ww-speed-btn--active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  if(typeof calcTransferFee === 'function') calcTransferFee();
+}
+function initTransferFeeSpeedUI() {
+  setTransferFeeSpeed(getTransferFeeSpeed());
+}
+function getTronFeeLimitUsdt() {
+  const sp = getTransferFeeSpeed();
+  if(sp === 'slow') return 15000000;
+  if(sp === 'fast') return 50000000;
+  return 20000000;
+}
+function getTronFeeLimitTrx() {
+  const sp = getTransferFeeSpeed();
+  if(sp === 'slow') return 10000000;
+  if(sp === 'fast') return 45000000;
+  return 25000000;
+}
+function transferSpeedHint(coinId, sp) {
+  const m = {
+    usdt: { slow: '经济 · 约 1–3 分钟', normal: '标准 · 约 30 秒', fast: '快速 · 约 15–45 秒' },
+    trx: { slow: '经济 · 约 1–2 分钟', normal: '标准 · 约 1 分钟', fast: '快速 · 约 20–40 秒' },
+    eth: { slow: '经济 · 约 5–15 分钟', normal: '标准 · 约 2–5 分钟', fast: '快速 · 约 30–90 秒' },
+    btc: { slow: '经济', normal: '标准', fast: '快速' }
   };
-  return map[coinId] || map.usdt;
+  return ((m[coinId] || m.usdt)[sp]) || m.usdt.normal;
+}
+let _wwTickerInterval = null;
+async function refreshHomePriceTicker() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tron,tether&vs_currencies=usd');
+    const d = await r.json();
+    const fmt = function(x) {
+      if(x === undefined || x === null || !isFinite(x)) return '—';
+      return x < 10 ? x.toFixed(4) : x.toLocaleString('en', { maximumFractionDigits: 2 });
+    };
+    const btc = fmt(d.bitcoin && d.bitcoin.usd);
+    const eth = fmt(d.ethereum && d.ethereum.usd);
+    const trx = fmt(d.tron && d.tron.usd);
+    const ust = fmt(d.tether && d.tether.usd);
+    const html = 'BTC <strong>$' + btc + '</strong> · ETH <strong>$' + eth + '</strong> · TRX <strong>$' + trx + '</strong> · USDT <strong>$' + ust + '</strong>';
+    const a = document.getElementById('wwTickerTextA');
+    const b = document.getElementById('wwTickerTextB');
+    if(a) a.innerHTML = html;
+    if(b) b.innerHTML = html;
+    if(!_wwTickerInterval) {
+      _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 90000);
+    }
+  } catch(e) {}
+}
+function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
+  const card = document.getElementById('wwPortfolioPieCard');
+  const c = document.getElementById('portfolioPieCanvas');
+  const leg = document.getElementById('portfolioPieLegend');
+  if(!card || !c || !leg) return;
+  const parts = [
+    { v: Number(usdtUsd) || 0, c: '#26a17b', l: 'USDT' },
+    { v: Number(trxUsd) || 0, c: '#e84d4d', l: 'TRX' },
+    { v: Number(ethUsd) || 0, c: '#627eea', l: 'ETH' },
+    { v: Number(btcUsd) || 0, c: '#f7931a', l: 'BTC' }
+  ];
+  const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
+  if(total <= 1e-9) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const ctx = c.getContext('2d');
+  const w = c.width, h = c.height, cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 6;
+  ctx.clearRect(0, 0, w, h);
+  let ang = -Math.PI / 2;
+  parts.forEach(function(p) {
+    if(p.v <= 0) return;
+    const slice = (p.v / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, ang, ang + slice);
+    ctx.closePath();
+    ctx.fillStyle = p.c;
+    ctx.fill();
+    ang += slice;
+  });
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.52, 0, Math.PI * 2);
+  ctx.fillStyle = '#0f0f18';
+  ctx.fill();
+  let htm = '';
+  parts.forEach(function(p) {
+    const pct = total > 0 ? (100 * p.v / total).toFixed(1) : '0';
+    htm += '<div><span><span class="ww-pie-dot" style="background:' + p.c + '"></span>' + p.l + '</span><span>' + pct + '%</span></div>';
+  });
+  leg.innerHTML = htm;
+}
+function getNetworkFeeEstimateLines(coinId) {
+  const sp = typeof getTransferFeeSpeed === 'function' ? getTransferFeeSpeed() : 'normal';
+  const usdtMap = {
+    slow: { line: '≈ 6–8 TRX · 能量上限（经济档）', sub: '确认较慢，费用较低' },
+    normal: { line: '≈ 8.5 TRX · 合约能量（示意）', sub: '约 30 秒内确认' },
+    fast: { line: '≈ 12–18 TRX · 能量上限（快速档）', sub: '优先确认' }
+  };
+  const trxMap = {
+    slow: { line: '≈ 0.8 TRX · 带宽（经济档）', sub: '约 1–2 分钟' },
+    normal: { line: '≈ 1.0 TRX · 带宽消耗（示意）', sub: '约 1 分钟内确认' },
+    fast: { line: '≈ 1.2 TRX · 带宽（快速档）', sub: '约 20–40 秒' }
+  };
+  const ethG = { slow: '~26–30 Gwei', normal: '~35 Gwei', fast: '~42–50 Gwei' };
+  const ethT = { slow: '约 5–15 分钟', normal: '约 2–5 分钟', fast: '约 30–90 秒' };
+  const ethMap = {
+    slow: { line: '≈ 0.0010 ETH · Gas ' + ethG.slow + '（示意）', sub: ethT.slow },
+    normal: { line: '≈ 0.0012 ETH · Gas ' + ethG.normal + '（示意）', sub: ethT.normal },
+    fast: { line: '≈ 0.0015 ETH · Gas ' + ethG.fast + '（示意）', sub: ethT.fast }
+  };
+  const btcMap = {
+    slow: { line: '≈ 低费率档 sat/vB（示意）', sub: '约 40–90 分钟' },
+    normal: { line: '≈ 1.2k sat/vB · 费率档（示意）', sub: '约 20–60 分钟' },
+    fast: { line: '≈ 高费率档 sat/vB（示意）', sub: '约 10–30 分钟' }
+  };
+  if(coinId === 'trx') return trxMap[sp] || trxMap.normal;
+  if(coinId === 'eth') return ethMap[sp] || ethMap.normal;
+  if(coinId === 'btc') return btcMap[sp] || btcMap.normal;
+  return usdtMap[sp] || usdtMap.normal;
 }
 
 function hideTransferAddrBook() {
@@ -4583,7 +4754,8 @@ function calcTransferFee() {
     document.getElementById('transferUSD').textContent = '$'+(amt*price).toFixed(2);
     if(cnyEl) cnyEl.textContent = (amt*price*usdToCny).toFixed(2);
   }
-  document.getElementById('transferChain').textContent = transferCoin.chain+' · 约30秒';
+  const _spd = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
+  document.getElementById('transferChain').textContent = transferCoin.chain+' · '+(typeof transferSpeedHint==='function'?transferSpeedHint(transferCoin.id,_spd):'约30秒');
   const bal = Number(transferCoin.bal) || 0;
   if(amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
@@ -5792,17 +5964,18 @@ async function getPrices() {
   if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
   try {
     // CoinGecko 免费价格 API（无需 key）
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum&vs_currencies=usd');
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd');
     const data = await res.json();
     priceCache = {
       usdt: data.tether?.usd || 1,
       trx: data.tron?.usd || 0.12,
       eth: data.ethereum?.usd || 3200,
+      btc: data.bitcoin?.usd || 60000,
     };
     priceCacheTime = Date.now();
     return priceCache;
   } catch(e) {
-    return { usdt: 1, trx: 0.12, eth: 3200 };
+    return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
   }
 }
 
@@ -5901,6 +6074,8 @@ async function loadBalances() {
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
     drawHomeBalanceChart(total);
+    if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
+    if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
     // 动态汇率（从价格接口获取，fallback 7.2）
   const cnyRate = window._cnyRate || 7.2;
   set('totalBalanceSub', '≈ ' + (total * cnyRate).toFixed(0) + ' CNY · 实时价格');
