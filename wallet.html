@@ -3949,8 +3949,8 @@ const COINS = [
   {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', bg:'rgba(255,215,0,0.12)', bal:0, price:312},
 ];
 
-let swapFrom = COINS[0]; // USDT
-let swapTo   = COINS[1]; // BTC
+let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
+let swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
 let pickerTarget = 'from';
 
 function setSwapCoin(target, coin) {
