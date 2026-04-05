@@ -1241,14 +1241,12 @@ function goTo(pageId, opts) {
     var _sel = document.getElementById('mnemonicLength');
     if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
     showWalletLoading();
-    createRealWallet(12).then(function() {
+    createRealWallet(currentMnemonicLength).then(function() {
       if (typeof updateRealAddr === 'function') updateRealAddr();
       hideWalletLoading();
       if (typeof renderKeyGrid === 'function') renderKeyGrid();
-      if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
     }).catch(function(e) {
       hideWalletLoading();
-      console.error('page-key createRealWallet error:', e);
     });
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
@@ -5748,24 +5746,23 @@ function renderNews(items) {
 
 // 切换助记词词数：从熵重新生成全新 BIP39 助记词（不截断旧词），并立即刷新网格
 async function changeMnemonicLength(n) {
-  currentMnemonicLength = parseInt(n, 10) || 12;
-  if (![12, 15, 18, 21, 24].includes(currentMnemonicLength)) return;
-  var sel = document.getElementById('mnemonicLength');
+  const wordCount = parseInt(n, 10) || 12;
+  if (![12, 15, 18, 21, 24].includes(wordCount)) return;
+  currentMnemonicLength = wordCount;
+  // 同步下拉框
+  const sel = document.getElementById('mnemonicLength');
   if (sel) {
-    sel.value = String(currentMnemonicLength);
-    var _oi = [12, 15, 18, 21, 24].indexOf(currentMnemonicLength);
-    if (_oi >= 0) sel.selectedIndex = _oi;
+    sel.value = String(wordCount);
+    sel.selectedIndex = [12,15,18,21,24].indexOf(wordCount);
   }
+  // 重新生成指定词数的钱包
   showWalletLoading();
   try {
-    await createRealWallet(currentMnemonicLength);
+    await createRealWallet(wordCount);
     if (typeof updateRealAddr === 'function') updateRealAddr();
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
-    if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
-  } catch (e) {
-    if (typeof showToast === 'function') {
-      showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
-    }
+  } catch(e) {
+    if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
   } finally {
     hideWalletLoading();
   }
