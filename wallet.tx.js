@@ -98,60 +98,92 @@ function confirmTransfer() {
   }, 200);
 }
 
-async function sendTRX(toAddr, amount) {
-  await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6);
-  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
-  const signed = await tw.trx.sign(tx);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'TRX 广播失败');
-}
-
-async function sendETH(toAddr, amount) {
-  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
-  const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
-  const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
-  const mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
-  const fd = await provider.getFeeData();
-  const txReq = {
-    to: toAddr,
-    value: ethers.utils.parseEther(amount.toString()),
-    gasLimit: 21000
-  };
-  const m = Math.round(mult * 100);
-  if(fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
-    txReq.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);
-    txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(m).div(100);
-  } else if(fd.gasPrice) {
-    txReq.gasPrice = fd.gasPrice.mul(m).div(100);
+/**
+ * 链上广播：使用 core/wallet.js 的 sendTx + core/security.js 的 decryptWalletSensitive
+ */
+async function broadcastRealTransfer() {
+  if (!REAL_WALLET) {
+    showToast('⚠️ 请先创建或导入钱包', 'warning');
+    return false;
   }
-  const tx = await wallet.sendTransaction(txReq);
-  await tx.wait(1);
-  return tx.hash;
-}
+  const addr = document.getElementById('transferAddr').value.trim();
+  if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
+    showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
+    return false;
+  }
+  const amt = parseFloat(document.getElementById('transferAmount').value);
+  const coin = transferCoin.id;
 
-async function sendUSDT_TRC20(toAddr, amount) {
-  await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
-  const tx = await tw.transactionBuilder.triggerSmartContract(
-    USDT_TRC20,
-    'transfer(address,uint256)',
-    { feeLimit: (typeof getTronFeeLimitUsdt==='function' ? getTronFeeLimitUsdt() : 20000000) },
-    [
-      { type: 'address', value: toAddr },
-      { type: 'uint256', value: amtSun }
-    ],
-    REAL_WALLET.trxAddress // Base58格式，TronWeb自动处理
-  );
-  const signed = await tw.trx.sign(tx.transaction);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'USDT 广播失败');
+  var pin = '';
+  try {
+    pin = (localStorage.getItem('ww_pin') || '').trim();
+  } catch (e) {}
+
+  var ethKey = null;
+  var trxKey = null;
+  if (pin && typeof decryptWalletSensitive === 'function') {
+    try {
+      var sens = await decryptWalletSensitive(pin);
+      if (sens) {
+        ethKey = sens.ethKey || sens.privateKey;
+        trxKey = sens.trxKey || sens.trxPrivateKey;
+      }
+    } catch (e) {
+      console.error('[broadcastRealTransfer] decrypt', e);
+    }
+  }
+  if (!ethKey && REAL_WALLET.privateKey) ethKey = REAL_WALLET.privateKey;
+  if (!trxKey && REAL_WALLET.trxPrivateKey) trxKey = REAL_WALLET.trxPrivateKey;
+
+  var chain = null;
+  var pk = null;
+  if (coin === 'usdt') {
+    chain = 'usdt_trc20';
+    pk = trxKey;
+  } else if (coin === 'trx') {
+    chain = 'trx';
+    pk = trxKey;
+  } else if (coin === 'eth') {
+    chain = 'eth';
+    pk = ethKey;
+  } else {
+    showToast('⚠️ 暂不支持 ' + transferCoin.name + ' 转账', 'warning');
+    return false;
+  }
+
+  if (!pk) {
+    showToast('❌ 无法获取私钥，请确认已设置 PIN 并解锁钱包', 'error');
+    return false;
+  }
+
+  if (typeof sendTx !== 'function') {
+    showToast('❌ 钱包核心未加载', 'error');
+    return false;
+  }
+
+  try {
+    var out = await sendTx(chain, addr, amt, pk);
+    if (out && out.error) {
+      showToast('❌ 转账失败: ' + out.error, 'error');
+      return false;
+    }
+    var txHash = out && out.txHash;
+    if (txHash) {
+      try {
+        if (typeof wwRecordSpendAfterBroadcast === 'function') wwRecordSpendAfterBroadcast(amt);
+      } catch (_rs) {}
+      _safeEl('successTxHash') &&
+        ((_safeEl('successTxHash') || { textContent: '', style: {}, classList: { add: function () {}, remove: function () {} } }).textContent = txHash);
+      _safeEl('successTxLink') &&
+        (_safeEl('successTxLink').href =
+          coin === 'eth' ? 'https://etherscan.io/tx/' + txHash : 'https://tronscan.org/#/transaction/' + txHash);
+      return true;
+    }
+  } catch (e) {
+    console.error('转账失败:', e);
+    showToast('❌ 转账失败: ' + (e.message || e), 'error');
+  }
+  return false;
 }
 
 async function loadBalances() {
@@ -185,9 +217,9 @@ async function loadBalances() {
     const trxBal = bal.trx;
     const ethBal = bal.eth;
 
-    let btcBal = 0;
+    let btcBal = typeof bal.btc === 'number' && bal.btc > 0 ? bal.btc : 0;
     try {
-      if (REAL_WALLET.btcAddress) {
+      if (REAL_WALLET.btcAddress && !btcBal) {
         const btcRes = await fetch(`https://mempool.space/api/address/${REAL_WALLET.btcAddress}`);
         const btcData = await btcRes.json();
         btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
@@ -201,7 +233,7 @@ async function loadBalances() {
     const trxUsd = trxBal * prices.trx;
     const ethUsd = ethBal * prices.eth;
     const btcUsd = btcBal * (prices.btc || 60000);
-    const total = bal.totalUsd + btcUsd;
+    const total = (typeof bal.totalUsd === 'number' ? bal.totalUsd : 0) + btcUsd;
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
