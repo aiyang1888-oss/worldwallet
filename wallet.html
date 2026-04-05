@@ -5254,7 +5254,8 @@ function hideQR() { document.getElementById('qrOverlay').classList.remove('show'
 
 // KEYWORDS_ZH 已迁移到 KW_ZH
 // KEYWORDS_EN 已迁移到 KW_EN
-let currentKeyword = (typeof KW_ZH!=='undefined' ? KW_ZH[0] : '举头望明月');
+// Must not reference KW_ZH here — const KW_ZH is declared later (TDZ).
+let currentKeyword = '举头望明月';
 
 function getKeywords() {
   return (typeof LANG_KW!=='undefined' ? LANG_KW[currentLang] : null) || KW_ZH || [];
