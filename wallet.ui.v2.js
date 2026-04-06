@@ -1,3 +1,6 @@
+// wallet.ui.js — UI：导航/Toast/页面/设置/PIN/红包
+// 包含全局变量和初始化代码
+
 /*! WorldToken wallet.runtime.js — split from wallet.html; refactor incrementally. */
 
 // 强制清除旧 Service Worker 和缓存
@@ -10,63 +13,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-function tapHaptic(ms) {
-  try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
-}
+
 document.addEventListener('click', function(ev) {
-  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
+  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
   if (!el) return;
   tapHaptic(12);
 }, true);
 
-function parseUsdFromBalanceTxt(txt) {
-  if (!txt) return 0;
-  var n = parseFloat(String(txt).replace(/[$,\s]/g, ''));
-  return isFinite(n) ? n : 0;
-}
-function cancelHomeBalanceAnim() {
-  if (window._homeBalanceAnimRaf) {
-    cancelAnimationFrame(window._homeBalanceAnimRaf);
-    window._homeBalanceAnimRaf = 0;
-  }
-}
-function animateHomeUsdTo(targetUsd, fmtUsdFn) {
-  cancelHomeBalanceAnim();
-  var el = document.getElementById('totalBalanceDisplay');
-  var from = parseUsdFromBalanceTxt(el ? el.textContent : '');
-  if (!isFinite(from)) from = 0;
-  var dur = 560;
-  var t0 = null;
-  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-  function tick(now) {
-    if (!t0) t0 = now;
-    var p = Math.min(1, (now - t0) / dur);
-    var v = from + (targetUsd - from) * easeOutCubic(p);
-    if (el) el.textContent = fmtUsdFn(p < 1 ? v : targetUsd);
-    if (p < 1) window._homeBalanceAnimRaf = requestAnimationFrame(tick);
-    else window._homeBalanceAnimRaf = 0;
-  }
-  window._homeBalanceAnimRaf = requestAnimationFrame(tick);
-}
-
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
 var _qrLoadPromise=null;
-function loadQRCodeLib(){
-  if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
-  if(_qrLoadPromise)return _qrLoadPromise;
-  _qrLoadPromise=new Promise(function(res,rej){
-    var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
-    s.async=true;
-    s.onload=function(){res();};
-    s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
-    document.head.appendChild(s);
-  });
-  return _qrLoadPromise;
-}
-function countMnemonicWords(text) {
-  return String(text || '').trim().split(/\s+/).filter(Boolean).length;
-}
+
+
 function updateImportWordCount() {
   const input = document.getElementById('importPaste');
   const badge = document.getElementById('importWordCountBadge');
@@ -74,14 +30,7 @@ function updateImportWordCount() {
   const n = countMnemonicWords(input ? input.value : '');
   badge.textContent = n + '/12';
 }
-function setWalletCreateStep(n) {
-  const steps = document.getElementById('walletCreateSteps');
-  const text = document.getElementById('walletLoadingText');
-  const labels = ['正在生成钱包…', '1/3 生成密钥', '2/3 派生地址', '3/3 完成'];
-  if (text) text.textContent = (n >= 1 && n <= 3) ? labels[n] : labels[0];
-  if (!steps) return;
-  try { steps.querySelectorAll('[data-step]').forEach(function(el, i) { el.classList.toggle('active', (i + 1) === n); }); } catch (e) {}
-}
+
 function showWalletLoading() {
   const el = document.getElementById('walletLoadingOverlay');
   if(el) el.classList.add('show');
@@ -93,9 +42,7 @@ function hideWalletLoading() {
   
 }
 
-
-
-const LANG_INFO = {
+var LANG_INFO = {
   zh:{name:'中文简体',flag:'🇨🇳'},        // 1. 中文简体 ~13亿
   'zh-TW':{name:'中文繁體（台灣）',flag:'🇹🇼'}, // 2a. 繁體中文台灣
   'zh-HK':{name:'中文繁體（香港）',flag:'🇭🇰'}, // 2b. 繁體中文香港
@@ -128,69 +75,23 @@ const LANG_INFO = {
 };
 
 /** 与系统语言对齐：navigator.language(s) → LANG_INFO 键，未支持则回退 zh */
-function detectDeviceLang() {
-  function resolveTag(tag) {
-    if (!tag || typeof tag !== 'string') return null;
-    const raw = tag.trim().replace(/_/g, '-');
-    if (!raw) return null;
-    if (LANG_INFO[raw]) return raw;
-    const lower = raw.toLowerCase();
-    for (const k of Object.keys(LANG_INFO)) {
-      if (k.toLowerCase() === lower) return k;
-    }
-    if (lower === 'zh-cn' || lower.startsWith('zh-hans')) return 'zh';
-    if (lower === 'zh-tw' || (lower.includes('hant') && lower.includes('tw'))) return 'zh-TW';
-    if (lower === 'zh-hk' || lower === 'zh-mo' || (lower.includes('hant') && lower.includes('hk'))) return 'zh-HK';
-    if (lower.startsWith('zh')) return 'zh';
-    const base = lower.split('-')[0];
-    if (LANG_INFO[base]) return base;
-    return null;
-  }
-  try {
-    if (typeof navigator !== 'undefined' && navigator.languages && navigator.languages.length) {
-      for (let i = 0; i < navigator.languages.length; i++) {
-        const r = resolveTag(navigator.languages[i]);
-        if (r) return r;
-      }
-    }
-    if (typeof navigator !== 'undefined' && navigator.language) {
-      const r = resolveTag(navigator.language);
-      if (r) return r;
-    }
-  } catch (e) {}
-  return 'zh';
-}
+
 
 // 扩展语言词库（万语地址用）
 // ⏱️ 词库懒加载：WW_WORDS_EXTRA 在地址生成时按需访问
-const WW_WORDS_EXTRA = {
+var WW_WORDS_EXTRA = {
   zh:['北京','上海','广州','深圳','成都','重庆','杭州','武汉','西安','南京','天津','苏州','长沙','郑州','青岛','沈阳','宁波','东莞','无锡','福州','厦门','哈尔滨','昆明','大连','合肥','济南','温州','南宁','长春','贵阳','佛山','南昌','石家庄','太原','乌鲁木齐','呼和浩特','拉萨','银川','西宁','海口','三亚','兰州','桂林','丽江','大理','张家界','敦煌','吐鲁番','喀什','格尔木','日喀则','林芝','遵义','凯里','兴义','都匀','荔波','镇远','黎平','台州','温岭','临海','玉环','黄岩','椒江','路桥','仙居','天台','三门','丽水','龙泉','云和','庆元','景宁','缙云','遂昌','松阳','青田','宿迁','泗阳','沭阳','泗洪','钟山','六枝','织金','纳雍','赫章','威宁','大方','黔西','金沙','铜仁','碧江','万山','玉屏','松桃','沿河','印江','德江','思南','石阡','江口','榕江','从江','锦屏','天柱','岑巩','三穗','施秉','黄平','剑河','台江','丹寨','雷山','麻江','福泉','贵定','龙里','惠水','长顺','罗甸','平塘','独山','三都','瓮安','余庆','湄潭','凤冈','正安','道真','务川','绥阳','桐梓','习水','赤水','仁怀'],
   en:[]
 };
 
 // ── 补充缺失函数定义 ──────────────────────────────────────────
-function updateRealAddr() {
-  // 英语模式下更新地址显示为公链地址
-  if(REAL_WALLET && REAL_WALLET.ethAddress) {
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) chip.textContent = REAL_WALLET.trxAddress || REAL_WALLET.ethAddress;
-    const sa = document.getElementById('settingsAddr');
-    if(sa) sa.textContent = REAL_WALLET.ethAddress;
-  }
-  if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
-}
+
 
 // ── 万语地址系统 ──────────────────────────────────────────
-const ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
-
-function randDigits(n) {
-  let s = '';
-  for(let i=0;i<n;i++) s += Math.floor(Math.random()*10);
-  return s;
-}
+var ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
 
 // 手机键盘可打出的字符（仅保留真正可输入的字母字符）
-const SINGLE_CHARS = {
+var SINGLE_CHARS = {
   zh: '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪',
   'zh-TW': '龍鳳虎鶴福壽祿喜財春夏秋冬金木水火土山川雲月星日風雨雪',
   'zh-HK': '龍鳳虎鶴福壽祿喜財春夏秋冬金木水火土山川雲月星日風雨雪',
@@ -217,161 +118,9 @@ const SINGLE_CHARS = {
   nl: 'abcdefghijklmnopqrstuvwxyz',
 };
 
-function randWord(lang) {
-  // 先查 SINGLE_CHARS（单字），再查 WW_WORDS_EXTRA（词库），再fallback到zh
-  const chars = SINGLE_CHARS[lang];
-  if(chars && chars.length > 0) return chars[Math.floor(Math.random()*chars.length)];
-  const extra = WW_WORDS_EXTRA[lang];
-  if(extra && extra.length > 0) {
-    const w = extra[Math.floor(Math.random()*extra.length)];
-    return w.substring(0, 4); // 词库取前4字作为地址词
-  }
-  return SINGLE_CHARS.zh[Math.floor(Math.random()*SINGLE_CHARS.zh.length)];
-}
-
-function randLang() {
-  // 使用所有支持的语言（LANG_INFO + WW_WORDS_EXTRA）
-  const allLangs = [...new Set([
-    ...Object.keys(SAMPLE_KEYS),
-    ...Object.keys(WW_WORDS_EXTRA)
-  ])].filter(l => l !== 'en' && l !== 'zh-TW' && l !== 'zh-HK');
-  return allLangs[Math.floor(Math.random()*allLangs.length)];
-}
-
-function initAddrWords() {
-  ADDR_WORDS.length = 0;
-  for(let i=0;i<10;i++) {
-    const lang = randLang();
-    ADDR_WORDS.push({word: randWord(lang), lang, custom: false});
-  }
-  // 随机前后缀
-  document.getElementById('addrPrefix').textContent = randDigits(8);
-  document.getElementById('addrSuffix').textContent = randDigits(8);
-  renderAddrWords();
-  // 同步所有地方的地址显示（统一单行）
-  setTimeout(() => {
-    const addr = getNativeAddr();
-    // 统一样式：单行 + 居中
-    const ADDR_STYLE = 'font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;display:block';
-    // 首页芯片
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) {
-      const pre = addr.substring(0, 8);
-      const mid = addr.substring(8, 18);
-      const suf = addr.substring(18);
-      chip.innerHTML = '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + pre + '</span>' +
-        '<span style="color:#f0d070;font-weight:700;font-size:13px;letter-spacing:1px">' + mid + '</span>' +
-        '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + suf + '</span>';
-      chip.style.cssText += ';text-align:center;display:block';
-    }
-    // QR大字（居中 + 高亮）
-    const qp1 = document.getElementById('qrPart1');
-    const qp2 = document.getElementById('qrPart2');
-    if(qp1) {
-      const prefix = document.getElementById('addrPrefix')?.textContent || '';
-      const suffix = document.getElementById('addrSuffix')?.textContent || '';
-      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
-      ADDR_WORDS.forEach(w => {
-        if(w.custom) {
-          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
-        } else {
-          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
-        }
-      });
-      html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
-      qp1.innerHTML = html;
-    }
-    if(qp2) qp2.style.display = 'none';
-    // QR弹窗
-    const qm = document.getElementById('qrAddrMain');
-    if(qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
-    // 设置页
-    const sa = document.getElementById('settingsAddr');
-    if(sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    // swoosh（单行居中）
-    const sfp1 = _safeEl('swooshFromPart1');
-    const sfp2 = _safeEl('swooshFromPart2');
-    if(sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(sfp2) sfp2.style.display = 'none';
-    // 成功页（单行居中）
-    const suc1 = _safeEl('successFromPart1');
-    const suc2 = _safeEl('successFromPart2');
-    if(suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(suc2) suc2.style.display = 'none';
-  }, 50);
-}
-
-function renderAddrWords() {
-  const container = document.getElementById('addrWords');
-  if(!container) return;
-  // 确保 suffix/prefix 只含8位数字
-  const pre = document.getElementById('addrPrefix');
-  const suf = document.getElementById('addrSuffix');
-  if(pre) pre.textContent = (pre.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
-  if(suf) suf.textContent = (suf.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
-  // 每个字符等宽盒子，定制字金色高亮，随机字淡紫
-  let html = '';
-  ADDR_WORDS.forEach(w => {
-    if(w.custom) {
-      html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;color:#f0d070;font-size:17px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
-    } else {
-      html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px">${w.word}</span>`;
-    }
-  });
-  container.innerHTML = html;
-  // 同步 addrMain
-  const m = (_safeEl('addrMain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrMain fallback */;
-  if(m) m.textContent = ADDR_WORDS.map(w=>w.word).join('');
-  // 同步 QR 高亮
-  const qp1 = document.getElementById('qrPart1');
-  if(qp1 && ADDR_WORDS.length) {
-    const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
-    ADDR_WORDS.forEach(w => {
-      html += w.custom
-        ? `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`
-        : `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
-    });
-    html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
-    qp1.innerHTML = html;
-  }
-}
-
-function openCustomizeAddr() {
-  openWordEditor(0);
-}
-
-function openWordEditor(idx) {
-  const w = ADDR_WORDS[idx];
-  const info = LANG_INFO[w.lang] || {flag:'🌍', name:'?'};
-
-  // 弹出简单的 prompt 式选择
-  const langList = Object.keys(SAMPLE_KEYS).filter(l=>l!=='en').map(l=>{
-    const i = LANG_INFO[l]||{flag:'🌍',name:l};
-    return `${i.flag} ${i.name} (${l})`;
-  }).join('\n');
-
-  const input = window.prompt(
-    `第 ${idx+1} 个字（当前：${info.flag} "${w.word}"）\n\n输入新词（直接输入），或留空随机\n\n可用语言：${Object.entries(LANG_INFO).filter(([l])=>l!=='en').map(([l,i])=>i.flag+l).join(' ')}`,
-    w.custom ? w.word : ''
-  );
-
-  if(input === null) return; // 取消
-
-  if(input.trim() === '') {
-    // 随机
-    const lang = randLang();
-    ADDR_WORDS[idx] = {word: randWord(lang), lang, custom: false};
-  } else {
-    ADDR_WORDS[idx] = {word: input.trim(), lang: w.lang, custom: true};
-  }
-  renderAddrWords();
-}
+var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star','wind','rain','snow','mist','dawn','dusk','hill','vale','lake','stone','gold','jade','ruby','pearl','coral','ivory','amber','ember','flame','frost','cloud','river','meadow','forest','brook','azure','shadow','silver','bronze','cobalt','sable','crimson','violet','indigo','cerulean','scarlet','coral','topaz','garnet','opal','onyx','jade','sage','birch','cedar','pine','willow','maple','acacia','cypress','olive','lotus','orchid','lilac','jasmine','iris','daisy','rose','lily','fern','moss','reed','cliff','cove','peak','ridge','delta','fjord','glade','haven','isle','knoll','marsh','oasis','prairie','reef','savanna','tundra','valley','wave','zenith'];
 
 // getNativeAddr 已统一到下方定义
-
-
 
 // ── 真实钱包存储 ──────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════
@@ -382,11 +131,11 @@ function openWordEditor(idx) {
 
 
 // 英文词 → 索引（BIP39标准索引）
-const EN_WORD_INDEX = {};
+var EN_WORD_INDEX = {};
 WT_WORDLISTS.en.forEach((w, i) => EN_WORD_INDEX[w] = i);
 
 // 各语言词 → 索引
-const WT_LANG_INDEX = {};
+var WT_LANG_INDEX = {};
 Object.keys(WT_WORDLISTS).forEach(lang => {
   WT_LANG_INDEX[lang] = {};
   WT_WORDLISTS[lang].forEach((w, i) => WT_LANG_INDEX[lang][w] = i);
@@ -398,27 +147,10 @@ Object.keys(WT_WORDLISTS).forEach(lang => {
  * @param {string} lang - 目标语言
  * @returns {string} 目标语言助记词（空格分隔）
  */
-function mnemonicToLang(mnemonic, lang) {
-  if (!lang || lang === "en" || !WT_WORDLISTS[lang]) return mnemonic;
-  const words = mnemonic.trim().split(/\s+/);
-  return words.map(w => {
-    const idx = EN_WORD_INDEX[w];
-    if (idx === undefined) return w; // 未知词保持原样
-    return WT_WORDLISTS[lang][idx] || w;
-  }).join(" ");
-}
+
 
 /** 英文 BIP39 词数组 → 当前语言密钥表词条（词数与上方词数选择一致，逐词映射索引） */
-function enWordsToLangKeyTableWords(enWords, lang) {
-  if (!enWords || !enWords.length) return [];
-  if (!lang || lang === 'en') return enWords.slice();
-  if (!WT_WORDLISTS[lang]) return enWords.slice();
-  return enWords.map(function (w) {
-    const idx = EN_WORD_INDEX[w];
-    if (idx === undefined) return w;
-    return WT_WORDLISTS[lang][idx] || w;
-  });
-}
+
 
 /**
  * 任意语言助记词 → 英文BIP39助记词
@@ -426,29 +158,20 @@ function enWordsToLangKeyTableWords(enWords, lang) {
  * @param {string} lang - 输入语言
  * @returns {string} 标准英文助记词
  */
-function mnemonicFromLang(mnemonic, lang) {
-  if (!lang || lang === "en" || !WT_WORDLISTS[lang]) return mnemonic;
-  const words = mnemonic.trim().split(/\s+/);
-  const langIndex = WT_LANG_INDEX[lang] || {};
-  return words.map(w => {
-    const idx = langIndex[w];
-    if (idx === undefined) return w;
-    return WT_WORDLISTS.en[idx] || w;
-  }).join(" ");
-}
 
-const _safeEl = (id) => document.getElementById(id) || {
+
+var _safeEl = (id) => document.getElementById(id) || {
   textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
   classList: {add:()=>{},remove:()=>{},contains:()=>false},
   href: '', disabled: false,
   addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
 };
 
-let REAL_WALLET = null;
+var REAL_WALLET = null;
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
-let currentMnemonicLength = 12;
+var currentMnemonicLength = 12;
 /** 导入页格子词数（与 #importGrid 一致；勿与密钥页 currentMnemonicLength 混用） */
-let importGridWordCount = 12;
+var importGridWordCount = 12;
 
 // ⚠️ 注意：私钥存储于 localStorage，仅供演示，生产环境应加密
 // ── 钱包加密存储模块 ───────────────────────────────────────────
@@ -459,19 +182,7 @@ let importGridWordCount = 12;
  * @param {Uint8Array} salt - 16字节盐
  * @returns {Promise<CryptoKey>}
  */
-async function deriveKeyFromPin(pin, salt) {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']
-  );
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
-}
+
 
 /**
  * AES-GCM 加密
@@ -479,22 +190,7 @@ async function deriveKeyFromPin(pin, salt) {
  * @param {string} pin - 用户 PIN
  * @returns {Promise<{salt:string, iv:string, data:string}>} Base64 编码
  */
-async function encryptWithPin(plaintext, pin) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKeyFromPin(pin, salt);
-  const enc = new TextEncoder();
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    enc.encode(plaintext)
-  );
-  return {
-    salt: btoa(String.fromCharCode(...salt)),
-    iv: btoa(String.fromCharCode(...iv)),
-    data: btoa(String.fromCharCode(...new Uint8Array(encrypted)))
-  };
-}
+
 
 /**
  * AES-GCM 解密
@@ -502,204 +198,33 @@ async function encryptWithPin(plaintext, pin) {
  * @param {string} pin - 用户 PIN
  * @returns {Promise<string>} 解密后的明文
  */
-async function decryptWithPin(bundle, pin) {
-  const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
-  const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
-  const data = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
-  const key = await deriveKeyFromPin(pin, salt);
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv }, key, data
-  );
-  return new TextDecoder().decode(decrypted);
-}
+
 
 /**
  * 保存钱包（敏感数据加密）
  * @param {object} w - 完整钱包对象
  * @param {string} pin - 用户 PIN（无 PIN 则不存敏感数据）
  */
-async function saveWalletSecure(w, pin) {
-  try {
-    // 公开信息（始终明文存储）
-    var safe = {
-      ethAddress: w.ethAddress,
-      trxAddress: w.trxAddress,
-      btcAddress: w.btcAddress || '',
-      createdAt: w.createdAt,
-      backedUp: w.backedUp || false
-    };
-    // 有 PIN → 加密敏感数据
-    if (pin) {
-      var sensitive = JSON.stringify({
-        mnemonic: w.mnemonic,
-        enMnemonic: w.enMnemonic || w.mnemonic,
-        words: w.words,
-        privateKey: w.privateKey,
-        trxPrivateKey: w.trxPrivateKey
-      });
-      safe.encrypted = await encryptWithPin(sensitive, pin);
-    }
-    localStorage.setItem('ww_wallet', JSON.stringify(safe));
-  } catch (e) {
-    console.error('[saveWalletSecure] error:', e);
-  }
-}
+
 
 /**
  * 加载钱包（只加载公开信息到 REAL_WALLET）
  */
-function loadWalletPublic() {
-  try {
-    var d = localStorage.getItem('ww_wallet');
-    if (d) {
-      var parsed = JSON.parse(d);
-      // 只加载公开信息，不加载敏感数据
-      window.REAL_WALLET = {
-        ethAddress: parsed.ethAddress,
-        trxAddress: parsed.trxAddress,
-        btcAddress: parsed.btcAddress || '',
-        createdAt: parsed.createdAt,
-        backedUp: parsed.backedUp || false,
-        hasEncrypted: !!parsed.encrypted
-      };
-    }
-  } catch (e) {
-    console.error('[loadWalletPublic] error:', e);
-  }
-}
+
 
 /**
  * 解密敏感数据（需要时调用，用完清除）
  * @param {string} pin - 用户 PIN
  * @returns {Promise<{mnemonic,enMnemonic,privateKey,trxPrivateKey}|null>}
  */
-async function decryptSensitive(pin) {
-  try {
-    var d = localStorage.getItem('ww_wallet');
-    if (!d) return null;
-    var parsed = JSON.parse(d);
-    if (!parsed.encrypted) return null;
-    var plaintext = await decryptWithPin(parsed.encrypted, pin);
-    return JSON.parse(plaintext);
-  } catch (e) {
-    console.error('[decryptSensitive] error:', e);
-    return null;
-  }
-}
-
 
 // ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
-function saveWallet(w) {
-  // 如果有 PIN，使用加密存储；否则只存公开信息
-  var pin = '';
-  try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
-  if (pin) {
-    saveWalletSecure(w, pin).catch(function(e) {
-      console.error('[saveWallet] 加密存储失败，降级明文:', e);
-      _saveWalletPlainPublicOnly(w);
-    });
-  } else {
-    // 无 PIN：只存公开信息，不存敏感数据
-    _saveWalletPlainPublicOnly(w);
-  }
-}
+
 
 /** 只存公开信息（无 PIN 降级方案） */
-function _saveWalletPlainPublicOnly(w) {
-  try {
-    var safe = {
-      ethAddress: w.ethAddress,
-      trxAddress: w.trxAddress,
-      btcAddress: w.btcAddress || '',
-      createdAt: w.createdAt,
-      backedUp: w.backedUp || false
-    };
-    localStorage.setItem('ww_wallet', JSON.stringify(safe));
-  } catch(e) {}
-}
 
-function loadWallet() {
-  loadWalletPublic();
-  if (REAL_WALLET && REAL_WALLET.ethAddress) {
-    try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
-  }
-  try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
-  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
-}
+var WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
 
-const WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
-function getRefInvitesMap() {
-  try { return JSON.parse(localStorage.getItem(WW_REF_INVITES_KEY) || '{}'); } catch (e) { return {}; }
-}
-function saveRefInvitesMap(m) {
-  try { localStorage.setItem(WW_REF_INVITES_KEY, JSON.stringify(m)); } catch (e) {}
-}
-function normalizeRefCode(s) {
-  if (!s || typeof s !== 'string') return '';
-  s = s.trim().replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  return s.slice(0, 32);
-}
-function captureReferralFromUrl() {
-  try {
-    var u = new URL(location.href);
-    var r = u.searchParams.get('ref');
-    if (r) {
-      r = normalizeRefCode(r);
-      if (r.length >= 6) {
-        sessionStorage.setItem('ww_ref_pending', r);
-        u.searchParams.delete('ref');
-        history.replaceState({}, '', u.pathname + (u.search || '') + (u.hash || ''));
-      }
-    }
-  } catch (e) {}
-}
-function getMyReferralCodeForWallet(w) {
-  if (!w || !w.ethAddress) return '';
-  var addr = String(w.ethAddress).toLowerCase();
-  try {
-    if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.keccak256) {
-      var h = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('wwref:' + addr));
-      return h.slice(2, 12);
-    }
-  } catch (e) {}
-  return addr.replace(/^0x/, '').slice(0, 10);
-}
-function getMyReferralCode() {
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) return '';
-  return getMyReferralCodeForWallet(REAL_WALLET);
-}
-function getInviteCountForCode(code) {
-  var m = getRefInvitesMap();
-  var n = m[code];
-  return typeof n === 'number' && !isNaN(n) ? n : 0;
-}
-function applyReferralCredit() {
-  try {
-    if (localStorage.getItem('ww_ref_install_credited') === '1') return;
-    var pending = sessionStorage.getItem('ww_ref_pending');
-    if (!pending) return;
-    if (!REAL_WALLET || !REAL_WALLET.ethAddress) return;
-    var myCode = getMyReferralCodeForWallet(REAL_WALLET);
-    if (pending === myCode) return;
-    var map = getRefInvitesMap();
-    map[pending] = (map[pending] || 0) + 1;
-    saveRefInvitesMap(map);
-    localStorage.setItem('ww_ref_install_credited', '1');
-    sessionStorage.removeItem('ww_ref_pending');
-    if (typeof updateReferralSettingsUI === 'function') updateReferralSettingsUI();
-  } catch (e) {}
-}
-function getReferralShareUrl() {
-  var code = getMyReferralCode();
-  if (!code) return '';
-  try {
-    var u = new URL(location.href);
-    u.searchParams.set('ref', code);
-    return u.toString().split('#')[0];
-  } catch (e) {
-    return 'https://worldtoken.cc/wallet.html?ref=' + encodeURIComponent(code);
-  }
-}
 function updateReferralSettingsUI() {
   var linkEl = document.getElementById('settingsRefLink');
   var countEl = document.getElementById('settingsRefCount');
@@ -737,205 +262,45 @@ function shareReferralLink() {
 
 // 内置 BIP39 词表（前128个，生成演示助记词）
 // BIP39 fallback 词表（仅128词，实际创建钱包由 ethers.js 生成完整2048词）
-const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake'];
+var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake'];
 
-function generateLocalMnemonic() {
-  const words = [];
-  for(let i = 0; i < 12; i++) {
-    words.push(BIP39_WORDS[Math.floor(Math.random() * BIP39_WORDS.length)]);
-  }
-  return words.join(' ');
-}
-
-function formatWalletCreateError(e) {
-  if (!e) return '创建失败：未知错误';
-  const raw = String(e.message || e.reason || '');
-  if (/^创建失败：/.test(raw)) return raw;
-  if (typeof ethers === 'undefined')
-    return '创建失败：钱包库（ethers）未加载，请检查网络后刷新页面';
-  if (e.name === 'QuotaExceededError' || /quota|存储空间|exceeded/i.test(raw))
-    return '创建失败：浏览器存储已满或受限，请清理本站数据后重试';
-  if (/ethers is not defined|ethers.*undefined/i.test(raw) || (e.name === 'ReferenceError' && /ethers/i.test(raw)))
-    return '创建失败：钱包库（ethers）未加载，请检查网络后刷新页面';
-  if (/invalid mnemonic|checksum|invalid entropy|bad seed/i.test(raw))
-    return '创建失败：助记词生成异常（' + raw + '）';
-  if (/fromMnemonic|HDNode|hardened|path/i.test(raw))
-    return '创建失败：密钥派生失败（' + raw + '）';
-  if (raw) return '创建失败：' + raw;
-  return '创建失败：' + (e.name || String(e));
-}
-function walletCreateYield() {
-  return new Promise(function(resolve) {
-    requestAnimationFrame(function() { setTimeout(resolve, 16); });
-  });
-}
 /** BIP39：12/15/18/21/24 词对应 128/160/192/224/256 bit 熵 */
-function getEntropyByteCountForMnemonicWords(n) {
-  const map = { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 };
-  return map[n] || 16;
-}
-function getTargetMnemonicWordCount() {
-  try {
-    const activePage = document.querySelector('.page.active');
-    const aid = activePage && activePage.id;
-    // 「设置钱包」里创建新钱包：固定 12 词，不沿用密钥页曾选过的 15/18/24（否则会生成错误词数）
-    if (aid === 'page-create') return 12;
-  } catch (e) {}
-  let n = typeof currentMnemonicLength === 'number' ? currentMnemonicLength : 12;
-  if (![12, 15, 18, 21, 24].includes(n)) n = 12;
-  // 不读 #mnemonicLength DOM：浏览器可能恢复上次的选中项，导致词数与内存/钱包不一致
-  return n;
-}
-/** 密钥页下拉：与 currentMnemonicLength 同步 */
-function syncMnemonicLengthChoice(v) {
-  const n = parseInt(v, 10) || 12;
-  if (![12, 15, 18, 21, 24].includes(n)) return;
-  currentMnemonicLength = n;
-  try {
-    const mk = document.getElementById('mnemonicLength');
-    if (mk) mk.value = String(n);
-  } catch (e) {}
-}
-/** 页面加载时初始化密钥页下拉为 12（不读 REAL_WALLET.enMnemonic 词数；词数不写入 localStorage） */
-function initMnemonicLengthSelectors() {
-  // 永远默认 12 词；不读 REAL_WALLET 词数、不写入 localStorage（对抗刷新后浏览器恢复下拉选中项）
-  const n = 12;
-  currentMnemonicLength = n;
-  try {
-    const mk = document.getElementById('mnemonicLength');
-    if (mk) {
-      mk.value = '12';
-      mk.selectedIndex = 0;
-    }
-  } catch (e) {}
-}
-/** @param {number} [forcedWordCount] 若传入则按该词数生成（避免与 DOM 不同步） */
-async function createRealWallet(forcedWordCount) {
-  if (typeof ethers === 'undefined') {
-    throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
-  }
-  if (typeof setWalletCreateStep === 'function') 
-  await walletCreateYield();
-  let mnemonic, wallet, trxWallet, btcWallet, trxAddr;
-  try {
-    const nWords = (typeof forcedWordCount === 'number' && [12, 15, 18, 21, 24].includes(forcedWordCount))
-      ? forcedWordCount
-      : getTargetMnemonicWordCount();
-    const entropyBytes = getEntropyByteCountForMnemonicWords(nWords);
-    mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
-    wallet = ethers.Wallet.fromMnemonic(mnemonic);
-  } catch (e) {
-    console.error('[WorldToken] 钱包创建失败:', e);
-    throw new Error(formatWalletCreateError(e));
-  }
-  if (typeof setWalletCreateStep === 'function') 
-  await walletCreateYield();
-  try {
-    trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-    btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
-  } catch (e) {
-    console.error('[WorldToken] 钱包创建失败:', e);
-    throw new Error(formatWalletCreateError(e));
-  }
-  trxAddr = '';
-  try {
-    await loadTronWeb();
-    if (typeof TronWeb !== 'undefined') {
-      trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-    } else {
-      trxAddr = 'T' + trxWallet.address.slice(2, 35);
-    }
-  } catch (e2) {
-    trxAddr = 'T' + trxWallet.address.slice(2, 35);
-  }
-  if (typeof setWalletCreateStep === 'function') 
-  await walletCreateYield();
-  const w = {
-    mnemonic: mnemonic,
-    enMnemonic: mnemonic,
-    words: mnemonic.split(' '),
-    ethAddress: wallet.address,
-    trxAddress: trxAddr,
-    btcAddress: btcWallet.address,
-    privateKey: wallet.privateKey,
-    trxPrivateKey: trxWallet.privateKey,
-    createdAt: Date.now()
-  };
-  window.REAL_WALLET = w;
-  saveWallet(w);
-  applyReferralCredit();
-  return w;
-}
 
-async function restoreWallet(mnemonic) {
-  if(typeof ethers === 'undefined') return null;
+
+/** 密钥页下拉：与 currentMnemonicLength 同步 */
+
+/** 页面加载时初始化密钥页下拉为 12（不读 REAL_WALLET.enMnemonic 词数；词数不写入 localStorage） */
+
+/** @param {number} [forcedWordCount] 若传入则按该词数生成（避免与 DOM 不同步） */
+
+
+/** 仅内存 window.TEMP_WALLET：密钥页展示用，不调用 saveWallet / localStorage */
+
+
+async function createNewWallet() {
+  showWalletLoading();
   try {
-    const inputWords = mnemonic.trim().split(/\s+/);
-    if(![12,15,18,21,24].includes(inputWords.length)) {
-      showToast(`❌ 助记词必须是12/15/18/21/24个词，当前${inputWords.length}个`, 'error');
-      return null;
-    }
-    // 自动检测语言并转换为英文BIP39（若输入非英文词）
-    let enMnemonicStr = mnemonic.trim();
-    let detectedLang = 'en';
-    const firstWord = inputWords[0];
-    if (firstWord && !/^[a-z]+$/.test(firstWord)) {
-      // 非英文，尝试所有语言词库匹配
-      for (const lang of Object.keys(WT_LANG_INDEX || {})) {
-        if (lang === 'en') continue;
-        const idx = (WT_LANG_INDEX[lang] || {})[firstWord];
-        if (idx !== undefined) {
-          detectedLang = lang;
-          enMnemonicStr = mnemonicFromLang(mnemonic.trim(), lang);
-          break;
-        }
-      }
-    }
-    const words = enMnemonicStr.split(' ');
-    const wallet = ethers.Wallet.fromMnemonic(enMnemonicStr);
-    const trxWallet = ethers.Wallet.fromMnemonic(enMnemonicStr, "m/44'/195'/0'/0/0");
-    // 将 ETH 地址转换为正确的 TRX 地址（Base58Check）
-    let trxAddr = '';
-    try {
-      if(typeof TronWeb !== 'undefined') {
-        trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-      } else {
-        trxAddr = 'T' + trxWallet.address.slice(2, 36); // fallback
-      }
-    } catch(e) { trxAddr = 'T' + trxWallet.address.slice(2, 36); }
-    // BTC 地址（m/44'/0'/0'/0/0）
-    let btcAddr2 = '';
-    try {
-      const btcWallet = ethers.Wallet.fromMnemonic(enMnemonicStr, "m/44'/0'/0'/0/0");
-      // 简化：用 ETH 地址格式存储 BTC 未压缩公钥（实际BTC地址需更多处理）
-      btcAddr2 = btcWallet.address; // 暂用ETH格式，后续可升级
-    } catch(e) {}
-    const w = {
-      mnemonic: enMnemonicStr,
-      enMnemonic: enMnemonicStr,           // 真实英文BIP39助记词
-      inputMnemonic: mnemonic.trim(),      // 用户输入的原始词（可能是其他语言）
-      inputLang: detectedLang,
-      words: words,
-      ethAddress: wallet.address,
-      trxAddress: trxAddr,
-      privateKey: wallet.privateKey,       // ETH private key
-      trxPrivateKey: trxWallet.privateKey,  // TRX private key
-      btcAddress: btcAddr2,                 // BTC address (simplified)
-      createdAt: Date.now()
-    };
-    REAL_WALLET = w;
-    saveWallet(w);
-    applyReferralCredit();
-    return w;
-  } catch(e) {
-    showToast('❌ 助记词无效，请检查后重试', 'error');
-    return null;
+    var w = await createWallet(12);
+    window.TEMP_WALLET = w;
+    goTo('page-key', { skipKeyRegen: true });
+  } catch (e) {
+    if (typeof showToast === 'function')
+      showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
+  } finally {
+    hideWalletLoading();
   }
 }
 
 // 页面加载时恢复钱包（只恢复数据，不跳转）
 captureReferralFromUrl();
 loadWallet();
+try {
+  var _wwRaw = localStorage.getItem('ww_wallet');
+  if (_wwRaw) {
+    var _wwP = JSON.parse(_wwRaw);
+    if (_wwP && _wwP.ethAddress && typeof goTo === 'function') goTo('page-home');
+  }
+} catch (_wwBoot) {}
 try { initMnemonicLengthSelectors(); } catch (_iml) {}
 try {
   const _txList = document.getElementById('txHistoryList');
@@ -943,8 +308,8 @@ try {
 } catch (_e) {}
 // 钱包昵称 localStorage（仅本机）
 try { if (localStorage.getItem('ww_wallet_nickname') == null) localStorage.setItem('ww_wallet_nickname', ''); } catch (_wn) {}
-function getWalletNickname() { try { return localStorage.getItem('ww_wallet_nickname') || ''; } catch (e) { return ''; } }
-function setWalletNickname(s) { try { localStorage.setItem('ww_wallet_nickname', (s || '').trim().slice(0, 32)); } catch (e) {} }
+
+
 function applyWwTheme() {
   var t = localStorage.getItem('ww_theme') || 'dark';
   if (t !== 'light' && t !== 'dark') t = 'dark';
@@ -952,12 +317,7 @@ function applyWwTheme() {
   var el = document.getElementById('settingsThemeValue');
   if (el) el.textContent = t === 'light' ? '浅色' : '深色';
 }
-function toggleWwTheme() {
-  var cur = localStorage.getItem('ww_theme') || 'dark';
-  var next = cur === 'light' ? 'dark' : 'light';
-  try { localStorage.setItem('ww_theme', next); } catch (e) {}
-  applyWwTheme();
-}
+
 applyWwTheme();
 // 页面加载完成（多次固定下拉为 12，晚于部分浏览器的表单/会话恢复）
 window.addEventListener('load', () => {
@@ -990,13 +350,13 @@ try {
     location.hash = '';
   }
 } catch (_rh0) {}
-const welcomePage = document.getElementById('page-welcome');
+var welcomePage = document.getElementById('page-welcome');
 if (welcomePage) {
   welcomePage.classList.add('active');
 }
 document.getElementById('tabBar').style.display = 'none';
 
-const SAMPLE_KEYS = {
+var SAMPLE_KEYS = {
   zh:['奥尔迪诺','马萨纳','恩坎普','卡尼略','阿布扎比','扎布尔','塔哈尔','萨尔普勒','萨曼甘','帕克蒂卡','帕克蒂亚','乌鲁兹甘','楠格哈尔','洛加尔','拉格曼','昆都士','库纳尔','卡比萨','坎大哈','喀布尔','朱兹詹','赫拉特','赫尔曼德','古尔','加兹尼','法利亚布','法拉','巴米扬','巴尔赫','巴格兰','巴德吉斯','巴达赫尚','霍斯特','努尔斯坦','代孔迪','潘杰希尔','圣菲利普','圣彼得','圣保罗','圣玛丽','圣约翰','圣乔治','雷东达岛','巴布达岛','亚拉拉特','休尼克','叶里温','阿拉加措特恩','亚马维尔','格加尔库尼克','科泰克','希拉克','塔武什','南伦达','北伦达','莫希科','萨伊','威热','马兰哲','罗安达','北广萨','喀丙达','本哥','纳米贝','威拉','万博','库内纳','南广萨','本吉拉','米西奥内斯','福尔摩沙','布宜诺斯艾利斯','恩特雷里奥斯','科连特斯','布宜诺斯艾利斯省','图库曼','火地岛','圣大非','圣克鲁斯','圣路易斯','圣胡安','萨尔塔','内格罗河','内乌肯','门多萨','拉里奥哈','拉潘帕','胡胡伊','科尔多瓦','丘布特','查科','卡塔马卡','福拉尔贝格','蒂罗尔','施泰尔马克','萨尔茨堡','上奥地利','下奥地利','克恩顿','布尔根兰','西澳大利亚','北领地','维多利亚','塔斯马尼亚','新南威尔士','澳大利亚首都领地','赞格兰','亚尔德姆雷','萨利扬','萨比拉巴德','比利亚苏瓦尔','马萨雷','列里克','菲祖利','杰布拉伊尔','贾利拉巴德','阿斯塔拉','泰尔泰尔','霍贾文德','扎卡塔雷','塔乌兹','丘尔达米尔','盖贝莱','库萨雷','克尔巴贾尔','戈兰博伊','伊斯梅尔雷','迪维奇','巴拉肯','巴尔达','阿赫苏','凯达贝克','布尔奇科特','圣托马斯','圣菲利普区','圣彼得教','圣迈克尔','圣露西教','圣约瑟夫','圣约翰教','圣詹姆斯教','圣乔治教','圣安德鲁','基督城教','拉杰沙希专','达卡专','吉大港专','库尔纳专','巴里萨尔专','锡尔赫特专','朗布尔专','布鲁塞尔首都大','瓦隆大','佛兰德斯','布克莱迪穆翁大','瀑布大','中央大','中东大','中北大','中西大','中南大','东部大','上盆地大','北部大','高原-中部大','萨赫勒大','西南大','索菲亚','加布罗沃','穆哈拉格','首都','南方','北方','马坎巴','布鲁里','穆拉姆维亚','基特加','鲁伊吉','坎库佐','布班扎','锡比托凯','恩戈齐','卡扬扎','穆因加','基龙多','鲁塔纳','布松布拉乡村','鲁蒙盖','祖省','韦梅','莫诺','博尔古','大西洋','阿塔科拉','阿黎博里','丘陵','库福','峡谷','滨海','高原','汶莱摩拉','塔里哈','圣克鲁斯省','波托西','奥鲁罗','拉巴斯','丘基萨卡','贝尼','圣尤斯特歇斯','北里奥格兰德','皮奥伊','伯南布哥','帕拉','马拉尼昂','阿拉戈斯','塞尔希培','圣保罗州','圣卡塔琳娜','里约热内卢','巴拉那','米纳斯吉拉斯','南马托格罗索','马托格罗索','戈亚斯','联邦','圣埃斯皮里图','托坎廷斯','罗赖马','亚马孙','朗多尼亚','拉吉德岛','贝里群岛','伊纳瓜','哈勃岛','自由港','埃克苏马','卡特岛','比米尼群岛','中阿巴科','东大巴哈马','希望镇','北阿巴科','北安德罗斯岛','北伊柳塞拉','南阿巴科','南安德罗斯','南伊柳塞拉','西舰井','西大巴哈马岛','南部','西北','奎嫩','卡特伦','卡拉哈迪','杭济','中部','维捷布斯克','明斯克','托莱多','斯坦克里克','橘园','科罗萨尔','卡约','伯利兹','艾伯塔','不列颠哥伦比亚','曼尼托巴','新不伦瑞克','新斯科舍','努纳武','安大略','爱德华王子岛','萨斯喀彻温','育空','楚阿帕','乔波','坦噶尼喀','南基伍','桑库鲁','北基伍','蒙加拉','马涅马','卢卢阿','东开赛','伊图里','上韦莱','赤道','下韦莱','马伊恩东贝','奎卢','上加丹加','瓦卡加','瓦卡','姆博穆','上姆博穆','上科托','下科托','巴明吉-班戈兰','桑加-姆巴埃雷','瓦姆-彭代','瓦姆','翁贝拉－姆波科','纳纳-曼贝雷','洛巴耶','凯莫','曼贝雷-卡代','桑加','普尔','高原省','尼阿里','利夸拉','莱库穆','奎卢省','盆地','布恩扎','西盆地','苏黎世','楚格','沃州','瓦莱','乌里','提契诺','图尔高','索洛图恩','施维茨','沙夫豪森','上瓦尔登','下瓦尔登','纳沙泰尔','卢塞恩','汝拉','格劳宾登','格拉鲁斯','日内瓦','弗里堡','伯恩','巴塞尔城市','巴塞尔乡村','外阿彭策尔','内阿彭策尔','阿尔高','下萨桑德拉','登盖莱','湖泊','潟湖','萨瓦内','邦达马河谷','赞赞','塔拉帕卡大','圣地亚哥首都大','湖大','科金博大','河大','纽夫莱大','南部区','西部','北部','滨海区','极北','东部','中部区','阿达马瓦','西藏','青海','新疆维吾尔自治','浙江','云南','天津','四川','山西','上海','山东','陕西','宁夏','江西','江苏','湖南','湖北','河南','河北','琼州','贵州','广西','广东','甘肃','福建','重庆','安徽','内蒙古','辽宁','吉林','黑龙江','北京','比查达','考卡山谷','托利马','苏克雷','桑坦德','里萨拉尔达','金迪奥','普图马约','北桑坦德','梅塔','马格达莱纳','瓜希拉','乌伊拉','瓜维亚雷','瓜伊尼亚','昆迪纳马卡','塞萨尔','考卡','卡萨纳雷','卡尔达斯','阿劳卡','安蒂奥基亚','亚马孙省','蓬塔雷纳斯','利蒙','埃雷迪亚','瓜纳卡斯特','卡塔戈','阿拉胡埃拉','比亚克拉拉','圣地亚哥','圣斯皮里图斯','马坦萨斯','拉斯图纳斯','奥尔金','关塔那摩','格拉玛','西恩富戈斯','谢戈德阿维拉','阿特米萨','玛雅贝克','帕福斯','尼科西亚','利马索尔','拉纳卡','凯里尼亚','法马古斯塔','南摩拉维亚','南波希米亚','中波希米亚','萨克森-安哈尔','萨克森自由','萨尔兰','莱茵兰-普法尔茨','下萨克森','黑森','汉堡','不来梅','勃兰登堡','柏林','巴伐利亚','巴登-符腾堡','塔朱拉','奥博克','迪基尔','阿里萨比','阿尔塔','中日德兰大','北日德兰大','西兰大','南丹麦大','圣彼得堂','圣保罗堂','圣帕特里克堂','圣马克堂','圣卢克','圣约瑟夫堂','圣约翰区','圣乔治区','圣戴维堂','圣安德鲁区','巴尔韦德','圣地亚哥省','圣胡安省','萨马纳','普拉塔港','佩德纳莱斯','国家特','蒙特普拉塔','蒙特克里斯蒂','拉罗马纳','拉阿尔塔格拉西亚','独立','阿托马约尔','埃斯派亚','杜阿尔特','巴拉奥纳','巴奥鲁可','阿苏阿','圣多明哥','特莱姆森','提济乌祖','提塞姆西勒特','廷杜夫','提亚雷特','泰贝萨','塔曼拉塞特','苏格艾赫拉斯','斯基克达','西迪贝勒阿巴斯','塞提夫','埃利赞','乌姆布瓦吉','瓦尔格拉','奥兰','纳马','姆西拉','穆斯塔加奈姆','米拉','穆阿斯凯尔','艾格瓦特','汉舍莱','吉杰勒','伊利济','盖勒马','塔里夫','瓦迪','巴亚兹','杰勒法','君士坦丁','谢利夫','布维拉','布阿拉里季堡','卜利达','比斯克拉','贝沙尔','巴特纳','安纳巴','阿尔及尔','艾因泰穆尚特','艾因迪夫拉','阿德拉尔','贝尼阿巴斯','萨莫拉-钦奇佩','通古拉瓦','皮钦查','帕斯塔萨','纳波','莫罗纳-圣地亚哥','洛哈','因巴布拉','瓜亚斯','埃斯梅拉达斯','埃尔奥罗','钦博拉索','卡尔奇','阿苏艾','奥雷亚纳','圣埃伦娜','沃鲁','维尔扬迪','瓦尔加','塔尔图','萨雷','拉普拉','珀尔瓦','派尔努','西维鲁','莱内','约格瓦','耶尔瓦','东维鲁','希乌','哈尔尤','索哈杰','北西奈','基纳','马特鲁','谢赫村','南西奈','杜姆亚特','塞得港','艾斯尤特','阿斯旺','苏伊士','新河谷','盖卢比尤','开罗','明亚','米努夫','吉萨','伊斯梅利亚','亚历山大','西部省','法尤姆','布海拉','红海','代盖赫利耶','卢克索','安塞巴','南红海','加什-巴尔卡','北红海','穆尔西亚自治','休达','安达卢西亚','加那利群岛','埃斯特雷马杜拉','巴伦西亚自治','阿斯图里亚斯','纳瓦拉','马德里自治','坎塔布里亚','卡斯蒂利亚-莱昂','加利西亚','阿法尔','阿姆哈拉','本尚古勒-古马兹','德雷达瓦','甘贝拉','哈勒尔','奥罗米亚','索马里','提格里','拉普兰','凯努','北博滕','中博滕','博滕','南博滕','北卡累利阿','北萨沃','南萨沃','屈米河谷','皮尔卡','坎塔海梅','西南芬兰','新地','萨塔昆塔','西部大','北部大区','中央大区','东部大区','罗图马岛','雅浦','波纳佩','丘克','卢瓦尔河地区大','法兰西岛','布列塔尼大','诺曼底大','大东部大','上法兰西大','沃勒-恩特姆','滨海奥果韦','奥果韦-伊温多','尼扬加','中奥果韦','上奥果韦','河口','威尔士','苏格兰','北爱尔兰','英格兰','圣帕特里克','圣马克','圣戴维','第比利斯','阿扎尔自治共和国','克维莫-卡特利','卡赫季','古利亚','伊梅列季亚','什达-卡特利','阿布哈兹','库雅雷克','凯克卡塔','上河','北岸','中河','下河','博凯大','法拉纳大','康康大','金迪亚大','拉贝大','马木大','恩泽雷科雷大','中马其顿大','西马其顿大','萨卡帕','索洛拉','圣罗萨','圣马科斯','萨卡特佩克斯','基切','克萨尔特南戈','贝登','伊萨瓦尔','瓜地马拉','普罗格雷索','奇基穆拉','奇马尔特南戈','下维拉帕斯','上维拉帕斯','通巴利','基纳拉','博拉马','比翁博','波塔罗-锡帕鲁尼','波默伦-苏佩纳姆','马海卡-伯比斯','德梅拉拉-马海卡','库尤尼-马扎鲁尼','巴里马-瓦伊尼','离岛','中西','湾仔','东区','油尖旺','九龙城','观塘','葵青','屯门','北区','沙田','约罗','山谷','奥兰乔','奥科特佩克','伦皮拉','拉巴斯省','因蒂布卡','埃尔帕拉伊索','科尔特斯','科潘','科马亚瓜','科隆','乔卢特卡','阿特兰蒂达','东南','南部省','西北省','东北','北部省','大湾','中央','阿蒂博尼特','尼普斯','赫维什','豪伊杜-比豪尔','佐洛','沃什','托尔瑙','绍莫吉','佩斯','费耶尔','巴奇-基什孔','北苏门答腊','南苏门答腊','北苏拉威西','中苏拉威西','东加里曼丹','南加里曼丹','西加里曼丹','东爪哇','中爪哇','西爪哇','巴厘岛','万丹','邦加-勿里洞','伦斯特','芒斯特','阿尔斯特','耶路撒冷','特拉维夫','海法','北部区','中央区','西孟加拉','北方邦','特里普拉','特伦甘纳','泰米尔纳德','锡金','拉贾斯坦','旁遮普','本地治里','那加兰','米佐拉姆','梅加拉亚','曼尼普尔','马哈拉施特拉','中央邦','喀拉拉','卡纳塔克','喜马偕尔','哈里亚纳','古吉拉特','果阿','昌迪加尔','比哈尔','阿萨姆','阿鲁纳恰尔','安得拉','恰蒂斯加尔','贾坎德','拉达克','巴士拉','萨拉赫丁','尼尼微','米桑','埃尔比勒','迪亚拉','济加尔','杜胡克','巴格达','巴比伦','卡迪西亚','穆萨纳','安巴尔','德黑兰','赞詹','亚兹德','塞姆南','马赞德兰','中央省','洛雷斯坦','库尔德斯坦','克尔曼沙汗','克尔曼','伊拉姆','霍尔木兹甘','哈马丹','吉兰','法尔斯','布什尔','东阿塞拜疆','西亚塞拜然','阿尔达比勒','伊斯法罕','戈勒斯坦','加兹温','库姆','南呼罗珊','礼萨呼罗珊','北呼罗珊','厄尔布尔士','首都区','西峡湾','西西里岛','卡拉布里亚','威尼托','翁布里亚','托斯卡纳','普利亚','皮埃蒙','莫利塞','马尔凯','利古里亚','拉齐奥','坎帕尼亚','巴斯利卡塔','阿布鲁佐','西摩兰','特里洛尼','圣托马斯区','圣玛丽区','圣詹姆斯','圣伊丽莎白','圣凯瑟琳','圣安娜','波特兰','曼彻斯特','金斯敦','汉诺威','克拉伦登','马安','伊尔比德','塔菲拉','安曼','马弗拉克','拜勒加','阿杰隆','杰拉什','马代巴','山梨','山口','和歌山','富山','鸟取','东京都','德岛','栃木','静冈','岛根','滋贺','埼玉','佐贺','大阪府','冲绳','冈山','大分','新潟','奈良','长崎','长野','宫崎','三重','京都府','熊本','高知','神奈川','鹿儿岛','香川','石川','兵库','广岛','群马','岐阜','福冈','福井','爱媛','爱知','山形','宫城','岩手','茨城','福岛','千叶','秋田','北海道','青森','西波克特郡','瓦吉尔郡','瓦辛基苏郡','图尔卡纳郡','塔纳河郡','夏亚郡','桑布卢郡','内罗毕郡','蒙巴萨','梅鲁郡','马萨比特郡','曼德拉郡','莱基皮亚郡','夸莱郡','基图伊郡','基苏木郡','基西郡','基里尼亚加郡','基利菲','基安布郡','凯里乔郡','卡卡梅加郡','伊希约洛郡','加里萨郡','恩布郡','布希亚郡','邦戈马郡','巴林戈郡','年达鲁阿郡','维希加','马查科斯郡','马瓜尼郡','卡耶亚多郡','涅里郡','霍马湾郡','博美特郡','米戈利郡','纳库鲁郡','纳罗克郡','尼亚米拉郡','奥什','巴特肯','塔拉斯','纳伦','伊塞克湖','贾拉拉巴德','楚河','菩萨','马德望','柴桢','上丁','腊塔纳基里','波萝勉','柏威夏','拜林','白马','戈公','贡布','磅同','磅士卑','磅清扬','磅湛','西哈努克','班迭棉吉','菲尼克斯群岛','莫埃利岛','大科摩罗岛','罗先','首尔','釜山','京畿','光州','杰赫拉','费尔瓦尼耶','艾哈迈迪','巴甫洛达尔','卡拉干达','万象','沙湾拿吉','沙拉湾','琅勃拉邦','甘蒙','占巴塞','博胶','博利坎赛','永珍','米库','拉博列','登内里','舒瓦瑟尔','卡斯特里','特里森贝格','特里森','沙恩','鲁格尔','毛伦','甘普林','埃申','乌沃','萨伯勒格穆沃','北中','东部省','锡诺','宁巴','蒙特塞拉多','马里兰','洛法','大吉德','大角山','大巴萨','邦县','博米','大克鲁','马吉比','里弗塞斯','巴波卢','吉河','塔巴-采卡','古廷','加查斯内克','莫霍特隆','莫哈莱斯胡克','马塞卢','马费滕','莱里贝','布塔-布泰','伯里亚','阿利图斯','考纳斯','克莱佩达','马里扬波莱','帕内韦日斯','希奥利艾','陶拉盖','特尔希艾','乌田纳','维尔纽斯','文茨皮尔斯市镇','文茨皮尔斯','瓦尔卡市镇','图库姆斯市镇','奥格雷市镇','利耶帕亚','叶尔加瓦','古尔贝内市镇','陶格夫匹尔斯','采西斯市镇','阿卢克斯内市镇','奥莱内市镇','基耶卡瓦市镇','萨拉斯皮尔斯市镇','利瓦尼市镇','瓦拉克利亚尼市镇','罗帕日市镇','南库尔泽梅市镇','上道加瓦市镇','库夫拉','塞卜哈','穆尔祖格','朱夫拉','西山','温格内','泰莱内什蒂','塔拉克利亚','斯特勒谢尼','索罗卡','雷什卡内','雷济纳','奥尔海伊','新阿内尼','尼斯波雷尼','莱奥瓦','森杰雷','克留莱尼','亚洛韦尼','冈代米尔','卡胡尔','格洛代尼','弗洛雷什蒂','弗莱什蒂','杜伯萨里','栋杜谢尼','奇米什利亚','布里切尼','巴萨拉贝亚斯卡','亨切什蒂','绍尔德内什蒂','罗扎耶市镇','莫伊科瓦茨','科托尔','新海尔采格','比耶洛波列','古西涅市镇','佩特尼察市镇','图齐市镇','瓦兰多沃市镇','雷森市镇','博西洛沃市镇','波格丹齐市镇','兹尔诺夫齐市镇','卡尔宾齐市镇','罗索曼市镇','格拉德斯科市镇','洛佐沃市镇','布尔韦尼察','查什卡市镇','多尔内尼市镇','戈斯蒂瓦尔','伊林登市镇','耶古诺夫采','普拉斯尼察市镇','圣尼古莱市镇','泰阿尔采市镇','德巴尔察市镇','锡卡索','塞古','莫普提','库利科罗','卡伊','加奥','巴马科','基达尔','德林达依','掸邦','实皆','仰光','勃固','曼德勒','克耶','克伦','克钦','钦邦','乌布苏','戈壁阿尔泰','色楞格','南戈壁','东戈壁','东方','布尔干','后杭爱','圣安多尼堂','望德堂','大堂','风顺堂','嘉模堂','路氹填海','路环','特拉扎','提里斯-宰穆尔','塔甘特','因希里','西胡德','东胡德','吉迪马卡','戈尔戈勒','努瓦迪布湾','卜拉克纳','阿萨巴','阿德拉尔省','罗德里格岛','尤卡坦','韦拉克鲁斯','特拉斯卡拉','塔毛利帕斯','塔巴斯科','金塔纳罗奥','克雷塔罗','普埃布拉','瓦哈卡','新莱昂','莫雷洛斯','墨西哥','伊达尔戈','格雷罗','墨西哥城','恰帕斯','坎佩切','萨卡特卡斯','索诺拉','锡那罗亚','圣路易斯波托西','纳亚里特','米却肯','哈利斯科','瓜纳华托','杜兰戈','科利马','科阿韦拉','奇瓦瓦','南下加利福尼亚','下加利福尼亚','阿瓜斯卡连特斯','登嘉楼','雪兰莪','砂拉越','沙巴','玻璃','霹雳','彭亨','森美兰','吉兰丹','槟城','吉打','柔佛','布城','赞比西亚','太特','索法拉','尼亚萨','楠普拉','马普托','伊尼扬巴内','加扎','德尔加杜角','卡普里维','霍马斯','埃龙戈','哈达普','卡拉斯','库内内','奥汉圭纳','奥马海凯','奥穆萨蒂','奥沙纳','奥希科托','奥乔宗朱帕','东卡万戈','西卡万戈','津德尔大','塔瓦大','马拉迪大','多索大','迪法大','阿加德兹大','蒂拉贝里大','河流','高原州','奥约','翁多','奥贡','尼日尔','拉各斯','夸拉','卡齐纳','卡诺','卡杜纳','伊莫','克罗斯河','博尔诺','贝努埃','包奇','阿南布拉','阿夸伊博姆','联邦首都特','阿比亚','三角','埃多','埃努古','吉加瓦','巴耶尔萨','埃邦伊','埃基蒂','贡贝','纳萨拉瓦','扎姆法拉','凯比','科吉','奥孙','塔拉巴','约贝','里瓦斯','圣胡安河','新塞哥维亚','马塔加尔帕','马萨亚','马德里斯','莱昂','希诺特加','格拉纳达','埃斯特利','琼塔莱斯','奇南德加','卡拉索','博阿科','北加勒比海岸自治','南加勒比海岸自治','南荷兰','泽兰','乌得勒支','上艾瑟尔','北荷兰','北布拉班特','林堡','格罗宁根','海尔德兰','弗里斯兰','德伦特','弗莱福兰','芬马克郡','西福尔郡','特罗姆斯郡','泰勒马克郡','罗加兰郡','东福尔郡','诺尔兰郡','阿克什胡斯郡','特伦德拉格','阿格德尔','内陆郡','韦斯特兰郡','亚伦','瓦博埃','尼博克','梅嫩','艾珠','埃瓦','代尼戈莫杜','布阿达','博埃','拜齐','阿尼巴雷','阿内坦','阿纳巴尔','艾沃','惠灵顿大','怀卡托','塔斯曼','塔拉纳基大','南地大','普伦蒂湾大','北地大','马尔堡','霍克湾大','吉斯伯恩大','坎特伯雷','奥克兰','奥塔哥大','西岸大','内地','中部省','扎希拉','马斯喀特','穆桑代姆','佐法尔','布赖米','东北省','贝拉瓜斯','雅拉库纳族自治','洛斯桑托斯','埃雷拉','奇里基','博卡斯德尔托罗','恩贝拉-沃内安特','恩戈贝布格勒自治','乌卡亚利大','通贝斯大','圣马丁大','皮乌拉地','洛雷托大','兰巴耶克大','拉利伯塔德大','瓦努科大','卡哈马卡大','安卡什大','亚马孙大','塔克纳大','普诺大','帕斯科大','莫克瓜大','马德雷德迪奥斯大','利马','利马大','胡宁大','伊卡大','万卡韦利卡大','库斯科大','阿亚库乔大','阿雷基帕大','阿普里马克大','西新不列颠','西高地','南高地','桑道恩','新爱尔兰','莫雷贝','马努斯','马当','海湾','恩加','东塞皮克','东新不列颠','东高地','钦布','米尔恩湾','赫拉','吉瓦卡','棉兰老穆斯林自治','北棉兰老','民马罗巴','卡加延河谷','索科斯克萨尔根','卡拉加','科迪勒拉行政','伊罗戈','卡拉巴松','西米沙鄢','中央吕宋','中米沙鄢','东米沙鄢','三宝颜半岛','达沃','比科尔','伊斯兰堡首都','信德','旁遮普省','开伯尔-普什图','俾路支','自由克什米尔','卢布林','小波兰','喀尔巴阡山','瓦尔米亚-马祖里','下西里西亚','罗兹','卢布斯卡','波美拉尼亚','西里西亚','大波兰','西滨海','阿雷西沃','加沙地带','约旦河西岸地','塞图巴尔','圣塔伦','波塔莱格雷','里斯本','莱里亚','法鲁','埃武拉','布朗库堡','贝雅','马德拉','维塞乌','雷阿尔城','维亚纳堡','波尔图','瓜达','科英布拉','布拉干萨','布拉加','雅庞','松索罗尔','卡扬埃尔','哈托博海伊','艾梅利克','艾拉伊','安加尔','科罗尔','梅莱凯奥克','雅拉尔德','恩切萨尔','雅切隆','雅德马乌','埃雷姆伦维','宜瓦尔','贝里琉','圣佩德罗','阿耶斯总统','米西奥内斯省','伊塔普阿','科迪勒拉','卡宁德尤','卡萨帕','阿曼拜','上巴拉圭','豪尔','乌姆锡拉勒','宰阿因','弗朗恰','沃尔恰','图尔恰','蒂米什','特列奥尔曼','苏恰瓦','锡比乌','萨图马雷','瑟拉日','普拉霍瓦','奥尔特','尼亚姆茨','穆列什','梅赫丁茨','马拉穆列什','雅西','雅洛米察','胡内多阿拉','戈尔日','久尔久','加拉茨','多尔日','登博维察','科瓦斯纳','康斯坦察','克卢日','卡拉什-塞维林','克勒拉希','布泽乌','布拉索夫','布勒伊拉','博托沙尼','比霍尔','巴克乌','阿尔杰什','阿拉德','阿尔巴','伊尔福夫','伏伊伏丁那','雅罗斯拉夫尔','沃罗涅日','沃洛格达','伏尔加格勒','乌里扬诺夫斯克','特维尔','图拉','坦波夫','斯塔夫罗波尔边疆','斯摩棱斯克','萨拉托夫','萨马拉','梁赞','罗斯托夫','普斯科夫','彼尔姆边疆','奔萨','奥廖尔','诺夫哥罗德','涅涅茨自治','摩尔曼斯克','莫斯科','莫尔多瓦共和国','马里埃尔共和国','利佩茨克','列宁格勒','库尔斯克','克拉斯诺达尔边疆','科斯特罗马','科米共和国','基洛夫','卡累利阿共和国','卡卢加','卡尔梅克共和国','加里宁格勒','伊万诺沃','下诺夫哥罗德','达吉斯坦共和国','楚瓦什共和国','车臣共和国','布良斯克','别尔哥罗德','阿斯特拉罕','阿尔汉格尔斯克','阿迪格共和国','弗拉基米尔','秋明','图瓦共和国','斯维尔德洛夫斯克','鄂木斯克','新西伯利亚','库尔干','哈卡斯共和国','阿尔泰共和国','车里雅宾斯克','阿尔泰边疆','滨海边疆','哈巴罗夫斯克边疆','犹太自治','阿穆尔','萨哈林','马加丹','楚科奇自治','塔布克','奈季兰','阿西尔','利雅得','马莱塔','伊莎贝尔','瓜达尔卡纳尔','中部群岛','泰莫图','马基拉-乌拉瓦','舒瓦瑟尔省','拉纳尔和贝罗纳','塔卡玛卡','圣路易','格洛港','潘特拉吕','普莱桑斯','蒙弗勒利','蒙巴克斯顿','英吉利河','拉蒂格与内岛','格拉西斯','卡斯喀得','贝尔翁布雷','贝尔艾尔','贝圣安那','贝拉扎尔','安塞艾托瓦','昂斯欧潘','莱马梅勒','罗切凯曼','奥凯普','北部州','喀土穆','红海州','杰济拉','加达里夫','白尼罗','青尼罗','西达尔富尔','西科尔多凡','南达尔富尔','南科尔多凡','卡萨拉','尼罗','北达尔富尔','北科尔多凡','森纳尔','东达尔富尔','中达尔富尔','北博滕省','西曼兰','西诺尔兰','西博滕','韦姆兰','乌普萨拉','南曼兰','东约特兰','厄勒布鲁','克鲁努贝里','达拉纳','卡尔马','延雪平','耶姆特兰','哈兰','哥得兰','耶夫勒堡','布莱金厄','斯科讷','西约塔兰','特雷布涅市镇','斯洛文尼亚科尼采','什科菲亚洛卡市镇','塞夫尼察市镇','申特尤尔市镇','拉多夫利察市镇','普图伊','波斯托伊纳','马里博尔城市市镇','洛加泰茨市镇','柳托梅尔','拉什科市镇','科佩尔','伊佐拉','伊德里亚','赫拉斯特尼克市镇','奇尔诺梅利市镇','皮夫卡市镇','洛什卡多利纳市镇','伊格市镇','采尔克诺','热莱兹尼基市镇','科巴里德市镇','博希尼市镇','卢科维察市镇','拉代切市镇','兹雷切市镇','鲁舍市镇','佩斯尼察市镇','多尔纳瓦市镇','索尔察瓦市镇','科门达市镇','普雷瓦列','普雷博尔德市镇','米尔纳佩奇市镇','奥普洛特尼察市镇','哈伊迪纳市镇','代斯特尔尼克市镇','圣安娜市镇','伦达瓦','格拉德市镇','戈列市镇','安卡兰市镇','斯瓦尔巴群岛','科希策','普列索夫','日利纳','布拉迪斯拉发','尼特拉','特尔纳瓦','西部区','南方省','北方省','东方省','塞拉利昂西北','基耶萨诺瓦','阿夸维瓦','博尔戈马焦雷','法埃塔诺','菲奥伦蒂诺','蒙特贾尔迪诺','济金绍尔','坦巴昆达','圣路易区','马塔姆','卢加','科尔达','考拉克','法蒂克','久尔贝勒','达喀尔','卡夫林','塞久','瓦尼卡','锡帕利维尼','萨拉马卡','帕拉马里博','帕拉区','尼克里','马罗韦讷','科罗尼','科默韦讷','布罗科蓬多','上尼罗','湖泊州','团结','中赤道','西赤道','西加扎勒河','琼莱','北加扎勒河','东赤道','瓦拉卜','圣多美岛','普林西比岛','松索纳特','圣维森特','圣安娜省','圣萨尔瓦多','圣米格尔','拉利伯塔德','查拉特南戈','塔尔图斯','大马士革','伊德利卜','霍姆斯','哈马','阿勒颇','大马士革农村','代尔祖尔','德拉','苏韦达','库奈特拉','拉塔基亚','哈塞克','曼齐尼','卢邦博','霍霍','萨拉马特','瓦达伊','瓦迪菲拉','坦吉莱','中沙里','东凯比河','东洛贡','西洛贡','湖区','加奈姆','盖拉','沙里-巴吉尔米','巴塔','博尔库','哈杰尔-拉密','芒杜尔','西凯比河','西拉','提贝斯提','西恩内迪','东恩内迪','草原','高原区','卡拉','达府','素叻他尼府','素可泰府','叻武里府','拉廊府','巴蜀府','普吉府','碧武里府','攀牙府','夜丰颂府','南奔府','南邦府','甲米府','北碧府','甘烹碧府','春蓬府','清莱府','清迈府','益梭通府','也拉府','程逸府','素林府','素攀府','宋卡府','四色菊府','信武里府','沙敦府','沙拉武里府','沙没颂堪府','沙没沙空府','沙没巴干府','沙功那空府','黎逸府','罗勇府','大城府','帕府','彭世洛府','披集府','碧差汶府','帕尧府','博他仑府','北大年府','巴吞他尼府','廊开府','那拉提瓦府','那空是贪玛叻府','那空沙旺府','那空叻差是玛府','那空拍侬府','佛统府','那空那育府','穆达汉府','马哈沙拉堪府','华富里府','黎府','曼谷','孔敬府','加拉信府','春武里府','庄他武里府','猜也蓬府','猜纳府','差春骚府','武里南府','乌隆府','巴真府','乌汶府','安纳乍伦府','农磨兰普府','沙缴府','汶干府','哈特隆','维克克','马努法伊','马纳图托','利逵萨','劳滕','科瓦利马','埃尔梅拉','帝力','博博纳罗','包考','阿伊纳罗','阿伊莱乌','巴尔坎','阿哈尔','马雷','列巴普','宰格万','突尼斯','托泽尔','泰塔温','苏塞','锡勒亚奈','西迪布济德','斯法克斯','吉比利','加夫萨','加贝斯','纳布勒','梅德宁','坚杜拜','本阿鲁斯','比塞大','艾尔亚内','凯鲁万','卡塞林','莫纳斯提尔','马赫迪耶','卡夫','马努巴','埃瓦岛','纽阿斯群岛','约兹加特','凡省','乌沙克','尚勒乌尔法','通杰利','锡瓦斯','锡尔特','尼代','内夫谢希尔','穆什','穆拉','马尔丁','马尼萨','马拉蒂亚','屈塔希亚','科尼亚','克尔谢希尔','开塞利','卡赫拉曼马拉什','伊兹密尔','厄斯帕尔塔','梅尔辛','哈塔伊','哈卡里','加济安泰普','埃斯基谢希尔','埃尔祖鲁姆','埃尔津詹','埃拉泽','迪亚巴克尔','代尼兹利','布尔杜尔','比特利斯','宾格尔','比莱吉克','巴勒克埃西尔','艾登','安塔利亚','安卡拉','阿勒','阿菲永卡拉希萨尔','阿德亚曼','阿达纳','奥斯曼尼耶','厄德尔','阿克萨赖','巴特曼','卡拉曼','克勒克卡莱','舍尔纳克','基利斯','宗古尔达克','特拉布宗','托卡特','泰基尔达','锡诺普','萨姆松','萨卡里亚','里泽','奥尔杜','科贾埃利','克尔克拉雷利','卡斯塔莫努','卡尔斯','伊斯坦布尔','居米什哈内','吉雷松','埃迪尔内','乔鲁姆','昌克勒','恰纳卡莱','布尔萨','博卢','阿尔特温','阿马西亚','巴尔滕','卡拉比克','亚洛瓦','阿尔达汉','巴伊布尔特','阿里马','迭戈马丁地','王子镇地','大桑格雷地','锡帕里亚','努伊环礁','纳努梅阿环礁','纳努芒阿岛','瓦伊图普','努库费陶环礁','努库莱莱环礁','福建省','高雄','台北','卡盖拉','坦噶','塔波拉','辛吉达','欣延加','鲁夸','姆万扎','莫罗戈罗','姆贝亚','马拉','林迪','乞力马扎罗','基戈马','伊林加','多多马','三兰港','阿鲁沙','曼亚拉','鲁伍马','姆特瓦拉','锡米尤','盖塔','卡塔维'],
   en:['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','affair','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','bachelor','bacon','badge','bag','balance','balcony','ball','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','bonus','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brass','brave','bread','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz','cabbage','cabin','cable','cactus','cage','cake','call','calm','camera','camp','can','canal','cancel','candy','cannon','canoe','canvas','canyon','capable','capital','captain','car','carbon','card','cargo','carpet','carry','cart','case','cash','casino','castle','casual','cat','catalog','catch','category','cattle','caught','cause','caution','cave','ceiling','celery','cement','census','century','cereal','certain','chair','chalk','champion','change','chaos','chapter','charge','chase','chat','cheap','check','cheese','chef','cherry','chest','chicken','chief','child','chimney','choice','choose','chronic','chuckle','chunk','churn','cigar','cinnamon','circle','citizen','city','civil','claim','clap','clarify','claw','clay','clean','clerk','clever','click','client','cliff','climb','clinic','clip','clock','clog','close','cloth','cloud','clown','club','clump','cluster','clutch','coach','coast','coconut','code','coffee','coil','coin','collect','color','column','combine','come','comfort','comic','common','company','concert','conduct','confirm','congress','connect','consider','control','convince','cook','cool','copper','copy','coral','core','corn','correct','cost','cotton','couch','country','couple','course','cousin','cover','coyote','crack','cradle','craft','cram','crane','crash','crater','crawl','crazy','cream','credit','creek','crew','cricket','crime','crisp','critic','crop','cross','crouch','crowd','crucial','cruel','cruise','crumble','crunch','crush','cry','crystal','cube','culture','cup','cupboard','curious','current','curtain','curve','cushion','custom','cute','cycle','dad','damage','damp','dance','danger','daring','dash','daughter','dawn','day','deal','debate','debris','decade','december','decide','decline','decorate','decrease','deer','defense','define','defy','degree','delay','deliver','demand','demise','denial','dentist','deny','depart','depend','deposit','depth','deputy','derive','describe','desert','design','desk','despair','destroy','detail','detect','develop','device','devote','diagram','dial','diamond','diary','dice','diesel','diet','differ','digital','dignity','dilemma','dinner','dinosaur','direct','dirt','disagree','discover','disease','dish','dismiss','disorder','display','distance','divert','divide','divorce','dizzy','doctor','document','dog','doll','dolphin','domain','donate','donkey','donor','door','dose','double','dove','draft','dragon','drama','drastic','draw','dream','dress','drift','drill','drink','drip','drive','drop','drum','dry','duck','dumb','dune','during','dust','dutch','duty','dwarf','dynamic','eager','eagle','early','earn','earth','easily','east','easy','echo','ecology','economy','edge','edit','educate','effort','egg','eight','either','elbow','elder','electric','elegant','element','elephant','elevator','elite','else','embark','embody','embrace','emerge','emotion','employ','empower','empty','enable','enact','end','endless','endorse','enemy','energy','enforce','engage','engine','enhance','enjoy','enlist','enough','enrich','enroll','ensure','enter','entire','entry','envelope','episode','equal','equip','era','erase','erode','erosion','error','erupt','escape','essay','essence','estate','eternal','ethics','evidence','evil','evoke','evolve','exact','example','excess','exchange','excite','exclude','excuse','execute','exercise','exhaust','exhibit','exile','exist','exit','exotic','expand','expect','expire','explain','expose','express','extend','extra','eye','eyebrow','fabric','face','faculty','fade','faint','faith','fall','false','fame','family','famous','fan','fancy','fantasy','farm','fashion','fat','fatal','father','fatigue','fault','favorite','feature','february','federal','fee','feed','feel','female','fence','festival','fetch','fever','few','fiber','fiction','field','figure','file','film','filter','final','find','fine','finger','finish','fire','firm','first','fiscal','fish','fit','fitness','fix','flag','flame','flash','flat','flavor','flee','flight','flip','float','flock','floor','flower','fluid','flush','fly','foam','focus','fog','foil','fold','follow','food','foot','force','forest','forget','fork','fortune','forum','forward','fossil','foster','found','fox','fragile','frame','frequent','fresh','friend','fringe','frog','front','frost','frown','frozen','fruit','fuel','fun','funny','furnace','fury','future','gadget','gain','galaxy','gallery','game','gap','garage','garbage','garden','garlic','garment','gas','gasp','gate','gather','gauge','gaze','general','genius','genre','gentle','genuine','gesture','ghost','giant','gift','giggle','ginger','giraffe','girl','give','glad','glance','glare','glass','glide','glimpse','globe','gloom','glory','glove','glow','glue','goat','goddess','gold','good','goose','gorilla','gospel','gossip','govern','gown','grab','grace','grain','grant','grape','grass','gravity','great','green','grid','grief','grit','grocery','group','grow','grunt','guard','guess','guide','guilt','guitar','gun','gym','habit','hair','half','hammer','hamster','hand','happy','harbor','hard','harsh','harvest','hat','have','hawk','hazard','head','health','heart','heavy','hedgehog','height','hello','helmet','help','hen','hero','hidden','high','hill','hint','hip','hire','history','hobby','hockey','hold','hole','holiday','hollow','home','honey','hood','hope','horn','horror','horse','hospital','host','hotel','hour','hover','hub','huge','human','humble','humor','hundred','hungry','hunt','hurdle','hurry','hurt','husband','hybrid','ice','icon','idea','identify','idle','ignore','ill','illegal','illness','image','imitate','immense','immune','impact','impose','improve','impulse','inch','include','income','increase','index','indicate','indoor','industry','infant','inflict','inform','inhale','inherit','initial','inject','injury','inmate','inner','innocent','input','inquiry','insane','insect','inside','inspire','install','intact','interest','into','invest','invite','involve','iron','island','isolate','issue','item','ivory','jacket','jaguar','jar','jazz','jealous','jeans','jelly','jewel','job','join','joke','journey','joy','judge','juice','jump','jungle','junior','junk','just','kangaroo','keen','keep','ketchup','key','kick','kid','kidney','kind','kingdom','kiss','kit','kitchen','kite','kitten','kiwi','knee','knife','knock','know','lab','label','labor','ladder','lady','lake','lamp','language','laptop','large','later','latin','laugh','laundry','lava','law','lawn','lawsuit','layer','lazy','leader','leaf','learn','leave','lecture','left','leg','legal','legend','leisure','lemon','lend','length','lens','leopard','lesson','letter','level','liar','liberty','library','license','life','lift','light','like','limb','limit','link','lion','liquid','list','little','live','lizard','load','loan','lobster','local','lock','logic','lonely','long','loop','lottery','loud','lounge','love','loyal','lucky','luggage','lumber','lunar','lunch','luxury','lyrics','machine','mad','magic','magnet','maid','mail','main','major','make','mammal','man','manage','mandate','mango','mansion','manual','maple','marble','march','margin','marine','market','marriage','mask','mass','master','match','material','math','matrix','matter','maximum','maze','meadow','mean','measure','meat','mechanic','medal','media','melody','melt','member','memory','mention','menu','mercy','merge','merit','merry','mesh','message','metal','method','middle','midnight','milk','million','mimic','mind','minimum','minor','minute','miracle','mirror','misery','miss','mistake','mix','mixed','mixture','mobile','model','modify','mom','moment','monitor','monkey','monster','month','moon','moral','more','morning','mosquito','mother','motion','motor','mountain','mouse','move','movie','much','muffin','mule','multiply','muscle','museum','mushroom','music','must','mutual','myself','mystery','myth','naive','name','napkin','narrow','nasty','nation','nature','near','neck','need','negative','neglect','neither','nephew','nerve','nest','net','network','neutral','never','news','next','nice','night','noble','noise','nominee','noodle','normal','north','nose','notable','note','nothing','notice','novel','now','nuclear','number','nurse','nut','oak','obey','object','oblige','obscure','observe','obtain','obvious','occur','ocean','october','odor','off','offer','office','often','oil','okay','old','olive','olympic','omit','once','one','onion','online','only','open','opera','opinion','oppose','option','orange','orbit','orchard','order','ordinary','organ','orient','original','orphan','ostrich','other','outdoor','outer','output','outside','oval','oven','over','own','owner','oxygen','oyster','ozone','pact','paddle','page','pair','palace','palm','panda','panel','panic','panther','paper','parade','parent','park','parrot','party','pass','patch','path','patient','patrol','pattern','pause','pave','payment','peace','peanut','pear','peasant','pelican','pen','penalty','pencil','people','pepper','perfect','permit','person','pet','phone','photo','phrase','physical','piano','picnic','picture','piece','pig','pigeon','pill','pilot','pink','pioneer','pipe','pistol','pitch','pizza','place','planet','plastic','plate','play','please','pledge','pluck','plug','plunge','poem','poet','point','polar','pole','police','pond','pony','pool','popular','portion','position','possible','post','potato','pottery','poverty','powder','power','practice','praise','predict','prefer','prepare','present','pretty','prevent','price','pride','primary','print','priority','prison','private','prize','problem','process','produce','profit','program','project','promote','proof','property','prosper','protect','proud','provide','public','pudding','pull','pulp','pulse','pumpkin','punch','pupil','puppy','purchase','purity','purpose','purse','push','put','puzzle','pyramid','quality','quantum','quarter','question','quick','quit','quiz','quote','rabbit','raccoon','race','rack','radar','radio','rail','rain','raise','rally','ramp','ranch','random','range','rapid','rare','rate','rather','raven','raw','razor','ready','real','reason','rebel','rebuild','recall','receive','recipe','record','recycle','reduce','reflect','reform','refuse','region','regret','regular','reject','relax','release','relief','rely','remain','remember','remind','remove','render','renew','rent','reopen','repair','repeat','replace','report','require','rescue','resemble','resist','resource','response','result','retire','retreat','return','reunion','reveal','review','reward','rhythm','rib','ribbon','rice','rich','ride','ridge','rifle','right','rigid','ring','riot','ripple','risk','ritual','rival','river','road','roast','robot','robust','rocket','romance','roof','rookie','room','rose','rotate','rough','round','route','royal','rubber','rude','rug','rule','run','runway','rural','sad','saddle','sadness','safe','sail','salad','salmon','salon','salt','salute','same','sample','sand','satisfy','satoshi','sauce','sausage','save','say','scale','scan','scare','scatter','scene','scheme','school','science','scissors','scorpion','scout','scrap','screen','script','scrub','sea','search','season','seat','second','secret','section','security','seed','seek','segment','select','sell','seminar','senior','sense','sentence','series','service','session','settle','setup','seven','shadow','shaft','shallow','share','shed','shell','sheriff','shield','shift','shine','ship','shiver','shock','shoe','shoot','shop','short','shoulder','shove','shrimp','shrug','shuffle','shy','sibling','sick','side','siege','sight','sign','silent','silk','silly','silver','similar','simple','since','sing','siren','sister','situate','six','size','skate','sketch','ski','skill','skin','skirt','skull','slab','slam','sleep','slender','slice','slide','slight','slim','slogan','slot','slow','slush','small','smart','smile','smoke','smooth','snack','snake','snap','sniff','snow','soap','soccer','social','sock','soda','soft','solar','soldier','solid','solution','solve','someone','song','soon','sorry','sort','soul','sound','soup','source','south','space','spare','spatial','spawn','speak','special','speed','spell','spend','sphere','spice','spider','spike','spin','spirit','split','spoil','sponsor','spoon','sport','spot','spray','spread','spring','spy','square','squeeze','squirrel','stable','stadium','staff','stage','stairs','stamp','stand','start','state','stay','steak','steel','stem','step','stereo','stick','still','sting','stock','stomach','stone','stool','story','stove','strategy','street','strike','strong','struggle','student','stuff','stumble','style','subject','submit','subway','success','such','sudden','suffer','sugar','suggest','suit','summer','sun','sunny','sunset','super','supply','supreme','sure','surface','surge','surprise','surround','survey','suspect','sustain','swallow','swamp','swap','swarm','swear','sweet','swift','swim','swing','switch','sword','symbol','symptom','syrup','system','table','tackle','tag','tail','talent','talk','tank','tape','target','task','taste','tattoo','taxi','teach','team','tell','ten','tenant','tennis','tent','term','test','text','thank','that','theme','then','theory','there','they','thing','this','thought','three','thrive','throw','thumb','thunder','ticket','tide','tiger','tilt','timber','time','tiny','tip','tired','tissue','title','toast','tobacco','today','toddler','toe','together','toilet','token','tomato','tomorrow','tone','tongue','tonight','tool','tooth','top','topic','topple','torch','tornado','tortoise','toss','total','tourist','toward','tower','town','toy','track','trade','traffic','tragic','train','transfer','trap','trash','travel','tray','treat','tree','trend','trial','tribe','trick','trigger','trim','trip','trophy','trouble','truck','true','truly','trumpet','trust','truth','try','tube','tuition','tumble','tuna','tunnel','turkey','turn','turtle','twelve','twenty','twice','twin','twist','two','type','typical','ugly','umbrella','unable','unaware','uncle','uncover','under','undo','unfair','unfold','unhappy','uniform','unique','unit','universe','unknown','unlock','until','unusual','unveil','update','upgrade','uphold','upon','upper','upset','urban','urge','usage','use','used','useful','useless','usual','utility','vacant','vacuum','vague','valid','valley','valve','van','vanish','vapor','various','vast','vault','vehicle','velvet','vendor','venture','venue','verb','verify','version','very','vessel','veteran','viable','vibrant','vicious','victory','video','view','village','vintage','violin','virtual','virus','visa','visit','visual','vital','vivid','vocal','voice','void','volcano','volume','vote','voyage','wage','wagon','wait','walk','wall','walnut','want','warfare','warm','warrior','wash','wasp','waste','water','wave','way','wealth','weapon','wear','weasel','weather','web','wedding','weekend','weird','welcome','west','wet','whale','what','wheat','wheel','when','where','whip','whisper','wide','width','wife','wild','will','win','window','wine','wing','wink','winner','winter','wire','wisdom','wise','wish','witness','wolf','woman','wonder','wood','wool','word','work','world','worry','worth','wrap','wreck','wrestle','wrist','write','wrong','yard','year','yellow','you','young','youth','zebra','zero','zone','zoo'],
   ja:['大和','山城','摂津','河内','和泉','伊賀','伊勢','志摩','尾張','三河','遠江','駿河','伊豆','甲斐','相模','武蔵','安房','上総','下総','常陸','近江','美濃','飛騨','信濃','上野','下野','陸奥','出羽','若狭','越前','加賀','能登','越中','越後','佐渡','丹波','丹後','但馬','因幡','伯耆','出雲','石見','隠岐','播磨','美作','備前','備中','備後','安芸','周防','長門','紀伊','淡路','阿波','讃岐','伊予','土佐','筑前','筑後','豊前','豊後','肥前','肥後','日向','大隅','薩摩','壱岐','対馬','琉球','沖縄','北海','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈','新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌','鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡','佐賀','長崎','熊本','大分','宮崎','鹿児','札幌','函館','旭川','釧路','帯広','北見','小樽','苫小牧','弘前','八戸','盛岡','仙台','石巻','鶴岡','酒田','郡山','会津','水戸','宇都宮','前橋','高崎','川越','熊谷','船橋','横浜','川崎','鎌倉','小田原','長岡','上越','金沢','甲府','松本','上田','諏訪','大垣','高山','浜松','沼津','熱海','三島','名古屋','豊橋','岡崎','一宮','津','四日市','大津','彦根','長浜','宇治','堺','神戸','姫路','和歌山','松江','倉敷','呉','尾道','福山','下関','宇部','萩','高松','松山','北九州','久留米','佐世保','別府','鹿児島','那覇','石垣','宮古','松島','天橋','竹生','宮島','錦帯','白川','兼六','偕楽','後楽','六義','伏見','嵐山','金閣','銀閣','清水','東寺','西寺','北野','祇園','先斗','浅草','日光','箱根','草津','有馬','城崎','湯布','白浜','勝浦','鳥羽','二見','高野','吉野','飛鳥','法隆','平泉','中尊','毛越','厳島','三徳','由布','阿蘇','霧島','桜島','首里','玉泉','斎場','古宇','十和田','田沢','奥入瀬','八甲','蔵王','磐梯','猪苗','尾瀬','奥日光','戦場','富士','天城','屋久','奄美','西表','北岳','奥穂','槍岳','立山','白山','御岳','霊山','岩木','早池','鳥海','月山','飯豊','吾妻','安達','那須','赤城','榛名','妙義','浅間','八ヶ岳','木曽','白馬','剱岳','鹿島','乗鞍','焼岳','御嶽','伊吹','比叡','金剛','大台','大峰','剣山','石鎚','九重','雲仙','普賢','開聞','韓国','宮之浦','口永','利根','荒川','多摩','富士川','天竜','木曽川','長良','揖斐','淀川','大和川','紀の川','吉野川','那賀','四万十','仁淀','物部','菊池','球磨','大淀','天塩','石狩','十勝','網走','北上','最上','阿武隈','久慈','馬淵','琵琶','霞ヶ浦','中禅寺','芦ノ湖','摩周','屈斜路','江戸','大坂','名護','丸亀','宇和','今治','宇和島','大洲','吉田','岩国','津山','米子','浜田','津和野','赤穂','明石','篠山','二条','竹田','新宮','亀山','松坂','清洲','犬山','岩村','苗木','掛川','駿府','韮山','下田','忍','鉢形','益子','笠間','土浦','白石','米沢','新庄','久保田','桜花','梅林','藤棚','菊野','蓮池','牡丹','芍薬','薔薇','芙蓉','椿花','水仙','百合','桔梗','萩野','薄野','菖蒲','紫陽','紅梅','白梅','枝垂','山吹','木蓮','辛夷','雪柳','花桃','桐花','藤花','杜若','花菖','花蓮','鶴舞','鷹飛','鷺立','鴨川','燕尾','雀声','鶯鳴','杜鵑','時鳥','雁行','白鳥','丹頂','青鷺','夜鷺','翡翠','孔雀','鸚鵡','九官','百舌','郭公','春風','夏風','秋風','冬風','海風','山風','松風','竹風','花風','雪風','朝風','夕風','夜風','嵐気','颱風','満月','新月','三日月','弦月','月光','月夜','月影','月明','月雫','月虹','春霞','夏雲','秋霜','冬雪','朝露','夕霞','夜霧','虹空','雷鳴','稲妻','瀧水','清流','深淵','磯波','岩礁','断崖','峰雲','谷間','野原','草原','田園','水田','棚田','段畑','松原','竹林','杉林','桜並','欅並','楠木','樫木','桐木','楓葉','銀杏','朱赤','緋色','桃色','紅色','深紅','橙色','黄金','萌黄','若草','翠緑','常磐','深緑','青磁','瑠璃','群青','藍色','紺碧','青紫','薄紫','藤色','菫色','葡萄','白磁','乳白','胡粉','象牙','白練','灰色','銀鼠','鉛色','鼠色','墨色','漆黒','烏羽','黒檀','鉄黒','墨黒','金色','黄朽','蒸栗','枯草','茶色','弁柄','朽葉','錆色','檜皮','睦月','如月','弥生','卯月','皐月','水無月','文月','葉月','長月','神無月','霜月','師走','春分','夏至','秋分','冬至','立春','立夏','立秋','立冬','大寒','小寒','大雪','小雪','霜降','寒露','白露','処暑','大暑','小暑','芒種','小満','穀雨','清明','啓蟄','雨水','朝霧','夕暮','黄昏','夜明','暁闇','正午','真夜','深夜','未明','払暁','一番','二番','三番','四番','五番','六番','七番','八番','九番','十番','百年','千年','万年','一里','千里','東西','南北','中央','上下','左右','前後','内外','表裏','陰陽','虚実','能楽','狂言','歌舞','文楽','雅楽','茶道','花道','香道','武道','柔道','剣道','弓道','相撲','空手','合気','俳句','短歌','連歌','物語','源氏','平家','義経','頼朝','信長','秀吉','家康','光秀','謙信','信玄','道元','親鸞','法然','空海','最澄','芭蕉','西鶴','近松','蕪村','一茶','北斎','広重','応挙','若冲','宗達','春日','住吉','熊野','三嶋','大山','香取','氷川','日枝','八坂','平安','上賀茂','下鴨','石清水','松尾','大原','三千院','寂光','化野','愛宕','高雄','神護','栂尾','槇尾','鞍馬','貴船','八瀬','延暦','三井','石山','長命','義仲','園城','四天王','唐招','東大','興福','元興','大安','西大','薬師','中宮','法起','法輪','達磨','長谷','室生','談山','岡寺','壺阪','橘寺','当麻','葛城','金峯','寿司','天麩','蕎麦','鍋物','懐石','会席','精進','本膳','茶懐石','卓袱','抹茶','煎茶','玄米','番茶','焙茶','日本','吟醸','純米','本醸','焼酎','梅酒','甘酒','味醂','醤油','味噌','和菓','羊羹','最中','落雁','煎餅','饅頭','大福','桜餅','柏餅','粽子','日本海','太平洋','瀬戸内','玄界','遠州','有明','八代','不知火','五島','天草','種子','口之島','中之島','悪石','徳之島','沖永良部','与論','竹富','与那国','久米','慶良間','渡嘉敷','座間味','阿嘉','渡名喜','伊是名','伊平屋','伊江','水納','瀬底','浦安','舞浜','幕張','柏','松戸','市川','習志野','八千代','四街道','佐倉','成田','銚子','旭','匝瑳','横芝','山武','東金','大網','茂原','君津','木更津','袖ヶ浦','富津','鋸南','南房','館山','長南','睦沢','長柄','白子','長生','大多喜','いすみ','夷隅','御宿','東庄','神崎','多古','芝山','酒々井','八街','印西','白井','富里','栄町','取手','守谷','稲敷','かすみがうら','石岡','小美玉','鉾田','行方','潮来','神栖','鹿嶋','坂東','常総','下妻','筑西','桜川','結城','古河','境','五霞','幸手','久喜','加須','羽生','行田','鴻巣','北本','桶川','伊奈','上尾','蕨','戸田','川口','越谷','草加','八潮','三郷','吉川','松伏','春日部','宮代','杉戸','白岡','蓮田','岩槻','さいたま','朝霞','志木','和光','新座','清瀬','東久留米','西東京','武蔵野','三鷹','調布','府中','国立','国分寺','小平','東村山','武蔵村山','東大和','立川','日野','八王子','町田','相模原','座間','綾瀬','海老名','厚木','愛川','清川','伊勢原','秦野','松田','山北','開成','大磯','二宮','中井','湯河原','真鶴','葉山','逗子','東山','東川','東野','東浜','東島','東港','東坂','東谷','東峠','東橋','東池','東沼','東原','東浦','東崎','西山','西川','西野','西浜','西島','西港','西坂','西谷','西峠','西橋','西池','西沼','西原','西浦','西崎','南山','南川','南野','南浜','南島','南港','南坂','南谷','南峠','南橋','南池','南沼','南原','南浦','南崎','北山','北川','北浜','北島','北港','北坂','北谷','北峠','北橋','北池','北沼','北原','北浦','北崎','上山','上川','上浜','上島','上港','上坂','上谷','上峠','上橋','上池','上沼','上原','上浦','上崎','下山','下川','下浜','下島','下港','下坂','下谷','下峠','下橋','下池','下沼','下原','下浦','下崎','新山','新川','新野','新浜','新島','新港','新坂','新谷','新峠','新橋','新池','新沼','新原','新浦','新崎','古山','古川','古野','古浜','古島','古港','古坂','古谷','古峠','古橋','古池','古沼','古原','古浦','古崎','大川','大野','大浜','大島','大港','大谷','大峠','大橋','大池','大沼','大浦','大崎','小山','小川','小野','小浜','小島','小港','小坂','小谷','小峠','小橋','小池','小沼','小原','小浦','小崎','中山','中川','中野','中浜','中島','中港','中坂','中谷','中峠','中橋','中池','中沼','中原','中浦','中崎','内山','内川','内野','内浜','内島','内港','内坂','内谷','内峠','内橋','内池','内沼','内原','内浦','内崎','外山','外川','外野','外浜','外島','外港','外坂','外谷','外峠','外橋','外池','外沼','外原','外浦','外崎','前山','前川','前野','前浜','前島','前港','前坂','前谷','前峠','前池','前沼','前原','前浦','前崎','後山','後川','後野','後浜','後島','後港','後坂','後谷','後峠','後橋','後池','後沼','後原','後浦','後崎','赤山','赤海','赤川','赤空','赤雲','赤風','赤雨','赤雪','赤花','赤木','赤葉','赤草','赤波','赤霧','赤月','青山','青海','青川','青空','青雲','青風','青雨','青雪','青花','青木','青葉','青草','青波','青霧','青月','白海','白空','白雲','白風','白雨','白雪','白花','白木','白葉','白草','白波','白霧','白月','黒山','黒海','黒川','黒空','黒雲','黒風','黒雨','黒雪','黒花','黒木','黒葉','黒草','黒波','黒霧','黒月','黄山','黄海','黄川','黄空','黄雲','黄風','黄雨','黄雪','黄花','黄木','黄葉','黄草','黄波','黄霧','黄月','緑山','緑海','緑川','緑空','緑雲','緑風','緑雨','緑雪','緑花','緑木','緑葉','緑草','緑波','緑霧','緑月','紫山','紫海','紫川','紫空','紫雲','紫風','紫雨','紫雪','紫花','紫木','紫葉','紫草','紫波','紫霧','紫月','橙山','橙海','橙川','橙空','橙雲','橙風','橙雨','橙雪','橙花','橙木','橙葉','橙草','橙波','橙霧','橙月','桃山','桃海','桃川','桃空','桃雲','桃風','桃雨','桃雪','桃花','桃木','桃葉','桃草','桃波','桃霧','桃月','茶山','茶海','茶川','茶空','茶雲','茶風','茶雨','茶雪','茶花','茶木','茶葉','茶草','茶波','茶霧','茶月','金山','金海','金川','金空','金雲','金風','金雨','金雪','金花','金木','金葉','金草','金波','金霧','金月','銀山','銀海','銀川','銀空','銀雲','銀風','銀雨','銀雪','銀花','銀木','銀葉','銀草','銀波','銀霧','銀月','灰山','灰海','灰川','灰空','灰雲','灰風','灰雨','灰雪','灰花','灰木','灰葉','灰草','灰波','灰霧','灰月','紺山','紺海','紺川','紺空','紺雲','紺風','紺雨','紺雪','紺花','紺木','紺葉','紺草','紺波','紺霧','紺月','朱山','朱海','朱川','朱空','朱雲','朱風','朱雨','朱雪','朱花','朱木','朱葉','朱草','朱波','朱霧','朱月','春雨','春霜','春雪','春雲','春空','春光','春闇','春霧','春霙','春霰','春露','春氷','春炎','夏雨','夏霞','夏霜','夏雪','夏空','夏光','夏闇','夏霧','夏霙','夏霰','夏露','夏氷','夏炎','秋雨','秋霞','秋雪','秋雲','秋空','秋光','秋闇','秋霧','秋霙','秋霰','秋露','秋氷','秋炎','冬雨','冬霞','冬霜','冬雲','冬空','冬光','冬闇','冬霧','冬霙','冬霰','冬露','冬氷','冬炎','一本','一丁','一条','一丸','一崎','一浦','一野','一原','一島','一山','一川','一谷','一坂','一橋','一町','二本','二丁','二丸','二崎','二浦','二野','二原','二島','二山','二川','二谷','二坂','二橋','二町','三本','三丁','三条','三丸','三崎','三浦','三野','三原','三山','三川','三谷','三坂','三橋','三町','四本','四丁','四条','四丸','四崎','四浦','四野','四原','四島','四山','四川','四谷','四坂','四橋','四町','五本','五丁','五条','五丸','五崎','五浦','五野','五原','五山','五川','五谷','五坂','五橋','五町','六本','六丁','六条','六丸','六崎','六浦','六野','六原','六島','六山','六川','六谷','六坂','六橋','六町','七本','七丁','七条','七丸','七崎','七浦','七野','七原','七島','七山','七川','七谷','七坂','七橋','七町','八本','八丁','八条','八丸','八崎','八浦','八野','八原','八島','八山','八川','八谷','八橋','八町','九本','九丁','九条','九丸','九崎','九浦','九野','九原','九島','九山','九川','九谷','九坂','九橋','九町','十本','十丁','十条','十丸','十崎','十浦','十野','十原','十島','十山','十川','十谷','十坂','十橋','十町','百本','百丁','百条','百丸','百崎','百浦','百野','百原','百島','百山','百川','百谷','百坂','百橋','百町','千本','千丁','千条','千丸','千崎','千浦','千野','千原','千島','千山','千川','千谷','千坂','千橋','千町','明川','明山','明海','明野','明空','明光','明影','明風','明雲','明雨','明雪','明霜','明露','明霧','明炎','明冰','明土','明砂','明岩','暗川','暗山','暗海','暗野','暗空','暗光','暗影','暗風','暗雲','暗雨','暗雪','暗霜','暗露','暗霧','暗炎','暗冰','暗石','暗土','暗砂','暗岩','清山','清海','清野','清空','清光','清影','清風','清雲','清雨','清雪','清霜','清露','清霧','清炎','清冰','清石','清土','清砂','清岩','濁川','濁山','濁海','濁野','濁空','濁光','濁影','濁風','濁雲','濁雨','濁雪','濁霜','濁露','濁霧','濁炎','濁冰','濁石','濁土','濁砂','濁岩','深川','深山','深海','深野','深空','深光','深影','深風','深雲','深雨','深雪','深霜','深露','深霧','深炎','深冰','深石','深土','深砂','深岩','浅川','浅山','浅海','浅野','浅空','浅光','浅影','浅風','浅雲','浅雨','浅雪','浅霜','浅露','浅霧','浅炎','浅冰','浅石','浅土','浅砂','浅岩','広川','広山','広海','広野','広空','広光','広影','広風','広雲','広雨','広雪','広霜','広露','広霧','広炎','広冰','広石','広土','広砂','広岩','狭川','狭山','狭海','狭野','狭空','狭光','狭影','狭風','狭雲','狭雨','狭雪','狭霜','狭露','狭霧','狭炎','狭冰','狭石','狭土','狭砂','狭岩','高川','高海','高空','高光','高影','高風','高雲','高雨','高雪','高霜','高露','高霧','高炎','高冰','高石','高土','高砂','高岩','低川','低山','低海','低野','低空','低光','低影','低風','低雲','低雨','低雪','低霜','低露','低霧','低炎','低冰','低石','低土','低砂','低岩','長川','長山','長海','長空','長光','長影','長風','長雲','長雨','長雪','長霜','長露','長霧','長炎','長冰','長石','長土','長砂','長岩','短川','短山','短海','短野','短空','短光','短影','短風','短雲','短雨','短雪','短霜','短露','短霧','短炎','短冰','短石','短土','短砂','短岩','大海','大空','大光','大影','大風','大雲','大雨','大霜','大露','大霧','大炎','大冰','大石','大土','大砂','大岩','小海','小空','小光','小影','小風','小雲','小雨','小霜','小露','小霧','小炎','小冰','小石','小土','小砂','小岩','古海','古空','古光','古影','古風','古雲','古雨','古雪','古霜','古露','古霧','古炎','古冰','古石','古土','古砂','古岩','新海','新空','新光','新影','新風','新雲','新雨','新雪','新霜','新露','新霧','新炎','新冰','新石','新土','新砂','新岩','老川','老山','老海','老野','老空','老光','老影','老風','老雲','老雨','老雪','老霜','老露','老霧','老炎','老冰','老石','老土','老砂','老岩','若川','若山','若海','若野','若空','若光','若影','若風','若雲','若雨','若雪','若霜','若露','若霧','若炎','若冰','若石','若土','若砂','若岩','強川','強山','強海','強野','強空','強光','強影','強風','強雲','強雨','強雪','強霜','強露','強霧','強炎','強冰','強石','強土','強砂','強岩','弱川','弱山','弱海','弱野','弱空','弱光','弱影','弱風','弱雲','弱雨','弱雪','弱霜','弱露','弱霧','弱炎','弱冰','弱石','弱土','弱砂','弱岩','神宮','神殿','神院','神堂','神門','神塔','神橋','神道','神路','神坂','神丘','神浦','神岬','神峰','神谷','神沢','神森','神林','神原','仏宮','仏殿','仏院','仏堂','仏門','仏塔','仏橋','仏道','仏路','仏坂','仏丘','仏浦','仏崎','仏岬','仏峰','仏谷','仏沢','仏森','仏林','仏原','龍宮','龍殿','龍院','龍堂','龍門','龍塔','龍橋','龍道','龍路','龍坂','龍丘','龍浦','龍崎','龍岬','龍峰','龍谷','龍沢','龍森','龍林','龍原','鳳宮','鳳殿','鳳院','鳳堂','鳳門','鳳塔','鳳橋','鳳道','鳳路','鳳坂','鳳丘','鳳浦','鳳崎','鳳岬','鳳峰','鳳谷','鳳沢','鳳森','鳳林','鳳原','虎宮','虎殿','虎院','虎堂','虎門','虎塔','虎橋','虎道','虎路','虎坂','虎丘','虎浦','虎崎','虎岬','虎峰','虎谷','虎沢','虎森','虎林','虎原','鷹宮','鷹殿','鷹院','鷹堂','鷹門','鷹塔','鷹橋','鷹道','鷹路','鷹坂','鷹丘','鷹浦','鷹崎','鷹岬','中国','アメリカ','インド','ロシア','ブラジル','ドイツ','イギリス','フランス','イタリア','カナダ','オーストラリア','スペイン','メキシコ','インドネシア','オランダ','サウジアラビア','トルコ','スイス','スウェーデン','ベルギー','アルゼンチン','ノルウェー','オーストリア','アラブ首長国','イスラエル','シンガポール','香港','台湾','タイ','マレーシア','フィリピン','ベトナム','パキスタン','バングラデシュ','エジプト','ナイジェリア','南アフリカ','ケニア','エチオピア','モロッコ','アルジェリア','イラン','イラク','シリア','ヨルダン','クウェート','カタール','オマーン','イエメン','アフガニスタン','スリランカ','ネパール','ミャンマー','カンボジア','モンゴル','カザフスタン','ウズベキスタン','ウクライナ','ポーランド','チェコ','ハンガリー','ルーマニア','ギリシャ','ポルトガル','フィンランド','デンマーク','アイルランド','ニュージーランド','チリ','コロンビア','ペルー','ベネズエラ','キューバ','タンザニア','ガーナ','ルワンダ','アンゴラ','ジンバブエ','ナミビア','モザンビーク','マダガスカル','カメルーン','コンゴ','セネガル','北京','ワシントン','ニューデリー','モスクワ','ブラジリア','ベルリン','ロンドン','パリ','ローマ','オタワ','ソウル','キャンベラ','マドリード','メキシコシティ','ジャカルタ','アムステルダム','リヤド','アンカラ','ベルン','ワルシャワ','ストックホルム','ブリュッセル','ブエノスアイレス','オスロ','ウィーン','アブダビ','エルサレム','台北','バンコク','クアラルンプール','マニラ','ハノイ','イスラマバード','ダッカ','カイロ','ナイロビ','アディスアベバ','テヘラン','バグダッド','ダマスカス','アンマン','ドーハ','マスカット','カブール','コロンボ','カトマンズ','ウランバートル','タシュケント','キエフ','プラハ','ブダペスト','アテネ','リスボン','ヘルシンキ','ダブリン','ウェリントン','サンティアゴ','ボゴタ','リマ','ハバナ','キガリ','ルアンダ','広東','浙江','江蘇','山東','河南','湖北','湖南','河北','福建','遼寧','黒龍江','吉林','安徽','江西','山西','陝西','雲南','貴州','広西','内モンゴル','チベット','新疆','甘粛','寧夏','海南','マカオ','カリフォルニア','テキサス','フロリダ','イリノイ','ペンシルベニア','オハイオ','ジョージア','ミシガン','シベリア','ウラル','コーカサス','マハーラーシュトラ','ウッタル・プラデーシュ','タミル・ナードゥ','カルナータカ','西ベンガル','サンパウロ州','リオデジャネイロ州','ミナスジェライス','バイーア','パラナ','上海','広州','深セン','成都','武漢','西安','杭州','南京','蘇州','青島','大連','厦門','昆明','ハルビン','鄭州','済南','長沙','瀋陽','ニューヨーク','ロサンゼルス','シカゴ','ヒューストン','ダラス','フィラデルフィア','トロント','バンクーバー','モントリオール','マンチェスター','エジンバラ','マルセイユ','リヨン','ボルドー','ハンブルク','ミュンヘン','フランクフルト','ミラノ','ナポリ','フィレンツェ','ベネチア','バルセロナ','チューリッヒ','ジュネーブ','サンクトペテルブルク','ノボシビルスク','ムンバイ','バンガロール','ハイデラバード','チェンナイ','コルカタ','ジャイプル','釜山','シドニー','メルボルン','サンパウロ','リオデジャネイロ','カサブランカ','ドバイ','イスタンブール','カラチ','ラゴス','ヨハネスブルク','ホーチミン','ヤンゴン','地名0275','地名0276','地名0277','地名0278','地名0279','地名0280','地名0281','地名0282','地名0283','地名0284','地名0285','地名0286','地名0287','地名0288','地名0289','地名0290','地名0291','地名0292','地名0293','地名0294','地名0295','地名0296','地名0297','地名0298','地名0299','地名0300','地名0301','地名0302','地名0303','地名0304','地名0305','地名0306','地名0307','地名0308','地名0309','地名0310','地名0311','地名0312','地名0313','地名0314','地名0315','地名0316','地名0317','地名0318','地名0319','地名0320','地名0321','地名0322','地名0323','地名0324','地名0325','地名0326','地名0327','地名0328','地名0329','地名0330','地名0331','地名0332','地名0333','地名0334','地名0335','地名0336','地名0337','地名0338','地名0339','地名0340','地名0341','地名0342','地名0343','地名0344','地名0345','地名0346','地名0347','地名0348','地名0349','地名0350','地名0351','地名0352','地名0353','地名0354','地名0355','地名0356','地名0357','地名0358','地名0359','地名0360','地名0361','地名0362','地名0363','地名0364','地名0365','地名0366','地名0367','地名0368','地名0369','地名0370','地名0371','地名0372','地名0373','地名0374','地名0375','地名0376','地名0377','地名0378','地名0379','地名0380','地名0381','地名0382','地名0383','地名0384','地名0385','地名0386','地名0387','地名0388','地名0389','地名0390','地名0391','地名0392','地名0393','地名0394','地名0395','地名0396','地名0397','地名0398','地名0399','地名0400','地名0401','地名0402','地名0403','地名0404','地名0405','地名0406','地名0407','地名0408','地名0409','地名0410','地名0411','地名0412','地名0413','地名0414','地名0415','地名0416','地名0417','地名0418','地名0419','地名0420','地名0421','地名0422','地名0423','地名0424','地名0425','地名0426','地名0427','地名0428','地名0429','地名0430','地名0431','地名0432','地名0433','地名0434','地名0435','地名0436','地名0437','地名0438','地名0439','地名0440','地名0441','地名0442','地名0443','地名0444','地名0445','地名0446','地名0447','地名0448','地名0449','地名0450','地名0451','地名0452','地名0453','地名0454','地名0455','地名0456','地名0457','地名0458','地名0459','地名0460','地名0461','地名0462','地名0463','地名0464','地名0465','地名0466','地名0467','地名0468','地名0469','地名0470','地名0471','地名0472','地名0473','地名0474','地名0475','地名0476','地名0477','地名0478','地名0479','地名0480','地名0481','地名0482','地名0483','地名0484','地名0485','地名0486','地名0487','地名0488','地名0489','地名0490','地名0491','地名0492','地名0493','地名0494','地名0495','地名0496','地名0497','地名0498','地名0499','地名0500','地名0501','地名0502','地名0503','地名0504','地名0505','地名0506','地名0507','地名0508','地名0509','地名0510','地名0511','地名0512','地名0513','地名0514','地名0515','地名0516','地名0517','地名0518','地名0519','地名0520','地名0521','地名0522','地名0523','地名0524','地名0525','地名0526','地名0527','地名0528','地名0529','地名0530','地名0531','地名0532','地名0533','地名0534','地名0535','地名0536','地名0537','地名0538','地名0539','地名0540','地名0541','地名0542','地名0543','地名0544','地名0545','地名0546','地名0547','地名0548','地名0549','地名0550','地名0551','地名0552','地名0553','地名0554','地名0555','地名0556','地名0557','地名0558','地名0559','地名0560','地名0561','地名0562','地名0563','地名0564','地名0565','地名0566','地名0567','地名0568','地名0569','地名0570','地名0571','地名0572','地名0573','地名0574','地名0575','地名0576','地名0577','地名0578','地名0579','地名0580','地名0581','地名0582','地名0583','地名0584','地名0585','地名0586','地名0587','地名0588','地名0589','地名0590','地名0591','地名0592','地名0593','地名0594','地名0595','地名0596','地名0597','地名0598','地名0599','地名0600','地名0601','地名0602','地名0603','地名0604','地名0605','地名0606','地名0607','地名0608','地名0609','地名0610','地名0611','地名0612','地名0613','地名0614','地名0615','地名0616','地名0617','地名0618','地名0619','地名0620','地名0621','地名0622','地名0623','地名0624','地名0625','地名0626','地名0627','地名0628','地名0629','地名0630','地名0631','地名0632','地名0633','地名0634','地名0635','地名0636','地名0637','地名0638','地名0639','地名0640','地名0641','地名0642','地名0643','地名0644','地名0645','地名0646','地名0647','地名0648','地名0649','地名0650','地名0651','地名0652','地名0653','地名0654','地名0655','地名0656','地名0657','地名0658','地名0659','地名0660','地名0661','地名0662','地名0663','地名0664','地名0665','地名0666','地名0667','地名0668','地名0669','地名0670','地名0671','地名0672','地名0673','地名0674','地名0675','地名0676','地名0677','地名0678','地名0679','地名0680','地名0681','地名0682','地名0683','地名0684','地名0685','地名0686','地名0687','地名0688','地名0689','地名0690','地名0691','地名0692','地名0693','地名0694','地名0695','地名0696','地名0697','地名0698','地名0699','地名0700','地名0701','地名0702','地名0703','地名0704','地名0705','地名0706','地名0707','地名0708','地名0709','地名0710','地名0711','地名0712','地名0713','地名0714','地名0715','地名0716','地名0717','地名0718','地名0719','地名0720','地名0721','地名0722','地名0723','地名0724','地名0725','地名0726','地名0727','地名0728','地名0729','地名0730','地名0731','地名0732','地名0733','地名0734','地名0735','地名0736','地名0737','地名0738','地名0739','地名0740','地名0741','地名0742','地名0743','地名0744','地名0745','地名0746','地名0747','地名0748','地名0749','地名0750','地名0751','地名0752','地名0753','地名0754','地名0755','地名0756','地名0757','地名0758','地名0759','地名0760','地名0761','地名0762','地名0763','地名0764','地名0765','地名0766','地名0767','地名0768','地名0769','地名0770','地名0771','地名0772','地名0773','地名0774','地名0775','地名0776','地名0777','地名0778','地名0779','地名0780','地名0781','地名0782','地名0783','地名0784','地名0785','地名0786','地名0787','地名0788','地名0789','地名0790','地名0791','地名0792','地名0793','地名0794','地名0795','地名0796','地名0797','地名0798','地名0799','地名0800','地名0801','地名0802','地名0803','地名0804','地名0805','地名0806','地名0807','地名0808','地名0809','地名0810','地名0811','地名0812','地名0813','地名0814','地名0815','地名0816','地名0817','地名0818','地名0819','地名0820','地名0821','地名0822','地名0823','地名0824','地名0825','地名0826','地名0827','地名0828','地名0829','地名0830','地名0831','地名0832','地名0833','地名0834','地名0835','地名0836','地名0837','地名0838','地名0839','地名0840','地名0841','地名0842','地名0843','地名0844','地名0845','地名0846','地名0847','地名0848','地名0849','地名0850','地名0851','地名0852','地名0853','地名0854','地名0855','地名0856','地名0857','地名0858','地名0859','地名0860','地名0861','地名0862','地名0863','地名0864','地名0865','地名0866','地名0867','地名0868','地名0869','地名0870','地名0871','地名0872','地名0873','地名0874','地名0875','地名0876','地名0877','地名0878','地名0879','地名0880','地名0881','地名0882','地名0883','地名0884','地名0885','地名0886','地名0887','地名0888','地名0889','地名0890','地名0891','地名0892','地名0893','地名0894','地名0895','地名0896','地名0897','地名0898','地名0899','地名0900','地名0901','地名0902','地名0903','地名0904','地名0905','地名0906','地名0907','地名0908','地名0909','地名0910','地名0911','地名0912','地名0913','地名0914','地名0915','地名0916','地名0917','地名0918','地名0919','地名0920','地名0921','地名0922','地名0923','地名0924','地名0925','地名0926','地名0927','地名0928','地名0929','地名0930','地名0931','地名0932','地名0933','地名0934','地名0935','地名0936','地名0937','地名0938','地名0939','地名0940','地名0941','地名0942','地名0943','地名0944','地名0945','地名0946','地名0947','地名0948','地名0949','地名0950','地名0951','地名0952','地名0953','地名0954','地名0955','地名0956','地名0957','地名0958','地名0959','地名0960','地名0961','地名0962','地名0963','地名0964','地名0965','地名0966','地名0967','地名0968','地名0969','地名0970','地名0971','地名0972','地名0973','地名0974','地名0975','地名0976','地名0977','地名0978','地名0979','地名0980','地名0981','地名0982','地名0983','地名0984','地名0985','地名0986','地名0987','地名0988','地名0989','地名0990','地名0991','地名0992','地名0993','地名0994','地名0995','地名0996','地名0997','地名0998','地名0999','地名1000','地名1001','地名1002','地名1003','地名1004','地名1005','地名1006','地名1007','地名1008','地名1009','地名1010','地名1011','地名1012','地名1013','地名1014','地名1015','地名1016','地名1017','地名1018','地名1019','地名1020','地名1021','地名1022','地名1023','地名1024','地名1025','地名1026','地名1027','地名1028','地名1029','地名1030','地名1031','地名1032','地名1033','地名1034','地名1035','地名1036','地名1037','地名1038','地名1039','地名1040','地名1041','地名1042','地名1043','地名1044','地名1045','地名1046','地名1047','地名1048','地名1049','地名1050','地名1051','地名1052','地名1053','地名1054','地名1055','地名1056','地名1057','地名1058','地名1059','地名1060','地名1061','地名1062','地名1063','地名1064','地名1065','地名1066','地名1067','地名1068','地名1069','地名1070','地名1071','地名1072','地名1073','地名1074','地名1075','地名1076','地名1077','地名1078','地名1079','地名1080','地名1081','地名1082','地名1083','地名1084','地名1085','地名1086','地名1087','地名1088','地名1089','地名1090','地名1091','地名1092','地名1093','地名1094','地名1095','地名1096','地名1097','地名1098','地名1099','地名1100','地名1101','地名1102','地名1103','地名1104','地名1105','地名1106','地名1107','地名1108','地名1109','地名1110','地名1111','地名1112','地名1113','地名1114','地名1115','地名1116','地名1117','地名1118','地名1119','地名1120','地名1121','地名1122','地名1123','地名1124','地名1125','地名1126','地名1127','地名1128','地名1129','地名1130','地名1131','地名1132','地名1133','地名1134','地名1135','地名1136','地名1137','地名1138','地名1139','地名1140','地名1141','地名1142','地名1143','地名1144','地名1145','地名1146','地名1147','地名1148','地名1149','地名1150','地名1151','地名1152','地名1153','地名1154','地名1155','地名1156','地名1157','地名1158','地名1159','地名1160','地名1161','地名1162','地名1163','地名1164','地名1165','地名1166','地名1167','地名1168','地名1169','地名1170','地名1171','地名1172','地名1173','地名1174','地名1175','地名1176','地名1177','地名1178','地名1179','地名1180','地名1181','地名1182','地名1183','地名1184','地名1185','地名1186','地名1187','地名1188','地名1189','地名1190','地名1191','地名1192','地名1193','地名1194','地名1195','地名1196','地名1197','地名1198','地名1199','地名1200','地名1201','地名1202','地名1203','地名1204','地名1205','地名1206','地名1207','地名1208','地名1209','地名1210','地名1211','地名1212','地名1213','地名1214','地名1215','地名1216','地名1217','地名1218','地名1219','地名1220','地名1221','地名1222','地名1223','地名1224','地名1225','地名1226','地名1227','地名1228','地名1229','地名1230','地名1231','地名1232','地名1233','地名1234','地名1235','地名1236','地名1237','地名1238','地名1239','地名1240','地名1241','地名1242','地名1243','地名1244','地名1245','地名1246','地名1247','地名1248','地名1249','地名1250','地名1251','地名1252','地名1253','地名1254','地名1255','地名1256','地名1257','地名1258','地名1259','地名1260','地名1261','地名1262','地名1263','地名1264','地名1265','地名1266','地名1267','地名1268','地名1269','地名1270','地名1271','地名1272','地名1273','地名1274','地名1275','地名1276','地名1277','地名1278','地名1279','地名1280','地名1281','地名1282','地名1283','地名1284','地名1285','地名1286','地名1287','地名1288','地名1289','地名1290','地名1291','地名1292','地名1293','地名1294','地名1295','地名1296','地名1297','地名1298','地名1299','地名1300','地名1301','地名1302','地名1303','地名1304','地名1305','地名1306','地名1307','地名1308','地名1309','地名1310','地名1311','地名1312','地名1313','地名1314','地名1315','地名1316','地名1317','地名1318','地名1319','地名1320','地名1321','地名1322','地名1323','地名1324','地名1325','地名1326','地名1327','地名1328','地名1329','地名1330','地名1331','地名1332','地名1333','地名1334','地名1335','地名1336','地名1337','地名1338','地名1339','地名1340','地名1341','地名1342','地名1343','地名1344','地名1345','地名1346','地名1347','地名1348','地名1349','地名1350','地名1351','地名1352','地名1353','地名1354','地名1355','地名1356','地名1357','地名1358','地名1359','地名1360','地名1361','地名1362','地名1363','地名1364','地名1365','地名1366','地名1367','地名1368','地名1369','地名1370','地名1371','地名1372','地名1373','地名1374','地名1375','地名1376','地名1377','地名1378','地名1379','地名1380','地名1381','地名1382','地名1383','地名1384','地名1385','地名1386','地名1387','地名1388','地名1389','地名1390','地名1391','地名1392','地名1393','地名1394','地名1395','地名1396','地名1397','地名1398','地名1399','地名1400','地名1401','地名1402','地名1403','地名1404','地名1405','地名1406','地名1407','地名1408','地名1409','地名1410','地名1411','地名1412','地名1413','地名1414','地名1415','地名1416','地名1417','地名1418','地名1419','地名1420','地名1421','地名1422','地名1423','地名1424','地名1425','地名1426','地名1427','地名1428','地名1429','地名1430','地名1431','地名1432','地名1433','地名1434','地名1435','地名1436','地名1437','地名1438','地名1439','地名1440','地名1441','地名1442','地名1443','地名1444','地名1445','地名1446','地名1447','地名1448','地名1449','地名1450','地名1451','地名1452','地名1453','地名1454','地名1455','地名1456','地名1457','地名1458','地名1459','地名1460','地名1461','地名1462','地名1463','地名1464','地名1465','地名1466','地名1467','地名1468','地名1469','地名1470','地名1471','地名1472','地名1473','地名1474','地名1475','地名1476','地名1477','地名1478','地名1479','地名1480','地名1481','地名1482','地名1483','地名1484','地名1485','地名1486','地名1487','地名1488','地名1489','地名1490','地名1491','地名1492','地名1493','地名1494','地名1495','地名1496','地名1497','地名1498','地名1499','地名1500','地名1501','地名1502','地名1503','地名1504','地名1505','地名1506','地名1507','地名1508','地名1509','地名1510','地名1511','地名1512','地名1513','地名1514','地名1515','地名1516','地名1517','地名1518','地名1519','地名1520','地名1521','地名1522','地名1523','地名1524','地名1525','地名1526','地名1527','地名1528','地名1529','地名1530','地名1531','地名1532','地名1533','地名1534','地名1535','地名1536','地名1537','地名1538','地名1539','地名1540','地名1541','地名1542','地名1543','地名1544','地名1545','地名1546','地名1547','地名1548','地名1549','地名1550','地名1551','地名1552','地名1553','地名1554','地名1555','地名1556','地名1557','地名1558','地名1559','地名1560','地名1561','地名1562','地名1563','地名1564','地名1565','地名1566','地名1567','地名1568','地名1569','地名1570','地名1571','地名1572','地名1573','地名1574','地名1575','地名1576','地名1577','地名1578','地名1579','地名1580','地名1581','地名1582','地名1583','地名1584','地名1585','地名1586','地名1587','地名1588','地名1589','地名1590','地名1591','地名1592','地名1593','地名1594','地名1595','地名1596','地名1597','地名1598','地名1599','地名1600','地名1601','地名1602','地名1603','地名1604','地名1605','地名1606','地名1607','地名1608','地名1609','地名1610','地名1611','地名1612','地名1613','地名1614','地名1615','地名1616','地名1617','地名1618','地名1619','地名1620','地名1621','地名1622','地名1623','地名1624','地名1625','地名1626','地名1627','地名1628','地名1629','地名1630','地名1631','地名1632','地名1633','地名1634','地名1635','地名1636','地名1637','地名1638','地名1639','地名1640','地名1641','地名1642','地名1643','地名1644','地名1645','地名1646','地名1647','地名1648','地名1649','地名1650','地名1651','地名1652','地名1653','地名1654','地名1655','地名1656','地名1657','地名1658','地名1659','地名1660','地名1661','地名1662','地名1663','地名1664','地名1665','地名1666','地名1667','地名1668','地名1669','地名1670','地名1671','地名1672','地名1673','地名1674','地名1675','地名1676','地名1677','地名1678','地名1679','地名1680','地名1681','地名1682','地名1683','地名1684','地名1685','地名1686','地名1687','地名1688','地名1689','地名1690','地名1691','地名1692','地名1693','地名1694','地名1695','地名1696','地名1697','地名1698','地名1699','地名1700','地名1701','地名1702','地名1703','地名1704','地名1705','地名1706','地名1707','地名1708','地名1709','地名1710','地名1711','地名1712','地名1713','地名1714','地名1715','地名1716','地名1717','地名1718','地名1719','地名1720','地名1721','地名1722','地名1723','地名1724','地名1725','地名1726','地名1727','地名1728','地名1729','地名1730','地名1731','地名1732','地名1733','地名1734','地名1735','地名1736','地名1737','地名1738','地名1739','地名1740','地名1741','地名1742','地名1743','地名1744','地名1745','地名1746','地名1747','地名1748','地名1749','地名1750','地名1751','地名1752','地名1753','地名1754','地名1755','地名1756','地名1757','地名1758','地名1759','地名1760','地名1761','地名1762','地名1763','地名1764','地名1765','地名1766','地名1767','地名1768','地名1769','地名1770','地名1771','地名1772','地名1773','地名1774','地名1775','地名1776','地名1777','地名1778','地名1779','地名1780','地名1781','地名1782','地名1783','地名1784','地名1785','地名1786','地名1787','地名1788','地名1789','地名1790','地名1791','地名1792','地名1793','地名1794','地名1795','地名1796','地名1797','地名1798','地名1799','地名1800','地名1801','地名1802','地名1803','地名1804','地名1805','地名1806','地名1807','地名1808','地名1809','地名1810','地名1811','地名1812','地名1813','地名1814','地名1815','地名1816','地名1817','地名1818','地名1819','地名1820','地名1821','地名1822','地名1823','地名1824','地名1825','地名1826','地名1827','地名1828','地名1829','地名1830','地名1831','地名1832','地名1833','地名1834','地名1835','地名1836','地名1837','地名1838','地名1839','地名1840','地名1841','地名1842','地名1843','地名1844','地名1845','地名1846','地名1847','地名1848','地名1849','地名1850','地名1851','地名1852','地名1853','地名1854','地名1855','地名1856','地名1857','地名1858','地名1859','地名1860','地名1861','地名1862','地名1863','地名1864','地名1865','地名1866','地名1867','地名1868','地名1869','地名1870','地名1871','地名1872','地名1873','地名1874','地名1875','地名1876','地名1877','地名1878','地名1879','地名1880','地名1881','地名1882','地名1883','地名1884','地名1885','地名1886','地名1887','地名1888','地名1889','地名1890','地名1891','地名1892','地名1893','地名1894','地名1895','地名1896','地名1897','地名1898','地名1899','地名1900','地名1901','地名1902','地名1903','地名1904','地名1905','地名1906','地名1907','地名1908','地名1909','地名1910','地名1911','地名1912','地名1913','地名1914','地名1915','地名1916','地名1917','地名1918','地名1919','地名1920','地名1921','地名1922','地名1923','地名1924','地名1925','地名1926','地名1927','地名1928','地名1929','地名1930','地名1931','地名1932','地名1933','地名1934','地名1935','地名1936','地名1937','地名1938','地名1939','地名1940','地名1941','地名1942','地名1943','地名1944','地名1945','地名1946','地名1947','地名1948','地名1949','地名1950','地名1951','地名1952','地名1953','地名1954','地名1955','地名1956','地名1957','地名1958','地名1959','地名1960','地名1961','地名1962','地名1963','地名1964','地名1965','地名1966','地名1967','地名1968','地名1969','地名1970','地名1971','地名1972','地名1973','地名1974','地名1975','地名1976','地名1977','地名1978','地名1979','地名1980','地名1981','地名1982','地名1983','地名1984','地名1985','地名1986','地名1987','地名1988','地名1989','地名1990','地名1991','地名1992','地名1993','地名1994','地名1995','地名1996','地名1997','地名1998','地名1999','地名2000','地名2001','地名2002','地名2003','地名2004','地名2005','地名2006','地名2007','地名2008','地名2009','地名2010','地名2011','地名2012','地名2013','地名2014','地名2015','地名2016','地名2017','地名2018','地名2019','地名2020','地名2021','地名2022','地名2023','地名2024','地名2025','地名2026','地名2027','地名2028','地名2029','地名2030','地名2031','地名2032','地名2033','地名2034','地名2035','地名2036','地名2037','地名2038','地名2039','地名2040','地名2041','地名2042','地名2043','地名2044','地名2045','地名2046','地名2047','地名2048'],
@@ -1027,7 +387,7 @@ const SAMPLE_KEYS = {
 };
 
 // 英文用户用公链地址，其他用母语诗句地址
-const ADDR_SAMPLES = {
+var ADDR_SAMPLES = {
   zh:{main:'龙凤虎 · 举头望明月', num:'3829461'},
   en:{main:'TQn4Hj8mKx3fR7vL2pN9', num:'(公链地址)'},
   ja:{main:'桜富士 · 古池や蛙飛び', num:'3829461'},
@@ -1057,22 +417,43 @@ const ADDR_SAMPLES = {
   ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
 };
 
-const CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--'
+var CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--'
 // 如果有真实钱包，使用真实 TRX 地址
-function getChainAddr() {
-  return (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : CHAIN_ADDR;
-};
+;
 // ETH/BTC 地址动态读取（不用 const 硬编码）
 function getEthAddr() { return (REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : '--'; }
 function getBtcAddr() { return (REAL_WALLET && REAL_WALLET.btcAddress) ? REAL_WALLET.btcAddress : '--'; }
-const ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
+var ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
 
-let currentLang = detectDeviceLang();
-const MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
-const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
+var currentLang = detectDeviceLang();
+/** 密钥页助记词显示语言（与 wordlists 语言键一致） */
+var WW_KEY_PAGE_LANGS = ['zh', 'en', 'ja', 'ko', 'es', 'fr', 'ar', 'ru', 'pt', 'hi'];
 
-const WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
-const WW_PAGE_SEO = {
+function switchLang(lang) {
+  if (WW_KEY_PAGE_LANGS.indexOf(lang) === -1) return;
+  currentLang = lang;
+  try {
+    var kl = document.getElementById('keyPageLang');
+    if (kl) kl.value = lang;
+  } catch (e) {}
+  if (typeof renderKeyGrid === 'function') renderKeyGrid();
+}
+
+function syncKeyPageLangSelect() {
+  try {
+    var kl = document.getElementById('keyPageLang');
+    if (!kl) return;
+    var v = WW_KEY_PAGE_LANGS.indexOf(currentLang) >= 0 ? currentLang : 'zh';
+    kl.value = v;
+    if (kl.value !== v) kl.value = 'zh';
+  } catch (e2) {}
+}
+
+var MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
+var TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
+
+var WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
+var WW_PAGE_SEO = {
   'page-welcome': { title: '欢迎 — WorldToken 多语言钱包', description: '创建或导入钱包：万语地址与多链资产管理。' },
   'page-create': { title: '创建钱包 — WorldToken', description: '生成 BIP39 助记词，派生 TRX、ETH、BTC 地址。' },
   'page-key': { title: '备份助记词 — WorldToken', description: '请安全抄写并离线保存助记词，勿截图或上传网络。' },
@@ -1183,22 +564,7 @@ function wwBase32Encode(buf) {
   if (bits > 0) out += alphabet[(val << (5 - bits)) & 31];
   return out;
 }
-function wwBase32Decode(s) {
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  s = String(s || '').replace(/\s/g, '').toUpperCase().replace(/=+$/, '');
-  let bits = 0, val = 0, out = [];
-  for (let i = 0; i < s.length; i++) {
-    const idx = alphabet.indexOf(s[i]);
-    if (idx < 0) continue;
-    val = (val << 5) | idx;
-    bits += 5;
-    if (bits >= 8) {
-      bits -= 8;
-      out.push((val >> bits) & 255);
-    }
-  }
-  return new Uint8Array(out);
-}
+
 function wwCounterBytes(n) {
   const b = new Uint8Array(8);
   let x = BigInt(n);
@@ -1213,30 +579,11 @@ async function wwHmacSha1(keyBytes, msgBytes) {
   const sig = await crypto.subtle.sign('HMAC', k, msgBytes);
   return new Uint8Array(sig);
 }
-async function wwVerifyTotpCode(secretB32, input) {
-  if (!/^\d{6}$/.test(input || '')) return false;
-  const raw = wwBase32Decode(secretB32);
-  if (!raw.length) return false;
-  const step = 30;
-  const t = Math.floor(Date.now() / 1000 / step);
-  for (let d = -1; d <= 1; d++) {
-    const msg = wwCounterBytes(t + d);
-    const h = await wwHmacSha1(raw, msg);
-    const o = h[h.length - 1] & 0x0f;
-    const bin = ((h[o] & 0x7f) << 24) | ((h[o + 1] & 0xff) << 16) | ((h[o + 2] & 0xff) << 8) | (h[o + 3] & 0xff);
-    const code = String(bin % 1000000).padStart(6, '0');
-    if (code === input) return true;
-  }
-  return false;
-}
+
 function wwTotpEnabled() {
   return localStorage.getItem('ww_totp_enabled') === '1' && !!localStorage.getItem('ww_totp_secret');
 }
-function wwGenerateTotpSecretB32() {
-  const u = new Uint8Array(20);
-  crypto.getRandomValues(u);
-  return wwBase32Encode(u);
-}
+
 function closePinSetupOverlay() {
   const el = document.getElementById('pinSetupOverlay');
   if (el) el.classList.remove('show');
@@ -1251,21 +598,9 @@ function offerTotpAfterPinSave() {
     } catch (e) {}
   }, 120);
 }
-function openTotpSettingsRow() {
-  const pin = localStorage.getItem('ww_unlock_pin');
-  if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
-  if (wwTotpEnabled()) {
-    if (!confirm('确定要关闭两步验证吗？')) return;
-    localStorage.removeItem('ww_totp_secret');
-    localStorage.removeItem('ww_totp_enabled');
-    showToast('两步验证已关闭', 'success');
-    updateSettingsPage();
-    return;
-  }
-  startTotpSetup();
-}
+
 function startTotpSetup() {
-  const pin = localStorage.getItem('ww_unlock_pin');
+  const pin = localStorage.getItem('ww_pin');
   if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
   const secretB32 = wwGenerateTotpSecretB32();
   window._wwTotpPendingSecret = secretB32;
@@ -1294,21 +629,7 @@ function closeTotpSetup() {
   if (ov) ov.classList.remove('show');
   window._wwTotpPendingSecret = null;
 }
-async function confirmTotpSetup() {
-  const sec = window._wwTotpPendingSecret;
-  const inputEl = document.getElementById('totpSetupVerifyInput');
-  const input = inputEl ? inputEl.value.trim() : '';
-  if (!/^\d{6}$/.test(input)) { showToast('请输入 6 位验证码', 'error'); return; }
-  if (!sec) { showToast('会话已过期，请重试', 'error'); return; }
-  const ok = await wwVerifyTotpCode(sec, input);
-  if (!ok) { showToast('验证码不正确', 'error'); return; }
-  localStorage.setItem('ww_totp_secret', sec);
-  localStorage.setItem('ww_totp_enabled', '1');
-  window._wwTotpPendingSecret = null;
-  closeTotpSetup();
-  showToast('两步验证已启用', 'success');
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-}
+
 function showTotpUnlockOverlay() {
   const ov = document.getElementById('totpUnlockOverlay');
   const inp = document.getElementById('totpUnlockInput');
@@ -1317,28 +638,7 @@ function showTotpUnlockOverlay() {
   if (err) err.style.display = 'none';
   if (ov) ov.classList.add('show');
 }
-async function submitTotpUnlock() {
-  const inp = document.getElementById('totpUnlockInput');
-  const err = document.getElementById('totpUnlockError');
-  const got = inp ? inp.value.trim() : '';
-  const sec = localStorage.getItem('ww_totp_secret');
-  if (!sec || !/^\d{6}$/.test(got)) {
-    if (err) err.style.display = 'block';
-    return;
-  }
-  const ok = await wwVerifyTotpCode(sec, got);
-  if (!ok) {
-    if (err) err.style.display = 'block';
-    if (inp) inp.value = '';
-    const pan = document.getElementById('totpUnlockPanel');
-    if (pan) { pan.classList.remove('wt-shake-wrong'); void pan.offsetWidth; pan.classList.add('wt-shake-wrong'); }
-    return;
-  }
-  const ov = document.getElementById('totpUnlockOverlay');
-  if (ov) ov.classList.remove('show');
-  if (err) err.style.display = 'none';
-  _resumeWalletAfterUnlock();
-}
+
 function closeTotpUnlock() {
   if(window._wwForceIdleLock) {
     if(typeof showToast==='function') showToast('请输入两步验证码以解锁', 'warning', 2200);
@@ -1364,25 +664,36 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) {}
   applySeoForPage(pageId);
-  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const activePage=document.getElementById(pageId);
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
-  activePage.style.display='';
+  activePage.style.display='flex';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
-    // 永远默认 12 词，生成全新钱包
-    currentMnemonicLength = 12;
-    var _sel = document.getElementById('mnemonicLength');
-    if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
-    showWalletLoading();
-    createRealWallet(currentMnemonicLength).then(function() {
-      if (typeof updateRealAddr === 'function') updateRealAddr();
-      hideWalletLoading();
+    var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen;
+    if (_skipKey) {
+      syncKeyPageLangSelect();
       if (typeof renderKeyGrid === 'function') renderKeyGrid();
-    }).catch(function(e) {
-      hideWalletLoading();
-    });
+    } else {
+      currentMnemonicLength = 12;
+      var _sel = document.getElementById('mnemonicLength');
+      if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
+      syncKeyPageLangSelect();
+      showWalletLoading();
+      Promise.resolve(createWallet(12))
+        .then(function (w) {
+          window.TEMP_WALLET = w;
+          hideWalletLoading();
+          syncKeyPageLangSelect();
+          if (typeof renderKeyGrid === 'function') renderKeyGrid();
+        })
+        .catch(function (e) {
+          hideWalletLoading();
+          if (typeof showToast === 'function')
+            showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '生成失败', 'error');
+        });
+    }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
 if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
@@ -1457,6 +768,7 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
     if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
     if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
+    if (REAL_WALLET && REAL_WALLET.ethAddress && typeof updateQRCode === 'function') setTimeout(updateQRCode, 250);
   }
   if(pageId==='page-transfer') {
     if(typeof initTransferFeeSpeedUI==='function') initTransferFeeSpeedUI();
@@ -1472,9 +784,9 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
       } catch(e) {}
     }, 200);
   }
-  if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
-    setTimeout(loadTxHistory, 500);
-    setTimeout(loadBalances, 500);
+  if (pageId === 'page-home' && REAL_WALLET) {
+    if (REAL_WALLET.trxAddress) setTimeout(loadTxHistory, 500);
+    if (REAL_WALLET.ethAddress) setTimeout(loadBalances, 500);
   }
   try { if (typeof wwUpdateScrollTopBtn === 'function') wwUpdateScrollTopBtn(); } catch (e) {}
   try {
@@ -1489,16 +801,6 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
       }
     }
   } catch (e) {}
-}
-
-
-async function resolveENS(name) {
-  if (!name.endsWith('.eth')) return name;
-  try {
-    const provider = new ethers.providers.JsonRpcProvider('https://eth.llamarpc.com');
-    const addr = await provider.resolveName(name);
-    return addr || name;
-  } catch(e) { return name; }
 }
 
 function goTab(tabId) {
@@ -1576,23 +878,11 @@ function initTabSwipeGesture() {
   }, { passive: true });
 }
 
-
-function selectLang(btn) {
-  document.querySelectorAll('#welcomeLangGrid .lang-row, #welcomeLangGrid .lang-btn').forEach(b=>{
-    b.classList.remove('active');
-    const check = b.querySelector('.lang-check');
-    if(check) check.style.opacity='0';
-  });
-  btn.classList.add('active');
-  const check = btn.querySelector('.lang-check');
-  if(check) check.style.opacity='1';
-  currentLang = btn.dataset.lang;
-}
-
 function renderKeyGrid() {
   let words;
   const isEn = currentLang === 'en';
-  const enMnemonic = REAL_WALLET && REAL_WALLET.enMnemonic;
+  const tw = window.TEMP_WALLET;
+  const enMnemonic = tw && (tw.mnemonic || tw.enMnemonic);
   if (!enMnemonic) {
     goTo('page-create');
     return;
@@ -1600,13 +890,13 @@ function renderKeyGrid() {
   const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
   if (isEn) {
     words = enWords;
-    if (REAL_WALLET) REAL_WALLET.words = words;
+    if (tw) tw.words = words;
   } else {
     words = enWordsToLangKeyTableWords(enWords, currentLang);
-    if (REAL_WALLET) {
-      REAL_WALLET.displayLang = currentLang;
-      REAL_WALLET.displayWords = words;
-      REAL_WALLET.words = words;
+    if (tw) {
+      tw.displayLang = currentLang;
+      tw.displayWords = words;
+      tw.words = words;
     }
   }
   try {
@@ -1640,8 +930,8 @@ function renderKeyGrid() {
     d.innerHTML=`<div class="word-num">${String(i+1).padStart(2,'0')}</div><div class="word-val" style="font-size:${isSmall?'11px':'13px'}">${w}</div>`;
     grid.appendChild(d);
   });
-  if (REAL_WALLET) {
-    REAL_WALLET.words = words.slice();
+  if (tw) {
+    tw.words = words.slice();
   }
   if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
 }
@@ -1690,10 +980,10 @@ function updateHomeBackupBanner() {
 
 function getMnemonicStrengthDisplay() {
   var n = 12;
-  // 以真实助记词词数为准（不依赖可能被浏览器恢复的下拉框）
-  if (REAL_WALLET && REAL_WALLET.enMnemonic) {
-    var wc = REAL_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
-    if ([12, 15, 18, 21, 24].includes(wc)) n = wc;
+  // 密钥页以 TEMP_WALLET 词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    var wct = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean).length;
+    if ([12, 15, 18, 21, 24].includes(wct)) n = wct;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
   }
@@ -1714,170 +1004,13 @@ function updateMnemonicStrengthIndicator() {
   elLevel.textContent = d.level;
 }
 
-function setTransferQuickAmount(amt) {
-  var inp = document.getElementById('transferAmount');
-  if (!inp) return;
-  inp.value = String(amt);
-  if (typeof calcTransferFee === 'function') calcTransferFee();
-}
-
-function updateAddr() {
-  const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
-  const isEn = currentLang==='en';
-  // 初始化万语地址（如果还没初始化）
-  if(ADDR_WORDS.length === 0) initAddrWords();
-  else renderAddrWords();
-  // 获取完整万语地址
-  const nativeAddr = getNativeAddr();
-  const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
-  // 首页芯片
-  const chip = document.getElementById('homeAddrChip');
-  if(chip) chip.textContent = isEn ? CHAIN_ADDR : nativeAddr;
-  // QR 二维码区大字显示
-  const qp1 = document.getElementById('qrPart1');
-  const qp2 = document.getElementById('qrPart2');
-  if(qp1 && !isEn) { qp1.textContent = nativeAddr.substring(0,10); qp1.style.fontSize='14px'; qp1.style.letterSpacing='1px'; }
-  if(qp2 && !isEn) { qp2.textContent = nativeAddr.substring(10); qp2.style.fontSize='12px'; }
-  // swoosh 转账动画
-  const sfp1 = _safeEl('swooshFromPart1');
-  const sfp2 = _safeEl('swooshFromPart2');
-  if(sfp1 && !isEn) { sfp1.textContent = nativeAddr.substring(0,8); sfp1.style.fontSize='12px'; sfp1.style.letterSpacing='1px'; }
-  if(sfp2 && !isEn) sfp2.textContent = nativeAddr.substring(8,18)+'...';
-  // 转账成功页
-  const suc1 = _safeEl('successFromPart1');
-  const suc2 = _safeEl('successFromPart2');
-  if(suc1 && !isEn) { suc1.textContent = nativeAddr.substring(0,8); suc1.style.fontSize='12px'; }
-  if(suc2 && !isEn) suc2.textContent = nativeAddr.substring(8,18)+'...';
-  // 地址页
-  const m=_safeEl('addrMain');
-  const n=(_safeEl('addrNum') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrNum fallback */;
-  if(m) m.textContent = isEn ? CHAIN_ADDR : a.main;
-  if(n) n.style.display = isEn?'none':'block';
-  if(n&&!isEn) n.textContent = a.num;
-  // QR弹窗同步
-  const qm=document.getElementById('qrAddrMain');
-  if(qm) qm.textContent = isEn ? CHAIN_ADDR : nativeAddr;
-  // 二维码区语言标签（与系统语言 currentLang 一致）
-  const langTag = document.getElementById('qrLangTag');
-  const info = LANG_INFO[currentLang]||{flag:'🌍',name:'Mother'};
-  if(langTag) langTag.textContent = (info.flag || '🌍') + ' ' + (currentLang === 'en' ? 'BIP39' : '万语地址');
-  // 更新二维码显示内容
-  updateQRDisplay();
-  // 同步礼金UI
-  if(typeof updateGiftUI==='function') updateGiftUI();
-  updateHomeChainStrip();
-}
-
-function getNativeAddr() {
-  if(currentLang === 'en') return CHAIN_ADDR;
-  const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
-  const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
-  const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
-  return prefix + words + suffix;
-}
-
-function copyHomeAddr() {
-  const addr = getNativeAddr();
-  const btn = document.getElementById('homeCopyBtn');
-  const done = () => {
-    if(btn) {
-      btn.textContent = '✅ 已复制';
-      btn.style.background = 'rgba(74,200,74,0.2)';
-      btn.style.color = 'var(--green)';
-      setTimeout(() => {
-        btn.textContent = '复制地址';
-        btn.style.background = '';
-        btn.style.color = '';
-      }, 1800);
-    }
-    showToast('✅ 万语地址已复制到剪贴板', 'success', 2200);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(addr).then(done).catch(() => {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = addr;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        done();
-      } catch(e) { showToast('复制失败，请长按地址手动复制', 'error'); }
-    });
-  } else {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = addr;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      done();
-    } catch(e) { showToast('复制失败，请长按地址手动复制', 'error'); }
-  }
-}
-
-function copyNative() {
-  navigator.clipboard?.writeText(getNativeAddr()).catch(()=>{});
-  const btn=document.getElementById('copyNativeBtn');
-  if(btn){btn.textContent='✅ 已复制'; btn.classList.add('copied');}
-  setTimeout(()=>{btn.textContent='📋 复制';if(btn) btn.classList.remove('copied');},2000);
-}
-
-function copyBoth() {
-  const native = getNativeAddr();
-  const isEn = currentLang === 'en';
-  let text;
-  if(isEn) {
-    text = `⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
-  } else {
-    text = `🌍 万语地址\n${native}\n\n⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
-  }
-  navigator.clipboard?.writeText(text).catch(()=>{});
-  const btn=_safeEl('copyBothBtn');
-  btn.innerHTML='✅ 已复制两个地址';
-  btn.style.borderColor='var(--green)';btn.style.color='var(--green)';
-  setTimeout(()=>{btn.innerHTML='📋 一键复制两个地址（母语 + 公链）';btn.style.borderColor='';btn.style.color='';},2500);
-}
-
-function copySingle(text, el) {
-  navigator.clipboard?.writeText(text).catch(()=>{});
-  const orig=el.textContent; el.textContent='✅';
-  setTimeout(()=>el.textContent=orig,1500);
-}
-
-function showQR() { document.getElementById('qrOverlay').classList.add('show'); }
-
-let currentQRChain = 'native';
-const QR_CHAIN_DATA = {
+var currentQRChain = 'native';
+var QR_CHAIN_DATA = {
   native: { label:'万语地址', color:'var(--gold)' },
   trx: { label:'TRX 公链地址', color:'#ff9a9a' },
   eth: { label:'ETH 公链地址', color:'#aaaaff' },
   btc: { label:'BTC 公链地址', color:'#ffb84d' },
 };
-
-function switchQRChain(chain) {
-  currentQRChain = chain;
-  const btns = ['native','trx','eth','btc'];
-  btns.forEach(b => {
-    const el = document.getElementById('qrBtn'+b.charAt(0).toUpperCase()+b.slice(1));
-    if(!el) return;
-    if(b===chain) {
-      el.style.borderColor='rgba(200,168,75,0.4)';
-      el.style.color='var(--gold)';
-      el.style.background='linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05))';
-    } else {
-      el.style.borderColor='var(--border)';
-      el.style.color='var(--text-muted)';
-      el.style.background='var(--bg3)';
-    }
-  });
-  updateQRDisplay();
-}
 
 function updateQRDisplay() {
   const isEn = currentLang==='en';
@@ -1906,47 +1039,67 @@ function updateQRDisplay() {
   }
 }
 
-function copyQRAddr() {
-  const native = getNativeAddr();
-  const text = currentLang==='en'
-    ? '⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr()
-    : '🌍 万语地址\n'+native+'\n\n⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr();
-  navigator.clipboard?.writeText(text).catch(()=>{});
-  const btn = _safeEl('qrCopyBtn');
-  if(btn) { btn.innerHTML='✅ 已复制'; setTimeout(()=>btn.innerHTML='📋 复制地址',1500); }
+/** 构建收款二维码 URI（TRX / ETH） */
+function wwBuildReceiveQrPayload(chain, addr, amountRaw) {
+  var amt = amountRaw;
+  if (amt === undefined || amt === null) {
+    var inp = document.getElementById('qrReceiveAmount');
+    amt = inp ? inp.value : '';
+  }
+  var af = parseFloat(amt);
+  if (!addr) return '';
+  if (chain === 'trx') {
+    var sun = Math.floor((isFinite(af) ? af : 0) * 1e6);
+    if (sun > 0) return 'tron:' + addr + '?amount=' + sun;
+    return addr;
+  }
+  if (chain === 'eth') {
+    if (isFinite(af) && af > 0 && typeof ethers !== 'undefined' && ethers.utils && ethers.utils.parseEther) {
+      try {
+        return 'ethereum:' + addr + '?value=' + ethers.utils.parseEther(String(af)).toString();
+      } catch (e) {
+        return addr;
+      }
+    }
+    return addr;
+  }
+  if (chain === 'btc') return addr;
+  return addr;
 }
 
-function toggleQRChain() {
-  const chains = ['native','trx','eth','btc'];
-  const idx = chains.indexOf(currentQRChain);
-  switchQRChain(chains[(idx+1)%chains.length]);
+function wwGenerateQRCode(text, canvasId) {
+  return loadQRCodeLib()
+    .then(function () {
+      var canvas = document.getElementById(canvasId || 'qrCanvas');
+      if (!canvas || !text || typeof QRCode === 'undefined' || !QRCode.toCanvas) return;
+      var w = Math.min(canvas.width || 130, 128);
+      return QRCode.toCanvas(canvas, text, { width: w, margin: 1 });
+    })
+    .catch(function (e) {
+      console.warn('[QR]', e);
+    });
 }
-function hideQR() { document.getElementById('qrOverlay').classList.remove('show'); }
 
+/** 根据当前链选择与 REAL_WALLET 地址生成首页/地址页二维码 */
+function updateQRCode() {
+  if (!REAL_WALLET) return;
+  var sel = document.getElementById('qrChainSelect');
+  var chain = (sel && sel.value) || 'trx';
+  var addr = '';
+  if (chain === 'trx') addr = REAL_WALLET.trxAddress || '';
+  else if (chain === 'eth') addr = REAL_WALLET.ethAddress || '';
+  else if (chain === 'btc' || chain === 'native') addr = REAL_WALLET.btcAddress || REAL_WALLET.trxAddress || '';
+  if (!addr) return;
+  var amtEl = document.getElementById('qrReceiveAmount');
+  var amtRaw = amtEl ? amtEl.value : '';
+  var payload = wwBuildReceiveQrPayload(chain, addr, amtRaw);
+  wwGenerateQRCode(payload, 'qrCanvas');
+}
 
 // KEYWORDS_ZH 已迁移到 KW_ZH
 // KEYWORDS_EN 已迁移到 KW_EN
 // Must not reference KW_ZH here — const KW_ZH is declared later (TDZ).
-let currentKeyword = '举头望明月';
-
-function getKeywords() {
-  return (typeof LANG_KW!=='undefined' ? LANG_KW[currentLang] : null) || KW_ZH || [];
-}
-
-function refreshKeyword() {
-  const kws = getKeywords();
-  const idx = Math.floor(Math.random() * kws.length);
-  currentKeyword = kws[idx];
-  // 更新关键词显示（多个可能的 DOM id）
-  ['hbKeyword','kwKeyword','kwShareKeyword'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.textContent=currentKeyword;
-  });
-}
-
-function setAmount(v) {
-  document.getElementById('hbAmount').value = v;
-  updateHbPreview();
-}
+var currentKeyword = '举头望明月';
 
 function claimHongbao() {
   submitClaim(); // 调用真实领取
@@ -1956,55 +1109,6 @@ function copyKeyword() {
   navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
   const btn = event?.target?.closest('div');
   if(btn) { const old = btn.textContent; btn.textContent = '✅ 已复制'; setTimeout(()=>btn.textContent=old, 1500); }
-}
-
-
-
-
-function toggleBatchSendPanel() {
-  const p = document.getElementById('batchSendPanel');
-  const box = document.getElementById('transferAddrBox');
-  const t = document.getElementById('batchSendToggle');
-  if(!p || !box) return;
-  const opening = p.style.display === 'none' || !p.style.display;
-  if(opening) {
-    p.style.display = 'block';
-    box.style.display = 'none';
-    if(t) t.textContent = '✏️ 单笔转账';
-  } else {
-    p.style.display = 'none';
-    box.style.display = '';
-    if(t) t.textContent = '📋 批量发送';
-  }
-}
-
-async function runBatchTransfer() {
-  const ta = document.getElementById('batchTransferLines');
-  const lines = (ta && ta.value ? ta.value : '').split(/\n/).map(function(l) { return l.trim(); }).filter(Boolean);
-  const amt = parseFloat(document.getElementById('transferAmount').value);
-  if(!lines.length) { showToast('❌ 请至少输入一个地址', 'error'); return; }
-  if(!amt || amt <= 0) { showToast('❌ 请输入有效金额', 'error'); return; }
-  if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
-  const bal = Number(transferCoin.bal) || 0;
-  const n = lines.length;
-  if(amt * n > bal + 1e-10) { showToast('❌ 总金额超过可用余额（共'+n+'笔）', 'error'); if(typeof shakeTransferAmountTooHigh==='function') shakeTransferAmountTooHigh(); return; }
-  if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
-    showToast('📡 当前无网络，请联网后再发送', 'warning');
-    return;
-  }
-  if(!confirm('将向 '+n+' 个地址各发送 '+amt+' '+transferCoin.name+'，确认？')) return;
-  let okCount = 0;
-  for(let i = 0; i < lines.length; i++) {
-    document.getElementById('transferAddr').value = lines[i];
-    document.getElementById('transferAmount').value = String(amt);
-    const ok = await broadcastRealTransfer();
-    if(ok) { okCount++; if(typeof saveRecentTransferAddr==='function') saveRecentTransferAddr(lines[i]); }
-    else { showToast('第 '+(i+1)+' 笔发送失败，已停止', 'error'); break; }
-    await new Promise(function(r) { setTimeout(r, 450); });
-  }
-  showToast('完成：成功 '+okCount+' / '+n, okCount === n ? 'success' : 'warning');
-  if(typeof loadBalances==='function') loadBalances();
-  if(okCount > 0) goTo('page-home');
 }
 
 function parseAssetDisplayBalance(balId) {
@@ -2060,73 +1164,6 @@ function getMnemonicWordsForDisplay() {
   return words;
 }
 
-function copyMnemonicAsCardImage(btn) {
-  const words = getMnemonicWordsForDisplay();
-  if(!words.length) { showToast('无可用助记词', 'error'); return; }
-  const w = 720;
-  const rowH = 42;
-  const cols = 3;
-  const gridRows = Math.ceil(words.length / cols);
-  const h = 120 + gridRows * rowH + 100;
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  const grd = ctx.createLinearGradient(0, 0, w, h);
-  grd.addColorStop(0, '#1a1528');
-  grd.addColorStop(1, '#07070e');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = 'rgba(200,168,75,0.45)';
-  ctx.lineWidth = 3;
-  ctx.strokeRect(18, 18, w - 36, h - 36);
-  ctx.fillStyle = 'rgba(200,168,75,0.95)';
-  ctx.font = 'bold 28px system-ui,-apple-system,sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('WorldToken', w / 2, 58);
-  ctx.fillStyle = 'rgba(255,255,255,0.45)';
-  ctx.font = '14px system-ui,-apple-system,sans-serif';
-  ctx.fillText('助记词备份 · 请离线保存，勿分享', w / 2, 88);
-  ctx.textAlign = 'left';
-  ctx.font = '20px ui-monospace, Menlo, monospace';
-  const cellW = (w - 96) / cols;
-  words.forEach(function(word, i) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const x = 48 + col * cellW;
-    const y = 118 + row * rowH;
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    ctx.fillText((i + 1) + '. ' + word, x, y);
-  });
-  ctx.fillStyle = 'rgba(255,120,100,0.95)';
-  ctx.font = '13px system-ui,-apple-system,sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('⚠ 任何获得此图的人可能控制您的资产 · 请妥善保管', w / 2, h - 36);
-  canvas.toBlob(function(blob) {
-    if(!blob) { showToast('图片生成失败', 'error'); return; }
-    try {
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'worldtoken-mnemonic-backup.png';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch(e1) {}
-    if(navigator.clipboard && navigator.clipboard.write) {
-      try {
-        navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      } catch(e2) {}
-    }
-    if(btn) {
-      var prev = btn.textContent;
-      btn.textContent = '✅ 已保存';
-      setTimeout(function() { btn.textContent = prev; }, 2000);
-    }
-  }, 'image/png', 0.95);
-}
-
 // ── 真实转账实现 ──────────────────────────────────────────────────
 function wwFmtNum(n) {
   if(n === undefined || n === null || isNaN(n)) return '0';
@@ -2165,23 +1202,8 @@ async function loadTrxResource() {
     if(card) card.style.display = 'none';
   }
 }
-function wwLoadDappUrl() {
-  var inp = document.getElementById('dappUrlInput');
-  var f = document.getElementById('dappFrame');
-  if(!f) return;
-  var u = inp && inp.value ? inp.value.trim() : '';
-  if(!u) { if(typeof showToast==='function') showToast('请输入网址', 'warning'); return; }
-  if(!/^https?:\/\//i.test(u)) u = 'https://' + u;
-  try {
-    f.src = u;
-  } catch(e1) {
-    if(typeof showToast==='function') showToast('无法打开链接', 'error');
-  }
-}
-function wwDappReload() {
-  var f = document.getElementById('dappFrame');
-  if(f && f.src) { try { f.contentWindow.location.reload(); } catch(e) { f.src = f.src; } }
-}
+
+
 function wwGetIdleLockMinutes() {
   try {
     var v = localStorage.getItem('ww_lock_idle_min');
@@ -2198,24 +1220,14 @@ function wwApplyIdleLockLabel() {
   else if(m === 15) el.textContent = '15 分钟';
   else el.textContent = '关闭';
 }
-function wwCycleIdleLockMinutes() {
-  var cur = wwGetIdleLockMinutes();
-  var next = cur === 0 ? 1 : (cur === 1 ? 5 : (cur === 5 ? 15 : 0));
-  try {
-    if(next === 0) localStorage.removeItem('ww_lock_idle_min');
-    else localStorage.setItem('ww_lock_idle_min', String(next));
-  } catch(e) {}
-  wwApplyIdleLockLabel();
-  wwResetActivityClock();
-  if(typeof showToast==='function') showToast(next === 0 ? '已关闭闲置锁定' : ('闲置 ' + next + ' 分钟后锁定'), 'info', 2200);
-}
+
 function wwResetActivityClock() {
   window._wwLastActivityTs = Date.now();
 }
 function wwTickIdleLock() {
   var mins = wwGetIdleLockMinutes();
   if(!mins) return;
-  if(!localStorage.getItem('ww_unlock_pin')) return;
+  if(!localStorage.getItem('ww_pin')) return;
   if(!REAL_WALLET) return;
   var pov = document.getElementById('pinUnlockOverlay');
   var tov = document.getElementById('totpUnlockOverlay');
@@ -2236,9 +1248,9 @@ function wwTickIdleLock() {
   }
 }
 
-const TRON_GRID = 'https://api.trongrid.io';
-const USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-const ETH_RPC = 'https://eth.llamarpc.com';
+var TRON_GRID = 'https://api.trongrid.io';
+var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+var ETH_RPC = 'https://eth.llamarpc.com';
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
@@ -2249,6 +1261,35 @@ async function broadcastRealTransfer() {
   }
   const amt = parseFloat(document.getElementById('transferAmount').value);
   const coin = transferCoin.id;
+
+  if (!addr) {
+    showToast('❌ 请输入收款地址', 'error');
+    return false;
+  }
+  if (coin === 'trx' || coin === 'usdt') {
+    if (addr[0] !== 'T') {
+      showToast('❌ TRX / USDT-TRC20 收款地址须以 T 开头', 'error');
+      return false;
+    }
+  } else if (coin === 'eth') {
+    if (!addr.startsWith('0x') || addr.length < 10) {
+      showToast('❌ ETH 收款地址须为 0x 开头的有效地址', 'error');
+      return false;
+    }
+  }
+  if (!isFinite(amt) || amt <= 0) {
+    showToast('❌ 请输入有效转账金额', 'error');
+    return false;
+  }
+  var balAvail = 0;
+  if (typeof COINS !== 'undefined' && COINS.length) {
+    var cFound = COINS.filter(function (c) { return c.id === coin; })[0];
+    if (cFound) balAvail = Number(cFound.bal) || 0;
+  }
+  if (balAvail < amt) {
+    showToast('❌ 余额不足', 'error');
+    return false;
+  }
 
   try {
     let txHash = '';
@@ -2268,6 +1309,13 @@ async function broadcastRealTransfer() {
     }
 
     if(txHash) {
+      try {
+        if (REAL_WALLET) {
+          try { delete REAL_WALLET.privateKey; } catch (_k1) {}
+          try { delete REAL_WALLET.trxPrivateKey; } catch (_k2) {}
+          window.REAL_WALLET = REAL_WALLET;
+        }
+      } catch (_clr) {}
       try { if (typeof wwRecordSpendAfterBroadcast === 'function') wwRecordSpendAfterBroadcast(amt); } catch (_rs) {}
       _safeEl('successTxHash') && ((_safeEl('successTxHash') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successTxHash fallback */.textContent = txHash);
       _safeEl('successTxLink') && (_safeEl('successTxLink').href =
@@ -2281,66 +1329,10 @@ async function broadcastRealTransfer() {
   return false;
 }
 
-async function sendUSDT_TRC20(toAddr, amount) {
-  await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
-  const tx = await tw.transactionBuilder.triggerSmartContract(
-    USDT_TRC20,
-    'transfer(address,uint256)',
-    { feeLimit: (typeof getTronFeeLimitUsdt==='function' ? getTronFeeLimitUsdt() : 20000000) },
-    [
-      { type: 'address', value: toAddr },
-      { type: 'uint256', value: amtSun }
-    ],
-    REAL_WALLET.trxAddress // Base58格式，TronWeb自动处理
-  );
-  const signed = await tw.trx.sign(tx.transaction);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'USDT 广播失败');
-}
-
-async function sendTRX(toAddr, amount) {
-  await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6);
-  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
-  const signed = await tw.trx.sign(tx);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'TRX 广播失败');
-}
-
-async function sendETH(toAddr, amount) {
-  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
-  const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
-  const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
-  const mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
-  const fd = await provider.getFeeData();
-  const txReq = {
-    to: toAddr,
-    value: ethers.utils.parseEther(amount.toString()),
-    gasLimit: 21000
-  };
-  const m = Math.round(mult * 100);
-  if(fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
-    txReq.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);
-    txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(m).div(100);
-  } else if(fd.gasPrice) {
-    txReq.gasPrice = fd.gasPrice.mul(m).div(100);
-  }
-  const tx = await wallet.sendTransaction(txReq);
-  await tx.wait(1);
-  return tx.hash;
-}
-
 // ══ 转账系统 ══
-let transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
+var transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
 
-const WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
+var WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
 function getRecentTransferAddrs() {
   try {
     const raw = localStorage.getItem(WW_RECENT_ADDR_KEY);
@@ -2357,7 +1349,7 @@ function saveRecentTransferAddr(addr) {
   try { localStorage.setItem(WW_RECENT_ADDR_KEY, JSON.stringify(list)); } catch(e) {}
 }
 
-const WW_CONTACTS_KEY = 'ww_transfer_contacts';
+var WW_CONTACTS_KEY = 'ww_transfer_contacts';
 function getTransferContacts() {
   try {
     const raw = localStorage.getItem(WW_CONTACTS_KEY);
@@ -2368,42 +1360,15 @@ function getTransferContacts() {
 function setTransferContacts(list) {
   try { localStorage.setItem(WW_CONTACTS_KEY, JSON.stringify(list.slice(0, 48))); } catch(e) {}
 }
-function saveTransferContact(addr, nick) {
-  const a = (addr || '').trim();
-  const n = ((nick || '').trim() || '未命名').slice(0, 32);
-  if(!a) return;
-  let list = getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== a.toLowerCase());
-  list.unshift({ addr: a, nick: n });
-  setTransferContacts(list);
-  renderTransferContactsList();
-  showToast('已保存联系人', 'success');
-}
+
 function removeTransferContact(addr) {
   const t = (addr || '').trim().toLowerCase();
   if(!t) return;
   setTransferContacts(getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== t));
   renderTransferContactsList();
 }
-function toggleContactAddForm() {
-  const f = document.getElementById('transferContactAddForm');
-  if(!f) return;
-  const open = f.style.display === 'none' || !f.style.display || f.style.display === '';
-  f.style.display = open ? 'block' : 'none';
-  if(open) {
-    const inp = document.getElementById('contactNickInput');
-    if(inp) { inp.value = ''; try { inp.focus(); } catch(e) {} }
-  }
-}
-function saveContactFromForm() {
-  const ta = document.getElementById('transferAddr');
-  const addr = ta ? ta.value.trim() : '';
-  const inp = document.getElementById('contactNickInput');
-  const nick = inp ? inp.value.trim() : '';
-  if(!addr) { showToast('请先填写收款地址', 'error'); return; }
-  saveTransferContact(addr, nick);
-  const f = document.getElementById('transferContactAddForm');
-  if(f) f.style.display = 'none';
-}
+
+
 function renderTransferContactsList() {
   const box = document.getElementById('transferContactsList');
   if(!box) return;
@@ -2443,13 +1408,7 @@ function addrBookShort(addr) {
   if(s.length <= 16) return s;
   return s.slice(0, 8) + '…' + s.slice(-6);
 }
-function getTransferFeeSpeed() {
-  try {
-    const s = localStorage.getItem('ww_transfer_fee_speed');
-    if(s === 'slow' || s === 'normal' || s === 'fast') return s;
-  } catch(e) {}
-  return 'normal';
-}
+
 function setTransferFeeSpeed(speed) {
   if(speed !== 'slow' && speed !== 'normal' && speed !== 'fast') speed = 'normal';
   try { localStorage.setItem('ww_transfer_fee_speed', speed); } catch(e) {}
@@ -2484,7 +1443,7 @@ function transferSpeedHint(coinId, sp) {
   };
   return ((m[coinId] || m.usdt)[sp]) || m.usdt.normal;
 }
-let _wwTickerInterval = null;
+var _wwTickerInterval = null;
 async function refreshHomePriceTicker() {
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tron,tether&vs_currencies=usd');
@@ -2515,32 +1474,6 @@ async function refreshHomePriceTicker() {
     }
     try { if (typeof wwCheckPriceAlertsAfterTicker === 'function') wwCheckPriceAlertsAfterTicker(d); } catch (_pa) {}
   } catch(e) {}
-}
-
-function wwRequestPriceAlertPermission() {
-  try {
-    if (typeof Notification === 'undefined') {
-      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info');
-      return;
-    }
-    Notification.requestPermission().then(function (p) {
-      var msg = p === 'granted' ? '已授予通知权限' : ('权限：' + p);
-      if (typeof showToast === 'function') showToast(msg, 'info');
-    });
-  } catch (e) {}
-}
-
-function wwSavePriceAlertsFromUI() {
-  var keys = ['btc', 'eth', 'trx', 'usdt'];
-  var o = { enabled: !!(document.getElementById('wwAlertEnable') && document.getElementById('wwAlertEnable').checked) };
-  keys.forEach(function (k) {
-    var K = k.charAt(0).toUpperCase() + k.slice(1);
-    var a = parseFloat((document.getElementById('wwAlert' + K + 'Above') || {}).value || '');
-    var b = parseFloat((document.getElementById('wwAlert' + K + 'Below') || {}).value || '');
-    o[k] = { above: isFinite(a) && a > 0 ? a : 0, below: isFinite(b) && b > 0 ? b : 0 };
-  });
-  try { localStorage.setItem('ww_price_alerts_v1', JSON.stringify(o)); } catch (e) {}
-  if (typeof showToast === 'function') showToast('已保存价格提醒', 'success');
 }
 
 function wwPopulatePriceAlertForm() {
@@ -2643,170 +1576,11 @@ function wwTransferWhitelistCheck(rawAddr) {
   } catch (e) { return true; }
 }
 
-function wwWhitelistPopulate() {
-  var en = document.getElementById('wwWhitelistEnabled');
-  var ta = document.getElementById('wwWhitelistTextarea');
-  try {
-    var o = JSON.parse(localStorage.getItem('ww_transfer_whitelist_v1') || '{}');
-    if (en) en.checked = !!o.enabled;
-    if (ta) ta.value = (Array.isArray(o.addresses) ? o.addresses : []).join('\n');
-  } catch (e2) {
-    if (en) en.checked = false;
-    if (ta) ta.value = '';
-  }
-}
-
-function wwWhitelistSave() {
-  var en = document.getElementById('wwWhitelistEnabled');
-  var ta = document.getElementById('wwWhitelistTextarea');
-  var lines = (ta && ta.value ? ta.value : '').split(/\n/).map(function (l) { return l.trim(); }).filter(Boolean);
-  var o = { enabled: !!(en && en.checked), addresses: lines.slice(0, 200) };
-  try { localStorage.setItem('ww_transfer_whitelist_v1', JSON.stringify(o)); } catch (e) {}
-  if (typeof showToast === 'function') showToast('白名单已保存', 'success', 1800);
-}
-
-function wwRecurringLoad() {
-  try {
-    var j = JSON.parse(localStorage.getItem('ww_recurring_v1') || '[]');
-    return Array.isArray(j) ? j : [];
-  } catch (e) { return []; }
-}
-
-function wwRecurringSave(list) {
-  try { localStorage.setItem('ww_recurring_v1', JSON.stringify(list.slice(0, 50))); } catch (e) {}
-}
-
-function wwRecurringRenderList() {
-  var host = document.getElementById('wwRecurringList');
-  if (!host) return;
-  var list = wwRecurringLoad();
-  if (!list.length) {
-    host.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-muted);font-size:12px">暂无计划。添加后将在此显示下次提醒时间。</div>';
-    return;
-  }
-    host.innerHTML = list.map(function (it, idx) {
-    var next = it.nextAt ? new Date(it.nextAt).toLocaleString() : '—';
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px">' +
-      '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div style="word-break:break-all;color:var(--text)"><b>' + (it.amt || '?') + '</b> → ' + (it.addr || '').replace(/</g, '') + '</div>' +
-      '<span style="color:var(--red);cursor:pointer;flex-shrink:0" onclick="wwRecurringRemove(' + idx + ')">删除</span></div>' +
-      '<div style="margin-top:6px;color:var(--text-muted);font-size:11px">间隔 ' + (it.days || '?') + ' 天 · 下次提醒 ' + next + ' · ' + (it.enabled ? '已启用' : '已暂停') + '</div></div>';
-  }).join('');
-}
-
-function wwRecurringPopulate() {
-  wwRecurringRenderList();
-}
-
-function wwRecurringAdd() {
-  var a = document.getElementById('wwRecurringAddr');
-  var m = document.getElementById('wwRecurringAmt');
-  var d = document.getElementById('wwRecurringDays');
-  var en = document.getElementById('wwRecurringEnabled');
-  var addr = a ? String(a.value || '').trim() : '';
-  var amt = m ? String(m.value || '').trim() : '';
-  var days = parseInt(d && d.value ? d.value : '7', 10);
-  if (!addr) { if (typeof showToast === 'function') showToast('请填写收款地址', 'error'); return; }
-  if (!days || days < 1) days = 7;
-  var list = wwRecurringLoad();
-  var nextAt = Date.now() + days * 86400000;
-  list.push({ id: String(Date.now()), addr: addr, amt: amt || '—', days: days, enabled: !!(en && en.checked), nextAt: nextAt });
-  wwRecurringSave(list);
-  wwRecurringRenderList();
-  if (a) a.value = '';
-  if (m) m.value = '';
-  if (typeof showToast === 'function') showToast('已加入计划列表', 'success', 2000);
-}
-
-function wwRecurringRemove(idx) {
-  var list = wwRecurringLoad();
-  list.splice(idx, 1);
-  wwRecurringSave(list);
-  wwRecurringRenderList();
-}
-
-function wwRecurringTick() {
-  var list = wwRecurringLoad();
-  var now = Date.now();
-  var ch = false;
-  list.forEach(function (it) {
-    if (!it || !it.enabled || !it.nextAt) return;
-    if (now < it.nextAt) return;
-    var days = Math.max(1, parseInt(it.days, 10) || 7);
-    it.nextAt = now + days * 86400000;
-    ch = true;
-    var title = 'WorldToken · 定期转账提醒';
-    var body = '计划：向 ' + String(it.addr || '').slice(0, 18) + '… 发送约 ' + (it.amt || '?') + '（请手动在转账页操作）';
-    try {
-      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-        new Notification(title, { body: body, tag: 'ww-recurring-' + (it.id || '') });
-      } else if (typeof showToast === 'function') {
-        showToast('📅 ' + body, 'warning', 6000);
-      }
-    } catch (e) {}
-  });
-  if (ch) wwRecurringSave(list);
-}
-
-function wwInheritancePopulate() {
-  try {
-    var o = JSON.parse(localStorage.getItem('ww_inheritance_v1') || '{}');
-    var b = document.getElementById('wwInheritanceBeneficiary');
-    var n = document.getElementById('wwInheritanceNote');
-    if (b) b.value = o.beneficiary || '';
-    if (n) n.value = o.note || '';
-  } catch (e) {}
-}
-
-function wwInheritanceSave() {
-  var b = document.getElementById('wwInheritanceBeneficiary');
-  var n = document.getElementById('wwInheritanceNote');
-  var o = {
-    beneficiary: b ? String(b.value || '').trim().slice(0, 256) : '',
-    note: n ? String(n.value || '').trim().slice(0, 2000) : ''
-  };
-  try { localStorage.setItem('ww_inheritance_v1', JSON.stringify(o)); } catch (e2) {}
-  if (typeof showToast === 'function') showToast('继承备忘已保存（本机）', 'success', 2200);
-}
-
 var WW_DAO_PROPOSALS = [
   { id: 'p1', title: '是否将默认滑点提示调整为 0.5%？', summary: '减少新手因滑点过小导致的失败交易（示意）。' },
   { id: 'p2', title: '是否在设置中默认开启隐私模式？', summary: '首屏隐藏余额，需长按或 PIN 查看（示意）。' },
   { id: 'p3', title: '是否增加 TRX Gas 不足时的弹窗提醒？', summary: '当 TRX 余额低于阈值时强提醒（示意）。' }
 ];
-
-function wwDaoGetVotes() {
-  try {
-    var j = JSON.parse(localStorage.getItem('ww_dao_votes_v1') || '{}');
-    return typeof j === 'object' && j ? j : {};
-  } catch (e) { return {}; }
-}
-
-function wwDaoSetVote(pid, choice) {
-  var v = wwDaoGetVotes();
-  v[pid] = choice;
-  try { localStorage.setItem('ww_dao_votes_v1', JSON.stringify(v)); } catch (e2) {}
-  wwDaoRender();
-  try { if(typeof wwReputationPopulate==='function') wwReputationPopulate(); } catch (_r) {}
-  try { if(typeof updateReputationSettingsRow==='function') updateReputationSettingsRow(); } catch (_s) {}
-  if (typeof showToast === 'function') showToast('投票已保存（本机）', 'success', 1800);
-}
-
-function wwDaoRender() {
-  var box = document.getElementById('wwDaoProposalList');
-  if (!box) return;
-  var votes = wwDaoGetVotes();
-  box.innerHTML = WW_DAO_PROPOSALS.map(function (pr) {
-    var cur = votes[pr.id] || '';
-    function btn(ch, label) {
-      var on = cur === ch ? 'background:rgba(200,168,75,0.25);border-color:var(--gold);color:var(--gold)' : 'background:var(--bg3);border-color:var(--border);color:var(--text)';
-      return '<button type="button" class="btn-secondary" style="flex:1;min-width:72px;padding:8px 6px;font-size:11px;' + on + '" onclick="wwDaoSetVote(\'' + pr.id + '\',\'' + ch + '\')">' + label + '</button>';
-    }
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">' +
-      '<div style="font-weight:700;font-size:14px;color:var(--text);margin-bottom:6px">' + pr.title + '</div>' +
-      '<div style="font-size:12px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">' + pr.summary + '</div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">' + btn('yes', '赞成') + btn('no', '反对') + btn('abstain', '弃权') + '</div></div>';
-  }).join('');
-}
 
 function computeWalletReputationScore() {
   var txs = (typeof window._wwTxHistoryCache !== 'undefined' && window._wwTxHistoryCache) ? window._wwTxHistoryCache : [];
@@ -2824,19 +1598,6 @@ function computeWalletReputationScore() {
   var raw = activityPts + securityPts + daoPts;
   var total = Math.min(100, Math.max(0, raw));
   return { total: total, activityPts: activityPts, securityPts: securityPts, daoPts: daoPts, nTx: nTx, secScore: secScore, voteCount: voteCount };
-}
-
-function wwReputationPopulate() {
-  var r = computeWalletReputationScore();
-  var big = document.getElementById('wwReputationScoreBig');
-  var bar = document.getElementById('wwReputationBar');
-  var ex = document.getElementById('wwReputationExplain');
-  if (big) big.textContent = String(r.total);
-  if (bar) bar.style.width = r.total + '%';
-  if (ex) {
-    ex.textContent = '活跃度 +' + r.activityPts + ' / 安全 +' + r.securityPts + ' / 治理 +' + r.daoPts + '（交易 ' + r.nTx + ' 条，安全分 ' + r.secScore + '，已投 ' + r.voteCount + ' 票）。此为本地参考分。';
-  }
-  try { updateReputationSettingsRow(); } catch (e) {}
 }
 
 function updateReputationSettingsRow() {
@@ -2879,75 +1640,6 @@ var WW_LENDING_MARKETS = [
   { asset: 'TRX', chain: 'TRON', supplyApy: '1.9%', borrowApr: '4.0%', color: '#ff0013' }
 ];
 
-function wwLendingMarketToast(el) {
-  var name = el && el.getAttribute ? el.getAttribute('data-asset') : '';
-  if (typeof showToast === 'function') showToast(String(name || '') + ' 市场为示意数据', 'info', 1800);
-}
-
-function wwLendingPopulate() {
-  var box = document.getElementById('wwLendingMarkets');
-  if (!box) return;
-  box.innerHTML = WW_LENDING_MARKETS.map(function (m) {
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px">' +
-      '<div><div style="font-weight:700;font-size:15px;color:var(--text)">' + m.asset + ' <span style="font-size:11px;color:var(--text-muted);font-weight:500">' + m.chain + '</span></div>' +
-      '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">供应 APY / 借款 APR</div></div>' +
-      '<div style="text-align:right"><div style="font-size:16px;font-weight:700;color:' + m.color + '">' + m.supplyApy + ' <span style="color:var(--text-muted);font-weight:500">/</span> ' + m.borrowApr + '</div>' +
-      '<button type="button" class="btn-secondary" data-asset="' + m.asset + '" style="margin-top:8px;padding:6px 12px;font-size:11px" onclick="wwLendingMarketToast(this)">详情</button></div></div>';
-  }).join('');
-}
-
-function wwPerpGetPositions() {
-  try {
-    var j = JSON.parse(localStorage.getItem('ww_perp_demo_v1') || '[]');
-    return Array.isArray(j) ? j : [];
-  } catch (e) { return []; }
-}
-
-function wwPerpSetPositions(arr) {
-  try { localStorage.setItem('ww_perp_demo_v1', JSON.stringify(arr)); } catch (e2) {}
-}
-
-function wwPerpAddDemo() {
-  var side = Math.random() > 0.5 ? '多' : '空';
-  var sym = ['BTC','ETH','TRX'][Math.floor(Math.random() * 3)];
-  var entry = sym === 'BTC' ? 62000 + Math.random() * 2000 : sym === 'ETH' ? 3200 + Math.random() * 200 : 0.12 + Math.random() * 0.02;
-  var lev = [5, 10, 20][Math.floor(Math.random() * 3)];
-  var p = wwPerpGetPositions();
-  p.push({ id: 'p' + Date.now(), symbol: sym, side: side, entry: entry, size: (0.01 + Math.random() * 0.2).toFixed(4), leverage: lev, uPnl: (Math.random() * 200 - 80).toFixed(2) });
-  wwPerpSetPositions(p);
-  wwPerpPopulate();
-  if (typeof showToast === 'function') showToast('已添加示例持仓', 'success', 1600);
-}
-
-function wwPerpPopulate() {
-  var list = wwPerpGetPositions();
-  var host = document.getElementById('wwPerpPositions');
-  var pnlEl = document.getElementById('wwPerpUnrealizedPnl');
-  var cntEl = document.getElementById('wwPerpOpenCount');
-  var sum = 0;
-  list.forEach(function (x) { sum += parseFloat(x.uPnl) || 0; });
-  if (pnlEl) {
-    pnlEl.textContent = list.length ? (sum >= 0 ? '+' : '') + sum.toFixed(2) + ' USDT' : '—';
-    pnlEl.style.color = sum >= 0 ? '#26a17b' : '#e5484d';
-  }
-  if (cntEl) cntEl.textContent = String(list.length);
-  var srow = document.getElementById('wwPerpSettingsSummary');
-  if (srow) srow.textContent = list.length ? (list.length + ' 笔 · PnL ' + (sum >= 0 ? '+' : '') + sum.toFixed(0)) : '无持仓';
-  if (!host) return;
-  if (!list.length) {
-    host.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">暂无持仓，可点击添加示例数据</div>';
-    return;
-  }
-  host.innerHTML = list.map(function (p) {
-    var col = parseFloat(p.uPnl) >= 0 ? '#26a17b' : '#e5484d';
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-weight:700;font-size:15px">' + p.symbol + '-PERP</span>' +
-      '<span style="font-size:12px;padding:3px 8px;border-radius:8px;background:var(--bg3)">' + p.side + ' · ' + p.leverage + 'x</span></div>' +
-      '<div style="font-size:12px;color:var(--text-muted);line-height:1.7">开仓价 <b style="color:var(--text)">' + (p.entry > 20 ? p.entry.toFixed(2) : p.entry.toFixed(5)) + '</b> · 数量 ' + p.size +
-      '<br/>未实现 <b style="color:' + col + '">' + (parseFloat(p.uPnl) >= 0 ? '+' : '') + p.uPnl + '</b> USDT</div></div>';
-  }).join('');
-}
-
 function wwOptionsSpotPrice(u) {
   var map = { ETH: 3200, BTC: 64000, TRX: 0.13 };
   return map[u] || 1;
@@ -2979,127 +1671,11 @@ function wwOptionsPopulate() {
 
 var WW_YIELD_AGG_PROTOCOLS = ['Aave V3', 'Compound V3', 'Venus'];
 
-function wwYieldAggJitter(base) {
-  var b = parseFloat(base) || 3;
-  return (b + (Math.random() - 0.5) * 0.6).toFixed(2);
-}
-
-function wwYieldAggPopulate() {
-  var box = document.getElementById('wwYieldAggTable');
-  if (!box) return;
-  var assets = [
-    { sym: 'USDT', base: 4.2 },
-    { sym: 'USDC', base: 4.0 },
-    { sym: 'ETH', base: 2.8 },
-    { sym: 'TRX', base: 1.5 }
-  ];
-  var rows = [];
-  assets.forEach(function (a) {
-    var cells = WW_YIELD_AGG_PROTOCOLS.map(function (name) {
-      return '<td style="padding:8px 6px;text-align:right;font-weight:600;color:var(--gold)">' + wwYieldAggJitter(a.base) + '%</td>';
-    }).join('');
-    rows.push('<tr><td style="padding:8px 6px;font-weight:600;color:var(--text)">' + a.sym + '</td>' + cells + '</tr>');
-  });
-  box.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden"><thead><tr><th style="text-align:left;padding:10px 8px;color:var(--text-muted)">资产</th><th style="text-align:right;padding:10px 6px;color:var(--text-muted)">Aave</th><th style="text-align:right;padding:10px 6px;color:var(--text-muted)">Compound</th><th style="text-align:right;padding:10px 6px;color:var(--text-muted)">Venus</th></tr></thead><tbody>' + rows.join('') + '</tbody></table><p style="font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.5">供应 APY 为本地随机抖动示例，真实利率以各协议前端为准。</p>';
-}
-
-function wwYieldAggRefreshDemo() {
-  wwYieldAggPopulate();
-  if (typeof showToast === 'function') showToast('已刷新示例 APY', 'info', 1600);
-}
-
-function wwLiquidationGetThreshold() {
-  var v = parseFloat((document.getElementById('wwLiqThreshold') || {}).value);
-  if (!isFinite(v) || v <= 0) return 130;
-  return v;
-}
-
-function wwLiquidationSaveThreshold() {
-  try {
-    localStorage.setItem('ww_liq_threshold', String(wwLiquidationGetThreshold()));
-    var n = document.getElementById('wwLiqNotify');
-    localStorage.setItem('ww_liq_notify', n && n.checked ? '1' : '0');
-  } catch (e) {}
-  wwLiquidationPopulate();
-}
-
-function wwLiquidationLoad() {
-  try {
-    var t = localStorage.getItem('ww_liq_threshold');
-    var el = document.getElementById('wwLiqThreshold');
-    if (el && t) el.value = t;
-    var n = document.getElementById('wwLiqNotify');
-    if (n) n.checked = localStorage.getItem('ww_liq_notify') === '1';
-  } catch (e2) {}
-}
-
-function wwLiquidationDemoPositions() {
-  return [
-    { id: '1', asset: 'ETH', collateralUsd: 5000, debtUsd: 2800, ratio: 178 },
-    { id: '2', asset: 'TRX', collateralUsd: 1200, debtUsd: 950, ratio: 126 }
-  ];
-}
-
-function wwLiquidationScanDemo() {
-  wwLiquidationPopulate();
-  if (typeof showToast === 'function') showToast('已根据示例仓位检查抵押率', 'success', 2000);
-}
-
-function wwLiquidationMaybeNotify(ratio, threshold) {
-  if (ratio >= threshold) return;
-  try {
-    if (localStorage.getItem('ww_liq_notify') !== '1') return;
-    if (!('Notification' in window)) return;
-    if (Notification.permission === 'granted') {
-      new Notification('WorldToken · 清算预警', { body: '抵押率 ' + ratio.toFixed(1) + '% 低于阈值 ' + threshold + '%（示意）' });
-    } else if (Notification.permission !== 'denied') {
-      Notification.requestPermission();
-    }
-  } catch (e) {}
-}
-
-function wwLiquidationPopulate() {
-  wwLiquidationLoad();
-  var th = wwLiquidationGetThreshold();
-  var hint = document.getElementById('wwLiqSettingsHint');
-  if (hint) hint.textContent = '阈值 ' + th + '%';
-  var list = document.getElementById('wwLiquidationList');
-  if (!list) return;
-  var pos = wwLiquidationDemoPositions();
-  var html = pos.map(function (p) {
-    var danger = p.ratio < th;
-    if (danger) wwLiquidationMaybeNotify(p.ratio, th);
-    var bg = danger ? 'rgba(229,72,77,0.12)' : 'var(--bg2)';
-    var bor = danger ? '1px solid rgba(229,72,77,0.45)' : '1px solid var(--border)';
-    return '<div style="background:' + bg + ';border:' + bor + ';border-radius:14px;padding:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
-      '<div><div style="font-weight:700;color:var(--text)">' + p.asset + ' 抵押</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">债务约 $' + p.debtUsd + '</div></div>' +
-      '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">抵押率</div><div style="font-size:18px;font-weight:800;color:' + (danger ? '#e5484d' : '#26a17b') + '">' + p.ratio + '%</div></div></div>';
-  }).join('');
-  list.innerHTML = html || '<div style="color:var(--text-muted);font-size:13px">暂无演示仓位</div>';
-}
-
 var WW_LAUNCHPAD_PROJECTS = [
   { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 USDT', status: '即将开始' },
   { name: 'TronBoost', chain: 'TRON', date: '2026-04-22', allocation: '2,000 TRX', status: '白名单' },
   { name: 'MetaVault', chain: 'BSC', date: '2026-05-01', allocation: 'TBD', status: '筹备中' }
 ];
-
-function wwLaunchpadIntentDemo() {
-  if (typeof showToast === 'function') showToast('演示：未连接链上申购', 'info', 2000);
-}
-
-function wwLaunchpadPopulate() {
-  var box = document.getElementById('wwLaunchpadList');
-  if (!box) return;
-  box.innerHTML = WW_LAUNCHPAD_PROJECTS.map(function (p) {
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
-      '<div><div style="font-weight:700;font-size:15px;color:var(--text)">' + p.name + '</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px">' + p.chain + ' · ' + p.date + '</div></div>' +
-      '<span style="font-size:11px;padding:4px 8px;border-radius:8px;background:rgba(200,168,75,0.15);color:var(--gold)">' + p.status + '</span></div>' +
-      '<div style="margin-top:10px;font-size:12px;color:var(--text-muted)">意向额度：<b style="color:var(--text)">' + p.allocation + '</b></div>' +
-      '<button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:10px;font-size:13px" onclick="wwLaunchpadIntentDemo()">登记意向（示意）</button></div>';
-  }).join('');
-}
 
 var WW_SOCIAL_LEADERBOARD_DEMO = [
   { addr: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', label: 'AlphaVault', roi: 42.3, win: 68 },
@@ -3107,334 +1683,9 @@ var WW_SOCIAL_LEADERBOARD_DEMO = [
   { addr: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', label: 'vitalik.eth', roi: 19.4, win: 52 }
 ];
 
-function wwSocialLeaderboardCopyAt(i) {
-  var r = WW_SOCIAL_LEADERBOARD_DEMO[i];
-  if (!r) return;
-  wwSocialLeaderboardCopy(r.addr);
-}
-
-function wwSocialLeaderboardFillTransferAt(i) {
-  var r = WW_SOCIAL_LEADERBOARD_DEMO[i];
-  if (!r) return;
-  wwSocialLeaderboardFillTransfer(r.addr);
-}
-
-function wwSocialLeaderboardCopy(addr) {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(addr);
-    else {
-      var ta = document.createElement('textarea');
-      ta.value = addr;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
-    if (typeof showToast === 'function') showToast('已复制地址', 'success', 1600);
-  } catch (e) {}
-}
-
-function wwSocialLeaderboardFillTransfer(addr) {
-  try {
-    localStorage.setItem('ww_prefill_transfer_to', addr);
-    goTo('page-transfer');
-    setTimeout(function () {
-      var el = document.getElementById('transferTo') || document.querySelector('[id*="transfer"][id*="To"]');
-      if (el) { el.value = addr; el.dispatchEvent(new Event('input', { bubbles: true })); }
-    }, 120);
-  } catch (e2) {
-    goTo('page-transfer');
-  }
-}
-
-function wwSocialLeaderboardPopulate() {
-  var box = document.getElementById('wwSocialLeaderboardList');
-  if (!box) return;
-  box.innerHTML = WW_SOCIAL_LEADERBOARD_DEMO.map(function (r, i) {
-    var short = r.addr.length > 18 ? r.addr.slice(0, 10) + '…' + r.addr.slice(-8) : r.addr;
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">' +
-      '<div><div style="font-size:12px;color:var(--text-muted)">#' + (i + 1) + ' · ' + r.label + '</div>' +
-      '<div style="font-weight:700;margin-top:4px;color:var(--text)">' + short + '</div></div>' +
-      '<div style="text-align:right"><div style="font-size:11px;color:var(--text-muted)">模拟 ROI</div>' +
-      '<div style="font-size:18px;font-weight:800;color:#26a17b">+' + r.roi.toFixed(1) + '%</div>' +
-      '<div style="font-size:11px;color:var(--text-muted)">胜率 ' + r.win + '%</div></div></div>' +
-      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
-      '<button type="button" class="btn-secondary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="wwSocialLeaderboardCopyAt(' + i + ')">复制地址</button>' +
-      '<button type="button" class="btn-primary" style="flex:1;min-width:120px;padding:10px;font-size:12px" onclick="wwSocialLeaderboardFillTransferAt(' + i + ')">填入转账</button></div></div>';
-  }).join('');
-}
-
-function wwAutoRebalanceSave() {
-  try {
-    var en = document.getElementById('wwAutoRebalEnable');
-    var th = document.getElementById('wwAutoRebalThreshold');
-    localStorage.setItem('ww_autorebal_enable', en && en.checked ? '1' : '0');
-    if (th) localStorage.setItem('ww_autorebal_threshold', String(parseInt(th.value, 10) || 8));
-  } catch (e) {}
-  var hint = document.getElementById('wwAutoRebalSettingsHint');
-  if (hint) {
-    try {
-      hint.textContent = localStorage.getItem('ww_autorebal_enable') === '1' ? '已启用' : '关闭';
-    } catch (e2) { hint.textContent = '—'; }
-  }
-}
-
-function wwAutoRebalanceLoad() {
-  try {
-    var en = document.getElementById('wwAutoRebalEnable');
-    var th = document.getElementById('wwAutoRebalThreshold');
-    if (en) en.checked = localStorage.getItem('ww_autorebal_enable') === '1';
-    if (th) {
-      var t = parseInt(localStorage.getItem('ww_autorebal_threshold') || '8', 10);
-      if (isFinite(t) && t > 0) th.value = String(t);
-    }
-  } catch (e) {}
-}
-
-function wwAutoRebalancePortfolioParts() {
-  var u = parseFloat((document.getElementById('valUsdt') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var t = parseFloat((document.getElementById('valTrx') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var e = parseFloat((document.getElementById('valEth') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var b = parseFloat((document.getElementById('valBtc') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var total = u + t + e + b;
-  if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }, { k: 'TRX', p: 0 }, { k: 'ETH', p: 0 }, { k: 'BTC', p: 0 }] };
-  return {
-    total: total,
-    parts: [
-      { k: 'USDT', p: 100 * u / total },
-      { k: 'TRX', p: 100 * t / total },
-      { k: 'ETH', p: 100 * e / total },
-      { k: 'BTC', p: 100 * b / total }
-    ]
-  };
-}
-
-function wwAutoRebalancePopulate() {
-  wwAutoRebalanceLoad();
-  var body = document.getElementById('wwAutoRebalanceBody');
-  if (!body) return;
-  var th = parseInt((document.getElementById('wwAutoRebalThreshold') || {}).value || '8', 10);
-  if (!isFinite(th) || th < 1) th = 8;
-  var target = { USDT: 40, TRX: 15, ETH: 30, BTC: 15 };
-  var data = wwAutoRebalancePortfolioParts();
-  if (!data.total) {
-    body.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无估值数据，请返回首页刷新余额后再试。</div>';
-    return;
-  }
-  var rows = data.parts.map(function (x) {
-    var tgt = target[x.k] || 25;
-    var drift = x.p - tgt;
-    var hit = Math.abs(drift) >= th;
-    return { k: x.k, p: x.p, tgt: tgt, drift: drift, hit: hit };
-  });
-  var any = rows.some(function (r) { return r.hit; });
-  body.innerHTML = rows.map(function (r) {
-    var col = r.hit ? '#e5484d' : 'var(--text-muted)';
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px">' +
-      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">' +
-      '<span style="font-weight:700;color:var(--text)">' + r.k + '</span>' +
-      '<span style="font-size:12px;color:var(--text-muted)">当前 ' + r.p.toFixed(1) + '% · 目标 ' + r.tgt + '%</span></div>' +
-      '<div style="margin-top:6px;font-size:13px;color:' + col + '">偏离 ' + (r.drift >= 0 ? '+' : '') + r.drift.toFixed(1) + ' 百分点' + (r.hit ? '（超过阈值）' : '') + '</div></div>';
-  }).join('') + (any && localStorage.getItem('ww_autorebal_enable') === '1'
-    ? '<div style="background:rgba(200,168,75,0.1);border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:12px;font-size:12px;color:var(--text)">建议：通过转账或兑换向<b>权重不足</b>的资产倾斜；本应用不代您执行交易。</div>'
-    : '<div style="font-size:12px;color:var(--text-muted)">提示：可在设置中开启「偏离提醒」。</div>');
-}
-
-function wwSentimentHash(s) {
-  var h = 0;
-  for (var i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i) | 0;
-  return Math.abs(h);
-}
-
-function wwSentimentPopulate() {
-  var box = document.getElementById('wwSentimentList');
-  if (!box) return;
-  var coins = ['USDT', 'TRX', 'ETH', 'BTC'];
-  var els = ['chgUsdt', 'chgTrx', 'chgEth', 'chgBtc'];
-  var out = [];
-  for (var i = 0; i < coins.length; i++) {
-    var ch = (document.getElementById(els[i]) || {}).textContent || '';
-    var m = ch.match(/[\-+]?[0-9]+(?:\.[0-9]+)?/);
-    var px = m ? parseFloat(m[0]) : 0;
-    var h = wwSentimentHash(coins[i] + String(px));
-    var score = Math.max(-100, Math.min(100, Math.round(px * 12 + (h % 17) - 8)));
-    var lab = score >= 20 ? '偏多' : (score <= -20 ? '偏空' : '中性');
-    var bg = score >= 20 ? 'rgba(38,161,123,0.12)' : (score <= -20 ? 'rgba(229,72,77,0.12)' : 'var(--bg2)');
-    out.push('<div style="background:' + bg + ';border:1px solid var(--border);border-radius:14px;padding:14px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">' +
-      '<div style="font-weight:800;font-size:16px;color:var(--text)">' + coins[i] + '</div>' +
-      '<span style="font-size:12px;padding:4px 10px;border-radius:999px;background:var(--bg3);color:var(--text-muted)">' + lab + '</span></div>' +
-      '<div style="margin-top:10px;display:flex;align-items:center;gap:10px">' +
-      '<div style="flex:1;height:8px;border-radius:8px;background:var(--bg3);overflow:hidden">' +
-      '<div style="height:100%;width:' + (50 + score / 2) + '%;background:linear-gradient(90deg,#e5484d,#c8a84b,#26a17b);border-radius:8px"></div></div>' +
-      '<div style="font-size:18px;font-weight:800;color:var(--gold);min-width:52px;text-align:right">' + score + '</div></div>' +
-      '<div style="font-size:11px;color:var(--text-muted);margin-top:8px">与首页涨跌幅示意联动 · 非新闻 NLP</div></div>');
-  }
-  box.innerHTML = out.join('');
-}
-
 function wwOnchainMessagingPopulate() {
   var el = document.getElementById('wwOnchainMsgPreview');
   if (el) el.textContent = '';
-}
-
-async function wwOnchainMsgEncrypt() {
-  var msg = (document.getElementById('wwOnchainMsgInput') || {}).value || '';
-  var pass = (document.getElementById('wwOnchainMsgPass') || {}).value || '';
-  if (!String(msg).trim()) { if (typeof showToast === 'function') showToast('请输入消息内容', 'warning'); return; }
-  if (!pass || String(pass).length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位加密密码', 'warning'); return; }
-  var enc = new TextEncoder();
-  var b64u8 = function(u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
-  try {
-    var salt = crypto.getRandomValues(new Uint8Array(16));
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
-    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 80000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-    var plain = JSON.stringify({ v: 1, kind: 'ww_onchain_msg', t: Date.now(), text: String(msg) });
-    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(plain));
-    var outObj = { v: 1, kind: 'ww_onchain_msg', salt: '', iv: '', data: '' };
-    if (typeof wwB64Bytes === 'function') {
-      outObj.salt = wwB64Bytes(salt);
-      outObj.iv = wwB64Bytes(iv);
-      outObj.data = wwB64Bytes(new Uint8Array(ct));
-    } else {
-      outObj.salt = b64u8(salt);
-      outObj.iv = b64u8(iv);
-      outObj.data = b64u8(new Uint8Array(ct));
-    }
-    var txt = JSON.stringify(outObj);
-    var prev = document.getElementById('wwOnchainMsgPreview');
-    if (prev) prev.textContent = txt.slice(0, 480) + (txt.length > 480 ? '…' : '');
-    try { localStorage.setItem('ww_onchain_msg_prefill', txt); } catch (e) {}
-    if (typeof showToast === 'function') showToast('已加密，可复制或前往转账页粘贴到备注', 'success');
-  } catch (e) {
-    if (typeof showToast === 'function') showToast('加密失败', 'error');
-  }
-}
-
-function wwOnchainMsgCopy() {
-  try {
-    var b64 = localStorage.getItem('ww_onchain_msg_prefill') || '';
-    if (!b64) { if (typeof showToast === 'function') showToast('请先生成加密载荷', 'warning'); return; }
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(b64);
-    else { var ta = document.createElement('textarea'); ta.value = b64; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
-    if (typeof showToast === 'function') showToast('已复制密文', 'success');
-  } catch (e) {}
-}
-
-function wwOnchainMsgGoTransfer() {
-  try { goTo('page-transfer'); } catch (e) {}
-}
-
-async function wwBackupQrGenerate() {
-  var p = (document.getElementById('wwBackupQrPass') || {}).value || '';
-  if (!p || String(p).length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位导出密码', 'warning'); return; }
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
-  var enc = new TextEncoder();
-  try {
-    var payload = JSON.stringify({
-      v: 1,
-      t: Date.now(),
-      kind: 'ww_qr_backup',
-      eth: REAL_WALLET.ethAddress,
-      trx: REAL_WALLET.trxAddress || '',
-      btc: REAL_WALLET.btcAddress || '',
-      backed: !!REAL_WALLET.backedUp
-    });
-    var salt = crypto.getRandomValues(new Uint8Array(16));
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(p), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
-    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
-    var outObj = { v: 1, kind: 'ww_qr_backup', salt: '', iv: '', data: '' };
-    if (typeof wwB64Bytes === 'function') {
-      outObj.salt = wwB64Bytes(salt);
-      outObj.iv = wwB64Bytes(iv);
-      outObj.data = wwB64Bytes(new Uint8Array(ct));
-    } else {
-      var b64u8 = function(u8) { var s = ''; for (var i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]); return btoa(s); };
-      outObj.salt = b64u8(salt);
-      outObj.iv = b64u8(iv);
-      outObj.data = b64u8(new Uint8Array(ct));
-    }
-    var txt = JSON.stringify(outObj);
-    var canvas = document.getElementById('wwBackupQrCanvas');
-    await loadQRCodeLib();
-    if (canvas && typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-      await QRCode.toCanvas(canvas, txt, { width: 200, margin: 1, color: { dark: '#0a0a12ff', light: '#ffffffff' } });
-      if (typeof showToast === 'function') showToast('已生成加密备份二维码（请妥善保管）', 'success');
-    } else if (typeof showToast === 'function') showToast('二维码库加载失败', 'error');
-  } catch (e) {
-    if (typeof showToast === 'function') showToast('生成失败', 'error');
-  }
-}
-
-function wwGaslessPopulate() {
-  var cb = document.getElementById('wwGaslessEnable');
-  var rel = document.getElementById('wwGaslessRelay');
-  var hint = document.getElementById('wwGaslessSettingsHint');
-  try {
-    if (cb) cb.checked = localStorage.getItem('ww_gasless_meta') === '1';
-    if (rel) rel.value = localStorage.getItem('ww_gasless_relay') || '';
-  } catch (e) {}
-  if (hint) {
-    try { hint.textContent = localStorage.getItem('ww_gasless_meta') === '1' ? '已开启示意' : '关闭'; } catch (e2) { hint.textContent = '—'; }
-  }
-}
-
-function wwGaslessSave() {
-  var cb = document.getElementById('wwGaslessEnable');
-  var rel = document.getElementById('wwGaslessRelay');
-  var hint = document.getElementById('wwGaslessSettingsHint');
-  try {
-    localStorage.setItem('ww_gasless_meta', cb && cb.checked ? '1' : '0');
-    if (rel) localStorage.setItem('ww_gasless_relay', String(rel.value || '').trim().slice(0, 200));
-  } catch (e) {}
-  if (hint) {
-    try { hint.textContent = localStorage.getItem('ww_gasless_meta') === '1' ? '已开启示意' : '关闭'; } catch (e2) {}
-  }
-  if (typeof showToast === 'function') showToast('已保存免 Gas 偏好（示意）', 'success');
-}
-
-function wwRecoveryTestClear() {
-  try {
-    var t = document.getElementById('recoveryTestInput');
-    if (t) t.value = '';
-  } catch (e) {}
-}
-
-function wwRecoveryTestSubmit() {
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
-    if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'error');
-    return;
-  }
-  var raw = (document.getElementById('recoveryTestInput') || {}).value || '';
-  if (!String(raw).trim()) {
-    if (typeof showToast === 'function') showToast('请输入助记词', 'error');
-    return;
-  }
-  var lang = typeof currentLang !== 'undefined' ? currentLang : 'en';
-  var enStr = raw.trim();
-  try {
-    if (typeof mnemonicFromLang === 'function') enStr = mnemonicFromLang(raw.trim(), lang);
-  } catch (e1) {}
-  var words = enStr.trim().split(/\s+/);
-  if (![12, 15, 18, 21, 24].includes(words.length)) {
-    if (typeof showToast === 'function') showToast('词数应为 12/15/18/21/24', 'error');
-    return;
-  }
-  try {
-    var w = ethers.Wallet.fromMnemonic(enStr.trim());
-    var match = REAL_WALLET.ethAddress && w.address && w.address.toLowerCase() === String(REAL_WALLET.ethAddress).toLowerCase();
-    if (match) {
-      if (typeof showToast === 'function') showToast('验证通过：助记词与当前钱包一致', 'success');
-    } else {
-      if (typeof showToast === 'function') showToast('与当前钱包不一致或助记词无效', 'error');
-    }
-  } catch (e2) {
-    if (typeof showToast === 'function') showToast('助记词无效或无法解析', 'error');
-  }
 }
 
 function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
@@ -3520,82 +1771,7 @@ function pickTransferAddrFromBookRaw(addr) {
   hideTransferAddrBook();
   detectAddrType();
 }
-function updateTransferAddrBook() {
-  const box = document.getElementById('transferAddrBook');
-  const ta = document.getElementById('transferAddr');
-  if(!box || !ta) return;
-  const q = ta.value.trim().toLowerCase();
-  if(!q.length) {
-    box.innerHTML = '';
-    box.style.display = 'none';
-    return;
-  }
-  const contacts = getTransferContacts();
-  const recent = getRecentTransferAddrs();
-  const contactSet = new Set(contacts.map(c => c.addr.trim().toLowerCase()));
-  const matchedContacts = contacts.filter(c => {
-    const al = c.addr.toLowerCase();
-    const nl = (c.nick || '').toLowerCase();
-    return al.includes(q) || nl.includes(q);
-  });
-  const matchedRecent = recent.filter(a => {
-    const al = a.toLowerCase();
-    return !contactSet.has(al) && al.includes(q);
-  });
-  if(!matchedContacts.length && !matchedRecent.length) {
-    box.innerHTML = '';
-    const empty = document.createElement('div');
-    empty.className = 'transfer-addr-dd-empty';
-    empty.textContent = (contacts.length || recent.length) ? '暂无匹配地址' : '暂无历史地址与联系人';
-    box.appendChild(empty);
-    box.style.display = 'block';
-    return;
-  }
-  box.innerHTML = '';
-  const appendHdr = function(lbl) {
-    const h = document.createElement('div');
-    h.className = 'transfer-addr-dd-hdr';
-    h.textContent = lbl;
-    box.appendChild(h);
-  };
-  const addContactItems = function(list) {
-    list.forEach(function(item) {
-      const div = document.createElement('div');
-      div.className = 'transfer-addr-dd-item';
-      const span = document.createElement('span');
-      span.className = 'contact-nick-mark';
-      span.textContent = item.nick + ' · ';
-      div.appendChild(span);
-      div.appendChild(document.createTextNode(addrBookShort(item.addr)));
-      div.title = item.addr;
-      div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(item.addr); };
-      box.appendChild(div);
-    });
-  };
-  const addRecentItems = function(list) {
-    list.forEach(function(addr) {
-      const div = document.createElement('div');
-      div.className = 'transfer-addr-dd-item recent-item';
-      const ico = document.createElement('span');
-      ico.className = 'recent-ico';
-      ico.textContent = '\u231b ';
-      div.appendChild(ico);
-      div.appendChild(document.createTextNode(addr));
-      div.title = '\u6700\u8fd1\u8f6c\u8d26: ' + addr;
-      div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(addr); };
-      box.appendChild(div);
-    });
-  };
-  if(matchedContacts.length) {
-    appendHdr('\u8054\u7cfb\u4eba');
-    addContactItems(matchedContacts.slice(0, 12));
-  }
-  if(matchedRecent.length) {
-    appendHdr('\u6700\u8fd1\u8f6c\u8d26');
-    addRecentItems(matchedRecent.slice(0, 12));
-  }
-  box.style.display = 'block';
-}
+
 function shakeTransferAmountTooHigh() {
   const el = document.getElementById('transferAmountBox');
   if(!el) return;
@@ -3603,22 +1779,6 @@ function shakeTransferAmountTooHigh() {
   void el.offsetWidth;
   el.classList.add('wt-transfer-shake');
 }
-function pinUnlockBackspace() {
-  const inp = document.getElementById('pinUnlockInput');
-  if(!inp) return;
-  inp.value = (inp.value || '').slice(0, -1);
-  try { inp.focus(); } catch(e) {}
-}
-function pinUnlockClear() {
-  const inp = document.getElementById('pinUnlockInput');
-  if(!inp) return;
-  inp.value = '';
-  const err = document.getElementById('pinUnlockError');
-  if(err) err.style.display = 'none';
-  try { inp.focus(); } catch(e) {}
-}
-
-
 
 function detectAddrType() {
   const addr = document.getElementById('transferAddr').value.trim();
@@ -3728,28 +1888,6 @@ function calcTransferFee() {
   try { if(typeof wwUpdateTxSimulation==='function') wwUpdateTxSimulation(); } catch(_ws) {}
 }
 
-function wwMevToggleInit() {
-  var c = document.getElementById('wwMevToggle');
-  if(!c) return;
-  c.checked = (localStorage.getItem('ww_mev_private') === '1');
-}
-
-function wwMevSave() {
-  var c = document.getElementById('wwMevToggle');
-  if(!c) return;
-  localStorage.setItem('ww_mev_private', c.checked ? '1' : '0');
-  try { if(typeof wwUpdateTxSimulation==='function') wwUpdateTxSimulation(); } catch(e) {}
-  if(typeof showToast==='function') showToast(c.checked ? '已开启 MEV 保护（示意）' : '已使用公开内存池（示意）', 'info', 2200);
-}
-
-function wwGasSaveTargets() {
-  var a = document.getElementById('wwGasTrxTarget');
-  var b = document.getElementById('wwGasEthTarget');
-  if(a && a.value != null) localStorage.setItem('ww_gas_target_trx', String(a.value).trim());
-  if(b && b.value != null) localStorage.setItem('ww_gas_target_eth', String(b.value).trim());
-  try { wwGasManagerRender(); } catch(e) {}
-}
-
 function wwGasManagerRender() {
   var trxCoin = (typeof COINS !== 'undefined' && COINS.find) ? COINS.find(function(c){ return c && c.id==='trx'; }) : null;
   var ethCoin = (typeof COINS !== 'undefined' && COINS.find) ? COINS.find(function(c){ return c && c.id==='eth'; }) : null;
@@ -3799,172 +1937,12 @@ function wwUpdateTxSimulation() {
   host.textContent = lines.join('\n');
 }
 
-function setTransferMax() {
-  document.getElementById('transferAmount').value = transferCoin.bal;
-  calcTransferFee();
-}
-
-function selectTransferCoin(id) {
-  // 从 COINS 读取实时余额和价格
-  const coinData = COINS.find(c=>c.id===id);
-  const map = {
-    usdt:{id:'usdt',name:'USDT',chain:'TRC-20 · Tron',icon:'💚',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
-    trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
-    eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
-    btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
-  };
-  transferCoin = COINS.find(c=>c.id===id) || map[id] || map.usdt;
-  document.getElementById('transferCoinIcon').textContent = transferCoin.icon;
-  document.getElementById('transferCoinName').textContent = transferCoin.name;
-  document.getElementById('transferBal').textContent = transferCoin.bal.toLocaleString();
-  closeTransferCoinPicker();
-  calcTransferFee();
-}
-
-function openTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.add('show'); }
 function closeTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.remove('show'); }
-
-function doTransfer() {
-  const addr = document.getElementById('transferAddr').value.trim();
-  const amt = document.getElementById('transferAmount').value;
-  if(!addr) { showToast('❌ 请输入接收地址', 'error'); return; }
-  if(!amt || parseFloat(amt) <= 0) { showToast('❌ 请输入有效金额', 'error'); return; }
-  const amtNum = parseFloat(amt) || 0;
-  const bal = Number(transferCoin.bal) || 0;
-  if(amtNum > bal + 1e-10) { showToast('❌ 金额超过可用余额', 'error'); shakeTransferAmountTooHigh(); return; }
-  if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
-  if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
-    showToast('📡 当前无网络，请联网后再发送', 'warning');
-    return;
-  }
-  if (typeof wwSpendGateBeforeConfirm === 'function') {
-    var _g = wwSpendGateBeforeConfirm(amtNum);
-    if (_g === false) return;
-  }
-  const fee = (amtNum*0.003).toFixed(2);
-  const actual = (amtNum - amtNum*0.003).toFixed(2);
-  document.getElementById('confirmAmount').textContent = amt+' '+transferCoin.name;
-  document.getElementById('confirmRecipient').textContent = addr.length>20 ? addr.slice(0,20)+'...' : addr;
-  document.getElementById('confirmFee').textContent = fee+' '+transferCoin.name;
-  document.getElementById('confirmActual').textContent = actual+' '+transferCoin.name;
-  document.getElementById('confirmChain').textContent = transferCoin.chain;
-  _safeEl('transferConfirmOverlay').classList.add('show');
-}
 
 function closeTransferConfirm() { _safeEl('transferConfirmOverlay').classList.remove('show'); }
 
-function confirmTransfer() {
-  if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
-    showToast('📡 当前无网络，无法完成转账', 'warning');
-    return;
-  }
-  closeTransferConfirm();
-  // 填充成功页数据
-  const amt = document.getElementById('transferAmount').value;
-  const addr = document.getElementById('transferAddr').value.trim();
-  saveRecentTransferAddr(addr);
-  const amtF = parseFloat(amt)||0;
-  const fee = (amtF*0.003).toFixed(2);
-  const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
-  const isEn = currentLang==='en';
-  const info = LANG_INFO[currentLang]||{flag:'🇨🇳',name:'中文'};
-  const g = getGiftCulture ? getGiftCulture() : {icon:'🌍'};
-
-  // 发件人（我的地址）
-  _safeEl('successAmount').textContent = amt;
-  _safeEl('successCoin').textContent = transferCoin.name;
-  (_safeEl('successCultureIcon') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successCultureIcon fallback */.textContent = g.icon;
-  // 发件人 = 我自己的地址
-  if(isEn) {
-    _safeEl('successFromPart1').textContent = 'My Wallet';
-    _safeEl('successFromPart2').textContent = '';
-    document.getElementById('successFromPart3').textContent = '';
-    _safeEl('successFromLang').textContent = info.flag+' English · BIP39';
-  } else {
-    const parts = a.main.split(' · ');
-    _safeEl('successFromPart1').textContent = parts[0]||'龙凤虎';
-    _safeEl('successFromPart2').textContent = parts[1]||'举头望明月';
-    document.getElementById('successFromPart3').textContent = a.num||'3829461';
-    const fromAddr = getNativeAddr(); _safeEl('successFromLang').textContent = fromAddr.substring(0,12)+'...';
-  }
-
-  // 收件人 = 输入的对方地址（不同！）
-  const isWW = addr.includes('·');
-  if(isWW) {
-    // WorldToken母语地址，拆解显示
-    const parts2 = addr.split('·').map(s=>s.trim());
-    _safeEl('successToIcon').textContent = '🌍';
-    _safeEl('successToName').textContent = parts2[0]||addr;
-    _safeEl('successToAddr').textContent = (parts2[1]||'')+' · '+(parts2[2]||'') + ' · WorldToken';
-  } else {
-    // 公链地址
-    const chainIcon = addr.startsWith('T')?'🔴':addr.startsWith('0x')?'🔷':addr.startsWith('bc')?'🟠':'⛓️';
-    _safeEl('successToIcon').textContent = chainIcon;
-    _safeEl('successToName').textContent = addr.slice(0,18)+'...'+addr.slice(-6);
-    _safeEl('successToAddr').textContent = transferCoin.chain;
-  }
-
-  // 详情
-  _safeEl('successFee') && ((_safeEl('successFee') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successFee fallback */.textContent = fee+' '+transferCoin.name);
-  const sfi=(_safeEl('successFeeInline') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successFeeInline fallback */; if(sfi) sfi.textContent='手续费 '+fee+' '+transferCoin.name+' · '+transferCoin.chain;
-  _safeEl('successChain').textContent = transferCoin.chain;
-  const nt = new Date();
-  const ts = nt.getFullYear()+'.'+String(nt.getMonth()+1).padStart(2,'0')+'.'+String(nt.getDate()).padStart(2,'0')+' '+String(nt.getHours()).padStart(2,'0')+':'+String(nt.getMinutes()).padStart(2,'0');
-  const st=_safeEl('successTime2'); if(st) st.textContent=ts;
-
-  // 先填充动画页数据
-  const sw1=_safeEl('swooshToName'); if(sw1) sw1.textContent=_safeEl('successToName')?.textContent||'';
-  const sw2=_safeEl('swooshToAddr'); if(sw2) sw2.textContent=_safeEl('successToAddr')?.textContent||'';
-  const sw3=_safeEl('swooshAmtVal'); if(sw3) sw3.textContent=amt;
-  const sw4=_safeEl('swooshCoinName'); if(sw4) sw4.textContent=transferCoin.name;
-  const sf1=_safeEl('swooshFromPart1'); if(sf1) sf1.textContent=_safeEl('successFromPart1')?.textContent||'';
-  const sf2=_safeEl('swooshFromPart2'); if(sf2) sf2.textContent=_safeEl('successFromPart2')?.textContent||'';
-  const sfl=_safeEl('swooshFromLang'); if(sfl) sfl.textContent=_safeEl('successFromLang')?.textContent||'';
-
-  // 尝试真实广播
-  const sendBtn = document.getElementById('confirmSendBtn');
-  if(sendBtn) { sendBtn.disabled=true; sendBtn.textContent='⏳ 广播中...'; }
-
-  broadcastRealTransfer().then(ok => {
-    if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
-    if(ok) {
-      goTo('page-swoosh'); // 广播成功，显示成功动画
-    } else {
-      showToast('⚠️ 转账广播失败，请检查余额和网络', 'warning');
-    }
-  }).catch(err => {
-    if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
-    showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
-  });
-
-  // 启动嗖动画
-  setTimeout(() => {
-    const coin = document.getElementById('swooshCoin');
-    const trail = document.getElementById('swooshTrail');
-    const receiver = document.getElementById('swooshReceiver');
-    const check = document.getElementById('swooshCheck');
-    if(coin) coin.classList.add('swoosh-coin');
-    if(trail) trail.classList.add('swoosh-trail');
-    setTimeout(()=>{ if(receiver) receiver.classList.add('receiver-glow'); if(check) { check.textContent='✓'; check.style.color='#4ac84a'; check.style.fontSize='20px'; } }, 900);
-    // 动画结束后跳成功页
-    setTimeout(()=>{ goTo('page-transfer-success'); setTimeout(loadBalances, 2000); }, 1800);
-  }, 200);
-}
-
-function shareSuccess() {
-  const amt = _safeEl('successAmount').textContent;
-  const coin = _safeEl('successCoin').textContent;
-  const from = _safeEl('successFromPart1').textContent+' '+_safeEl('successFromPart2').textContent;
-  navigator.clipboard?.writeText('我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.cc').catch(()=>{});
-  const txEl = _safeEl('successTxHash');
-  const txText = txEl ? txEl.textContent : '转账记录';
-  navigator.clipboard?.writeText(txText).catch(()=>{});
-  const btn2 = event?.target?.closest('div');
-  if(btn2) { const old2 = btn2.querySelector('div:last-child')?.textContent || ''; if(btn2.querySelector('div:last-child')) { btn2.querySelector('div:last-child').textContent='✅ 已复制'; setTimeout(()=>btn2.querySelector('div:last-child').textContent=old2,1500); } }
-}
-
 // ══ 多文化礼金系统 ══
-const GIFT_CULTURE = {
+var GIFT_CULTURE = {
   zh: { name:'礼物', icon:'🎁', color:'#cc2200', desc:'恭喜发财', festival:'春节·中秋·生日' },
   ja: { name:'お年玉', icon:'🎍', color:'#8b0000', desc:'新年おめでとう', festival:'お正月·お祝い' },
   ko: { name:'세뱃돈', icon:'🎎', color:'#9b0000', desc:'새해 복 많이 받으세요', festival:'설날·추석' },
@@ -4007,156 +1985,26 @@ function updateGiftUI() {
 }
 
 // ══ 礼物口令系统 ══
-const KW_ZH = ['举头望明月','春风得意马蹄','柳暗花明又一村','飞流直下三千尺','万紫千红总是春','轻舟已过万重山','千里江陵一日还','接天莲叶无穷碧','春色满园关不住','山重水复疑无路','白日依山尽黄河','烟花三月下扬州','孤帆远影碧空尽','不识庐山真面目','停车坐爱枫林晚','明月几时有把酒','相见时难别亦难','此情可待成追忆','衣带渐宽终不悔','山高月小水落石','但愿人长久千里','海上生明月天涯','春眠不觉晓处处','床前明月光疑是','独在异乡为异客','知否知否应是绿','天生我材必有用','长风破浪会有时','会当凌绝顶一览','青山遮不住毕竟'];
-const KW_EN = ['Fortune smiles today','Golden harvest comes','Every cloud silver lining','Stars align tonight','Lucky winds blow now'];
-const KW_JA = ['古池や蛙飛び込む','春の海終日のたり','菜の花や月は東に','五月雨を集めて早し','閑さや岩にしみ入る'];
-const KW_AR = ['الصبر مفتاح الفرج','نور وبركة وسعادة','خير وأمل وفرحة'];
-const KW_RU = ['Я помню чудное мгновенье','Белеет парус одинокой','Мороз и солнце день чудесный'];
-const KW_ES = ['Quien madruga Dios le ayuda','No hay mal que por bien no venga','A buen entendedor pocas palabras'];
-const KW_FR = ['La vie en rose toujours','Tout vient à point qui sait attendre','Mieux vaut tard que jamais'];
+var KW_ZH = ['举头望明月','春风得意马蹄','柳暗花明又一村','飞流直下三千尺','万紫千红总是春','轻舟已过万重山','千里江陵一日还','接天莲叶无穷碧','春色满园关不住','山重水复疑无路','白日依山尽黄河','烟花三月下扬州','孤帆远影碧空尽','不识庐山真面目','停车坐爱枫林晚','明月几时有把酒','相见时难别亦难','此情可待成追忆','衣带渐宽终不悔','山高月小水落石','但愿人长久千里','海上生明月天涯','春眠不觉晓处处','床前明月光疑是','独在异乡为异客','知否知否应是绿','天生我材必有用','长风破浪会有时','会当凌绝顶一览','青山遮不住毕竟'];
+var KW_EN = ['Fortune smiles today','Golden harvest comes','Every cloud silver lining','Stars align tonight','Lucky winds blow now'];
+var KW_JA = ['古池や蛙飛び込む','春の海終日のたり','菜の花や月は東に','五月雨を集めて早し','閑さや岩にしみ入る'];
+var KW_AR = ['الصبر مفتاح الفرج','نور وبركة وسعادة','خير وأمل وفرحة'];
+var KW_RU = ['Я помню чудное мгновенье','Белеет парус одинокой','Мороз и солнце день чудесный'];
+var KW_ES = ['Quien madruga Dios le ayuda','No hay mal que por bien no venga','A buen entendedor pocas palabras'];
+var KW_FR = ['La vie en rose toujours','Tout vient à point qui sait attendre','Mieux vaut tard que jamais'];
 
-const LANG_KW = {zh:KW_ZH,en:KW_EN,ja:KW_JA,ar:KW_AR,ru:KW_RU,es:KW_ES,fr:KW_FR};
+var LANG_KW = {zh:KW_ZH,en:KW_EN,ja:KW_JA,ar:KW_AR,ru:KW_RU,es:KW_ES,fr:KW_FR};
 
-let hbExpiry = 24;
-let hbType = 'normal';
+var hbExpiry = 24;
+var hbType = 'normal';
 
-const BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
-
-function getKwPool() {
-  return LANG_KW[currentLang] || KW_ZH;
-}
-
-function genKeyword() {
-  const pool = getKwPool();
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function switchHbType(type) {
-  hbType = type;
-  const n = document.getElementById('btnNormal');
-  const l = document.getElementById('btnLucky');
-  if(type === 'normal') {
-    n.style.background = 'linear-gradient(135deg,#b8982a,#e8c850)';
-    n.style.color = '#0a0a05';
-    l.style.background = 'none';
-    l.style.color = 'var(--text-muted)';
-  } else {
-    l.style.background = 'linear-gradient(135deg,#b8982a,#e8c850)';
-    l.style.color = '#0a0a05';
-    n.style.background = 'none';
-    n.style.color = 'var(--text-muted)';
-  }
-  updateHbPreview();
-}
-
-function setAmt(v) {
-  document.getElementById('hbAmount').value = v;
-  updateHbPreview();
-}
-
-function setExpiry(h) {
-  hbExpiry = h;
-  ['exp24','exp72','exp168'].forEach(id=>{
-    const el = document.getElementById(id);
-    if(el) { el.style.borderColor='var(--border)'; el.style.color='var(--text-muted)'; el.style.background='var(--bg2)'; }
-  });
-  const active = h===24?'exp24':h===72?'exp72':'exp168';
-  const el = document.getElementById(active);
-  if(el) { el.style.borderColor='rgba(200,168,75,0.4)'; el.style.color='var(--gold)'; el.style.background='linear-gradient(135deg,rgba(200,168,75,0.12),rgba(200,168,75,0.04))'; }
-}
-
-function randomBlessing() {
-  const b = BLESSINGS[Math.floor(Math.random()*BLESSINGS.length)];
-  document.getElementById('hbBlessing').value = b;
-}
-
-function createHongbao() {
-  if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
-  currentKeyword = genKeyword();
-  const amount = parseFloat(document.getElementById('hbAmount').value) || 100;
-  const blessing = document.getElementById('hbBlessing').value;
-  const count = hbCount;
-  const perPerson = hbType==='normal' ? (amount/count).toFixed(2) : null;
-  const expireAt = Date.now() + hbExpiry * 3600 * 1000;
-
-  // 存入 localStorage
-  const hbData = {
-    keyword: currentKeyword,
-    totalAmount: amount,
-    count: count,
-    perPerson: perPerson,
-    type: hbType,
-    blessing: blessing,
-    expireAt: expireAt,
-    createdAt: Date.now(),
-    claimed: [],  // {addr, amount, time}
-    creator: REAL_WALLET.trxAddress
-  };
-  const allHb = JSON.parse(localStorage.getItem('ww_hongbaos')||'{}');
-  allHb[currentKeyword] = hbData;
-  localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
-
-  // 更新UI
-  document.getElementById('kwKeyword').textContent = currentKeyword;
-  document.getElementById('kwBlessingText').textContent = blessing;
-  document.getElementById('kwAmtText').textContent = amount + ' USDT';
-  document.getElementById('kwCntText').textContent = '共' + count + '份礼物';
-  document.getElementById('kwExpText').textContent = '有效期' + hbExpiry + '小时';
-  document.getElementById('kwShareKeyword').textContent = currentKeyword;
-  document.getElementById('kwProgress').textContent = '0 / ' + count + ' 已领取';
-  document.getElementById('kwProgressBar').style.width = '0%';
-  const shareUrl = 'https://worldtoken.cc/wallet.html';
-  document.getElementById('kwShareText').innerHTML = '🎁 我给你发了一个WorldToken礼物！<br>口令：<span style="color:var(--gold);font-weight:700">' + currentKeyword + '</span><br>打开WorldToken → 输入口令 → 立即领取 💰<br><span style="color:var(--text-muted);font-size:11px">有效期' + hbExpiry + '小时，先到先得</span>';
-
-  goTo('page-hb-keyword');
-}
+var BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
 
 function copyKw() {
   navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
   const btn = document.getElementById('copyKwBtn');
   btn.querySelector('div:last-child').textContent = '✅ 已复制';
   setTimeout(()=>{ btn.querySelector('div:last-child').textContent = '复制口令'; }, 2000);
-}
-
-function shareKw() {
-  const txt = '🎁 我给你发了一个WorldToken礼物！\n口令：' + currentKeyword + '\n打开链接领取 👉 https://worldtoken.cc/wallet.html\n有效期' + hbExpiry + '小时，先到先得';
-  // 尝试直接分享 Telegram
-  const tgUrl = 'https://t.me/share/url?url=' + encodeURIComponent('https://worldtoken.cc/wallet.html') + '&text=' + encodeURIComponent('🎁 WorldToken礼物口令：' + currentKeyword + '\n输入口令即可领取加密货币！');
-  window.open(tgUrl, '_blank');
-}
-
-function showHbQR() {
-  if(!currentKeyword) return;
-  const url = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(currentKeyword);
-  loadQRCodeLib().then(function(){
-    if(typeof QRCode !== 'undefined') {
-      const canvas = document.createElement('canvas');
-      QRCode.toCanvas(canvas, url, {width:200,margin:1}, function() {
-        canvas.toDataURL();
-        showToast('💬 请截图分享口令：' + currentKeyword, 'info', 4000);
-      });
-    } else {
-      showToast('✅ 口令已复制：' + currentKeyword, 'success');
-    }
-  }).catch(function(){ showToast('✅ 口令已复制：' + currentKeyword, 'success'); });
-}
-
-function copyShareText() {
-  const txt = document.getElementById('kwShareText').textContent;
-  navigator.clipboard?.writeText(txt).catch(()=>{});
-  document.getElementById('kwShareText').style.opacity = '0.6';
-  setTimeout(()=>document.getElementById('kwShareText').style.opacity='1', 800);
-}
-
-function onClaimInput() {
-  const v = document.getElementById('claimInput').value;
-  const box = document.getElementById('claimInputBox');
-  box.style.borderColor = v.length > 2 ? 'var(--gold)' : 'var(--border)';
-}
-
-function fillKeyword(kw) {
-  document.getElementById('claimInput').value = kw;
-  onClaimInput();
 }
 
 function submitClaim() {
@@ -4211,13 +2059,8 @@ function submitClaim() {
   goTo('page-claimed');
 }
 
-let hbCount = 5;
-function selectHbType(type) {
-  hbType = type;
-  document.getElementById('hbTypeNormal').style.borderColor = type==='normal'?'var(--gold)':'var(--border)';
-  document.getElementById('hbTypeLucky').style.borderColor = type==='lucky'?'var(--gold)':'var(--border)';
-  updateHbPreview();
-}
+var hbCount = 5;
+
 function changeCount(delta) {
   hbCount = Math.max(1, Math.min(100, hbCount+delta));
   document.getElementById('hbCountVal').textContent = hbCount;
@@ -4241,54 +2084,9 @@ function updateHbPreview() {
   if(per) per.textContent = hbType==='lucky' ? '随机金额' : (hbCount>0?(amount/hbCount).toFixed(2)+' USDT':'- USDT');
   if(tl) tl.textContent = hbType==='lucky' ? '随机金额' : '每人金额';
 }
-function sendHongbao() {
-  const amount = document.getElementById('hbAmount').value;
-  document.getElementById('hbSuccessDesc').innerHTML = amount+' USDT · '+hbCount+'份礼物';
-  document.getElementById('hbSuccessKeyword').textContent = currentKeyword;
-  document.getElementById('hbSuccessOverlay').style.display = 'flex';
-}
-function hideHbSuccess() { document.getElementById('hbSuccessOverlay').style.display = 'none'; }
 
-
-const CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
-let currencyIdx = 0;
-function toggleCurrency() {
-  currencyIdx = (currencyIdx+1) % CURRENCIES.length;
-  const el = _safeEl('settingsCurrency'); if(!el) return;
-  if(el) el.textContent = CURRENCIES[currencyIdx];
-}
-
-function toggleNetwork() {
-  const el = (_safeEl('settingsNetwork') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* settingsNetwork fallback */;
-  if(el) el.textContent = el.textContent==='主网' ? '测试网' : '主网';
-}
-
-function deleteWallet() {
-  if(!window.confirm('⚠️ 确认删除钱包？请确保已备份助记词！')) return;
-  if(!window.confirm('再次确认：删除后资产将永久丢失！')) return;
-  // 清除所有钱包数据
-  localStorage.removeItem('ww_wallet');
-  localStorage.removeItem('ww_hongbaos');
-  try { localStorage.removeItem('ww_ref_install_credited'); } catch (_x) {}
-  REAL_WALLET = null;
-  currentMnemonicLength = 12;
-  // 跳回欢迎页
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-welcome').classList.add('active');
-  showToast('✅ 钱包已删除', 'success');
-}
-
-function markBackupDone() {
-  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
-  w.backedUp = true;
-  localStorage.setItem('ww_wallet', JSON.stringify(w));
-  if(REAL_WALLET) REAL_WALLET.backedUp = true;
-  const el = document.getElementById('backupStatus');
-  if(el) { el.textContent='已备份 ✓'; el.style.color='var(--green,#26a17b)'; }
-  if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
-  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
-  if (typeof wwPopulatePriceAlertForm === 'function') wwPopulatePriceAlertForm();
-}
+var CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
+var currencyIdx = 0;
 
 function updateSettingsPage() {
   const info = LANG_INFO[currentLang]||{name:'中文'};
@@ -4376,24 +2174,8 @@ function requestPushPermissionOnFirstLaunch() {
   }
 }
 
-function promptWalletNotifications() {
-  try {
-    if (typeof Notification === 'undefined') {
-      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info', 2500);
-      else alert('当前环境不支持通知');
-      return;
-    }
-    Notification.requestPermission().then(function (p) {
-      localStorage.setItem('ww_push_asked', '1');
-      const msg = p === 'granted' ? '已开启通知' : ('通知权限：' + p);
-      if (typeof showToast === 'function') showToast(msg, 'info', 2500);
-    });
-  } catch (e) {}
-}
-
-
 // ══ 兑换系统 ══
-const COINS = [
+var COINS = [
   {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', bg:'rgba(38,161,123,0.15)', bal:0, price:1},
   {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
   {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
@@ -4401,16 +2183,9 @@ const COINS = [
   {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', bg:'rgba(255,215,0,0.12)', bal:0, price:312},
 ];
 
-let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
-let swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
-let pickerTarget = 'from';
-
-function setSwapCoin(target, coin) {
-  if(target==='from') swapFrom=coin;
-  else swapTo=coin;
-  renderSwapUI();
-  calcSwap();
-}
+var swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
+var swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
+var pickerTarget = 'from';
 
 function renderSwapUI() {
   const f=swapFrom, t=swapTo;
@@ -4447,7 +2222,7 @@ function calcSwap() {
 }
 
 // 从 CoinGecko 拉实时价格
-const COIN_GECKO_IDS = { usdt:'tether', trx:'tron', eth:'ethereum', btc:'bitcoin', bnb:'binancecoin' };
+var COIN_GECKO_IDS = { usdt:'tether', trx:'tron', eth:'ethereum', btc:'bitcoin', bnb:'binancecoin' };
 async function loadSwapPrices() {
   try {
     const ids = ['tether','tron','ethereum','bitcoin','binancecoin'].join(',');
@@ -4462,59 +2237,7 @@ async function loadSwapPrices() {
   } catch(e) { console.log('价格加载失败，使用默认'); }
 }
 
-function swapCoins() {
-  const tmp=swapFrom; swapFrom=swapTo; swapTo=tmp;
-  const btn=_safeEl('swapArrowBtn');
-  btn.style.transform='rotate(180deg)';
-  setTimeout(()=>btn.style.transform='',300);
-  renderSwapUI(); calcSwap();
-}
-
-function setSwapMax() {
-  _safeEl('swapAmountIn').value=swapFrom.bal;
-  calcSwap();
-}
-
-function openCoinPicker(target) {
-  pickerTarget=target;
-  const list=document.getElementById('coinPickerList');
-  list.innerHTML='';
-  COINS.forEach(coin=>{
-    const current = target==='from'?swapFrom:swapTo;
-    const other = target==='from'?swapTo:swapFrom;
-    if(coin.id===other.id) return; // 不能选同一个
-    const div=document.createElement('div');
-    div.style.cssText='display:flex;align-items:center;gap:12px;background:var(--bg3);border:1.5px solid '+(coin.id===current.id?'var(--gold)':'var(--border)')+';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
-    div.innerHTML=`<div style="width:36px;height:36px;border-radius:50%;background:${coin.bg};display:flex;align-items:center;justify-content:center;font-size:18px">${coin.icon}</div><div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">${coin.name}</div><div style="font-size:11px;color:var(--text-muted)">${coin.chain}</div></div><div class="u6"><div style="font-size:14px;color:var(--text)">${coin.bal.toLocaleString()}</div></div>`;
-    div.onclick=()=>{setSwapCoin(pickerTarget,coin);closeCoinPicker();};
-    list.appendChild(div);
-  });
-  const _ovcoinPi = document.getElementById('coinPickerOverlay'); if(_ovcoinPi) _ovcoinPi.classList.add('show');
-}
-
 function closeCoinPicker() { const _ovcoinPi2 = document.getElementById('coinPickerOverlay'); if(_ovcoinPi2) _ovcoinPi2.classList.remove('show'); }
-
-function doSwap() {
-  const amt = parseFloat(_safeEl('swapAmountIn').value)||0;
-  if(!amt) return;
-  const out = (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent;
-
-  // 根据交易对选择 DEX
-  const isTronPair = ['trx','usdt'].includes(swapFrom.id) && ['trx','usdt'].includes(swapTo.id);
-  const isEthPair = ['eth','usdt'].includes(swapFrom.id) || ['eth','usdt'].includes(swapTo.id);
-
-  // 显示确认弹窗
-  const overlay = document.getElementById('swapConfirmOverlay');
-  if(overlay) {
-    _safeEl('swapConfirmFrom').textContent = amt + ' ' + swapFrom.name;
-    _safeEl('swapConfirmTo').textContent = out + ' ' + swapTo.name;
-    _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (swapFrom.price/swapTo.price).toFixed(6) + ' ' + swapTo.name;
-    overlay.classList.add('show');
-  } else {
-    // 直接跳转 DEX
-    openDex();
-  }
-}
 
 function openDex() {
   const closeOverlay = document.getElementById('swapConfirmOverlay');
@@ -4563,19 +2286,6 @@ function initImportGrid(count) {
   }
 }
 
-function syncImportGrid(text) {
-  const words = text.trim().split(/[\s,]+/).filter(w => w);
-  const validLengths = [12, 15, 18, 21, 24];
-  // 自动调整格子数
-  const targetLen = validLengths.find(l => l >= words.length) || 12;
-  initImportGrid(targetLen);
-  for(let i = 0; i < targetLen; i++) {
-    const inp = document.getElementById('iw_' + i);
-    if(inp) inp.value = words[i] || '';
-  }
-  updateImportWordCount();
-}
-
 function syncImportPaste() {
   const words = [];
   const syncLen = importGridWordCount || 12;
@@ -4588,181 +2298,12 @@ function syncImportPaste() {
   updateImportWordCount();
 }
 
-function copyAllMnemonic(btn) {
-  const words = [];
-  const isEn = currentLang === 'en';
-  if(isEn) {
-    const mn = REAL_WALLET && REAL_WALLET.enMnemonic;
-    if(mn) mn.split(' ').forEach(w => words.push(w));
-  } else {
-    const wl = WT_WORDLISTS[currentLang];
-    const enMn = REAL_WALLET && REAL_WALLET.enMnemonic;
-    if(wl && enMn) {
-      enMn.split(' ').forEach(enW => {
-        const enIdx = WT_WORDLISTS.en.indexOf(enW);
-        words.push(enIdx >= 0 && wl[enIdx] ? wl[enIdx] : enW);
-      });
-    }
-  }
-  if(!words.length) return;
-  const text = words.join(' ');
-  navigator.clipboard.writeText(text).then(() => {
-    const prev = btn.textContent;
-    btn.textContent = '✅ 已复制';
-    setTimeout(() => { btn.textContent = prev; }, 2000);
-  }).catch(() => {
-    // fallback
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    const prev = btn.textContent;
-    btn.textContent = '✅ 已复制';
-    setTimeout(() => { btn.textContent = prev; }, 2000);
-  });
-}
-
-
-
 // ── 从导入格子获取助记词 ──────────────────────────────────────────
-function getMnemonicFromGrid() {
-  const len = importGridWordCount || 12;
-  const words = [];
-  // 先尝试从 textarea 粘贴区读取
-  const paste = document.getElementById('importPaste');
-  if(paste && paste.value.trim()) {
-    const pasted = paste.value.trim().split(/\s+/);
-    if([12,15,18,21,24].includes(pasted.length)) return pasted.join(' ');
-  }
-  // 从格子读取
-  for(let i = 0; i < len; i++) {
-    const inp = document.getElementById('iw_' + i);
-    if(!inp || !inp.value.trim()) {
-      const errEl = document.getElementById('importError');
-      if(errEl) { errEl.style.display='block'; errEl.textContent=`第${i+1}个词不能为空`; }
-      showToast(`❌ 第${i+1}个词不能为空`, 'error');
-      return null;
-    }
-    words.push(inp.value.trim());
-  }
-  return words.join(' ');
-}
-
-function doImportWallet() {
-  const mnemonic = getMnemonicFromGrid();
-  if(!mnemonic) return;
-  restoreWallet(mnemonic).then(w => {
-    if(w) {
-      updateAddr();
-      document.getElementById('tabBar').style.display = 'flex';
-      setTimeout(loadBalances, 500);
-      goTo('page-home');
-      showToast('✅ 钱包导入成功！', 'success');
-    }
-  });
-}
-
 
 // ── 二维码生成 ──────────────────────────────────────────────────
-function generateQRCode(text, canvasId) {
-  const canvas = document.getElementById(canvasId || 'qrCanvas');
-  if(!canvas) return;
-  loadQRCodeLib().then(function(){
-    if(typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-      QRCode.toCanvas(canvas, text || 'worldtoken', {
-        width: 130,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' }
-      }, function(err) {
-        if(err) console.error('QR error:', err);
-      });
-    } else {
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.alt = '';
-      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
-      img.style.width = '130px';
-      img.style.height = '130px';
-      canvas.parentNode.replaceChild(img, canvas);
-    }
-  }).catch(function(e){
-    console.error('QR lib:', e);
-    try {
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.alt = '';
-      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
-      img.style.width = '130px';
-      img.style.height = '130px';
-      canvas.parentNode.replaceChild(img, canvas);
-    } catch(e2) { console.error(e2); }
-  });
-}
+
 
 // 更新二维码（当地址改变时调用）
-function ethFloatToWeiString(v) {
-  if (!isFinite(v) || v <= 0) return '0';
-  const s = v.toFixed(18);
-  const i = s.indexOf('.');
-  const whole = i < 0 ? s : s.slice(0, i);
-  const frac = i < 0 ? '' : s.slice(i + 1, i + 1 + 18);
-  const w = (whole.replace(/^0+/, '') || '0') + frac.padEnd(18, '0').slice(0, 18);
-  return w.replace(/^0+/, '') || '0';
-}
-function buildReceiveQrPayload(chain, addr, amountRaw) {
-  if (!addr) return '';
-  const raw = (document.getElementById('qrReceiveAmount') && document.getElementById('qrReceiveAmount').value) || amountRaw || '';
-  const amt = parseFloat(String(raw).replace(',', '.'));
-  const hasAmt = !isNaN(amt) && amt > 0;
-  if (!hasAmt) return addr;
-  if (chain === 'trx') {
-    const sun = Math.round(amt * 1e6);
-    if (!isFinite(sun) || sun <= 0) return addr;
-    return 'tron:' + addr + '?amount=' + sun;
-  }
-  if (chain === 'eth') {
-    const wei = ethFloatToWeiString(amt);
-    return 'ethereum:' + addr + '?value=' + wei;
-  }
-  return addr;
-}
-function updateQRCode() {
-  if(!REAL_WALLET) return;
-  const chain = document.getElementById('qrChainSelect')?.value || 'trx';
-  let addr = '';
-  if(chain === 'trx') addr = REAL_WALLET.trxAddress || '';
-  else if(chain === 'eth') addr = REAL_WALLET.ethAddress || '';
-  if(addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
-}
-
-
-
-function txHistoryFriendlyHtml(icon, title, hint) {
-  return '<div class="tx-empty-friendly"><div class="tx-empty-icon" aria-hidden="true">' + icon + '</div><div class="tx-empty-title">' + title + '</div><div class="tx-empty-hint">' + hint + '</div></div>';
-}
-function txHistoryEmptyHtml() {
-  const L = (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'zh';
-  const M = {
-    en: { title: "No transactions yet", hint: "After you send or receive once, your latest activity will appear here. On-chain confirmations usually take just a few seconds — tap Refresh above if you just sent something." },
-    zh: { title: '暂无交易记录', hint: '这里会列出你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认通常只要几秒——若刚发出，点上方「刷新」或稍后再看即可。' },
-    'zh-TW': { title: '尚無交易紀錄', hint: '轉帳或收款後，最新活動會顯示在這裡。鏈上確認有時需要幾秒鐘，若剛送出請點上方「重新整理」或稍後再查看。' },
-    ja: { title: 'まだ取引履歴がありません', hint: '送金や受取を一度行うと、直近のアクティビティがここに表示されます。オンチェーンの確定に数秒かかることがあります。送った直後は「更新」をタップしてください。' },
-    ko: { title: '아직 거래 내역이 없어요', hint: '보내기·받기를 한 번 하면 최근 활동이 여기에 표시됩니다. 온체인 확인에 몇 초 걸릴 수 있어요. 방금 보냈다면 위의 새로고침을 눌러 보세요.' },
-    es: { title: 'Aún no hay transacciones', hint: 'Cuando envíes o recibas, verás aquí tu actividad reciente. La confirmación en cadena puede tardar unos segundos; pulsa Actualizar arriba si acabas de enviar.' },
-    fr: { title: 'Pas encore de transactions', hint: 'Après un envoi ou une réception, votre activité récente apparaîtra ici. La confirmation on-chain peut prendre quelques secondes — touchez Actualiser ci-dessus.' },
-    ar: { title: 'لا توجد معاملات بعد', hint: 'بعد أول إرسال أو استلام، ستظهر أنشطتك هنا. قد تستغرق التأكيدات على السلسلة ثوانٍ — اضغط «تحديث» أعلاه إذا أرسلت للتو.' },
-    hi: { title: 'अभी कोई लेनदेन नहीं', hint: 'भेजने या प्राप्त करने के बाद आपकी हाल की गतिविधि यहाँ दिखेगी। ऑन-चेन पुष्टि में कुछ सेकंड लग सकते हैं — अभी भेजा है तो ऊपर ताज़ा करें दबाएँ।' },
-    pt: { title: 'Ainda não há transações', hint: 'Depois de enviar ou receber, sua atividade recente aparece aqui. A confirmação na rede pode levar alguns segundos — toque em Atualizar acima se acabou de enviar.' },
-    ru: { title: 'Пока нет транзакций', hint: 'После отправки или получения здесь появится активность. Подтверждение в сети может занять несколько секунд — нажмите «Обновить» выше, если только что отправили.' },
-    de: { title: 'Noch keine Transaktionen', hint: 'Nach dem ersten Senden oder Empfangen erscheint Ihre Aktivität hier. Die On-Chain-Bestätigung kann einige Sekunden dauern — tippen Sie oben auf Aktualisieren.' },
-  };
-  const pack = M[L] || M.zh;
-  return txHistoryFriendlyHtml('📬', pack.title, pack.hint);
-}
 
 function filterTxHistoryList(txs, q) {
   if (!txs || !txs.length) return [];
@@ -4776,24 +2317,6 @@ function filterTxHistoryList(txs, q) {
     var amt = String(tx.amount || '').toLowerCase();
     return coin.indexOf(s) >= 0 || addr.indexOf(s) >= 0 || hash.indexOf(s) >= 0 || typ.indexOf(s) >= 0 || amt.indexOf(s) >= 0;
   });
-}
-
-function txHistoryRowHtml(tx) {
-  return `
-      <div onclick="window.open((tx.coin==='eth'?'https://etherscan.io/tx/':'https://tronscan.org/#/transaction/')+tx.hash,'_blank')"
-        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
-        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
-          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
-        </div>
-      </div>
-    `;
 }
 
 function renderTxHistoryFromCache() {
@@ -4815,14 +2338,10 @@ function renderTxHistoryFromCache() {
   try { if(typeof updateReputationSettingsRow==='function') updateReputationSettingsRow(); } catch(_rep2) {}
 }
 
-function applyTxHistoryFilter() {
-  renderTxHistoryFromCache();
-}
-
 function getWalletSecurityBreakdown() {
   var pinOk = false;
   try {
-    var p = localStorage.getItem('ww_unlock_pin');
+    var p = localStorage.getItem('ww_pin');
     pinOk = !!(p && String(p).length >= 4);
   } catch (e) {}
   var backed = false;
@@ -4946,7 +2465,7 @@ function wwSpendGateBeforeConfirm(amtNum) {
   var pin = prompt('本笔约 $' + est.toFixed(2) + '，今日已累计约 $' + used.toFixed(2) + '，已超过每日限额 $' + lim.toFixed(2) + '。输入 6 位 PIN 以本次继续');
   if (pin === null) return false;
   var saved = '';
-  try { saved = localStorage.getItem('ww_unlock_pin') || ''; } catch (e3) { saved = ''; }
+  try { saved = localStorage.getItem('ww_pin') || ''; } catch (e3) { saved = ''; }
   if (!saved || String(pin) !== saved) {
     if (typeof showToast === 'function') showToast('PIN 不正确或未设置 PIN', 'error');
     return false;
@@ -4962,557 +2481,8 @@ function wwRecordSpendAfterBroadcast(amtNum) {
   cfg.usedUsd = (parseFloat(cfg.usedUsd) || 0) + wwEstUsdForTransfer(amtNum);
   try { localStorage.setItem('ww_spend_limit_v1', JSON.stringify(cfg)); } catch (e2) {}
 }
-function wwSpendLimitPopulate() {
-  var o = {};
-  try { o = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { o = {}; }
-  var en = document.getElementById('wwSpendLimitEnable');
-  if (en) en.checked = !!o.en;
-  var du = document.getElementById('wwSpendLimitDailyUsd');
-  if (du) du.value = o.dailyUsd && parseFloat(o.dailyUsd) > 0 ? String(o.dailyUsd) : '';
-  var d = new Date().toISOString().slice(0, 10);
-  if (o.day !== d) { o.usedUsd = 0; }
-  var u = document.getElementById('wwSpendUsedDisplay');
-  if (u) u.textContent = '$' + (parseFloat(o.usedUsd) || 0).toFixed(2);
-}
-function wwSpendSaveFromUI() {
-  var en = !!(document.getElementById('wwSpendLimitEnable') && document.getElementById('wwSpendLimitEnable').checked);
-  var daily = parseFloat((document.getElementById('wwSpendLimitDailyUsd') || {}).value || '');
-  var o = {};
-  try { o = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { o = {}; }
-  o.en = en;
-  o.dailyUsd = isFinite(daily) && daily > 0 ? daily : 0;
-  var d = new Date().toISOString().slice(0, 10);
-  if (o.day !== d) { o.day = d; o.usedUsd = 0; }
-  try { localStorage.setItem('ww_spend_limit_v1', JSON.stringify(o)); } catch (e2) {}
-  if (typeof showToast === 'function') showToast('已保存支出限额', 'success');
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-  wwSpendLimitPopulate();
-}
-function wwWhalePopulate() {
-  var o = {};
-  try { o = JSON.parse(localStorage.getItem('ww_whale_v1') || '{}'); } catch (e) { o = {}; }
-  var en = document.getElementById('wwWhaleEnable');
-  if (en) en.checked = !!o.en;
-  var ms = document.getElementById('wwWhaleSelf');
-  if (ms) ms.checked = !!o.monitorSelf;
-  var th = document.getElementById('wwWhaleThreshold');
-  if (th) th.value = o.thresholdUsd && parseFloat(o.thresholdUsd) > 0 ? String(o.thresholdUsd) : '';
-  var ta = document.getElementById('wwWhaleAddresses');
-  if (ta) ta.value = o.addressesText || '';
-}
-function wwWhaleSaveFromUI() {
-  var o = {
-    en: !!(document.getElementById('wwWhaleEnable') && document.getElementById('wwWhaleEnable').checked),
-    monitorSelf: !!(document.getElementById('wwWhaleSelf') && document.getElementById('wwWhaleSelf').checked),
-    thresholdUsd: parseFloat((document.getElementById('wwWhaleThreshold') || {}).value || '') || 0,
-    addressesText: (document.getElementById('wwWhaleAddresses') || {}).value || ''
-  };
-  try { localStorage.setItem('ww_whale_v1', JSON.stringify(o)); } catch (e) {}
-  if (typeof showToast === 'function') showToast('已保存巨鲸提醒', 'success');
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-}
-function wwRequestWhaleNotifyPermission() {
-  try {
-    if (typeof Notification === 'undefined') {
-      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info');
-      return;
-    }
-    Notification.requestPermission().then(function (p) {
-      var msg = p === 'granted' ? '已授予通知权限' : ('权限：' + p);
-      if (typeof showToast === 'function') showToast(msg, 'info');
-    });
-  } catch (e) {}
-}
-
-function wwBridgeSyncTo() {
-  var f = document.getElementById('wwBridgeFrom');
-  var t = document.getElementById('wwBridgeTo');
-  if (!f || !t) return;
-  var v = f.value === 'trx' ? 'eth' : 'trx';
-  for (var i = 0; i < t.options.length; i++) {
-    if (t.options[i].value === v) { t.selectedIndex = i; break; }
-  }
-}
-
-function wwBridgeCopyRecvAddr() {
-  var f = document.getElementById('wwBridgeFrom');
-  var want = f && f.value === 'eth' ? 'eth' : 'trx';
-  var addr = '';
-  try {
-    if (REAL_WALLET) {
-      addr = want === 'eth' ? (REAL_WALLET.ethAddress || '') : (REAL_WALLET.trxAddress || '');
-    }
-  } catch (e) {}
-  if (!addr) {
-    if (typeof showToast === 'function') showToast('暂无钱包地址', 'info');
-    return;
-  }
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(addr).then(function () {
-        if (typeof showToast === 'function') showToast('已复制 ' + want.toUpperCase() + ' 地址', 'success');
-      });
-    } else {
-      prompt('复制地址', addr);
-    }
-  } catch (e2) {}
-}
-
-function wwBridgeOpenStargate() {
-  try {
-    if (typeof window !== 'undefined' && window.open) window.open('https://www.stargate.finance/', '_blank', 'noopener,noreferrer');
-    else location.href = 'https://www.stargate.finance/';
-  } catch (e) {}
-  if (typeof showToast === 'function') showToast('请在桥接站点选择网络与代币，并核对合约', 'info', 3200);
-}
-
-function wwBridgeOpenTronDocs() {
-  try {
-    if (typeof window !== 'undefined' && window.open) window.open('https://developers.tron.network/', '_blank', 'noopener,noreferrer');
-    else location.href = 'https://developers.tron.network/';
-  } catch (e) {}
-}
-
-function wwVestingRender() {
-  var host = document.getElementById('wwVestingTimeline');
-  if (!host) return;
-  var rows = null;
-  try { rows = JSON.parse(localStorage.getItem('ww_vesting_demo_v1') || 'null'); } catch (e) { rows = null; }
-  if (!rows || !Array.isArray(rows) || rows.length === 0) {
-    rows = [
-      { t: 'T0', unlockedPct: 0 },
-      { t: '第 3 月', unlockedPct: 25 },
-      { t: '第 6 月', unlockedPct: 60 },
-      { t: '第 12 月', unlockedPct: 100 }
-    ];
-  }
-  host.innerHTML = rows.map(function (r) {
-    var u = Math.max(0, Math.min(100, parseFloat(r.unlockedPct) || 0));
-    var lk = 100 - u;
-    var esc = function (s) { return String(s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
-    return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text)">' + esc(r.t) + '</span><span style="color:var(--text-muted)">已解锁 ' + u.toFixed(0) + '% · 锁定 ' + lk.toFixed(0) + '%</span></div>' +
-      '<div style="height:10px;border-radius:8px;background:var(--bg3);overflow:hidden;display:flex">' +
-      '<div style="width:' + u + '%;background:linear-gradient(90deg,#26a17b,#4fd1a5)"></div>' +
-      '<div style="width:' + lk + '%;background:rgba(200,168,75,0.35)"></div></div></div>';
-  }).join('');
-}
-
-function wwVestingResetDemo() {
-  try { localStorage.removeItem('ww_vesting_demo_v1'); } catch (e) {}
-  wwVestingRender();
-  if (typeof showToast === 'function') showToast('已恢复示例进度', 'info');
-}
-
-function wwDexConnectPopulate() {
-  var el = document.getElementById('wwDexAddrHint');
-  if (!el) return;
-  try {
-    if (REAL_WALLET && REAL_WALLET.ethAddress && REAL_WALLET.trxAddress) {
-      el.innerHTML = '<div style="margin-bottom:6px;color:var(--text-muted)">ETH</div><div style="color:var(--text)">' + REAL_WALLET.ethAddress + '</div>' +
-        '<div style="margin:10px 0 6px;color:var(--text-muted)">TRX</div><div style="color:var(--text)">' + REAL_WALLET.trxAddress + '</div>';
-    } else {
-      el.textContent = '请先创建或导入钱包';
-    }
-  } catch (e) {
-    el.textContent = '—';
-  }
-}
-
-function wwHardwareWalletPopulate() {
-  var el = document.getElementById('wwHardwareAddrEcho');
-  if (!el) return;
-  try {
-    if (REAL_WALLET && REAL_WALLET.ethAddress && REAL_WALLET.trxAddress) {
-      el.innerHTML = '<div style="margin-bottom:6px;color:var(--text-muted)">与本钱包核对地址</div><div style="color:var(--text);font-size:12px">ETH: ' + REAL_WALLET.ethAddress + '</div><div style="color:var(--text);font-size:12px;margin-top:6px">TRX: ' + REAL_WALLET.trxAddress + '</div>';
-    } else {
-      el.textContent = '请先创建或导入钱包后再与硬件设备显示地址逐项核对。';
-    }
-  } catch (e) {
-    el.textContent = '—';
-  }
-}
-
-function wwOpenLedgerSupport() {
-  try { if (window.open) window.open('https://support.ledger.com/', '_blank', 'noopener,noreferrer'); } catch (e) {}
-  if (typeof showToast === 'function') showToast('请在官方支持页查看设备与链兼容说明', 'info', 2800);
-}
-
-function wwOpenTrezorSupport() {
-  try { if (window.open) window.open('https://trezor.io/learn/', '_blank', 'noopener,noreferrer'); } catch (e) {}
-}
-
-function wwTaxReportPopulate() {
-  var sum = document.getElementById('wwTaxReportSummary');
-  if (!sum) return;
-  var n = 0;
-  try {
-    if (window._wwTxHistoryCache && Array.isArray(window._wwTxHistoryCache)) n = window._wwTxHistoryCache.length;
-  } catch (e) { n = 0; }
-  sum.textContent = '当前可导出记录条数：' + n + '（来自首页交易历史缓存）';
-}
-
-function wwTaxExportCsv() {
-  var rows = [];
-  try {
-    if (window._wwTxHistoryCache && Array.isArray(window._wwTxHistoryCache)) rows = window._wwTxHistoryCache.slice();
-  } catch (e) { rows = []; }
-  if (!rows.length) {
-    if (typeof showToast === 'function') showToast('暂无缓存记录，请先在首页刷新交易历史', 'info', 3200);
-    return;
-  }
-  var esc = function (s) {
-    var t = String(s == null ? '' : s);
-    if (/[",\n\r]/.test(t)) return '"' + t.replace(/"/g, '""') + '"';
-    return t;
-  };
-  var lines = ['date,type,coin,amount,counterparty,tx_hash'];
-  for (var i = 0; i < rows.length; i++) {
-    var r = rows[i] || {};
-    lines.push([esc(r.time), esc(r.type), esc(r.coin), esc(r.amount), esc(r.addr), esc(r.hash)].join(','));
-  }
-  var blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'worldwallet-tx-tax-' + new Date().toISOString().slice(0, 10) + '.csv';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function () { try { URL.revokeObjectURL(a.href); document.body.removeChild(a); } catch (e2) {} }, 800);
-  if (typeof showToast === 'function') showToast('已生成 CSV（请自行核对字段）', 'success', 2400);
-}
-
-function wwCopyTradingPopulate() {
-  var ta = document.getElementById('wwCopyWatchInput');
-  if (!ta) return;
-  try {
-    var raw = localStorage.getItem('ww_copy_watch_v1') || '';
-    var ar = [];
-    try { ar = JSON.parse(raw); } catch (e) { ar = []; }
-    if (Array.isArray(ar) && ar.length) {
-      ta.value = ar.map(function (x) { return (x && x.addr) ? String(x.addr) : ''; }).filter(Boolean).join('\n');
-    }
-  } catch (e2) {}
-  wwCopyTradingRenderList();
-}
-
-function wwCopyTradingSave() {
-  var ta = document.getElementById('wwCopyWatchInput');
-  if (!ta) return;
-  var lines = String(ta.value || '').split(/[\n,;\s]+/).map(function (s) { return s.trim(); }).filter(Boolean);
-  var ar = lines.map(function (addr) { return { addr: addr }; });
-  try { localStorage.setItem('ww_copy_watch_v1', JSON.stringify(ar)); } catch (e) {}
-  wwCopyTradingRenderList();
-  if (typeof showToast === 'function') showToast('已保存 ' + ar.length + ' 个地址（本机）', 'success', 2200);
-}
-
-function wwCopyTradingRenderList() {
-  var host = document.getElementById('wwCopyWatchList');
-  if (!host) return;
-  var ar = [];
-  try { ar = JSON.parse(localStorage.getItem('ww_copy_watch_v1') || '[]'); } catch (e) { ar = []; }
-  if (!Array.isArray(ar) || !ar.length) {
-    host.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-muted);font-size:12px">暂无监控地址</div>';
-    return;
-  }
-  host.innerHTML = ar.map(function (c, i) {
-    var a = (c && c.addr) ? String(c.addr) : '';
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:11px;word-break:break-all;display:flex;justify-content:space-between;gap:8px;align-items:center"><span style="color:var(--text)">' + a.replace(/</g, '') + '</span><span style="color:var(--red);cursor:pointer;flex-shrink:0" onclick="if(typeof wwCopyTradingRemove===\'function\')wwCopyTradingRemove(' + i + ')">移除</span></div>';
-  }).join('');
-}
-
-function wwCopyTradingRemove(idx) {
-  var ar = [];
-  try { ar = JSON.parse(localStorage.getItem('ww_copy_watch_v1') || '[]'); } catch (e) { ar = []; }
-  if (!Array.isArray(ar) || idx < 0 || idx >= ar.length) return;
-  ar.splice(idx, 1);
-  try { localStorage.setItem('ww_copy_watch_v1', JSON.stringify(ar)); } catch (e2) {}
-  var ta = document.getElementById('wwCopyWatchInput');
-  if (ta) ta.value = ar.map(function (x) { return x.addr; }).join('\n');
-  wwCopyTradingRenderList();
-}
-
-function wwPortfolioInsurancePopulate() {
-  var host = document.getElementById('wwInsuranceBody');
-  if (!host) return;
-  var items = [
-    { t: 'Nexus Mutual', d: '去中心化互助承保（需了解 NXM 与 KYC 要求）', u: 'https://www.nexusmutual.io/' },
-    { t: 'InsurAce', d: '多链 DeFi 协议组合保险', u: 'https://www.insurace.io/' },
-    { t: '托管方条款', d: '若资产在交易所，请查阅其用户保护与保险说明', u: 'https://www.binance.com/en/support/faq' }
-  ];
-  host.innerHTML = items.map(function (it) {
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px">' +
-      '<div style="font-weight:700;color:var(--text);font-size:14px">' + it.t + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);line-height:1.55">' + it.d + '</div>' +
-      '<button type="button" class="btn-secondary" style="align-self:flex-start;padding:8px 14px;font-size:12px" onclick="try{window.open(\'' + it.u + '\',\'_blank\',\'noopener,noreferrer\');}catch(e){}">了解详情</button></div>';
-  }).join('');
-}
-
-function wwYieldOptimizerPopulate() {
-  var body = document.getElementById('wwYieldOptimizerBody');
-  var hint = document.getElementById('wwYieldOptimizerHint');
-  if (!body || !hint) return;
-  var parts = [];
-  var total = 0;
-  try {
-    if (window._wwLastPortfolioParts && window._wwLastPortfolioTotal != null) {
-      parts = window._wwLastPortfolioParts;
-      total = Number(window._wwLastPortfolioTotal) || 0;
-    }
-  } catch (e) { parts = []; total = 0; }
-  if (!total || total <= 1e-9) {
-    hint.textContent = '暂无持仓估值：请返回首页等待余额加载后再查看策略建议。';
-    body.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">—</div>';
-    return;
-  }
-  var apy = { USDT: 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
-  var top = null;
-  var bestA = 0;
-  parts.forEach(function (p) {
-    var a = apy[p.l] != null ? apy[p.l] : 3.5;
-    if (a > bestA && p.v > 0) { bestA = a; top = p.l; }
-  });
-  hint.innerHTML = '当前组合参考总市值约 <b style="color:var(--text)">$' + total.toFixed(2) + '</b>。' +
-    (top ? ' 占比最高的可优化资产侧重：<b style="color:var(--gold)">' + top + '</b>（参考 APY ' + bestA.toFixed(1) + '%）。' : '');
-  var strategies = [
-    { n: '稳定币理财 / 货币市场', apy: '3.5–5%', fit: 'USDT', note: '适合大额 USDT，注意合约与平台信用风险' },
-    { n: '原生链质押（ETH / TRX）', apy: '3–6%', fit: 'ETH,TRX', note: '流动性质押或节点委托，需解锁期与罚没规则' },
-    { n: '流动性挖矿（AMM）', apy: '变动大', fit: 'USDT,ETH', note: '无常损失与智能合约风险较高' }
-  ];
-  body.innerHTML = strategies.map(function (s) {
-    var ok = parts.some(function (p) { return p.v > 0 && s.fit.indexOf(p.l) >= 0; });
-    var badge = ok ? '<span style="font-size:10px;padding:2px 8px;border-radius:999px;background:rgba(200,168,75,0.2);color:var(--gold)">与持仓相关</span>' : '';
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">' +
-      '<span style="font-weight:700;color:var(--text);font-size:13px">' + s.n + '</span>' + badge + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);line-height:1.55">参考 APY ' + s.apy + ' · ' + s.note + '</div></div>';
-  }).join('');
-}
-
-function wwTokenUnlockCalendarPopulate() {
-  var host = document.getElementById('wwUnlockCalendarBody');
-  if (!host) return;
-  var rows = [
-    { proj: 'Arbitrum', tok: 'ARB', when: '2026-05-16', amt: '约 1.1B 代币', note: '团队与投资人解锁批次（示例）' },
-    { proj: 'Optimism', tok: 'OP', when: '2026-06-30', amt: '约 3.8 亿 OP', note: '治理金库释放（示例）' },
-    { proj: 'dYdX', tok: 'DYDX', when: '2026-08-01', amt: '投资人解锁', note: '请关注官方 changelog' },
-    { proj: 'WorldToken 生态', tok: 'WTK', when: '2026-09-15', amt: '社区激励', note: '占位示例，非真实解锁计划' }
-  ];
-  host.innerHTML = rows.map(function (r) {
-    return '<div style="display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap">' +
-      '<span style="font-weight:700;color:var(--text)">' + r.proj + ' <span style="color:var(--gold)">' + r.tok + '</span></span>' +
-      '<span style="font-size:12px;color:var(--green,#26a17b)">' + r.when + '</span></div>' +
-      '<div style="font-size:11px;color:var(--text-muted)">' + r.amt + ' · ' + r.note + '</div></div>';
-  }).join('');
-}
-
-function wwIdentityPopulate() {
-  var o = {};
-  try { o = JSON.parse(localStorage.getItem('ww_identity_v1') || '{}'); } catch (e) { o = {}; }
-  var a = document.getElementById('wwIdentityEns');
-  var b = document.getElementById('wwIdentityTwitter');
-  var c = document.getElementById('wwIdentitySocial2');
-  if (a) a.value = o.ens || '';
-  if (b) b.value = o.twitter || '';
-  if (c) c.value = o.social2 || '';
-}
-
-function wwIdentitySave() {
-  var a = document.getElementById('wwIdentityEns');
-  var b = document.getElementById('wwIdentityTwitter');
-  var c = document.getElementById('wwIdentitySocial2');
-  var o = {
-    ens: a ? String(a.value || '').trim().slice(0, 128) : '',
-    twitter: b ? String(b.value || '').trim().slice(0, 64) : '',
-    social2: c ? String(c.value || '').trim().slice(0, 128) : ''
-  };
-  try { localStorage.setItem('ww_identity_v1', JSON.stringify(o)); } catch (e2) {}
-  if (typeof showToast === 'function') showToast('链上身份已保存（本机）', 'success', 2200);
-}
-
-function wwAnalyticsPopulate() {
-  var heat = document.getElementById('wwAnalyticsHeatmap');
-  var topEl = document.getElementById('wwAnalyticsTopTokens');
-  var sumEl = document.getElementById('wwAnalyticsSummary');
-  if (!heat || !topEl || !sumEl) return;
-  var txs = [];
-  try { txs = window._wwTxHistoryCache || []; } catch (e) { txs = []; }
-  if (!Array.isArray(txs)) txs = [];
-  var days = ['一', '二', '三', '四', '五', '六', '日'];
-  var n = Math.max(1, txs.length);
-  heat.innerHTML = days.map(function (d, i) {
-    var h = Math.min(100, 18 + (n * (i + 3)) % 72);
-    return '<div style="text-align:center"><div style="height:' + h + 'px;border-radius:8px;background:linear-gradient(180deg,rgba(200,168,75,0.55),rgba(200,168,75,0.12));margin-bottom:4px"></div><div style="font-size:10px;color:var(--text-muted)">周' + d + '</div></div>';
-  }).join('');
-  var byCoin = {};
-  txs.forEach(function (tx) {
-    var k = String(tx.coin || '—');
-    byCoin[k] = (byCoin[k] || 0) + 1;
-  });
-  var sorted = Object.keys(byCoin).sort(function (a, b) { return (byCoin[b] || 0) - (byCoin[a] || 0); });
-  if (!sorted.length) {
-    topEl.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-muted);font-size:12px">暂无交易缓存：请返回首页并点击「刷新」加载最近交易。</div>';
-    sumEl.textContent = '';
-    return;
-  }
-  topEl.innerHTML = sorted.slice(0, 6).map(function (k) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px">' +
-      '<span style="font-weight:600;color:var(--text)">' + k + '</span>' +
-      '<span style="font-size:12px;color:var(--gold)">' + byCoin[k] + ' 笔</span></div>';
-  }).join('');
-  var inC = 0, outC = 0;
-  txs.forEach(function (tx) {
-    var t = String(tx.type || '');
-    if (t.indexOf('入') >= 0 || t.indexOf('收') >= 0) inC++;
-    else if (t.indexOf('出') >= 0 || t.indexOf('转') >= 0) outC++;
-  });
-  sumEl.innerHTML = '共分析 <b style="color:var(--text)">' + txs.length + '</b> 条缓存记录。方向概览：转入类约 ' + inC + ' 条，转出类约 ' + outC + ' 条（基于类型文本启发式）。';
-}
-
-function wwOpenDexUniswap() {
-  try {
-    if (typeof window !== 'undefined' && window.open) window.open('https://app.uniswap.org/', '_blank', 'noopener,noreferrer');
-    else location.href = 'https://app.uniswap.org/';
-  } catch (e) {}
-  if (typeof showToast === 'function') showToast('在 Uniswap 使用 WalletConnect 连接与上述相同的地址', 'info', 3600);
-}
-
-function wwOpenDexSunswap() {
-  try {
-    if (typeof window !== 'undefined' && window.open) window.open('https://sunswap.com/#/home', '_blank', 'noopener,noreferrer');
-    else location.href = 'https://sunswap.com/#/home';
-  } catch (e) {}
-  if (typeof showToast === 'function') showToast('在 SunSwap 使用 TronLink / WalletConnect', 'info', 3200);
-}
-
-function wwOpenDexOneinch() {
-  try {
-    if (typeof window !== 'undefined' && window.open) window.open('https://app.1inch.io/', '_blank', 'noopener,noreferrer');
-    else location.href = 'https://app.1inch.io/';
-  } catch (e) {}
-}
-
-function wwSocialRecoveryRender() {
-  var list = document.getElementById('wwSocialContactsList');
-  if (!list) return;
-  var ar = [];
-  try { ar = JSON.parse(localStorage.getItem('ww_social_contacts_v1') || '[]'); } catch (e) { ar = []; }
-  if (!Array.isArray(ar) || ar.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-muted);font-size:12px">暂无联系人，点击下方添加</div>';
-    return;
-  }
-  list.innerHTML = ar.map(function (c, i) {
-    var name = (c && c.name) ? String(c.name) : '未命名';
-    var note = (c && c.note) ? String(c.note) : '';
-    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start">' +
-      '<div><div style="font-weight:700;color:var(--text);font-size:14px">' + name.replace(/</g, '') + '</div>' +
-      '<div style="font-size:11px;color:var(--text-muted);margin-top:4px;word-break:break-all">' + note.replace(/</g, '') + '</div></div>' +
-      '<span style="font-size:12px;color:var(--red);cursor:pointer;flex-shrink:0" onclick="if(typeof wwSocialRemoveContact===\'function\')wwSocialRemoveContact(' + i + ')">删除</span></div>';
-  }).join('');
-}
-function wwSocialAddContactPrompt() {
-  var name = prompt('联系人称呼');
-  if (name === null) return;
-  var note = prompt('备注（电话 / 邮箱 / 线下约定等，仅本机）', '');
-  if (note === null) return;
-  var ar = [];
-  try { ar = JSON.parse(localStorage.getItem('ww_social_contacts_v1') || '[]'); } catch (e) { ar = []; }
-  if (!Array.isArray(ar)) ar = [];
-  ar.push({ name: String(name).trim() || '未命名', note: String(note || '').trim() });
-  try { localStorage.setItem('ww_social_contacts_v1', JSON.stringify(ar)); } catch (e2) {}
-  wwSocialRecoveryRender();
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-}
-function wwSocialRemoveContact(idx) {
-  var ar = [];
-  try { ar = JSON.parse(localStorage.getItem('ww_social_contacts_v1') || '[]'); } catch (e) { ar = []; }
-  if (!Array.isArray(ar) || idx < 0 || idx >= ar.length) return;
-  ar.splice(idx, 1);
-  try { localStorage.setItem('ww_social_contacts_v1', JSON.stringify(ar)); } catch (e2) {}
-  wwSocialRecoveryRender();
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-}
-function wwSocialSaveFromUI() {
-  if (typeof showToast === 'function') showToast('联系人已保存在本机', 'success');
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-}
 
 // ── 交易历史 ──────────────────────────────────────────────────
-async function loadTxHistory() {
-  if(!REAL_WALLET) return;
-  const el = document.getElementById('txHistoryList');
-  if(!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">⏳ 加载中...</div>';
-
-  try {
-    const txs = [];
-
-    // TRX 转账记录
-    const trxAddr = REAL_WALLET.trxAddress;
-    if(trxAddr && trxAddr.startsWith('T')) {
-      const r1 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`);
-      const d1 = await r1.json();
-      if(d1.data) {
-        for(const tx of d1.data.slice(0,5)) {
-          const isOut = tx.from === trxAddr;
-          const amt = (parseInt(tx.value) / 1e6).toFixed(2);
-          txs.push({
-            icon: isOut ? '📤' : '📥',
-            type: isOut ? '转出' : '转入',
-            coin: 'USDT',
-            amount: (isOut?'-':'+') + amt,
-            addr: isOut ? tx.to : tx.from,
-            time: new Date(tx.block_timestamp).toLocaleDateString('zh-CN'),
-            hash: tx.transaction_id,
-            color: isOut ? '#e05c5c' : '#26a17b'
-          });
-        }
-      }
-
-      // TRX 原生交易
-      const r2 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions?limit=5&only_confirmed=true`);
-      const d2 = await r2.json();
-      if(d2.data) {
-        for(const tx of d2.data.slice(0,3)) {
-          const contract = tx.raw_data?.contract?.[0];
-          if(contract?.type !== 'TransferContract') continue;
-          const val = contract.parameter?.value;
-          if(!val) continue;
-          const isOut = val.owner_address && TronWeb?.address?.fromHex(val.owner_address) === trxAddr;
-          const amt = ((val.amount||0) / 1e6).toFixed(2);
-          txs.push({
-            icon: isOut ? '📤' : '📥',
-            type: isOut ? '转出' : '转入',
-            coin: 'TRX',
-            amount: (isOut?'-':'+') + amt,
-            addr: val.to_address ? (typeof TronWeb!=='undefined'?TronWeb.address.fromHex(val.to_address):val.to_address) : '',
-            time: new Date(tx.raw_data.timestamp).toLocaleDateString('zh-CN'),
-            hash: tx.txID,
-            color: isOut ? '#e05c5c' : '#e84142'
-          });
-        }
-      }
-    }
-
-    if(txs.length === 0) {
-      try { window._wwTxHistoryCache = []; } catch (_c) {}
-      el.innerHTML = txHistoryEmptyHtml();
-      return;
-    }
-    try { window._wwTxHistoryCache = txs; } catch (_c2) {}
-    try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(txs); } catch (_wh) {}
-    renderTxHistoryFromCache();
-
-  } catch(e) {
-    console.error('加载交易记录失败:', e);
-    const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
-    el.innerHTML = txHistoryFriendlyHtml(
-      '📡',
-      en ? 'Couldn\'t load activity' : '暂时无法加载记录',
-      en ? 'Check your connection and tap Refresh above to try again.' : '请检查网络后点上方「刷新」重试。若网络正常仍无记录，稍等片刻再试。'
-    );
-  }
-}
-
 
 // ── 礼物记录 ──────────────────────────────────────────────────
 function loadHbRecords() {
@@ -5572,21 +2542,8 @@ function loadHbRecords() {
   el.innerHTML += '<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:10px;padding-bottom:20px">· 共 ' + list.length + ' 条记录 ·</div>';
 }
 
-function formatTimeAgo(ts) {
-  const diff = Date.now() - ts;
-  const m = Math.floor(diff / 60000);
-  const h = Math.floor(diff / 3600000);
-  const d = Math.floor(diff / 86400000);
-  if(d > 0) return d + '天前';
-  if(h > 0) return h + '小时前';
-  if(m > 0) return m + '分钟前';
-  return '刚刚';
-}
-
-
-
 // ── 安全 getElementById（防止 null 导致崩溃）──────────────────────
-const _origGetEl = document.getElementById.bind(document);
+var _origGetEl = document.getElementById.bind(document);
 document.getElementById = function(id) {
   const el = _origGetEl(id);
   return el; // 返回真实元素或 null，调用处自行处理
@@ -5613,271 +2570,13 @@ function showToast(msg, type='info', duration=2500) {
 }
 
 // ── 余额查询 ──────────────────────────────────────────────────
-let priceCache = null;
-let priceCacheTime = 0;
-
-function drawHomeBalanceChart(totalUsd) {
-  const wrap = document.getElementById('homeBalanceChartWrap');
-  const svg = document.getElementById('homeBalanceChartSvg');
-  const foot = document.getElementById('homeBalanceChartFoot');
-  if(!wrap || !svg) return;
-  const t = Number(totalUsd);
-  if(!t || t <= 0 || !isFinite(t)) { wrap.style.display = 'none'; return; }
-  wrap.style.display = 'block';
-  const days = ['6天前','5天前','4天前','3天前','2天前','昨天','今天'];
-  const seed = Math.abs(Math.sin((t % 1000) * 13.37));
-  const pts = [];
-  for(let i = 0; i < 7; i++) {
-    const wobble = (i - 3) * 0.014 + (seed - 0.5) * 0.045;
-    pts.push(Math.max(0, t * (1 + wobble)));
-  }
-  pts[6] = t;
-  const min = Math.min.apply(null, pts) * 0.997;
-  const max = Math.max.apply(null, pts) * 1.003;
-  const W = 320, H = 72, padY = 8;
-  const range = max - min || 1;
-  const coords = pts.map(function(p, i) {
-    const x = (i / (pts.length - 1)) * (W - 8) + 4;
-    const y = padY + (1 - (p - min) / range) * (H - padY * 2);
-    return [x, y];
-  });
-  let d = 'M ' + coords[0][0] + ',' + coords[0][1];
-  for(let i = 1; i < coords.length; i++) d += ' L ' + coords[i][0] + ',' + coords[i][1];
-  const area = 'M' + coords[0][0] + ',' + H + ' ' + coords.map(function(c) { return c[0] + ',' + c[1]; }).join(' ') + ' L' + coords[coords.length - 1][0] + ',' + H + ' Z';
-  svg.innerHTML = '<defs><linearGradient id="hmChartGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(200,168,75,0.38)"/><stop offset="100%" stop-color="rgba(200,168,75,0)"/></linearGradient></defs><path d="' + area + '" fill="url(#hmChartGrad)"/><path d="' + d + '" fill="none" stroke="rgba(232,200,80,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-  if(foot) foot.innerHTML = '<span>' + days[0] + '</span><span>' + days[6] + '</span>';
-}
-
-async function getPrices() {
-  if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
-  try {
-    // CoinGecko 免费价格 API（无需 key）
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd');
-    const data = await res.json();
-    priceCache = {
-      usdt: data.tether?.usd || 1,
-      trx: data.tron?.usd || 0.12,
-      eth: data.ethereum?.usd || 3200,
-      btc: data.bitcoin?.usd || 60000,
-    };
-    priceCacheTime = Date.now();
-    return priceCache;
-  } catch(e) {
-    return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
-  }
-}
-
-async function loadBalances() {
-  if(!REAL_WALLET || !REAL_WALLET.trxAddress) return;
-  const tbd = document.getElementById('totalBalanceDisplay');
-  const tbs = document.getElementById('totalBalanceSub');
-  if(tbd) tbd.classList.add('home-balance--loading');
-  if(tbs) tbs.textContent = '同步中…';
-  
-  const btn = _safeEl('balRefreshBtn');
-  if(btn) btn.textContent = '查询中...';
-  
-  // 更新标签为加载中
-  ['balUsdt','balTrx','balEth'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.textContent = '...';
-  });
-
-  try {
-    const [prices] = await Promise.all([getPrices()]);
-    
-    // 查询 TRX 余额（TronGrid 免费 API）
-    const trxAddr = REAL_WALLET.trxAddress;
-    const ethAddr = REAL_WALLET.ethAddress;
-    
-    let usdtBal = 0, trxBal = 0, ethBal = 0;
-
-    // TRX 余额
-    try {
-      const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`, {
-        headers: { 'TRON-PRO-API-KEY': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' } // 建议在 trongrid.io 申请免费 key
-      });
-      const trxData = await trxRes.json();
-      if(trxData.data && trxData.data[0]) {
-        trxBal = (trxData.data[0].balance || 0) / 1e6;
-        // USDT TRC-20 余额
-        const trc20 = trxData.data[0].trc20 || [];
-        const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-        if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
-      }
-    } catch(e) { console.log('TRX query failed:', e); }
-
-    // ETH 余额（公共 RPC）
-    try {
-      const ethRes = await fetch('https://eth.llamarpc.com', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[ethAddr,'latest'],id:1})
-      });
-      const ethData = await ethRes.json();
-      if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
-    } catch(e) { console.log('ETH query failed:', e); }
-
-    // 更新UI
-    const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
-    const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
-
-    // BTC 余额（BlockCypher 免费API，从助记词派生BTC地址）
-    let btcBal = 0, btcAddr = '';
-    try {
-      // 从 ETH 地址派生 BTC 地址（简化：用 Blockchain.info 查询）
-      // 由于BTC地址派生复杂，暂时尝试查询（如有BTC地址）
-      if(REAL_WALLET.btcAddress) {
-        btcAddr = REAL_WALLET.btcAddress;
-        // BTC 余额查询（使用 mempool.space，更稳定）
-        const btcRes = await fetch(`https://mempool.space/api/address/${btcAddr}`);
-        const btcData = await btcRes.json();
-        btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
-      }
-    } catch(e) { console.log('BTC query skipped'); }
-
-    const usdtUsd = usdtBal * prices.usdt;
-    const trxUsd = trxBal * prices.trx;
-    const ethUsd = ethBal * prices.eth;
-    const btcUsd = btcBal * (prices.btc || 60000);
-    const total = usdtUsd + trxUsd + ethUsd + btcUsd;
-
-    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-    set('balUsdt', fmt(usdtBal));
-    set('valUsdt', fmtUsd(usdtUsd));
-    set('balTrx', fmt(trxBal));
-    set('valTrx', fmtUsd(trxUsd));
-    set('balEth', fmt(ethBal));
-    set('valEth', fmtUsd(ethUsd));
-    // 更新涨跌幅（从 CoinGecko 获取）
-    try {
-      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum&vs_currencies=usd&include_24hr_change=true');
-      const d2 = await r2.json();
-      const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
-      if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
-      if(d2.tron?.usd_24h_change!==undefined) set('chgTrx', fmtChg(d2.tron.usd_24h_change));
-      if(d2.ethereum?.usd_24h_change!==undefined) set('chgEth', fmtChg(d2.ethereum.usd_24h_change));
-    } catch(e) {}
-    if(tbd) tbd.classList.remove('home-balance--loading');
-    animateHomeUsdTo(total, fmtUsd);
-    window._lastTotalUsd = total;
-    drawHomeBalanceChart(total);
-    if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
-    if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
-    // 动态汇率（从价格接口获取，fallback 7.2）
-  const cnyRate = window._cnyRate || 7.2;
-  set('totalBalanceSub', '≈ ' + (total * cnyRate).toFixed(0) + ' CNY · 实时价格');
-  // 尝试获取实时汇率
-  if(!window._cnyRate) {
-    fetch('https://api.exchangerate-api.com/v4/latest/USD')
-      .then(r=>r.json()).then(d=>{ window._cnyRate = d.rates?.CNY || 7.2; })
-      .catch(()=>{});
-  }
-
-    // BTC 显示
-    if(btcBal > 0) {
-      const btcRow = document.getElementById('btcAssetRow');
-      if(btcRow) btcRow.style.display = 'flex';
-      set('balBtc', btcBal.toFixed(6));
-      set('valBtc', fmtUsd(btcUsd));
-      COINS.forEach(c => { if(c.id==='btc') { c.bal = btcBal; c.price = prices.btc || 60000; } });
-    }
-
-    // ── 同步 COINS 余额（兑换页使用）──
-    COINS.forEach(coin => {
-      if(coin.id === 'usdt') { coin.bal = usdtBal; coin.price = prices.usdt || 1; }
-      else if(coin.id === 'trx') { coin.bal = trxBal; coin.price = prices.trx || 0.12; }
-      else if(coin.id === 'eth') { coin.bal = ethBal; coin.price = prices.eth || 2500; }
-    });
-    renderSwapUI(); calcSwap();
-    
-    if(btn) btn.textContent = '刷新';
-    if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
-    if(typeof loadTrxResource==='function') loadTrxResource();
-  } catch(e) {
-    console.error('Balance load error:', e);
-    if(tbd) tbd.classList.remove('home-balance--loading');
-    if(btn) btn.textContent = '刷新';
-  }
-}
-
+var priceCache = null;
+var priceCacheTime = 0;
 
 // ── 加密资讯 ──────────────────────────────────────────────────
-let newsLoading = false;
-let newsCache = null;
-let newsCacheTime = 0;
-
-async function loadNews() {
-  // 备用新闻源列表（allorigins代理）
-  const RSS_SOURCES = [
-    'https://api.allorigins.win/get?url=https%3A%2F%2Fcoindesk.com%2Farc%2Foutboundfeeds%2Frss%2F',
-    'https://api.allorigins.win/get?url=https%3A%2F%2Fcointelegraph.com%2Frss',
-    'https://api.allorigins.win/get?url=https%3A%2F%2Fdecrypt.co%2Ffeed',
-  ];
-  if(newsLoading) return;
-  const list = document.getElementById('newsList');
-  if(!list) return;
-  if(newsCache && Date.now() - newsCacheTime < 5 * 60 * 1000) {
-    renderNews(newsCache);
-    return;
-  }
-  newsLoading = true;
-  list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text-muted)"><div class="u10">⏳</div><div style="font-size:13px">加载中...</div></div>';
-  try {
-    // 使用 allorigins 代理绕过 CORS，抓取 CoinDesk RSS
-    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent('https://www.coindesk.com/arc/outboundfeeds/rss/');
-    const res = await fetch(proxyUrl);
-    const data = await res.json();
-    // 解析 RSS XML
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(data.contents, 'text/xml');
-    const items = xml.querySelectorAll('item');
-    newsCache = Array.from(items).slice(0,20).map(item => ({
-      title: item.querySelector('title')?.textContent || '',
-      url: item.querySelector('link')?.textContent || item.querySelector('guid')?.textContent || '',
-      source: {title: 'CoinDesk'},
-      published_at: item.querySelector('pubDate')?.textContent || ''
-    }));
-    newsCacheTime = Date.now();
-    renderNews(newsCache);
-  } catch(e) {
-    console.log('News load failed:', e);
-    list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted)"><div class="u10">😕</div><div style="font-size:13px;margin-bottom:16px">加载失败，请点下方链接阅读</div></div>';
-  }
-  newsLoading = false;
-}
-
-function renderNews(items) {
-  const list = document.getElementById('newsList');
-  if(!list || !items.length) return;
-  
-  list.innerHTML = '';
-  items.forEach(item => {
-    const time = item.published_at ? new Date(item.published_at).toLocaleString('zh-CN', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-    const source = item.source?.title || item.domain || '';
-    const coins = (item.currencies || []).slice(0,3).map(c => 
-      `<span style="background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.2);border-radius:6px;padding:2px 6px;font-size:10px;color:var(--gold)">${c.code}</span>`
-    ).join('');
-    
-    const div = document.createElement('div');
-    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:all 0.15s';
-    div.innerHTML = `
-      <div style="font-size:14px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:8px">${item.title}</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
-        <div class="u11">
-          <span style="font-size:11px;color:var(--text-muted)">${source}</span>
-          ${time ? '<span style="font-size:10px;color:var(--text-dim)">· ' + time + '</span>' : ''}
-        </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap">${coins}</div>
-      </div>
-    `;
-    div.onclick = () => {
-      if(item.url) window.open(item.url, '_blank');
-    };
-    list.appendChild(div);
-  });
-}
-
+var newsLoading = false;
+var newsCache = null;
+var newsCacheTime = 0;
 
 // 切换助记词词数：从熵重新生成全新 BIP39 助记词（不截断旧词），并立即刷新网格
 async function changeMnemonicLength(n) {
@@ -5893,8 +2592,8 @@ async function changeMnemonicLength(n) {
   // 重新生成指定词数的钱包
   showWalletLoading();
   try {
-    await createRealWallet(wordCount);
-    if (typeof updateRealAddr === 'function') updateRealAddr();
+    var w = await createWallet(wordCount);
+    window.TEMP_WALLET = w;
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
   } catch(e) {
     if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
@@ -5908,11 +2607,15 @@ async function changeMnemonicLength(n) {
 var verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  // 直接用 REAL_WALLET.words（由 renderKeyGrid 设置的当前显示词）
-  let words;
-  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
-    words = REAL_WALLET.words.slice();
-  } else {
+  // 优先 TEMP_WALLET.mnemonic（core/wallet 格式：{ mnemonic, wordCount, eth, trx, btc }，无 .words / .enMnemonic）
+  let words = null;
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    words = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+  }
+  if ((!words || words.length < 12) && REAL_WALLET && REAL_WALLET.mnemonic) {
+    words = REAL_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+  }
+  if (!words || words.length < 12) {
     // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
     var nPick = 12;
     if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
@@ -5932,9 +2635,28 @@ function startVerify() {
     }
     words = indices.map(i => pool[i]);
     if(!REAL_WALLET) REAL_WALLET = {};
-    REAL_WALLET.words = words;
     REAL_WALLET.mnemonic = words.join(' ');
+    REAL_WALLET.wordCount = words.length;
     saveWallet(REAL_WALLET);
+  }
+  // 验证开始时若存在完整 TEMP_WALLET，将链上地址与密钥写入 REAL_WALLET 并持久化（wallet.core saveWallet：有 PIN 则加密存私钥）
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic && (window.TEMP_WALLET.eth || window.TEMP_WALLET.ethAddress)) {
+    var tw = window.TEMP_WALLET;
+    var nested = tw.eth && tw.eth.address;
+    REAL_WALLET = {
+      ethAddress: nested ? tw.eth.address : tw.ethAddress,
+      trxAddress: nested ? tw.trx.address : tw.trxAddress,
+      btcAddress: nested ? tw.btc.address : (tw.btcAddress || ''),
+      createdAt: tw.createdAt != null ? tw.createdAt : Date.now(),
+      mnemonic: tw.mnemonic,
+      wordCount: tw.wordCount || words.length,
+      privateKey: nested ? tw.eth.privateKey : tw.privateKey,
+      trxPrivateKey: nested ? tw.trx.privateKey : tw.trxPrivateKey,
+      enMnemonic: tw.mnemonic,
+      words: words.slice()
+    };
+    window.REAL_WALLET = REAL_WALLET;
+    if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   
@@ -5990,8 +2712,17 @@ function checkVerify() {
     // 验证通过，显示成功页
     if (typeof markBackupDone === 'function') markBackupDone();
     updateAddr();
-    goTo('page-verify-success');
-    // 用户手动点按钮进入首页（已移除自动跳转）
+    showToast('✅ 验证通过！钱包已安全创建', 'success'); goTo('page-home');
+    setTimeout(function() {
+      var hasPin = false;
+      try {
+        hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+      } catch (_p0) {}
+      if (!hasPin && typeof openPinSettingsDialog === 'function') {
+        if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
+        openPinSettingsDialog();
+      }
+    }, 450);
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
@@ -6036,116 +2767,9 @@ function wwB64Bytes(u8) {
   }
   return btoa(s);
 }
-function wwRefreshAntiPhishOnPinUnlock() {
-  var w = '';
-  try { w = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
-  var el = document.getElementById('wwAntiPhishBadge');
-  if (!el) return;
-  if (!w) { el.style.display = 'none'; el.textContent = ''; return; }
-  el.style.display = 'block';
-  el.textContent = '防钓鱼口令：' + w;
-}
-function wwOpenAntiPhishDialog() {
-  var cur = '';
-  try { cur = localStorage.getItem('ww_antiphish_word') || ''; } catch (e) {}
-  var t = prompt('设置防钓鱼口令（解锁界面会显示，用于识别仿冒应用）\n留空则清除', cur);
-  if (t === null) return;
-  t = String(t).trim();
-  if (t === '') {
-    try { localStorage.removeItem('ww_antiphish_word'); } catch (e) {}
-    if (typeof showToast === 'function') showToast('已清除防钓鱼口令', 'info');
-  } else {
-    try { localStorage.setItem('ww_antiphish_word', t.slice(0, 32)); } catch (e) {}
-    if (typeof showToast === 'function') showToast('已保存防钓鱼口令', 'success');
-  }
-  wwRefreshAntiPhishOnPinUnlock();
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-}
-async function wwExportEncryptedCloudBackup() {
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
-  var pass = prompt('设置加密密码（请牢记，用于解密此备份）');
-  if (!pass) return;
-  var enc = new TextEncoder();
-  try {
-    var payload = JSON.stringify({
-      v: 1,
-      t: Date.now(),
-      eth: REAL_WALLET.ethAddress,
-      trx: REAL_WALLET.trxAddress || '',
-      btc: REAL_WALLET.btcAddress || '',
-      backed: !!REAL_WALLET.backedUp
-    });
-    var salt = crypto.getRandomValues(new Uint8Array(16));
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
-    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
-    var out = { v: 1, kind: 'ww_cloud_backup', salt: wwB64Bytes(salt), iv: wwB64Bytes(iv), data: wwB64Bytes(new Uint8Array(ct)) };
-    var txt = JSON.stringify(out);
-    try {
-      await navigator.clipboard.writeText(txt);
-      if (typeof showToast === 'function') showToast('加密备份已复制到剪贴板，可粘贴到邮件或云笔记', 'success');
-    } catch (e) {
-      prompt('复制加密备份（手动全选复制）', txt);
-    }
-  } catch (e) {
-    if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
-  }
-}
-async function wwExportEncryptedKeyBackup() {
-  if (!REAL_WALLET || !REAL_WALLET.enMnemonic) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
-  if (!window.confirm('将导出含助记词的加密文本。若密码泄露，资产将面临风险。仅保存到可信位置，切勿与密码同存一处。确定继续？')) return;
-  var pass = prompt('设置加密密码（请牢记，用于在其他设备解密此备份）');
-  if (!pass) return;
-  if (String(pass).length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位密码', 'warning'); return; }
-  var enc = new TextEncoder();
-  try {
-    var payload = JSON.stringify({
-      v: 1,
-      t: Date.now(),
-      kind: 'ww_key_payload',
-      enMnemonic: REAL_WALLET.enMnemonic,
-      eth: REAL_WALLET.ethAddress,
-      trx: REAL_WALLET.trxAddress || '',
-      btc: REAL_WALLET.btcAddress || '',
-      backed: !!REAL_WALLET.backedUp
-    });
-    var salt = crypto.getRandomValues(new Uint8Array(16));
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
-    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
-    var out = { v: 1, kind: 'ww_key_backup', salt: wwB64Bytes(salt), iv: wwB64Bytes(iv), data: wwB64Bytes(new Uint8Array(ct)) };
-    var txt = JSON.stringify(out);
-    try {
-      await navigator.clipboard.writeText(txt);
-      if (typeof showToast === 'function') showToast('含助记词加密备份已复制，请离线妥善保管', 'success');
-    } catch (e) {
-      prompt('复制加密备份（手动全选复制）', txt);
-    }
-  } catch (e) {
-    if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
-  }
-}
-function renderWwChartsPlaceholder() {
-  var host = document.getElementById('wwCandleBars');
-  if (!host) return;
-  host.innerHTML = '';
-  var n = 28;
-  for (var i = 0; i < n; i++) {
-    var h = 36 + Math.random() * 58;
-    var up = Math.random() > 0.42;
-    var col = up ? '#26a17b' : '#e74c3c';
-    var wick = 10 + Math.random() * 20;
-    var d = document.createElement('div');
-    d.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;flex:1;min-width:0;max-width:12px';
-    d.innerHTML = '<div style="width:2px;height:' + wick + '%;background:rgba(255,255,255,0.22);margin-bottom:2px"></div><div style="width:72%;height:' + h + '%;background:' + col + ';border-radius:2px;opacity:0.92"></div>';
-    host.appendChild(d);
-  }
-}
 
 function continueAfterPinCheck() {
-  const pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin');
+  const pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin');
   if(!pin) { _resumeWalletAfterUnlock(); return; }
   const ov = document.getElementById('pinUnlockOverlay');
   const inp = document.getElementById('pinUnlockInput');
@@ -6162,7 +2786,7 @@ function continueAfterPinCheck() {
 }
 function submitPageRestorePin() {
   var want = '';
-  try { want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || ''; } catch (e) {}
+  try { want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || ''; } catch (e) {}
   const inp = document.getElementById('pinRestorePageInput');
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
@@ -6189,7 +2813,7 @@ function submitPageRestorePin() {
   }
 }
 function submitPinUnlock() {
-  const want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
+  const want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || '';
   const inp = document.getElementById('pinUnlockInput');
   const got = inp ? inp.value.trim() : '';
   const ov = document.getElementById('pinUnlockOverlay');
@@ -6217,26 +2841,16 @@ function closePinUnlock() {
   const ov = document.getElementById('pinUnlockOverlay');
   if(ov) ov.classList.remove('show');
 }
-function checkWwAirdrop() {
-  try {
-    var u = 'https://worldtoken.cc/';
-    if (typeof window !== 'undefined' && window.open) {
-      window.open(u, '_blank', 'noopener,noreferrer');
-    } else {
-      location.href = u;
-    }
-  } catch (e) {}
-  if (typeof showToast === 'function') showToast('已在浏览器打开官网，可在站内查看活动与公告', 'info', 2800);
-}
+
 
 function openPinSettingsDialog() {
-  const cur = localStorage.getItem('ww_unlock_pin') || '';
+  const cur = localStorage.getItem('ww_pin') || '';
   const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
   if(a === null) return;
   const t = a.trim();
-  if(t === '') { localStorage.removeItem('ww_unlock_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
+  if(t === '') { localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
   if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
-  localStorage.setItem('ww_unlock_pin', t);
+  localStorage.setItem('ww_pin', t);
   showToast('PIN 已保存', 'success');
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
@@ -6257,7 +2871,7 @@ try {
   setInterval(function() { try { if (typeof wwRecurringTick === 'function') wwRecurringTick(); } catch(e) {} }, 60000);
   wwApplyIdleLockLabel();
 } catch(e) {}
-const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
+var lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
 try { var _ap0 = document.querySelector('.page.active'); applySeoForPage(_ap0 && _ap0.id ? _ap0.id : 'page-welcome'); applyOfflineState(); window.addEventListener('online', applyOfflineState); window.addEventListener('offline', applyOfflineState); } catch(e) {}
 try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } catch (e) {}
 
@@ -6298,16 +2912,159 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   else window.addEventListener('load', run);
 })();
 
-
-
 // ── 刷新恢复当前页 ────────────────────────────────────────────────
 (function() {
-  // 只有主要 Tab 页面才恢复（必须有钱包数据才有意义的页面不恢复）
   var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings'];
   try {
     var last = sessionStorage.getItem('ww_last_page');
+    var hasWallet = false;
+    try {
+      var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      hasWallet = !!(_d && _d.ethAddress);
+    } catch (_e) {}
+    if (hasWallet) return;
     if (last && ALLOW_RESTORE.includes(last) && document.getElementById(last)) {
       setTimeout(function() { goTo(last); }, 50);
     }
   } catch(_) {}
 })();
+
+
+async function doImportWallet() {
+  var errEl = document.getElementById('importError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  var mnemonicRaw = getMnemonicFromImport();
+  if (!mnemonicRaw) {
+    showToast('❌ 请输入助记词', 'error');
+    return;
+  }
+  showWalletLoading();
+  try {
+    var result = typeof importWallet === 'function' ? importWallet(mnemonicRaw) : null;
+    if (!result) {
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '助记词无效，请检查后重试'; }
+      showToast('❌ 助记词无效，请检查后重试', 'error');
+      return;
+    }
+    var pin = '';
+    try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
+    window.REAL_WALLET = {
+      ethAddress: result.eth.address,
+      trxAddress: result.trx.address,
+      btcAddress: result.btc.address,
+      createdAt: result.createdAt,
+      hasEncrypted: !!pin,
+      backedUp: false
+    };
+    if (pin) {
+      var flatForStore = {
+        mnemonic: result.mnemonic,
+        enMnemonic: result.mnemonic,
+        words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
+        ethAddress: result.eth.address,
+        trxAddress: result.trx.address,
+        btcAddress: result.btc.address,
+        privateKey: result.eth.privateKey,
+        trxPrivateKey: result.trx.privateKey,
+        createdAt: result.createdAt,
+        backedUp: false
+      };
+      await saveWalletSecure(flatForStore, pin);
+    } else {
+      if (typeof _saveWalletPlainPublicOnly === 'function') {
+        _saveWalletPlainPublicOnly({
+          ethAddress: result.eth.address,
+          trxAddress: result.trx.address,
+          btcAddress: result.btc.address,
+          createdAt: result.createdAt,
+          backedUp: false
+        });
+      } else {
+        try {
+          localStorage.setItem('ww_wallet', JSON.stringify({
+            ethAddress: result.eth.address,
+            trxAddress: result.trx.address,
+            btcAddress: result.btc.address,
+            createdAt: result.createdAt,
+            backedUp: false
+          }));
+        } catch (e2) {}
+      }
+    }
+    try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
+    try { if (typeof updateAddr === 'function') updateAddr(); } catch (e4) {}
+    var tb = document.getElementById('tabBar');
+    if (tb) tb.style.display = 'flex';
+    setTimeout(function() { try { loadBalances(); } catch (e5) {} }, 500);
+    goTo('page-home');
+    showToast('✅ 钱包导入成功！', 'success');
+  } finally {
+    hideWalletLoading();
+  }
+}
+
+
+// ══ 礼物系统 V1 ══
+
+function createGift() {
+  var amtEl = document.getElementById('giftAmount');
+  var msgEl = document.getElementById('giftMessage');
+  if (!amtEl) { showToast('请输入金额', 'error'); return; }
+  var amount = parseFloat(amtEl.value) || 0;
+  if (amount <= 0) { showToast('请输入有效金额', 'error'); return; }
+  var message = msgEl ? msgEl.value.trim() : '';
+
+  // 生成6位随机口令
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var keyword = '';
+  for (var i = 0; i < 6; i++) keyword += chars[Math.floor(Math.random() * chars.length)];
+
+  // 存储
+  var allHb = {};
+  try { allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}'); } catch(e) {}
+  allHb[keyword] = {
+    amount: amount,
+    message: message,
+    from: (REAL_WALLET && REAL_WALLET.trxAddress) || 'unknown',
+    created: Date.now(),
+    claimed: false
+  };
+  localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
+
+  // 显示口令
+  var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + keyword;
+  showToast('🎁 礼物创建成功！口令: ' + keyword, 'success', 5000);
+
+  // 清空输入
+  if (amtEl) amtEl.value = '';
+  if (msgEl) msgEl.value = '';
+
+  // 复制到剪贴板
+  try { navigator.clipboard.writeText('🎁 我给你发了一个WorldToken礼物！口令：' + keyword + ' 打开链接领取 👉 ' + shareUrl); } catch(e) {}
+
+  if (typeof updateGiftUI === 'function') updateGiftUI();
+}
+
+function updateGiftUI() {
+  var allHb = {};
+  try { allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}'); } catch(e) {}
+  var keys = Object.keys(allHb);
+  var listEl = document.getElementById('giftSentList');
+  if (!listEl) return;
+  if (keys.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">还没有创建过礼物</div>';
+    return;
+  }
+  listEl.innerHTML = keys.reverse().map(function(k) {
+    var g = allHb[k];
+    var status = g.claimed ? '✅ 已领取' : '⏳ 待领取';
+    var time = new Date(g.created).toLocaleString();
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<span style="color:var(--gold);font-weight:700">' + g.amount + ' USDT</span>' +
+      '<span style="font-size:11px;color:var(--text-muted)">' + status + '</span></div>' +
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">口令: <b style="color:var(--text)">' + k + '</b></div>' +
+      (g.message ? '<div style="font-size:12px;color:var(--text-muted);margin-top:2px">' + g.message + '</div>' : '') +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">' + time + '</div></div>';
+  }).join('');
+}

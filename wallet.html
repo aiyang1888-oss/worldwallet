@@ -609,36 +609,524 @@
         <div class="nav-title">设置</div>
       </div>
       <div class="u14">
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
-          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px">钱包地址</div>
-          <div style="font-size:12px;color:var(--text-muted);line-height:1.7;word-break:break-all" id="settingsAddr"></div>
+
+        <!-- 钱包信息 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌍</div>
+          <div class="u4">
+            <div style="font-size:15px;font-weight:700;color:var(--text)" id="settingsWalletTitle">我的钱包</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:2px;word-break:break-all" id="settingsAddr"></div>
+            <input id="walletNicknameInput" type="text" placeholder="钱包昵称（仅本机）" maxlength="32" autocomplete="off" style="width:100%;margin-top:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;box-sizing:border-box" onblur="if(typeof setWalletNickname==='function'){setWalletNickname(this.value);if(typeof updateSettingsPage==='function')updateSettingsPage();}" />
+          </div>
+          <div style="font-size:18px;color:var(--text-muted)">›</div>
         </div>
 
+        <div id="wwSecurityScoreCard" style="background:linear-gradient(135deg,rgba(200,168,75,0.1),transparent);border:1px solid rgba(200,168,75,0.35);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div>
+              <div style="font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px">钱包安全分</div>
+              <div style="font-size:26px;font-weight:800;color:var(--gold);line-height:1" id="wwSecurityScoreValue">--</div>
+            </div>
+            <span style="font-size:11px;padding:4px 10px;border-radius:999px;background:var(--bg3);color:var(--text-muted)" id="wwSecurityScoreBadge">评估中</span>
+          </div>
+          <div style="margin-top:10px;height:6px;border-radius:6px;background:var(--bg3);overflow:hidden">
+            <div id="wwSecurityScoreBar" style="height:100%;width:0%;background:linear-gradient(90deg,#26a17b,#c8a84b);border-radius:6px;transition:width 0.35s ease"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.55" id="wwSecurityScoreHint">根据本机 PIN 与助记词备份状态估算（满分 100）。</div>
+        </div>
+
+        <div id="wwCloudBackupHint" style="background:rgba(80,120,200,0.08);border:1px solid rgba(80,120,200,0.35);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px">☁️ 云端备份提示</div>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.6;margin-bottom:12px">可将<b>加密后的备份文本</b>发到自有邮箱或保存到云盘；请勿明文发送助记词。第一按钮仅含地址；完整密钥包请用下方「含助记词加密备份」（AES-GCM，与密码分存，勿与密文同存）。</div>
+          <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px" onclick="if(typeof wwExportEncryptedCloudBackup==='function')wwExportEncryptedCloudBackup()">复制加密备份到剪贴板</button>
+          <button type="button" class="btn-secondary" style="width:100%;padding:12px;font-size:13px;margin-top:10px" onclick="if(typeof wwExportEncryptedKeyBackup==='function')wwExportEncryptedKeyBackup()">复制含助记词加密备份（慎用）</button>
+        </div>
+
+        <!-- 安全 -->
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">安全</div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
           <div class="settings-row" id="settingsPinRow" onclick="openPinSettingsDialog()">
             <span class="settings-icon">🔐</span>
             <span class="settings-label">PIN码</span>
-            <span class="settings-value" id="settingsPinValue">未设置</span>
+            <span class="settings-value">已开启</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="toggleWwTheme()">
+            <span class="settings-icon">🌓</span>
+            <span class="settings-label">主题</span>
+            <span class="settings-value" id="settingsThemeValue">深色</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="openTotpSettingsRow()">
+            <span class="settings-icon">🔢</span>
+            <span class="settings-label">两步验证</span>
+            <span class="settings-value" id="settingsTotpValue">未开启</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="showToast('👆 请在手机设置中开启 Face ID / 指纹', 'info')">
+            <span class="settings-icon">👆</span>
+            <span class="settings-label">Face ID / 指纹</span>
+            <span class="settings-value">已开启</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="wwCycleIdleLockMinutes()">
+            <span class="settings-icon">⏱️</span>
+            <span class="settings-label">闲置锁定</span>
+            <span class="settings-value" id="settingsIdleLockValue">关闭</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
           <div class="settings-row" onclick="window._keyBackPage='page-settings';goTo('page-key')">
             <span class="settings-icon">📋</span>
-            <span class="settings-label">备份助记词</span>
+            <span class="settings-label">备份密钥</span>
             <span class="settings-value" id="backupStatus" style="color:var(--red)">未备份</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="if(confirm('确定删除本机钱包？此操作会清空本地数据。')){ localStorage.removeItem('ww_wallet'); localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_hongbaos'); REAL_WALLET=null; goTo('page-welcome'); showToast('钱包已删除', 'success'); }">
-            <span class="settings-icon">🗑️</span>
-            <span class="settings-label" style="color:var(--red)">删除钱包</span>
-            <span class="settings-value" style="color:var(--red)">清空本机</span>
+          <div class="settings-row" onclick="goTo('page-recovery-test')">
+            <span class="settings-icon">🧪</span>
+            <span class="settings-label">恢复演练</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">安全模式</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof wwOpenAntiPhishDialog==='function')wwOpenAntiPhishDialog()">
+            <span class="settings-icon">🪪</span>
+            <span class="settings-label">防钓鱼口令</span>
+            <span class="settings-value" id="settingsAntiPhishValue" style="font-size:11px;color:var(--text-muted)">未设置</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-social-recovery')">
+            <span class="settings-icon">🤝</span>
+            <span class="settings-label">社交恢复</span>
+            <span class="settings-value" id="settingsSocialRecoveryValue" style="font-size:11px;color:var(--text-muted)">联系人</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-spending-limits')">
+            <span class="settings-icon">📉</span>
+            <span class="settings-label">支出限额</span>
+            <span class="settings-value" id="settingsSpendLimitValue" style="font-size:11px;color:var(--text-muted)">关闭</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-whale-alerts')">
+            <span class="settings-icon">🐋</span>
+            <span class="settings-label">巨鲸提醒</span>
+            <span class="settings-value" id="settingsWhaleValue" style="font-size:11px;color:var(--text-muted)">关闭</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-bridge')">
+            <span class="settings-icon">🌉</span>
+            <span class="settings-label">跨链桥</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">TRX ↔ ETH</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-vesting')">
+            <span class="settings-icon">📅</span>
+            <span class="settings-label">代币解锁</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">进度</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-dex-connect')">
+            <span class="settings-icon">🔗</span>
+            <span class="settings-label">连接 DEX</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">Uniswap</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-hardware-wallet')">
+            <span class="settings-icon">🔐</span>
+            <span class="settings-label">硬件钱包</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">Ledger / Trezor</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-tax-report')">
+            <span class="settings-icon">📑</span>
+            <span class="settings-label">税务报表</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">导出 CSV</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-copy-trading')">
+            <span class="settings-icon">🐳</span>
+            <span class="settings-label">跟单交易</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">巨鲸地址</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-portfolio-insurance')">
+            <span class="settings-icon">🛡️</span>
+            <span class="settings-label">资产保险</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">承保选项</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-yield-optimizer')">
+            <span class="settings-icon">📊</span>
+            <span class="settings-label">收益优化</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">DeFi 策略</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-token-unlock-calendar')">
+            <span class="settings-icon">📅</span>
+            <span class="settings-label">解锁日历</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">大户项目</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-identity')">
+            <span class="settings-icon">🪪</span>
+            <span class="settings-label">链上身份</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">ENS / 社交</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-analytics')">
+            <span class="settings-icon">📉</span>
+            <span class="settings-label">数据洞察</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">支出与活跃</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-recurring')">
+            <span class="settings-icon">🔁</span>
+            <span class="settings-label">定期转账</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">计划任务</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-token-whitelist')">
+            <span class="settings-icon">✅</span>
+            <span class="settings-label">转账白名单</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">仅允许向…</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-inheritance')">
+            <span class="settings-icon">📜</span>
+            <span class="settings-label">继承与受益人</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">备忘</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-dao')">
+            <span class="settings-icon">🏛️</span>
+            <span class="settings-label">DAO 治理</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">提案与投票</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-reputation')">
+            <span class="settings-icon">⭐</span>
+            <span class="settings-label">钱包信誉分</span>
+            <span class="settings-value" id="wwReputationSettingsValue" style="font-size:11px;color:var(--text-muted)">--</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-lending')">
+            <span class="settings-icon">🏦</span>
+            <span class="settings-label">借贷协议</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">存借利率示意</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-perp-futures')">
+            <span class="settings-icon">📈</span>
+            <span class="settings-label">永续合约</span>
+            <span class="settings-value" id="wwPerpSettingsSummary" style="font-size:11px;color:var(--text-muted)">--</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-options')">
+            <span class="settings-icon">📊</span>
+            <span class="settings-label">期权交易</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">基础界面</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-yield-aggregator')">
+            <span class="settings-icon">🧮</span>
+            <span class="settings-label">收益聚合</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">Aave / Compound / Venus</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-liquidation-alerts')">
+            <span class="settings-icon">⚠️</span>
+            <span class="settings-label">清算预警</span>
+            <span class="settings-value" id="wwLiqSettingsHint" style="font-size:11px;color:var(--text-muted)">抵押率监控</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-launchpad')">
+            <span class="settings-icon">🚀</span>
+            <span class="settings-label">Launchpad</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">IDO / IEO 示意</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-social-leaderboard')">
+            <span class="settings-icon">🏆</span>
+            <span class="settings-label">社交跟单榜</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">排行榜 · 复制</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-auto-rebalance')">
+            <span class="settings-icon">⚙️</span>
+            <span class="settings-label">自动再平衡</span>
+            <span class="settings-value" id="wwAutoRebalSettingsHint" style="font-size:11px;color:var(--text-muted)">关闭</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-sentiment')">
+            <span class="settings-icon">📰</span>
+            <span class="settings-label">舆情分析</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">多空头绪</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-onchain-messaging')">
+            <span class="settings-icon">💬</span>
+            <span class="settings-label">链上消息</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">加密载荷 · 附转账</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-backup-qr')">
+            <span class="settings-icon">📲</span>
+            <span class="settings-label">备份二维码</span>
+            <span class="settings-value" style="font-size:11px;color:var(--text-muted)">加密导出 QR</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="goTo('page-gasless')">
+            <span class="settings-icon">🎈</span>
+            <span class="settings-label">免 Gas / 元交易</span>
+            <span class="settings-value" id="wwGaslessSettingsHint" style="font-size:11px;color:var(--text-muted)">中继示意</span>
             <span class="settings-arrow">›</span>
           </div>
         </div>
+
+        <div id="wwGasManagerCard" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">⛽ Gas 代币储备</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.55">本机记录目标阈值，与首页余额对比（示意，非托管）。用于提醒保留足够 TRX / ETH 支付网络费。</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="color:var(--text-muted)">TRX（当前）</span>
+              <span style="font-weight:600;color:var(--text)" id="wwGasTrxCurrent">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+              <span style="color:var(--text-muted)">ETH（当前）</span>
+              <span style="font-weight:600;color:var(--text)" id="wwGasEthCurrent">—</span>
+            </div>
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:11px;color:var(--text-muted)">目标 TRX 储备</span>
+              <input id="wwGasTrxTarget" type="text" inputmode="decimal" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px" oninput="wwGasSaveTargets()" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:11px;color:var(--text-muted)">目标 ETH 储备</span>
+              <input id="wwGasEthTarget" type="text" inputmode="decimal" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px" oninput="wwGasSaveTargets()" />
+            </label>
+            <div id="wwGasStatus" style="font-size:11px;padding:8px 10px;border-radius:10px;background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.25);color:var(--text-muted);line-height:1.5"></div>
+          </div>
+        </div>
+
+
+        <div id="wwPriceAlertSection" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)">🔔 价格提醒</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.55">使用浏览器 Web Notifications。价格与首页行情同源（约 90 秒刷新）。保存后需在系统中允许通知。</div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:10px;cursor:pointer;user-select:none">
+            <input type="checkbox" id="wwAlertEnable" style="accent-color:var(--gold);width:16px;height:16px" />
+            启用价格提醒
+          </label>
+          <button type="button" class="btn-secondary" style="width:100%;padding:10px;margin-bottom:12px;font-size:13px" onclick="if(typeof wwRequestPriceAlertPermission==='function')wwRequestPriceAlertPermission()">请求通知权限</button>
+          <div style="display:grid;gap:10px;font-size:12px">
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">BTC</span> 美元价 — 高于 <input id="wwAlertBtcAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertBtcBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">ETH</span> 美元价 — 高于 <input id="wwAlertEthAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertEthBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-weight:600">TRX</span> 美元价 — 高于 <input id="wwAlertTrxAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertTrxBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+            <div style="padding:8px 0"><span style="font-weight:600">USDT</span> 美元价 — 高于 <input id="wwAlertUsdtAbove" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /> 低于 <input id="wwAlertUsdtBelow" type="number" step="any" placeholder="可选" style="width:90px;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px" /></div>
+          </div>
+          <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;font-size:13px" onclick="if(typeof wwSavePriceAlertsFromUI==='function')wwSavePriceAlertsFromUI()">保存提醒条件</button>
+        </div>
+
+
+        <!-- 邀请 -->
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">邀请</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:14px;font-weight:600;color:var(--text)">推荐好友</span>
+            <span style="font-size:13px;color:var(--gold)">已邀请 <span id="settingsRefCount">0</span> 人</span>
+          </div>
+          <div style="font-size:10px;color:var(--text-muted);word-break:break-all;line-height:1.5;margin-bottom:10px" id="settingsRefLink">—</div>
+          <div style="display:flex;gap:10px">
+            <div onclick="copyReferralLink()" style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px;text-align:center;font-size:12px;color:var(--text);cursor:pointer">复制链接</div>
+            <div onclick="shareReferralLink()" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.2),rgba(200,168,75,0.08));border:1px solid rgba(200,168,75,0.35);border-radius:12px;padding:10px;text-align:center;font-size:12px;color:var(--gold);cursor:pointer">分享</div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">活动</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
+          <div class="settings-row" onclick="checkWwAirdrop()">
+            <span class="settings-icon">🪂</span>
+            <span class="settings-label">空投查询</span>
+            <span class="settings-value" id="settingsAirdropHint">官网</span>
+            <span class="settings-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- 关于 -->
+        <div style="font-size:10px;color:var(--text-muted);letter-spacing:2px;margin:0 4px 8px">关于</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
+          <div class="settings-row" onclick="showToast('WorldToken v1.0.0 · worldtoken.cc', 'info', 3000)">
+            <span class="settings-icon">ℹ️</span>
+            <span class="settings-label">版本</span>
+            <span class="settings-value">v1.0.0</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="window.open('https://worldtoken.cc/wallet.html','_blank')">
+            <span class="settings-icon">🌍</span>
+            <span class="settings-label">官网</span>
+            <span class="settings-value">worldtoken.cc</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="showToast('🔒 WorldToken 不上传任何数据，所有信息只存储在您的设备', 'info', 3500)">
+            <span class="settings-icon">📄</span>
+            <span class="settings-label">隐私政策</span>
+            <span class="settings-value"></span>
+            <span class="settings-arrow">›</span>
+          </div>
+        </div>
+
+        <!-- 危险区 -->
+        <div style="background:rgba(255,60,60,0.06);border:1px solid rgba(255,60,60,0.15);border-radius:16px;overflow:hidden;margin-bottom:20px">
+          <div class="settings-row" onclick="deleteWallet()">
+            <span class="settings-icon">🗑️</span>
+            <span class="settings-label" style="color:var(--red)">删除钱包</span>
+            <span class="settings-value"></span>
+            <span class="settings-arrow" style="color:var(--red)">›</span>
+          </div>
+        </div>
+
       </div>
     </div>
 
+    <!-- 社交恢复（联系人仅本机保存） -->
+    
+
+    <!-- 支出限额 -->
+    
+
+    <!-- 巨鲸提醒 -->
+    
+
+    <!-- 跨链桥 -->
+    
+
+    <!-- 代币解锁 -->
+    
+
+    <!-- 连接 DEX -->
+    
+
+    <!-- 硬件钱包 -->
+    
+
+    <!-- 税务报表 -->
+    
+
+    <!-- 跟单交易 -->
+    
+
+    <!-- 资产保险 -->
+    
+
+    <!-- 收益优化 -->
+    
+
+    <!-- 解锁日历 -->
+    
+
+    <!-- 链上身份 -->
+    
+
+    <!-- 数据洞察 -->
+    
+
+    <!-- 定期转账 -->
+    
+
+    <!-- 转账白名单 -->
+    
+
+    <!-- 继承与受益人 -->
+    
+
+    <!-- DAO 治理（本机示意） -->
+    
+
+    <!-- 钱包信誉分 -->
+    
+
+    <!-- 借贷协议（本机示意） -->
+    
+
+    <!-- 永续合约持仓（本机示意） -->
+    
+
+    <!-- 期权（基础界面示意） -->
+    
+
+    <!-- 收益聚合对比（本机示意） -->
+    
+
+    <!-- 清算保护预警（本机示意） -->
+    
+
+    <!-- Launchpad / IDO（本机示意） -->
+    
+
+    <!-- 社交跟单榜（示意） -->
+    
+
+    <!-- 自动组合再平衡 -->
+    
+
+    <!-- 舆情 / 情绪（示意） -->
+    
+
+    <!-- 链上消息（本地加密载荷，可随转账备注传播） -->
+    
+
+    <!-- 备份二维码（加密 JSON，非明文助记词） -->
+    
+
+    <!-- 免 Gas / 元交易（偏好示意） -->
+    
+
+    <!-- 恢复演练（安全模式） -->
+    
+
+    <!-- K线 / 行情（图表示意） -->
+    
+
+    <!-- DApp 浏览器 -->
+    
+
+    <!-- Swap页 -->
     <div class="page" id="page-swap">
       <div class="nav-bar">
         <div class="nav-back"></div>
