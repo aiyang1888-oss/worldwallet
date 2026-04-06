@@ -781,7 +781,7 @@ function goTo(pageId, opts) {
   activePage.style.display='flex';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
-    var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen;
+    var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen || (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic);
     if (_skipKey) {
       syncKeyPageLangSelect();
       if (typeof renderKeyGrid === 'function') renderKeyGrid();
@@ -3092,7 +3092,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   window.addEventListener('hashchange', function () {
     wwApplyHashRoute();
   });
- // setTimeout(wwApplyHashRoute, 0);
+  setTimeout(wwApplyHashRoute, 0);
 })();
 
     if ('serviceWorker' in navigator) {
