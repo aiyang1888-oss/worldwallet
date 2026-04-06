@@ -148,7 +148,6 @@ body {
 /* 隐藏 pages 容器内游离元素（不属于任何 .page） */
 .pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg) { display: none !important; }
 .page {
-  color: var(--text);
   position: absolute;
   top: 50px; left: 0; right: 0; bottom: 0;
   overflow-y: auto; overflow-x: hidden;

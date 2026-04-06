@@ -13,6 +13,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+
 document.addEventListener('click', function(ev) {
   var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
   if (!el) return;
@@ -21,13 +22,13 @@ document.addEventListener('click', function(ev) {
 
 var _qrLoadPromise=null;
 
+
 function updateImportWordCount() {
   const input = document.getElementById('importPaste');
   const badge = document.getElementById('importWordCountBadge');
   if(!badge) return;
   const n = countMnemonicWords(input ? input.value : '');
-  const cap = importGridWordCount || 12;
-  badge.textContent = n + '/' + cap;
+  badge.textContent = n + '/12';
 }
 
 function showWalletLoading() {
@@ -41,7 +42,7 @@ function hideWalletLoading() {
   
 }
 
-var LANG_INFO = {
+const LANG_INFO = {
   zh:{name:'中文简体',flag:'🇨🇳'},        // 1. 中文简体 ~13亿
   'zh-TW':{name:'中文繁體（台灣）',flag:'🇹🇼'}, // 2a. 繁體中文台灣
   'zh-HK':{name:'中文繁體（香港）',flag:'🇭🇰'}, // 2b. 繁體中文香港
@@ -75,20 +76,22 @@ var LANG_INFO = {
 
 /** 与系统语言对齐：navigator.language(s) → LANG_INFO 键，未支持则回退 zh */
 
+
 // 扩展语言词库（万语地址用）
 // ⏱️ 词库懒加载：WW_WORDS_EXTRA 在地址生成时按需访问
-var WW_WORDS_EXTRA = {
+const WW_WORDS_EXTRA = {
   zh:['北京','上海','广州','深圳','成都','重庆','杭州','武汉','西安','南京','天津','苏州','长沙','郑州','青岛','沈阳','宁波','东莞','无锡','福州','厦门','哈尔滨','昆明','大连','合肥','济南','温州','南宁','长春','贵阳','佛山','南昌','石家庄','太原','乌鲁木齐','呼和浩特','拉萨','银川','西宁','海口','三亚','兰州','桂林','丽江','大理','张家界','敦煌','吐鲁番','喀什','格尔木','日喀则','林芝','遵义','凯里','兴义','都匀','荔波','镇远','黎平','台州','温岭','临海','玉环','黄岩','椒江','路桥','仙居','天台','三门','丽水','龙泉','云和','庆元','景宁','缙云','遂昌','松阳','青田','宿迁','泗阳','沭阳','泗洪','钟山','六枝','织金','纳雍','赫章','威宁','大方','黔西','金沙','铜仁','碧江','万山','玉屏','松桃','沿河','印江','德江','思南','石阡','江口','榕江','从江','锦屏','天柱','岑巩','三穗','施秉','黄平','剑河','台江','丹寨','雷山','麻江','福泉','贵定','龙里','惠水','长顺','罗甸','平塘','独山','三都','瓮安','余庆','湄潭','凤冈','正安','道真','务川','绥阳','桐梓','习水','赤水','仁怀'],
   en:[]
 };
 
 // ── 补充缺失函数定义 ──────────────────────────────────────────
 
+
 // ── 万语地址系统 ──────────────────────────────────────────
-var ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
+const ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
 
 // 手机键盘可打出的字符（仅保留真正可输入的字母字符）
-var SINGLE_CHARS = {
+const SINGLE_CHARS = {
   zh: '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪',
   'zh-TW': '龍鳳虎鶴福壽祿喜財春夏秋冬金木水火土山川雲月星日風雨雪',
   'zh-HK': '龍鳳虎鶴福壽祿喜財春夏秋冬金木水火土山川雲月星日風雨雪',
@@ -126,12 +129,13 @@ var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star'
 // ═══════════════════════════════════════════════════════
 // WT_WORDLISTS loaded from wordlists.js
 
+
 // 英文词 → 索引（BIP39标准索引）
-var EN_WORD_INDEX = {};
+const EN_WORD_INDEX = {};
 WT_WORDLISTS.en.forEach((w, i) => EN_WORD_INDEX[w] = i);
 
 // 各语言词 → 索引
-var WT_LANG_INDEX = {};
+const WT_LANG_INDEX = {};
 Object.keys(WT_WORDLISTS).forEach(lang => {
   WT_LANG_INDEX[lang] = {};
   WT_WORDLISTS[lang].forEach((w, i) => WT_LANG_INDEX[lang][w] = i);
@@ -144,7 +148,9 @@ Object.keys(WT_WORDLISTS).forEach(lang => {
  * @returns {string} 目标语言助记词（空格分隔）
  */
 
+
 /** 英文 BIP39 词数组 → 当前语言密钥表词条（词数与上方词数选择一致，逐词映射索引） */
+
 
 /**
  * 任意语言助记词 → 英文BIP39助记词
@@ -153,18 +159,19 @@ Object.keys(WT_WORDLISTS).forEach(lang => {
  * @returns {string} 标准英文助记词
  */
 
-var _safeEl = (id) => document.getElementById(id) || {
+
+const _safeEl = (id) => document.getElementById(id) || {
   textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
   classList: {add:()=>{},remove:()=>{},contains:()=>false},
   href: '', disabled: false,
   addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
 };
 
-var REAL_WALLET = null;
+let REAL_WALLET = null;
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
-var currentMnemonicLength = 12;
+let currentMnemonicLength = 12;
 /** 导入页格子词数（与 #importGrid 一致；勿与密钥页 currentMnemonicLength 混用） */
-var importGridWordCount = 12;
+let importGridWordCount = 12;
 
 // ⚠️ 注意：私钥存储于 localStorage，仅供演示，生产环境应加密
 // ── 钱包加密存储模块 ───────────────────────────────────────────
@@ -176,12 +183,14 @@ var importGridWordCount = 12;
  * @returns {Promise<CryptoKey>}
  */
 
+
 /**
  * AES-GCM 加密
  * @param {string} plaintext - 明文 JSON 字符串
  * @param {string} pin - 用户 PIN
  * @returns {Promise<{salt:string, iv:string, data:string}>} Base64 编码
  */
+
 
 /**
  * AES-GCM 解密
@@ -190,15 +199,18 @@ var importGridWordCount = 12;
  * @returns {Promise<string>} 解密后的明文
  */
 
+
 /**
  * 保存钱包（敏感数据加密）
  * @param {object} w - 完整钱包对象
  * @param {string} pin - 用户 PIN（无 PIN 则不存敏感数据）
  */
 
+
 /**
  * 加载钱包（只加载公开信息到 REAL_WALLET）
  */
+
 
 /**
  * 解密敏感数据（需要时调用，用完清除）
@@ -208,9 +220,10 @@ var importGridWordCount = 12;
 
 // ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
 
+
 /** 只存公开信息（无 PIN 降级方案） */
 
-var WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
+const WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
 
 function updateReferralSettingsUI() {
   var linkEl = document.getElementById('settingsRefLink');
@@ -246,11 +259,13 @@ function shareReferralLink() {
   }
 }
 
+
 // 内置 BIP39 词表（前128个，生成演示助记词）
 // BIP39 fallback 词表（仅128词，实际创建钱包由 ethers.js 生成完整2048词）
-var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake'];
+const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake'];
 
 /** BIP39：12/15/18/21/24 词对应 128/160/192/224/256 bit 熵 */
+
 
 /** 密钥页下拉：与 currentMnemonicLength 同步 */
 
@@ -258,25 +273,14 @@ var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb',
 
 /** @param {number} [forcedWordCount] 若传入则按该词数生成（避免与 DOM 不同步） */
 
+
 /** 仅内存 window.TEMP_WALLET：密钥页展示用，不调用 saveWallet / localStorage */
 
-/** @param {number} wordCount */
-async function applyCreateWalletToTemp(wordCount) {
-  var w = await createWallet(wordCount);
-  window.TEMP_WALLET = {
-    mnemonic: w.mnemonic,
-    wordCount: w.wordCount,
-    eth: w.eth,
-    trx: w.trx,
-    btc: w.btc
-  };
-  return window.TEMP_WALLET;
-}
 
 async function createNewWallet() {
   showWalletLoading();
   try {
-    await applyCreateWalletToTemp(12);
+    await generateTempWallet(12);
     goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
     if (typeof showToast === 'function')
@@ -296,6 +300,7 @@ try {
 } catch (_e) {}
 // 钱包昵称 localStorage（仅本机）
 try { if (localStorage.getItem('ww_wallet_nickname') == null) localStorage.setItem('ww_wallet_nickname', ''); } catch (_wn) {}
+
 
 function applyWwTheme() {
   var t = localStorage.getItem('ww_theme') || 'dark';
@@ -326,7 +331,7 @@ window.addEventListener('pageshow', function () {
 // 强刷后进入应用最开始的页面（欢迎页），不恢复 URL hash 深链
 document.querySelectorAll('.page').forEach(p => {
   p.classList.remove('active');
-  p.style.display = 'none';
+  p.style.display = '';
 });
 try {
   if (typeof history !== 'undefined' && history.replaceState) {
@@ -337,13 +342,13 @@ try {
     location.hash = '';
   }
 } catch (_rh0) {}
-var welcomePage = document.getElementById('page-welcome');
+const welcomePage = document.getElementById('page-welcome');
 if (welcomePage) {
   welcomePage.classList.add('active');
 }
 document.getElementById('tabBar').style.display = 'none';
 
-var SAMPLE_KEYS = {
+const SAMPLE_KEYS = {
   zh:['奥尔迪诺','马萨纳','恩坎普','卡尼略','阿布扎比','扎布尔','塔哈尔','萨尔普勒','萨曼甘','帕克蒂卡','帕克蒂亚','乌鲁兹甘','楠格哈尔','洛加尔','拉格曼','昆都士','库纳尔','卡比萨','坎大哈','喀布尔','朱兹詹','赫拉特','赫尔曼德','古尔','加兹尼','法利亚布','法拉','巴米扬','巴尔赫','巴格兰','巴德吉斯','巴达赫尚','霍斯特','努尔斯坦','代孔迪','潘杰希尔','圣菲利普','圣彼得','圣保罗','圣玛丽','圣约翰','圣乔治','雷东达岛','巴布达岛','亚拉拉特','休尼克','叶里温','阿拉加措特恩','亚马维尔','格加尔库尼克','科泰克','希拉克','塔武什','南伦达','北伦达','莫希科','萨伊','威热','马兰哲','罗安达','北广萨','喀丙达','本哥','纳米贝','威拉','万博','库内纳','南广萨','本吉拉','米西奥内斯','福尔摩沙','布宜诺斯艾利斯','恩特雷里奥斯','科连特斯','布宜诺斯艾利斯省','图库曼','火地岛','圣大非','圣克鲁斯','圣路易斯','圣胡安','萨尔塔','内格罗河','内乌肯','门多萨','拉里奥哈','拉潘帕','胡胡伊','科尔多瓦','丘布特','查科','卡塔马卡','福拉尔贝格','蒂罗尔','施泰尔马克','萨尔茨堡','上奥地利','下奥地利','克恩顿','布尔根兰','西澳大利亚','北领地','维多利亚','塔斯马尼亚','新南威尔士','澳大利亚首都领地','赞格兰','亚尔德姆雷','萨利扬','萨比拉巴德','比利亚苏瓦尔','马萨雷','列里克','菲祖利','杰布拉伊尔','贾利拉巴德','阿斯塔拉','泰尔泰尔','霍贾文德','扎卡塔雷','塔乌兹','丘尔达米尔','盖贝莱','库萨雷','克尔巴贾尔','戈兰博伊','伊斯梅尔雷','迪维奇','巴拉肯','巴尔达','阿赫苏','凯达贝克','布尔奇科特','圣托马斯','圣菲利普区','圣彼得教','圣迈克尔','圣露西教','圣约瑟夫','圣约翰教','圣詹姆斯教','圣乔治教','圣安德鲁','基督城教','拉杰沙希专','达卡专','吉大港专','库尔纳专','巴里萨尔专','锡尔赫特专','朗布尔专','布鲁塞尔首都大','瓦隆大','佛兰德斯','布克莱迪穆翁大','瀑布大','中央大','中东大','中北大','中西大','中南大','东部大','上盆地大','北部大','高原-中部大','萨赫勒大','西南大','索菲亚','加布罗沃','穆哈拉格','首都','南方','北方','马坎巴','布鲁里','穆拉姆维亚','基特加','鲁伊吉','坎库佐','布班扎','锡比托凯','恩戈齐','卡扬扎','穆因加','基龙多','鲁塔纳','布松布拉乡村','鲁蒙盖','祖省','韦梅','莫诺','博尔古','大西洋','阿塔科拉','阿黎博里','丘陵','库福','峡谷','滨海','高原','汶莱摩拉','塔里哈','圣克鲁斯省','波托西','奥鲁罗','拉巴斯','丘基萨卡','贝尼','圣尤斯特歇斯','北里奥格兰德','皮奥伊','伯南布哥','帕拉','马拉尼昂','阿拉戈斯','塞尔希培','圣保罗州','圣卡塔琳娜','里约热内卢','巴拉那','米纳斯吉拉斯','南马托格罗索','马托格罗索','戈亚斯','联邦','圣埃斯皮里图','托坎廷斯','罗赖马','亚马孙','朗多尼亚','拉吉德岛','贝里群岛','伊纳瓜','哈勃岛','自由港','埃克苏马','卡特岛','比米尼群岛','中阿巴科','东大巴哈马','希望镇','北阿巴科','北安德罗斯岛','北伊柳塞拉','南阿巴科','南安德罗斯','南伊柳塞拉','西舰井','西大巴哈马岛','南部','西北','奎嫩','卡特伦','卡拉哈迪','杭济','中部','维捷布斯克','明斯克','托莱多','斯坦克里克','橘园','科罗萨尔','卡约','伯利兹','艾伯塔','不列颠哥伦比亚','曼尼托巴','新不伦瑞克','新斯科舍','努纳武','安大略','爱德华王子岛','萨斯喀彻温','育空','楚阿帕','乔波','坦噶尼喀','南基伍','桑库鲁','北基伍','蒙加拉','马涅马','卢卢阿','东开赛','伊图里','上韦莱','赤道','下韦莱','马伊恩东贝','奎卢','上加丹加','瓦卡加','瓦卡','姆博穆','上姆博穆','上科托','下科托','巴明吉-班戈兰','桑加-姆巴埃雷','瓦姆-彭代','瓦姆','翁贝拉－姆波科','纳纳-曼贝雷','洛巴耶','凯莫','曼贝雷-卡代','桑加','普尔','高原省','尼阿里','利夸拉','莱库穆','奎卢省','盆地','布恩扎','西盆地','苏黎世','楚格','沃州','瓦莱','乌里','提契诺','图尔高','索洛图恩','施维茨','沙夫豪森','上瓦尔登','下瓦尔登','纳沙泰尔','卢塞恩','汝拉','格劳宾登','格拉鲁斯','日内瓦','弗里堡','伯恩','巴塞尔城市','巴塞尔乡村','外阿彭策尔','内阿彭策尔','阿尔高','下萨桑德拉','登盖莱','湖泊','潟湖','萨瓦内','邦达马河谷','赞赞','塔拉帕卡大','圣地亚哥首都大','湖大','科金博大','河大','纽夫莱大','南部区','西部','北部','滨海区','极北','东部','中部区','阿达马瓦','西藏','青海','新疆维吾尔自治','浙江','云南','天津','四川','山西','上海','山东','陕西','宁夏','江西','江苏','湖南','湖北','河南','河北','琼州','贵州','广西','广东','甘肃','福建','重庆','安徽','内蒙古','辽宁','吉林','黑龙江','北京','比查达','考卡山谷','托利马','苏克雷','桑坦德','里萨拉尔达','金迪奥','普图马约','北桑坦德','梅塔','马格达莱纳','瓜希拉','乌伊拉','瓜维亚雷','瓜伊尼亚','昆迪纳马卡','塞萨尔','考卡','卡萨纳雷','卡尔达斯','阿劳卡','安蒂奥基亚','亚马孙省','蓬塔雷纳斯','利蒙','埃雷迪亚','瓜纳卡斯特','卡塔戈','阿拉胡埃拉','比亚克拉拉','圣地亚哥','圣斯皮里图斯','马坦萨斯','拉斯图纳斯','奥尔金','关塔那摩','格拉玛','西恩富戈斯','谢戈德阿维拉','阿特米萨','玛雅贝克','帕福斯','尼科西亚','利马索尔','拉纳卡','凯里尼亚','法马古斯塔','南摩拉维亚','南波希米亚','中波希米亚','萨克森-安哈尔','萨克森自由','萨尔兰','莱茵兰-普法尔茨','下萨克森','黑森','汉堡','不来梅','勃兰登堡','柏林','巴伐利亚','巴登-符腾堡','塔朱拉','奥博克','迪基尔','阿里萨比','阿尔塔','中日德兰大','北日德兰大','西兰大','南丹麦大','圣彼得堂','圣保罗堂','圣帕特里克堂','圣马克堂','圣卢克','圣约瑟夫堂','圣约翰区','圣乔治区','圣戴维堂','圣安德鲁区','巴尔韦德','圣地亚哥省','圣胡安省','萨马纳','普拉塔港','佩德纳莱斯','国家特','蒙特普拉塔','蒙特克里斯蒂','拉罗马纳','拉阿尔塔格拉西亚','独立','阿托马约尔','埃斯派亚','杜阿尔特','巴拉奥纳','巴奥鲁可','阿苏阿','圣多明哥','特莱姆森','提济乌祖','提塞姆西勒特','廷杜夫','提亚雷特','泰贝萨','塔曼拉塞特','苏格艾赫拉斯','斯基克达','西迪贝勒阿巴斯','塞提夫','埃利赞','乌姆布瓦吉','瓦尔格拉','奥兰','纳马','姆西拉','穆斯塔加奈姆','米拉','穆阿斯凯尔','艾格瓦特','汉舍莱','吉杰勒','伊利济','盖勒马','塔里夫','瓦迪','巴亚兹','杰勒法','君士坦丁','谢利夫','布维拉','布阿拉里季堡','卜利达','比斯克拉','贝沙尔','巴特纳','安纳巴','阿尔及尔','艾因泰穆尚特','艾因迪夫拉','阿德拉尔','贝尼阿巴斯','萨莫拉-钦奇佩','通古拉瓦','皮钦查','帕斯塔萨','纳波','莫罗纳-圣地亚哥','洛哈','因巴布拉','瓜亚斯','埃斯梅拉达斯','埃尔奥罗','钦博拉索','卡尔奇','阿苏艾','奥雷亚纳','圣埃伦娜','沃鲁','维尔扬迪','瓦尔加','塔尔图','萨雷','拉普拉','珀尔瓦','派尔努','西维鲁','莱内','约格瓦','耶尔瓦','东维鲁','希乌','哈尔尤','索哈杰','北西奈','基纳','马特鲁','谢赫村','南西奈','杜姆亚特','塞得港','艾斯尤特','阿斯旺','苏伊士','新河谷','盖卢比尤','开罗','明亚','米努夫','吉萨','伊斯梅利亚','亚历山大','西部省','法尤姆','布海拉','红海','代盖赫利耶','卢克索','安塞巴','南红海','加什-巴尔卡','北红海','穆尔西亚自治','休达','安达卢西亚','加那利群岛','埃斯特雷马杜拉','巴伦西亚自治','阿斯图里亚斯','纳瓦拉','马德里自治','坎塔布里亚','卡斯蒂利亚-莱昂','加利西亚','阿法尔','阿姆哈拉','本尚古勒-古马兹','德雷达瓦','甘贝拉','哈勒尔','奥罗米亚','索马里','提格里','拉普兰','凯努','北博滕','中博滕','博滕','南博滕','北卡累利阿','北萨沃','南萨沃','屈米河谷','皮尔卡','坎塔海梅','西南芬兰','新地','萨塔昆塔','西部大','北部大区','中央大区','东部大区','罗图马岛','雅浦','波纳佩','丘克','卢瓦尔河地区大','法兰西岛','布列塔尼大','诺曼底大','大东部大','上法兰西大','沃勒-恩特姆','滨海奥果韦','奥果韦-伊温多','尼扬加','中奥果韦','上奥果韦','河口','威尔士','苏格兰','北爱尔兰','英格兰','圣帕特里克','圣马克','圣戴维','第比利斯','阿扎尔自治共和国','克维莫-卡特利','卡赫季','古利亚','伊梅列季亚','什达-卡特利','阿布哈兹','库雅雷克','凯克卡塔','上河','北岸','中河','下河','博凯大','法拉纳大','康康大','金迪亚大','拉贝大','马木大','恩泽雷科雷大','中马其顿大','西马其顿大','萨卡帕','索洛拉','圣罗萨','圣马科斯','萨卡特佩克斯','基切','克萨尔特南戈','贝登','伊萨瓦尔','瓜地马拉','普罗格雷索','奇基穆拉','奇马尔特南戈','下维拉帕斯','上维拉帕斯','通巴利','基纳拉','博拉马','比翁博','波塔罗-锡帕鲁尼','波默伦-苏佩纳姆','马海卡-伯比斯','德梅拉拉-马海卡','库尤尼-马扎鲁尼','巴里马-瓦伊尼','离岛','中西','湾仔','东区','油尖旺','九龙城','观塘','葵青','屯门','北区','沙田','约罗','山谷','奥兰乔','奥科特佩克','伦皮拉','拉巴斯省','因蒂布卡','埃尔帕拉伊索','科尔特斯','科潘','科马亚瓜','科隆','乔卢特卡','阿特兰蒂达','东南','南部省','西北省','东北','北部省','大湾','中央','阿蒂博尼特','尼普斯','赫维什','豪伊杜-比豪尔','佐洛','沃什','托尔瑙','绍莫吉','佩斯','费耶尔','巴奇-基什孔','北苏门答腊','南苏门答腊','北苏拉威西','中苏拉威西','东加里曼丹','南加里曼丹','西加里曼丹','东爪哇','中爪哇','西爪哇','巴厘岛','万丹','邦加-勿里洞','伦斯特','芒斯特','阿尔斯特','耶路撒冷','特拉维夫','海法','北部区','中央区','西孟加拉','北方邦','特里普拉','特伦甘纳','泰米尔纳德','锡金','拉贾斯坦','旁遮普','本地治里','那加兰','米佐拉姆','梅加拉亚','曼尼普尔','马哈拉施特拉','中央邦','喀拉拉','卡纳塔克','喜马偕尔','哈里亚纳','古吉拉特','果阿','昌迪加尔','比哈尔','阿萨姆','阿鲁纳恰尔','安得拉','恰蒂斯加尔','贾坎德','拉达克','巴士拉','萨拉赫丁','尼尼微','米桑','埃尔比勒','迪亚拉','济加尔','杜胡克','巴格达','巴比伦','卡迪西亚','穆萨纳','安巴尔','德黑兰','赞詹','亚兹德','塞姆南','马赞德兰','中央省','洛雷斯坦','库尔德斯坦','克尔曼沙汗','克尔曼','伊拉姆','霍尔木兹甘','哈马丹','吉兰','法尔斯','布什尔','东阿塞拜疆','西亚塞拜然','阿尔达比勒','伊斯法罕','戈勒斯坦','加兹温','库姆','南呼罗珊','礼萨呼罗珊','北呼罗珊','厄尔布尔士','首都区','西峡湾','西西里岛','卡拉布里亚','威尼托','翁布里亚','托斯卡纳','普利亚','皮埃蒙','莫利塞','马尔凯','利古里亚','拉齐奥','坎帕尼亚','巴斯利卡塔','阿布鲁佐','西摩兰','特里洛尼','圣托马斯区','圣玛丽区','圣詹姆斯','圣伊丽莎白','圣凯瑟琳','圣安娜','波特兰','曼彻斯特','金斯敦','汉诺威','克拉伦登','马安','伊尔比德','塔菲拉','安曼','马弗拉克','拜勒加','阿杰隆','杰拉什','马代巴','山梨','山口','和歌山','富山','鸟取','东京都','德岛','栃木','静冈','岛根','滋贺','埼玉','佐贺','大阪府','冲绳','冈山','大分','新潟','奈良','长崎','长野','宫崎','三重','京都府','熊本','高知','神奈川','鹿儿岛','香川','石川','兵库','广岛','群马','岐阜','福冈','福井','爱媛','爱知','山形','宫城','岩手','茨城','福岛','千叶','秋田','北海道','青森','西波克特郡','瓦吉尔郡','瓦辛基苏郡','图尔卡纳郡','塔纳河郡','夏亚郡','桑布卢郡','内罗毕郡','蒙巴萨','梅鲁郡','马萨比特郡','曼德拉郡','莱基皮亚郡','夸莱郡','基图伊郡','基苏木郡','基西郡','基里尼亚加郡','基利菲','基安布郡','凯里乔郡','卡卡梅加郡','伊希约洛郡','加里萨郡','恩布郡','布希亚郡','邦戈马郡','巴林戈郡','年达鲁阿郡','维希加','马查科斯郡','马瓜尼郡','卡耶亚多郡','涅里郡','霍马湾郡','博美特郡','米戈利郡','纳库鲁郡','纳罗克郡','尼亚米拉郡','奥什','巴特肯','塔拉斯','纳伦','伊塞克湖','贾拉拉巴德','楚河','菩萨','马德望','柴桢','上丁','腊塔纳基里','波萝勉','柏威夏','拜林','白马','戈公','贡布','磅同','磅士卑','磅清扬','磅湛','西哈努克','班迭棉吉','菲尼克斯群岛','莫埃利岛','大科摩罗岛','罗先','首尔','釜山','京畿','光州','杰赫拉','费尔瓦尼耶','艾哈迈迪','巴甫洛达尔','卡拉干达','万象','沙湾拿吉','沙拉湾','琅勃拉邦','甘蒙','占巴塞','博胶','博利坎赛','永珍','米库','拉博列','登内里','舒瓦瑟尔','卡斯特里','特里森贝格','特里森','沙恩','鲁格尔','毛伦','甘普林','埃申','乌沃','萨伯勒格穆沃','北中','东部省','锡诺','宁巴','蒙特塞拉多','马里兰','洛法','大吉德','大角山','大巴萨','邦县','博米','大克鲁','马吉比','里弗塞斯','巴波卢','吉河','塔巴-采卡','古廷','加查斯内克','莫霍特隆','莫哈莱斯胡克','马塞卢','马费滕','莱里贝','布塔-布泰','伯里亚','阿利图斯','考纳斯','克莱佩达','马里扬波莱','帕内韦日斯','希奥利艾','陶拉盖','特尔希艾','乌田纳','维尔纽斯','文茨皮尔斯市镇','文茨皮尔斯','瓦尔卡市镇','图库姆斯市镇','奥格雷市镇','利耶帕亚','叶尔加瓦','古尔贝内市镇','陶格夫匹尔斯','采西斯市镇','阿卢克斯内市镇','奥莱内市镇','基耶卡瓦市镇','萨拉斯皮尔斯市镇','利瓦尼市镇','瓦拉克利亚尼市镇','罗帕日市镇','南库尔泽梅市镇','上道加瓦市镇','库夫拉','塞卜哈','穆尔祖格','朱夫拉','西山','温格内','泰莱内什蒂','塔拉克利亚','斯特勒谢尼','索罗卡','雷什卡内','雷济纳','奥尔海伊','新阿内尼','尼斯波雷尼','莱奥瓦','森杰雷','克留莱尼','亚洛韦尼','冈代米尔','卡胡尔','格洛代尼','弗洛雷什蒂','弗莱什蒂','杜伯萨里','栋杜谢尼','奇米什利亚','布里切尼','巴萨拉贝亚斯卡','亨切什蒂','绍尔德内什蒂','罗扎耶市镇','莫伊科瓦茨','科托尔','新海尔采格','比耶洛波列','古西涅市镇','佩特尼察市镇','图齐市镇','瓦兰多沃市镇','雷森市镇','博西洛沃市镇','波格丹齐市镇','兹尔诺夫齐市镇','卡尔宾齐市镇','罗索曼市镇','格拉德斯科市镇','洛佐沃市镇','布尔韦尼察','查什卡市镇','多尔内尼市镇','戈斯蒂瓦尔','伊林登市镇','耶古诺夫采','普拉斯尼察市镇','圣尼古莱市镇','泰阿尔采市镇','德巴尔察市镇','锡卡索','塞古','莫普提','库利科罗','卡伊','加奥','巴马科','基达尔','德林达依','掸邦','实皆','仰光','勃固','曼德勒','克耶','克伦','克钦','钦邦','乌布苏','戈壁阿尔泰','色楞格','南戈壁','东戈壁','东方','布尔干','后杭爱','圣安多尼堂','望德堂','大堂','风顺堂','嘉模堂','路氹填海','路环','特拉扎','提里斯-宰穆尔','塔甘特','因希里','西胡德','东胡德','吉迪马卡','戈尔戈勒','努瓦迪布湾','卜拉克纳','阿萨巴','阿德拉尔省','罗德里格岛','尤卡坦','韦拉克鲁斯','特拉斯卡拉','塔毛利帕斯','塔巴斯科','金塔纳罗奥','克雷塔罗','普埃布拉','瓦哈卡','新莱昂','莫雷洛斯','墨西哥','伊达尔戈','格雷罗','墨西哥城','恰帕斯','坎佩切','萨卡特卡斯','索诺拉','锡那罗亚','圣路易斯波托西','纳亚里特','米却肯','哈利斯科','瓜纳华托','杜兰戈','科利马','科阿韦拉','奇瓦瓦','南下加利福尼亚','下加利福尼亚','阿瓜斯卡连特斯','登嘉楼','雪兰莪','砂拉越','沙巴','玻璃','霹雳','彭亨','森美兰','吉兰丹','槟城','吉打','柔佛','布城','赞比西亚','太特','索法拉','尼亚萨','楠普拉','马普托','伊尼扬巴内','加扎','德尔加杜角','卡普里维','霍马斯','埃龙戈','哈达普','卡拉斯','库内内','奥汉圭纳','奥马海凯','奥穆萨蒂','奥沙纳','奥希科托','奥乔宗朱帕','东卡万戈','西卡万戈','津德尔大','塔瓦大','马拉迪大','多索大','迪法大','阿加德兹大','蒂拉贝里大','河流','高原州','奥约','翁多','奥贡','尼日尔','拉各斯','夸拉','卡齐纳','卡诺','卡杜纳','伊莫','克罗斯河','博尔诺','贝努埃','包奇','阿南布拉','阿夸伊博姆','联邦首都特','阿比亚','三角','埃多','埃努古','吉加瓦','巴耶尔萨','埃邦伊','埃基蒂','贡贝','纳萨拉瓦','扎姆法拉','凯比','科吉','奥孙','塔拉巴','约贝','里瓦斯','圣胡安河','新塞哥维亚','马塔加尔帕','马萨亚','马德里斯','莱昂','希诺特加','格拉纳达','埃斯特利','琼塔莱斯','奇南德加','卡拉索','博阿科','北加勒比海岸自治','南加勒比海岸自治','南荷兰','泽兰','乌得勒支','上艾瑟尔','北荷兰','北布拉班特','林堡','格罗宁根','海尔德兰','弗里斯兰','德伦特','弗莱福兰','芬马克郡','西福尔郡','特罗姆斯郡','泰勒马克郡','罗加兰郡','东福尔郡','诺尔兰郡','阿克什胡斯郡','特伦德拉格','阿格德尔','内陆郡','韦斯特兰郡','亚伦','瓦博埃','尼博克','梅嫩','艾珠','埃瓦','代尼戈莫杜','布阿达','博埃','拜齐','阿尼巴雷','阿内坦','阿纳巴尔','艾沃','惠灵顿大','怀卡托','塔斯曼','塔拉纳基大','南地大','普伦蒂湾大','北地大','马尔堡','霍克湾大','吉斯伯恩大','坎特伯雷','奥克兰','奥塔哥大','西岸大','内地','中部省','扎希拉','马斯喀特','穆桑代姆','佐法尔','布赖米','东北省','贝拉瓜斯','雅拉库纳族自治','洛斯桑托斯','埃雷拉','奇里基','博卡斯德尔托罗','恩贝拉-沃内安特','恩戈贝布格勒自治','乌卡亚利大','通贝斯大','圣马丁大','皮乌拉地','洛雷托大','兰巴耶克大','拉利伯塔德大','瓦努科大','卡哈马卡大','安卡什大','亚马孙大','塔克纳大','普诺大','帕斯科大','莫克瓜大','马德雷德迪奥斯大','利马','利马大','胡宁大','伊卡大','万卡韦利卡大','库斯科大','阿亚库乔大','阿雷基帕大','阿普里马克大','西新不列颠','西高地','南高地','桑道恩','新爱尔兰','莫雷贝','马努斯','马当','海湾','恩加','东塞皮克','东新不列颠','东高地','钦布','米尔恩湾','赫拉','吉瓦卡','棉兰老穆斯林自治','北棉兰老','民马罗巴','卡加延河谷','索科斯克萨尔根','卡拉加','科迪勒拉行政','伊罗戈','卡拉巴松','西米沙鄢','中央吕宋','中米沙鄢','东米沙鄢','三宝颜半岛','达沃','比科尔','伊斯兰堡首都','信德','旁遮普省','开伯尔-普什图','俾路支','自由克什米尔','卢布林','小波兰','喀尔巴阡山','瓦尔米亚-马祖里','下西里西亚','罗兹','卢布斯卡','波美拉尼亚','西里西亚','大波兰','西滨海','阿雷西沃','加沙地带','约旦河西岸地','塞图巴尔','圣塔伦','波塔莱格雷','里斯本','莱里亚','法鲁','埃武拉','布朗库堡','贝雅','马德拉','维塞乌','雷阿尔城','维亚纳堡','波尔图','瓜达','科英布拉','布拉干萨','布拉加','雅庞','松索罗尔','卡扬埃尔','哈托博海伊','艾梅利克','艾拉伊','安加尔','科罗尔','梅莱凯奥克','雅拉尔德','恩切萨尔','雅切隆','雅德马乌','埃雷姆伦维','宜瓦尔','贝里琉','圣佩德罗','阿耶斯总统','米西奥内斯省','伊塔普阿','科迪勒拉','卡宁德尤','卡萨帕','阿曼拜','上巴拉圭','豪尔','乌姆锡拉勒','宰阿因','弗朗恰','沃尔恰','图尔恰','蒂米什','特列奥尔曼','苏恰瓦','锡比乌','萨图马雷','瑟拉日','普拉霍瓦','奥尔特','尼亚姆茨','穆列什','梅赫丁茨','马拉穆列什','雅西','雅洛米察','胡内多阿拉','戈尔日','久尔久','加拉茨','多尔日','登博维察','科瓦斯纳','康斯坦察','克卢日','卡拉什-塞维林','克勒拉希','布泽乌','布拉索夫','布勒伊拉','博托沙尼','比霍尔','巴克乌','阿尔杰什','阿拉德','阿尔巴','伊尔福夫','伏伊伏丁那','雅罗斯拉夫尔','沃罗涅日','沃洛格达','伏尔加格勒','乌里扬诺夫斯克','特维尔','图拉','坦波夫','斯塔夫罗波尔边疆','斯摩棱斯克','萨拉托夫','萨马拉','梁赞','罗斯托夫','普斯科夫','彼尔姆边疆','奔萨','奥廖尔','诺夫哥罗德','涅涅茨自治','摩尔曼斯克','莫斯科','莫尔多瓦共和国','马里埃尔共和国','利佩茨克','列宁格勒','库尔斯克','克拉斯诺达尔边疆','科斯特罗马','科米共和国','基洛夫','卡累利阿共和国','卡卢加','卡尔梅克共和国','加里宁格勒','伊万诺沃','下诺夫哥罗德','达吉斯坦共和国','楚瓦什共和国','车臣共和国','布良斯克','别尔哥罗德','阿斯特拉罕','阿尔汉格尔斯克','阿迪格共和国','弗拉基米尔','秋明','图瓦共和国','斯维尔德洛夫斯克','鄂木斯克','新西伯利亚','库尔干','哈卡斯共和国','阿尔泰共和国','车里雅宾斯克','阿尔泰边疆','滨海边疆','哈巴罗夫斯克边疆','犹太自治','阿穆尔','萨哈林','马加丹','楚科奇自治','塔布克','奈季兰','阿西尔','利雅得','马莱塔','伊莎贝尔','瓜达尔卡纳尔','中部群岛','泰莫图','马基拉-乌拉瓦','舒瓦瑟尔省','拉纳尔和贝罗纳','塔卡玛卡','圣路易','格洛港','潘特拉吕','普莱桑斯','蒙弗勒利','蒙巴克斯顿','英吉利河','拉蒂格与内岛','格拉西斯','卡斯喀得','贝尔翁布雷','贝尔艾尔','贝圣安那','贝拉扎尔','安塞艾托瓦','昂斯欧潘','莱马梅勒','罗切凯曼','奥凯普','北部州','喀土穆','红海州','杰济拉','加达里夫','白尼罗','青尼罗','西达尔富尔','西科尔多凡','南达尔富尔','南科尔多凡','卡萨拉','尼罗','北达尔富尔','北科尔多凡','森纳尔','东达尔富尔','中达尔富尔','北博滕省','西曼兰','西诺尔兰','西博滕','韦姆兰','乌普萨拉','南曼兰','东约特兰','厄勒布鲁','克鲁努贝里','达拉纳','卡尔马','延雪平','耶姆特兰','哈兰','哥得兰','耶夫勒堡','布莱金厄','斯科讷','西约塔兰','特雷布涅市镇','斯洛文尼亚科尼采','什科菲亚洛卡市镇','塞夫尼察市镇','申特尤尔市镇','拉多夫利察市镇','普图伊','波斯托伊纳','马里博尔城市市镇','洛加泰茨市镇','柳托梅尔','拉什科市镇','科佩尔','伊佐拉','伊德里亚','赫拉斯特尼克市镇','奇尔诺梅利市镇','皮夫卡市镇','洛什卡多利纳市镇','伊格市镇','采尔克诺','热莱兹尼基市镇','科巴里德市镇','博希尼市镇','卢科维察市镇','拉代切市镇','兹雷切市镇','鲁舍市镇','佩斯尼察市镇','多尔纳瓦市镇','索尔察瓦市镇','科门达市镇','普雷瓦列','普雷博尔德市镇','米尔纳佩奇市镇','奥普洛特尼察市镇','哈伊迪纳市镇','代斯特尔尼克市镇','圣安娜市镇','伦达瓦','格拉德市镇','戈列市镇','安卡兰市镇','斯瓦尔巴群岛','科希策','普列索夫','日利纳','布拉迪斯拉发','尼特拉','特尔纳瓦','西部区','南方省','北方省','东方省','塞拉利昂西北','基耶萨诺瓦','阿夸维瓦','博尔戈马焦雷','法埃塔诺','菲奥伦蒂诺','蒙特贾尔迪诺','济金绍尔','坦巴昆达','圣路易区','马塔姆','卢加','科尔达','考拉克','法蒂克','久尔贝勒','达喀尔','卡夫林','塞久','瓦尼卡','锡帕利维尼','萨拉马卡','帕拉马里博','帕拉区','尼克里','马罗韦讷','科罗尼','科默韦讷','布罗科蓬多','上尼罗','湖泊州','团结','中赤道','西赤道','西加扎勒河','琼莱','北加扎勒河','东赤道','瓦拉卜','圣多美岛','普林西比岛','松索纳特','圣维森特','圣安娜省','圣萨尔瓦多','圣米格尔','拉利伯塔德','查拉特南戈','塔尔图斯','大马士革','伊德利卜','霍姆斯','哈马','阿勒颇','大马士革农村','代尔祖尔','德拉','苏韦达','库奈特拉','拉塔基亚','哈塞克','曼齐尼','卢邦博','霍霍','萨拉马特','瓦达伊','瓦迪菲拉','坦吉莱','中沙里','东凯比河','东洛贡','西洛贡','湖区','加奈姆','盖拉','沙里-巴吉尔米','巴塔','博尔库','哈杰尔-拉密','芒杜尔','西凯比河','西拉','提贝斯提','西恩内迪','东恩内迪','草原','高原区','卡拉','达府','素叻他尼府','素可泰府','叻武里府','拉廊府','巴蜀府','普吉府','碧武里府','攀牙府','夜丰颂府','南奔府','南邦府','甲米府','北碧府','甘烹碧府','春蓬府','清莱府','清迈府','益梭通府','也拉府','程逸府','素林府','素攀府','宋卡府','四色菊府','信武里府','沙敦府','沙拉武里府','沙没颂堪府','沙没沙空府','沙没巴干府','沙功那空府','黎逸府','罗勇府','大城府','帕府','彭世洛府','披集府','碧差汶府','帕尧府','博他仑府','北大年府','巴吞他尼府','廊开府','那拉提瓦府','那空是贪玛叻府','那空沙旺府','那空叻差是玛府','那空拍侬府','佛统府','那空那育府','穆达汉府','马哈沙拉堪府','华富里府','黎府','曼谷','孔敬府','加拉信府','春武里府','庄他武里府','猜也蓬府','猜纳府','差春骚府','武里南府','乌隆府','巴真府','乌汶府','安纳乍伦府','农磨兰普府','沙缴府','汶干府','哈特隆','维克克','马努法伊','马纳图托','利逵萨','劳滕','科瓦利马','埃尔梅拉','帝力','博博纳罗','包考','阿伊纳罗','阿伊莱乌','巴尔坎','阿哈尔','马雷','列巴普','宰格万','突尼斯','托泽尔','泰塔温','苏塞','锡勒亚奈','西迪布济德','斯法克斯','吉比利','加夫萨','加贝斯','纳布勒','梅德宁','坚杜拜','本阿鲁斯','比塞大','艾尔亚内','凯鲁万','卡塞林','莫纳斯提尔','马赫迪耶','卡夫','马努巴','埃瓦岛','纽阿斯群岛','约兹加特','凡省','乌沙克','尚勒乌尔法','通杰利','锡瓦斯','锡尔特','尼代','内夫谢希尔','穆什','穆拉','马尔丁','马尼萨','马拉蒂亚','屈塔希亚','科尼亚','克尔谢希尔','开塞利','卡赫拉曼马拉什','伊兹密尔','厄斯帕尔塔','梅尔辛','哈塔伊','哈卡里','加济安泰普','埃斯基谢希尔','埃尔祖鲁姆','埃尔津詹','埃拉泽','迪亚巴克尔','代尼兹利','布尔杜尔','比特利斯','宾格尔','比莱吉克','巴勒克埃西尔','艾登','安塔利亚','安卡拉','阿勒','阿菲永卡拉希萨尔','阿德亚曼','阿达纳','奥斯曼尼耶','厄德尔','阿克萨赖','巴特曼','卡拉曼','克勒克卡莱','舍尔纳克','基利斯','宗古尔达克','特拉布宗','托卡特','泰基尔达','锡诺普','萨姆松','萨卡里亚','里泽','奥尔杜','科贾埃利','克尔克拉雷利','卡斯塔莫努','卡尔斯','伊斯坦布尔','居米什哈内','吉雷松','埃迪尔内','乔鲁姆','昌克勒','恰纳卡莱','布尔萨','博卢','阿尔特温','阿马西亚','巴尔滕','卡拉比克','亚洛瓦','阿尔达汉','巴伊布尔特','阿里马','迭戈马丁地','王子镇地','大桑格雷地','锡帕里亚','努伊环礁','纳努梅阿环礁','纳努芒阿岛','瓦伊图普','努库费陶环礁','努库莱莱环礁','福建省','高雄','台北','卡盖拉','坦噶','塔波拉','辛吉达','欣延加','鲁夸','姆万扎','莫罗戈罗','姆贝亚','马拉','林迪','乞力马扎罗','基戈马','伊林加','多多马','三兰港','阿鲁沙','曼亚拉','鲁伍马','姆特瓦拉','锡米尤','盖塔','卡塔维'],
   en:['abandon','ability','able','about','above','absent','absorb','abstract','absurd','abuse','access','accident','account','accuse','achieve','acid','acoustic','acquire','across','act','action','actor','actress','actual','adapt','add','addict','address','adjust','admit','adult','advance','advice','aerobic','affair','afford','afraid','again','age','agent','agree','ahead','aim','air','airport','aisle','alarm','album','alcohol','alert','alien','all','alley','allow','almost','alone','alpha','already','also','alter','always','amateur','amazing','among','amount','amused','analyst','anchor','ancient','anger','angle','angry','animal','ankle','announce','annual','another','answer','antenna','antique','anxiety','any','apart','apology','appear','apple','approve','april','arch','arctic','area','arena','argue','arm','armed','armor','army','around','arrange','arrest','arrive','arrow','art','artefact','artist','artwork','ask','aspect','assault','asset','assist','assume','asthma','athlete','atom','attack','attend','attitude','attract','auction','audit','august','aunt','author','auto','autumn','average','avocado','avoid','awake','aware','away','awesome','awful','awkward','axis','baby','bachelor','bacon','badge','bag','balance','balcony','ball','bamboo','banana','banner','bar','barely','bargain','barrel','base','basic','basket','battle','beach','bean','beauty','because','become','beef','before','begin','behave','behind','believe','below','belt','bench','benefit','best','betray','better','between','beyond','bicycle','bid','bike','bind','biology','bird','birth','bitter','black','blade','blame','blanket','blast','bleak','bless','blind','blood','blossom','blouse','blue','blur','blush','board','boat','body','boil','bomb','bone','bonus','book','boost','border','boring','borrow','boss','bottom','bounce','box','boy','bracket','brain','brand','brass','brave','bread','breeze','brick','bridge','brief','bright','bring','brisk','broccoli','broken','bronze','broom','brother','brown','brush','bubble','buddy','budget','buffalo','build','bulb','bulk','bullet','bundle','bunker','burden','burger','burst','bus','business','busy','butter','buyer','buzz','cabbage','cabin','cable','cactus','cage','cake','call','calm','camera','camp','can','canal','cancel','candy','cannon','canoe','canvas','canyon','capable','capital','captain','car','carbon','card','cargo','carpet','carry','cart','case','cash','casino','castle','casual','cat','catalog','catch','category','cattle','caught','cause','caution','cave','ceiling','celery','cement','census','century','cereal','certain','chair','chalk','champion','change','chaos','chapter','charge','chase','chat','cheap','check','cheese','chef','cherry','chest','chicken','chief','child','chimney','choice','choose','chronic','chuckle','chunk','churn','cigar','cinnamon','circle','citizen','city','civil','claim','clap','clarify','claw','clay','clean','clerk','clever','click','client','cliff','climb','clinic','clip','clock','clog','close','cloth','cloud','clown','club','clump','cluster','clutch','coach','coast','coconut','code','coffee','coil','coin','collect','color','column','combine','come','comfort','comic','common','company','concert','conduct','confirm','congress','connect','consider','control','convince','cook','cool','copper','copy','coral','core','corn','correct','cost','cotton','couch','country','couple','course','cousin','cover','coyote','crack','cradle','craft','cram','crane','crash','crater','crawl','crazy','cream','credit','creek','crew','cricket','crime','crisp','critic','crop','cross','crouch','crowd','crucial','cruel','cruise','crumble','crunch','crush','cry','crystal','cube','culture','cup','cupboard','curious','current','curtain','curve','cushion','custom','cute','cycle','dad','damage','damp','dance','danger','daring','dash','daughter','dawn','day','deal','debate','debris','decade','december','decide','decline','decorate','decrease','deer','defense','define','defy','degree','delay','deliver','demand','demise','denial','dentist','deny','depart','depend','deposit','depth','deputy','derive','describe','desert','design','desk','despair','destroy','detail','detect','develop','device','devote','diagram','dial','diamond','diary','dice','diesel','diet','differ','digital','dignity','dilemma','dinner','dinosaur','direct','dirt','disagree','discover','disease','dish','dismiss','disorder','display','distance','divert','divide','divorce','dizzy','doctor','document','dog','doll','dolphin','domain','donate','donkey','donor','door','dose','double','dove','draft','dragon','drama','drastic','draw','dream','dress','drift','drill','drink','drip','drive','drop','drum','dry','duck','dumb','dune','during','dust','dutch','duty','dwarf','dynamic','eager','eagle','early','earn','earth','easily','east','easy','echo','ecology','economy','edge','edit','educate','effort','egg','eight','either','elbow','elder','electric','elegant','element','elephant','elevator','elite','else','embark','embody','embrace','emerge','emotion','employ','empower','empty','enable','enact','end','endless','endorse','enemy','energy','enforce','engage','engine','enhance','enjoy','enlist','enough','enrich','enroll','ensure','enter','entire','entry','envelope','episode','equal','equip','era','erase','erode','erosion','error','erupt','escape','essay','essence','estate','eternal','ethics','evidence','evil','evoke','evolve','exact','example','excess','exchange','excite','exclude','excuse','execute','exercise','exhaust','exhibit','exile','exist','exit','exotic','expand','expect','expire','explain','expose','express','extend','extra','eye','eyebrow','fabric','face','faculty','fade','faint','faith','fall','false','fame','family','famous','fan','fancy','fantasy','farm','fashion','fat','fatal','father','fatigue','fault','favorite','feature','february','federal','fee','feed','feel','female','fence','festival','fetch','fever','few','fiber','fiction','field','figure','file','film','filter','final','find','fine','finger','finish','fire','firm','first','fiscal','fish','fit','fitness','fix','flag','flame','flash','flat','flavor','flee','flight','flip','float','flock','floor','flower','fluid','flush','fly','foam','focus','fog','foil','fold','follow','food','foot','force','forest','forget','fork','fortune','forum','forward','fossil','foster','found','fox','fragile','frame','frequent','fresh','friend','fringe','frog','front','frost','frown','frozen','fruit','fuel','fun','funny','furnace','fury','future','gadget','gain','galaxy','gallery','game','gap','garage','garbage','garden','garlic','garment','gas','gasp','gate','gather','gauge','gaze','general','genius','genre','gentle','genuine','gesture','ghost','giant','gift','giggle','ginger','giraffe','girl','give','glad','glance','glare','glass','glide','glimpse','globe','gloom','glory','glove','glow','glue','goat','goddess','gold','good','goose','gorilla','gospel','gossip','govern','gown','grab','grace','grain','grant','grape','grass','gravity','great','green','grid','grief','grit','grocery','group','grow','grunt','guard','guess','guide','guilt','guitar','gun','gym','habit','hair','half','hammer','hamster','hand','happy','harbor','hard','harsh','harvest','hat','have','hawk','hazard','head','health','heart','heavy','hedgehog','height','hello','helmet','help','hen','hero','hidden','high','hill','hint','hip','hire','history','hobby','hockey','hold','hole','holiday','hollow','home','honey','hood','hope','horn','horror','horse','hospital','host','hotel','hour','hover','hub','huge','human','humble','humor','hundred','hungry','hunt','hurdle','hurry','hurt','husband','hybrid','ice','icon','idea','identify','idle','ignore','ill','illegal','illness','image','imitate','immense','immune','impact','impose','improve','impulse','inch','include','income','increase','index','indicate','indoor','industry','infant','inflict','inform','inhale','inherit','initial','inject','injury','inmate','inner','innocent','input','inquiry','insane','insect','inside','inspire','install','intact','interest','into','invest','invite','involve','iron','island','isolate','issue','item','ivory','jacket','jaguar','jar','jazz','jealous','jeans','jelly','jewel','job','join','joke','journey','joy','judge','juice','jump','jungle','junior','junk','just','kangaroo','keen','keep','ketchup','key','kick','kid','kidney','kind','kingdom','kiss','kit','kitchen','kite','kitten','kiwi','knee','knife','knock','know','lab','label','labor','ladder','lady','lake','lamp','language','laptop','large','later','latin','laugh','laundry','lava','law','lawn','lawsuit','layer','lazy','leader','leaf','learn','leave','lecture','left','leg','legal','legend','leisure','lemon','lend','length','lens','leopard','lesson','letter','level','liar','liberty','library','license','life','lift','light','like','limb','limit','link','lion','liquid','list','little','live','lizard','load','loan','lobster','local','lock','logic','lonely','long','loop','lottery','loud','lounge','love','loyal','lucky','luggage','lumber','lunar','lunch','luxury','lyrics','machine','mad','magic','magnet','maid','mail','main','major','make','mammal','man','manage','mandate','mango','mansion','manual','maple','marble','march','margin','marine','market','marriage','mask','mass','master','match','material','math','matrix','matter','maximum','maze','meadow','mean','measure','meat','mechanic','medal','media','melody','melt','member','memory','mention','menu','mercy','merge','merit','merry','mesh','message','metal','method','middle','midnight','milk','million','mimic','mind','minimum','minor','minute','miracle','mirror','misery','miss','mistake','mix','mixed','mixture','mobile','model','modify','mom','moment','monitor','monkey','monster','month','moon','moral','more','morning','mosquito','mother','motion','motor','mountain','mouse','move','movie','much','muffin','mule','multiply','muscle','museum','mushroom','music','must','mutual','myself','mystery','myth','naive','name','napkin','narrow','nasty','nation','nature','near','neck','need','negative','neglect','neither','nephew','nerve','nest','net','network','neutral','never','news','next','nice','night','noble','noise','nominee','noodle','normal','north','nose','notable','note','nothing','notice','novel','now','nuclear','number','nurse','nut','oak','obey','object','oblige','obscure','observe','obtain','obvious','occur','ocean','october','odor','off','offer','office','often','oil','okay','old','olive','olympic','omit','once','one','onion','online','only','open','opera','opinion','oppose','option','orange','orbit','orchard','order','ordinary','organ','orient','original','orphan','ostrich','other','outdoor','outer','output','outside','oval','oven','over','own','owner','oxygen','oyster','ozone','pact','paddle','page','pair','palace','palm','panda','panel','panic','panther','paper','parade','parent','park','parrot','party','pass','patch','path','patient','patrol','pattern','pause','pave','payment','peace','peanut','pear','peasant','pelican','pen','penalty','pencil','people','pepper','perfect','permit','person','pet','phone','photo','phrase','physical','piano','picnic','picture','piece','pig','pigeon','pill','pilot','pink','pioneer','pipe','pistol','pitch','pizza','place','planet','plastic','plate','play','please','pledge','pluck','plug','plunge','poem','poet','point','polar','pole','police','pond','pony','pool','popular','portion','position','possible','post','potato','pottery','poverty','powder','power','practice','praise','predict','prefer','prepare','present','pretty','prevent','price','pride','primary','print','priority','prison','private','prize','problem','process','produce','profit','program','project','promote','proof','property','prosper','protect','proud','provide','public','pudding','pull','pulp','pulse','pumpkin','punch','pupil','puppy','purchase','purity','purpose','purse','push','put','puzzle','pyramid','quality','quantum','quarter','question','quick','quit','quiz','quote','rabbit','raccoon','race','rack','radar','radio','rail','rain','raise','rally','ramp','ranch','random','range','rapid','rare','rate','rather','raven','raw','razor','ready','real','reason','rebel','rebuild','recall','receive','recipe','record','recycle','reduce','reflect','reform','refuse','region','regret','regular','reject','relax','release','relief','rely','remain','remember','remind','remove','render','renew','rent','reopen','repair','repeat','replace','report','require','rescue','resemble','resist','resource','response','result','retire','retreat','return','reunion','reveal','review','reward','rhythm','rib','ribbon','rice','rich','ride','ridge','rifle','right','rigid','ring','riot','ripple','risk','ritual','rival','river','road','roast','robot','robust','rocket','romance','roof','rookie','room','rose','rotate','rough','round','route','royal','rubber','rude','rug','rule','run','runway','rural','sad','saddle','sadness','safe','sail','salad','salmon','salon','salt','salute','same','sample','sand','satisfy','satoshi','sauce','sausage','save','say','scale','scan','scare','scatter','scene','scheme','school','science','scissors','scorpion','scout','scrap','screen','script','scrub','sea','search','season','seat','second','secret','section','security','seed','seek','segment','select','sell','seminar','senior','sense','sentence','series','service','session','settle','setup','seven','shadow','shaft','shallow','share','shed','shell','sheriff','shield','shift','shine','ship','shiver','shock','shoe','shoot','shop','short','shoulder','shove','shrimp','shrug','shuffle','shy','sibling','sick','side','siege','sight','sign','silent','silk','silly','silver','similar','simple','since','sing','siren','sister','situate','six','size','skate','sketch','ski','skill','skin','skirt','skull','slab','slam','sleep','slender','slice','slide','slight','slim','slogan','slot','slow','slush','small','smart','smile','smoke','smooth','snack','snake','snap','sniff','snow','soap','soccer','social','sock','soda','soft','solar','soldier','solid','solution','solve','someone','song','soon','sorry','sort','soul','sound','soup','source','south','space','spare','spatial','spawn','speak','special','speed','spell','spend','sphere','spice','spider','spike','spin','spirit','split','spoil','sponsor','spoon','sport','spot','spray','spread','spring','spy','square','squeeze','squirrel','stable','stadium','staff','stage','stairs','stamp','stand','start','state','stay','steak','steel','stem','step','stereo','stick','still','sting','stock','stomach','stone','stool','story','stove','strategy','street','strike','strong','struggle','student','stuff','stumble','style','subject','submit','subway','success','such','sudden','suffer','sugar','suggest','suit','summer','sun','sunny','sunset','super','supply','supreme','sure','surface','surge','surprise','surround','survey','suspect','sustain','swallow','swamp','swap','swarm','swear','sweet','swift','swim','swing','switch','sword','symbol','symptom','syrup','system','table','tackle','tag','tail','talent','talk','tank','tape','target','task','taste','tattoo','taxi','teach','team','tell','ten','tenant','tennis','tent','term','test','text','thank','that','theme','then','theory','there','they','thing','this','thought','three','thrive','throw','thumb','thunder','ticket','tide','tiger','tilt','timber','time','tiny','tip','tired','tissue','title','toast','tobacco','today','toddler','toe','together','toilet','token','tomato','tomorrow','tone','tongue','tonight','tool','tooth','top','topic','topple','torch','tornado','tortoise','toss','total','tourist','toward','tower','town','toy','track','trade','traffic','tragic','train','transfer','trap','trash','travel','tray','treat','tree','trend','trial','tribe','trick','trigger','trim','trip','trophy','trouble','truck','true','truly','trumpet','trust','truth','try','tube','tuition','tumble','tuna','tunnel','turkey','turn','turtle','twelve','twenty','twice','twin','twist','two','type','typical','ugly','umbrella','unable','unaware','uncle','uncover','under','undo','unfair','unfold','unhappy','uniform','unique','unit','universe','unknown','unlock','until','unusual','unveil','update','upgrade','uphold','upon','upper','upset','urban','urge','usage','use','used','useful','useless','usual','utility','vacant','vacuum','vague','valid','valley','valve','van','vanish','vapor','various','vast','vault','vehicle','velvet','vendor','venture','venue','verb','verify','version','very','vessel','veteran','viable','vibrant','vicious','victory','video','view','village','vintage','violin','virtual','virus','visa','visit','visual','vital','vivid','vocal','voice','void','volcano','volume','vote','voyage','wage','wagon','wait','walk','wall','walnut','want','warfare','warm','warrior','wash','wasp','waste','water','wave','way','wealth','weapon','wear','weasel','weather','web','wedding','weekend','weird','welcome','west','wet','whale','what','wheat','wheel','when','where','whip','whisper','wide','width','wife','wild','will','win','window','wine','wing','wink','winner','winter','wire','wisdom','wise','wish','witness','wolf','woman','wonder','wood','wool','word','work','world','worry','worth','wrap','wreck','wrestle','wrist','write','wrong','yard','year','yellow','you','young','youth','zebra','zero','zone','zoo'],
   ja:['大和','山城','摂津','河内','和泉','伊賀','伊勢','志摩','尾張','三河','遠江','駿河','伊豆','甲斐','相模','武蔵','安房','上総','下総','常陸','近江','美濃','飛騨','信濃','上野','下野','陸奥','出羽','若狭','越前','加賀','能登','越中','越後','佐渡','丹波','丹後','但馬','因幡','伯耆','出雲','石見','隠岐','播磨','美作','備前','備中','備後','安芸','周防','長門','紀伊','淡路','阿波','讃岐','伊予','土佐','筑前','筑後','豊前','豊後','肥前','肥後','日向','大隅','薩摩','壱岐','対馬','琉球','沖縄','北海','青森','岩手','宮城','秋田','山形','福島','茨城','栃木','群馬','埼玉','千葉','東京','神奈','新潟','富山','石川','福井','山梨','長野','岐阜','静岡','愛知','三重','滋賀','京都','大阪','兵庫','奈良','和歌','鳥取','島根','岡山','広島','山口','徳島','香川','愛媛','高知','福岡','佐賀','長崎','熊本','大分','宮崎','鹿児','札幌','函館','旭川','釧路','帯広','北見','小樽','苫小牧','弘前','八戸','盛岡','仙台','石巻','鶴岡','酒田','郡山','会津','水戸','宇都宮','前橋','高崎','川越','熊谷','船橋','横浜','川崎','鎌倉','小田原','長岡','上越','金沢','甲府','松本','上田','諏訪','大垣','高山','浜松','沼津','熱海','三島','名古屋','豊橋','岡崎','一宮','津','四日市','大津','彦根','長浜','宇治','堺','神戸','姫路','和歌山','松江','倉敷','呉','尾道','福山','下関','宇部','萩','高松','松山','北九州','久留米','佐世保','別府','鹿児島','那覇','石垣','宮古','松島','天橋','竹生','宮島','錦帯','白川','兼六','偕楽','後楽','六義','伏見','嵐山','金閣','銀閣','清水','東寺','西寺','北野','祇園','先斗','浅草','日光','箱根','草津','有馬','城崎','湯布','白浜','勝浦','鳥羽','二見','高野','吉野','飛鳥','法隆','平泉','中尊','毛越','厳島','三徳','由布','阿蘇','霧島','桜島','首里','玉泉','斎場','古宇','十和田','田沢','奥入瀬','八甲','蔵王','磐梯','猪苗','尾瀬','奥日光','戦場','富士','天城','屋久','奄美','西表','北岳','奥穂','槍岳','立山','白山','御岳','霊山','岩木','早池','鳥海','月山','飯豊','吾妻','安達','那須','赤城','榛名','妙義','浅間','八ヶ岳','木曽','白馬','剱岳','鹿島','乗鞍','焼岳','御嶽','伊吹','比叡','金剛','大台','大峰','剣山','石鎚','九重','雲仙','普賢','開聞','韓国','宮之浦','口永','利根','荒川','多摩','富士川','天竜','木曽川','長良','揖斐','淀川','大和川','紀の川','吉野川','那賀','四万十','仁淀','物部','菊池','球磨','大淀','天塩','石狩','十勝','網走','北上','最上','阿武隈','久慈','馬淵','琵琶','霞ヶ浦','中禅寺','芦ノ湖','摩周','屈斜路','江戸','大坂','名護','丸亀','宇和','今治','宇和島','大洲','吉田','岩国','津山','米子','浜田','津和野','赤穂','明石','篠山','二条','竹田','新宮','亀山','松坂','清洲','犬山','岩村','苗木','掛川','駿府','韮山','下田','忍','鉢形','益子','笠間','土浦','白石','米沢','新庄','久保田','桜花','梅林','藤棚','菊野','蓮池','牡丹','芍薬','薔薇','芙蓉','椿花','水仙','百合','桔梗','萩野','薄野','菖蒲','紫陽','紅梅','白梅','枝垂','山吹','木蓮','辛夷','雪柳','花桃','桐花','藤花','杜若','花菖','花蓮','鶴舞','鷹飛','鷺立','鴨川','燕尾','雀声','鶯鳴','杜鵑','時鳥','雁行','白鳥','丹頂','青鷺','夜鷺','翡翠','孔雀','鸚鵡','九官','百舌','郭公','春風','夏風','秋風','冬風','海風','山風','松風','竹風','花風','雪風','朝風','夕風','夜風','嵐気','颱風','満月','新月','三日月','弦月','月光','月夜','月影','月明','月雫','月虹','春霞','夏雲','秋霜','冬雪','朝露','夕霞','夜霧','虹空','雷鳴','稲妻','瀧水','清流','深淵','磯波','岩礁','断崖','峰雲','谷間','野原','草原','田園','水田','棚田','段畑','松原','竹林','杉林','桜並','欅並','楠木','樫木','桐木','楓葉','銀杏','朱赤','緋色','桃色','紅色','深紅','橙色','黄金','萌黄','若草','翠緑','常磐','深緑','青磁','瑠璃','群青','藍色','紺碧','青紫','薄紫','藤色','菫色','葡萄','白磁','乳白','胡粉','象牙','白練','灰色','銀鼠','鉛色','鼠色','墨色','漆黒','烏羽','黒檀','鉄黒','墨黒','金色','黄朽','蒸栗','枯草','茶色','弁柄','朽葉','錆色','檜皮','睦月','如月','弥生','卯月','皐月','水無月','文月','葉月','長月','神無月','霜月','師走','春分','夏至','秋分','冬至','立春','立夏','立秋','立冬','大寒','小寒','大雪','小雪','霜降','寒露','白露','処暑','大暑','小暑','芒種','小満','穀雨','清明','啓蟄','雨水','朝霧','夕暮','黄昏','夜明','暁闇','正午','真夜','深夜','未明','払暁','一番','二番','三番','四番','五番','六番','七番','八番','九番','十番','百年','千年','万年','一里','千里','東西','南北','中央','上下','左右','前後','内外','表裏','陰陽','虚実','能楽','狂言','歌舞','文楽','雅楽','茶道','花道','香道','武道','柔道','剣道','弓道','相撲','空手','合気','俳句','短歌','連歌','物語','源氏','平家','義経','頼朝','信長','秀吉','家康','光秀','謙信','信玄','道元','親鸞','法然','空海','最澄','芭蕉','西鶴','近松','蕪村','一茶','北斎','広重','応挙','若冲','宗達','春日','住吉','熊野','三嶋','大山','香取','氷川','日枝','八坂','平安','上賀茂','下鴨','石清水','松尾','大原','三千院','寂光','化野','愛宕','高雄','神護','栂尾','槇尾','鞍馬','貴船','八瀬','延暦','三井','石山','長命','義仲','園城','四天王','唐招','東大','興福','元興','大安','西大','薬師','中宮','法起','法輪','達磨','長谷','室生','談山','岡寺','壺阪','橘寺','当麻','葛城','金峯','寿司','天麩','蕎麦','鍋物','懐石','会席','精進','本膳','茶懐石','卓袱','抹茶','煎茶','玄米','番茶','焙茶','日本','吟醸','純米','本醸','焼酎','梅酒','甘酒','味醂','醤油','味噌','和菓','羊羹','最中','落雁','煎餅','饅頭','大福','桜餅','柏餅','粽子','日本海','太平洋','瀬戸内','玄界','遠州','有明','八代','不知火','五島','天草','種子','口之島','中之島','悪石','徳之島','沖永良部','与論','竹富','与那国','久米','慶良間','渡嘉敷','座間味','阿嘉','渡名喜','伊是名','伊平屋','伊江','水納','瀬底','浦安','舞浜','幕張','柏','松戸','市川','習志野','八千代','四街道','佐倉','成田','銚子','旭','匝瑳','横芝','山武','東金','大網','茂原','君津','木更津','袖ヶ浦','富津','鋸南','南房','館山','長南','睦沢','長柄','白子','長生','大多喜','いすみ','夷隅','御宿','東庄','神崎','多古','芝山','酒々井','八街','印西','白井','富里','栄町','取手','守谷','稲敷','かすみがうら','石岡','小美玉','鉾田','行方','潮来','神栖','鹿嶋','坂東','常総','下妻','筑西','桜川','結城','古河','境','五霞','幸手','久喜','加須','羽生','行田','鴻巣','北本','桶川','伊奈','上尾','蕨','戸田','川口','越谷','草加','八潮','三郷','吉川','松伏','春日部','宮代','杉戸','白岡','蓮田','岩槻','さいたま','朝霞','志木','和光','新座','清瀬','東久留米','西東京','武蔵野','三鷹','調布','府中','国立','国分寺','小平','東村山','武蔵村山','東大和','立川','日野','八王子','町田','相模原','座間','綾瀬','海老名','厚木','愛川','清川','伊勢原','秦野','松田','山北','開成','大磯','二宮','中井','湯河原','真鶴','葉山','逗子','東山','東川','東野','東浜','東島','東港','東坂','東谷','東峠','東橋','東池','東沼','東原','東浦','東崎','西山','西川','西野','西浜','西島','西港','西坂','西谷','西峠','西橋','西池','西沼','西原','西浦','西崎','南山','南川','南野','南浜','南島','南港','南坂','南谷','南峠','南橋','南池','南沼','南原','南浦','南崎','北山','北川','北浜','北島','北港','北坂','北谷','北峠','北橋','北池','北沼','北原','北浦','北崎','上山','上川','上浜','上島','上港','上坂','上谷','上峠','上橋','上池','上沼','上原','上浦','上崎','下山','下川','下浜','下島','下港','下坂','下谷','下峠','下橋','下池','下沼','下原','下浦','下崎','新山','新川','新野','新浜','新島','新港','新坂','新谷','新峠','新橋','新池','新沼','新原','新浦','新崎','古山','古川','古野','古浜','古島','古港','古坂','古谷','古峠','古橋','古池','古沼','古原','古浦','古崎','大川','大野','大浜','大島','大港','大谷','大峠','大橋','大池','大沼','大浦','大崎','小山','小川','小野','小浜','小島','小港','小坂','小谷','小峠','小橋','小池','小沼','小原','小浦','小崎','中山','中川','中野','中浜','中島','中港','中坂','中谷','中峠','中橋','中池','中沼','中原','中浦','中崎','内山','内川','内野','内浜','内島','内港','内坂','内谷','内峠','内橋','内池','内沼','内原','内浦','内崎','外山','外川','外野','外浜','外島','外港','外坂','外谷','外峠','外橋','外池','外沼','外原','外浦','外崎','前山','前川','前野','前浜','前島','前港','前坂','前谷','前峠','前池','前沼','前原','前浦','前崎','後山','後川','後野','後浜','後島','後港','後坂','後谷','後峠','後橋','後池','後沼','後原','後浦','後崎','赤山','赤海','赤川','赤空','赤雲','赤風','赤雨','赤雪','赤花','赤木','赤葉','赤草','赤波','赤霧','赤月','青山','青海','青川','青空','青雲','青風','青雨','青雪','青花','青木','青葉','青草','青波','青霧','青月','白海','白空','白雲','白風','白雨','白雪','白花','白木','白葉','白草','白波','白霧','白月','黒山','黒海','黒川','黒空','黒雲','黒風','黒雨','黒雪','黒花','黒木','黒葉','黒草','黒波','黒霧','黒月','黄山','黄海','黄川','黄空','黄雲','黄風','黄雨','黄雪','黄花','黄木','黄葉','黄草','黄波','黄霧','黄月','緑山','緑海','緑川','緑空','緑雲','緑風','緑雨','緑雪','緑花','緑木','緑葉','緑草','緑波','緑霧','緑月','紫山','紫海','紫川','紫空','紫雲','紫風','紫雨','紫雪','紫花','紫木','紫葉','紫草','紫波','紫霧','紫月','橙山','橙海','橙川','橙空','橙雲','橙風','橙雨','橙雪','橙花','橙木','橙葉','橙草','橙波','橙霧','橙月','桃山','桃海','桃川','桃空','桃雲','桃風','桃雨','桃雪','桃花','桃木','桃葉','桃草','桃波','桃霧','桃月','茶山','茶海','茶川','茶空','茶雲','茶風','茶雨','茶雪','茶花','茶木','茶葉','茶草','茶波','茶霧','茶月','金山','金海','金川','金空','金雲','金風','金雨','金雪','金花','金木','金葉','金草','金波','金霧','金月','銀山','銀海','銀川','銀空','銀雲','銀風','銀雨','銀雪','銀花','銀木','銀葉','銀草','銀波','銀霧','銀月','灰山','灰海','灰川','灰空','灰雲','灰風','灰雨','灰雪','灰花','灰木','灰葉','灰草','灰波','灰霧','灰月','紺山','紺海','紺川','紺空','紺雲','紺風','紺雨','紺雪','紺花','紺木','紺葉','紺草','紺波','紺霧','紺月','朱山','朱海','朱川','朱空','朱雲','朱風','朱雨','朱雪','朱花','朱木','朱葉','朱草','朱波','朱霧','朱月','春雨','春霜','春雪','春雲','春空','春光','春闇','春霧','春霙','春霰','春露','春氷','春炎','夏雨','夏霞','夏霜','夏雪','夏空','夏光','夏闇','夏霧','夏霙','夏霰','夏露','夏氷','夏炎','秋雨','秋霞','秋雪','秋雲','秋空','秋光','秋闇','秋霧','秋霙','秋霰','秋露','秋氷','秋炎','冬雨','冬霞','冬霜','冬雲','冬空','冬光','冬闇','冬霧','冬霙','冬霰','冬露','冬氷','冬炎','一本','一丁','一条','一丸','一崎','一浦','一野','一原','一島','一山','一川','一谷','一坂','一橋','一町','二本','二丁','二丸','二崎','二浦','二野','二原','二島','二山','二川','二谷','二坂','二橋','二町','三本','三丁','三条','三丸','三崎','三浦','三野','三原','三山','三川','三谷','三坂','三橋','三町','四本','四丁','四条','四丸','四崎','四浦','四野','四原','四島','四山','四川','四谷','四坂','四橋','四町','五本','五丁','五条','五丸','五崎','五浦','五野','五原','五山','五川','五谷','五坂','五橋','五町','六本','六丁','六条','六丸','六崎','六浦','六野','六原','六島','六山','六川','六谷','六坂','六橋','六町','七本','七丁','七条','七丸','七崎','七浦','七野','七原','七島','七山','七川','七谷','七坂','七橋','七町','八本','八丁','八条','八丸','八崎','八浦','八野','八原','八島','八山','八川','八谷','八橋','八町','九本','九丁','九条','九丸','九崎','九浦','九野','九原','九島','九山','九川','九谷','九坂','九橋','九町','十本','十丁','十条','十丸','十崎','十浦','十野','十原','十島','十山','十川','十谷','十坂','十橋','十町','百本','百丁','百条','百丸','百崎','百浦','百野','百原','百島','百山','百川','百谷','百坂','百橋','百町','千本','千丁','千条','千丸','千崎','千浦','千野','千原','千島','千山','千川','千谷','千坂','千橋','千町','明川','明山','明海','明野','明空','明光','明影','明風','明雲','明雨','明雪','明霜','明露','明霧','明炎','明冰','明土','明砂','明岩','暗川','暗山','暗海','暗野','暗空','暗光','暗影','暗風','暗雲','暗雨','暗雪','暗霜','暗露','暗霧','暗炎','暗冰','暗石','暗土','暗砂','暗岩','清山','清海','清野','清空','清光','清影','清風','清雲','清雨','清雪','清霜','清露','清霧','清炎','清冰','清石','清土','清砂','清岩','濁川','濁山','濁海','濁野','濁空','濁光','濁影','濁風','濁雲','濁雨','濁雪','濁霜','濁露','濁霧','濁炎','濁冰','濁石','濁土','濁砂','濁岩','深川','深山','深海','深野','深空','深光','深影','深風','深雲','深雨','深雪','深霜','深露','深霧','深炎','深冰','深石','深土','深砂','深岩','浅川','浅山','浅海','浅野','浅空','浅光','浅影','浅風','浅雲','浅雨','浅雪','浅霜','浅露','浅霧','浅炎','浅冰','浅石','浅土','浅砂','浅岩','広川','広山','広海','広野','広空','広光','広影','広風','広雲','広雨','広雪','広霜','広露','広霧','広炎','広冰','広石','広土','広砂','広岩','狭川','狭山','狭海','狭野','狭空','狭光','狭影','狭風','狭雲','狭雨','狭雪','狭霜','狭露','狭霧','狭炎','狭冰','狭石','狭土','狭砂','狭岩','高川','高海','高空','高光','高影','高風','高雲','高雨','高雪','高霜','高露','高霧','高炎','高冰','高石','高土','高砂','高岩','低川','低山','低海','低野','低空','低光','低影','低風','低雲','低雨','低雪','低霜','低露','低霧','低炎','低冰','低石','低土','低砂','低岩','長川','長山','長海','長空','長光','長影','長風','長雲','長雨','長雪','長霜','長露','長霧','長炎','長冰','長石','長土','長砂','長岩','短川','短山','短海','短野','短空','短光','短影','短風','短雲','短雨','短雪','短霜','短露','短霧','短炎','短冰','短石','短土','短砂','短岩','大海','大空','大光','大影','大風','大雲','大雨','大霜','大露','大霧','大炎','大冰','大石','大土','大砂','大岩','小海','小空','小光','小影','小風','小雲','小雨','小霜','小露','小霧','小炎','小冰','小石','小土','小砂','小岩','古海','古空','古光','古影','古風','古雲','古雨','古雪','古霜','古露','古霧','古炎','古冰','古石','古土','古砂','古岩','新海','新空','新光','新影','新風','新雲','新雨','新雪','新霜','新露','新霧','新炎','新冰','新石','新土','新砂','新岩','老川','老山','老海','老野','老空','老光','老影','老風','老雲','老雨','老雪','老霜','老露','老霧','老炎','老冰','老石','老土','老砂','老岩','若川','若山','若海','若野','若空','若光','若影','若風','若雲','若雨','若雪','若霜','若露','若霧','若炎','若冰','若石','若土','若砂','若岩','強川','強山','強海','強野','強空','強光','強影','強風','強雲','強雨','強雪','強霜','強露','強霧','強炎','強冰','強石','強土','強砂','強岩','弱川','弱山','弱海','弱野','弱空','弱光','弱影','弱風','弱雲','弱雨','弱雪','弱霜','弱露','弱霧','弱炎','弱冰','弱石','弱土','弱砂','弱岩','神宮','神殿','神院','神堂','神門','神塔','神橋','神道','神路','神坂','神丘','神浦','神岬','神峰','神谷','神沢','神森','神林','神原','仏宮','仏殿','仏院','仏堂','仏門','仏塔','仏橋','仏道','仏路','仏坂','仏丘','仏浦','仏崎','仏岬','仏峰','仏谷','仏沢','仏森','仏林','仏原','龍宮','龍殿','龍院','龍堂','龍門','龍塔','龍橋','龍道','龍路','龍坂','龍丘','龍浦','龍崎','龍岬','龍峰','龍谷','龍沢','龍森','龍林','龍原','鳳宮','鳳殿','鳳院','鳳堂','鳳門','鳳塔','鳳橋','鳳道','鳳路','鳳坂','鳳丘','鳳浦','鳳崎','鳳岬','鳳峰','鳳谷','鳳沢','鳳森','鳳林','鳳原','虎宮','虎殿','虎院','虎堂','虎門','虎塔','虎橋','虎道','虎路','虎坂','虎丘','虎浦','虎崎','虎岬','虎峰','虎谷','虎沢','虎森','虎林','虎原','鷹宮','鷹殿','鷹院','鷹堂','鷹門','鷹塔','鷹橋','鷹道','鷹路','鷹坂','鷹丘','鷹浦','鷹崎','鷹岬','中国','アメリカ','インド','ロシア','ブラジル','ドイツ','イギリス','フランス','イタリア','カナダ','オーストラリア','スペイン','メキシコ','インドネシア','オランダ','サウジアラビア','トルコ','スイス','スウェーデン','ベルギー','アルゼンチン','ノルウェー','オーストリア','アラブ首長国','イスラエル','シンガポール','香港','台湾','タイ','マレーシア','フィリピン','ベトナム','パキスタン','バングラデシュ','エジプト','ナイジェリア','南アフリカ','ケニア','エチオピア','モロッコ','アルジェリア','イラン','イラク','シリア','ヨルダン','クウェート','カタール','オマーン','イエメン','アフガニスタン','スリランカ','ネパール','ミャンマー','カンボジア','モンゴル','カザフスタン','ウズベキスタン','ウクライナ','ポーランド','チェコ','ハンガリー','ルーマニア','ギリシャ','ポルトガル','フィンランド','デンマーク','アイルランド','ニュージーランド','チリ','コロンビア','ペルー','ベネズエラ','キューバ','タンザニア','ガーナ','ルワンダ','アンゴラ','ジンバブエ','ナミビア','モザンビーク','マダガスカル','カメルーン','コンゴ','セネガル','北京','ワシントン','ニューデリー','モスクワ','ブラジリア','ベルリン','ロンドン','パリ','ローマ','オタワ','ソウル','キャンベラ','マドリード','メキシコシティ','ジャカルタ','アムステルダム','リヤド','アンカラ','ベルン','ワルシャワ','ストックホルム','ブリュッセル','ブエノスアイレス','オスロ','ウィーン','アブダビ','エルサレム','台北','バンコク','クアラルンプール','マニラ','ハノイ','イスラマバード','ダッカ','カイロ','ナイロビ','アディスアベバ','テヘラン','バグダッド','ダマスカス','アンマン','ドーハ','マスカット','カブール','コロンボ','カトマンズ','ウランバートル','タシュケント','キエフ','プラハ','ブダペスト','アテネ','リスボン','ヘルシンキ','ダブリン','ウェリントン','サンティアゴ','ボゴタ','リマ','ハバナ','キガリ','ルアンダ','広東','浙江','江蘇','山東','河南','湖北','湖南','河北','福建','遼寧','黒龍江','吉林','安徽','江西','山西','陝西','雲南','貴州','広西','内モンゴル','チベット','新疆','甘粛','寧夏','海南','マカオ','カリフォルニア','テキサス','フロリダ','イリノイ','ペンシルベニア','オハイオ','ジョージア','ミシガン','シベリア','ウラル','コーカサス','マハーラーシュトラ','ウッタル・プラデーシュ','タミル・ナードゥ','カルナータカ','西ベンガル','サンパウロ州','リオデジャネイロ州','ミナスジェライス','バイーア','パラナ','上海','広州','深セン','成都','武漢','西安','杭州','南京','蘇州','青島','大連','厦門','昆明','ハルビン','鄭州','済南','長沙','瀋陽','ニューヨーク','ロサンゼルス','シカゴ','ヒューストン','ダラス','フィラデルフィア','トロント','バンクーバー','モントリオール','マンチェスター','エジンバラ','マルセイユ','リヨン','ボルドー','ハンブルク','ミュンヘン','フランクフルト','ミラノ','ナポリ','フィレンツェ','ベネチア','バルセロナ','チューリッヒ','ジュネーブ','サンクトペテルブルク','ノボシビルスク','ムンバイ','バンガロール','ハイデラバード','チェンナイ','コルカタ','ジャイプル','釜山','シドニー','メルボルン','サンパウロ','リオデジャネイロ','カサブランカ','ドバイ','イスタンブール','カラチ','ラゴス','ヨハネスブルク','ホーチミン','ヤンゴン','地名0275','地名0276','地名0277','地名0278','地名0279','地名0280','地名0281','地名0282','地名0283','地名0284','地名0285','地名0286','地名0287','地名0288','地名0289','地名0290','地名0291','地名0292','地名0293','地名0294','地名0295','地名0296','地名0297','地名0298','地名0299','地名0300','地名0301','地名0302','地名0303','地名0304','地名0305','地名0306','地名0307','地名0308','地名0309','地名0310','地名0311','地名0312','地名0313','地名0314','地名0315','地名0316','地名0317','地名0318','地名0319','地名0320','地名0321','地名0322','地名0323','地名0324','地名0325','地名0326','地名0327','地名0328','地名0329','地名0330','地名0331','地名0332','地名0333','地名0334','地名0335','地名0336','地名0337','地名0338','地名0339','地名0340','地名0341','地名0342','地名0343','地名0344','地名0345','地名0346','地名0347','地名0348','地名0349','地名0350','地名0351','地名0352','地名0353','地名0354','地名0355','地名0356','地名0357','地名0358','地名0359','地名0360','地名0361','地名0362','地名0363','地名0364','地名0365','地名0366','地名0367','地名0368','地名0369','地名0370','地名0371','地名0372','地名0373','地名0374','地名0375','地名0376','地名0377','地名0378','地名0379','地名0380','地名0381','地名0382','地名0383','地名0384','地名0385','地名0386','地名0387','地名0388','地名0389','地名0390','地名0391','地名0392','地名0393','地名0394','地名0395','地名0396','地名0397','地名0398','地名0399','地名0400','地名0401','地名0402','地名0403','地名0404','地名0405','地名0406','地名0407','地名0408','地名0409','地名0410','地名0411','地名0412','地名0413','地名0414','地名0415','地名0416','地名0417','地名0418','地名0419','地名0420','地名0421','地名0422','地名0423','地名0424','地名0425','地名0426','地名0427','地名0428','地名0429','地名0430','地名0431','地名0432','地名0433','地名0434','地名0435','地名0436','地名0437','地名0438','地名0439','地名0440','地名0441','地名0442','地名0443','地名0444','地名0445','地名0446','地名0447','地名0448','地名0449','地名0450','地名0451','地名0452','地名0453','地名0454','地名0455','地名0456','地名0457','地名0458','地名0459','地名0460','地名0461','地名0462','地名0463','地名0464','地名0465','地名0466','地名0467','地名0468','地名0469','地名0470','地名0471','地名0472','地名0473','地名0474','地名0475','地名0476','地名0477','地名0478','地名0479','地名0480','地名0481','地名0482','地名0483','地名0484','地名0485','地名0486','地名0487','地名0488','地名0489','地名0490','地名0491','地名0492','地名0493','地名0494','地名0495','地名0496','地名0497','地名0498','地名0499','地名0500','地名0501','地名0502','地名0503','地名0504','地名0505','地名0506','地名0507','地名0508','地名0509','地名0510','地名0511','地名0512','地名0513','地名0514','地名0515','地名0516','地名0517','地名0518','地名0519','地名0520','地名0521','地名0522','地名0523','地名0524','地名0525','地名0526','地名0527','地名0528','地名0529','地名0530','地名0531','地名0532','地名0533','地名0534','地名0535','地名0536','地名0537','地名0538','地名0539','地名0540','地名0541','地名0542','地名0543','地名0544','地名0545','地名0546','地名0547','地名0548','地名0549','地名0550','地名0551','地名0552','地名0553','地名0554','地名0555','地名0556','地名0557','地名0558','地名0559','地名0560','地名0561','地名0562','地名0563','地名0564','地名0565','地名0566','地名0567','地名0568','地名0569','地名0570','地名0571','地名0572','地名0573','地名0574','地名0575','地名0576','地名0577','地名0578','地名0579','地名0580','地名0581','地名0582','地名0583','地名0584','地名0585','地名0586','地名0587','地名0588','地名0589','地名0590','地名0591','地名0592','地名0593','地名0594','地名0595','地名0596','地名0597','地名0598','地名0599','地名0600','地名0601','地名0602','地名0603','地名0604','地名0605','地名0606','地名0607','地名0608','地名0609','地名0610','地名0611','地名0612','地名0613','地名0614','地名0615','地名0616','地名0617','地名0618','地名0619','地名0620','地名0621','地名0622','地名0623','地名0624','地名0625','地名0626','地名0627','地名0628','地名0629','地名0630','地名0631','地名0632','地名0633','地名0634','地名0635','地名0636','地名0637','地名0638','地名0639','地名0640','地名0641','地名0642','地名0643','地名0644','地名0645','地名0646','地名0647','地名0648','地名0649','地名0650','地名0651','地名0652','地名0653','地名0654','地名0655','地名0656','地名0657','地名0658','地名0659','地名0660','地名0661','地名0662','地名0663','地名0664','地名0665','地名0666','地名0667','地名0668','地名0669','地名0670','地名0671','地名0672','地名0673','地名0674','地名0675','地名0676','地名0677','地名0678','地名0679','地名0680','地名0681','地名0682','地名0683','地名0684','地名0685','地名0686','地名0687','地名0688','地名0689','地名0690','地名0691','地名0692','地名0693','地名0694','地名0695','地名0696','地名0697','地名0698','地名0699','地名0700','地名0701','地名0702','地名0703','地名0704','地名0705','地名0706','地名0707','地名0708','地名0709','地名0710','地名0711','地名0712','地名0713','地名0714','地名0715','地名0716','地名0717','地名0718','地名0719','地名0720','地名0721','地名0722','地名0723','地名0724','地名0725','地名0726','地名0727','地名0728','地名0729','地名0730','地名0731','地名0732','地名0733','地名0734','地名0735','地名0736','地名0737','地名0738','地名0739','地名0740','地名0741','地名0742','地名0743','地名0744','地名0745','地名0746','地名0747','地名0748','地名0749','地名0750','地名0751','地名0752','地名0753','地名0754','地名0755','地名0756','地名0757','地名0758','地名0759','地名0760','地名0761','地名0762','地名0763','地名0764','地名0765','地名0766','地名0767','地名0768','地名0769','地名0770','地名0771','地名0772','地名0773','地名0774','地名0775','地名0776','地名0777','地名0778','地名0779','地名0780','地名0781','地名0782','地名0783','地名0784','地名0785','地名0786','地名0787','地名0788','地名0789','地名0790','地名0791','地名0792','地名0793','地名0794','地名0795','地名0796','地名0797','地名0798','地名0799','地名0800','地名0801','地名0802','地名0803','地名0804','地名0805','地名0806','地名0807','地名0808','地名0809','地名0810','地名0811','地名0812','地名0813','地名0814','地名0815','地名0816','地名0817','地名0818','地名0819','地名0820','地名0821','地名0822','地名0823','地名0824','地名0825','地名0826','地名0827','地名0828','地名0829','地名0830','地名0831','地名0832','地名0833','地名0834','地名0835','地名0836','地名0837','地名0838','地名0839','地名0840','地名0841','地名0842','地名0843','地名0844','地名0845','地名0846','地名0847','地名0848','地名0849','地名0850','地名0851','地名0852','地名0853','地名0854','地名0855','地名0856','地名0857','地名0858','地名0859','地名0860','地名0861','地名0862','地名0863','地名0864','地名0865','地名0866','地名0867','地名0868','地名0869','地名0870','地名0871','地名0872','地名0873','地名0874','地名0875','地名0876','地名0877','地名0878','地名0879','地名0880','地名0881','地名0882','地名0883','地名0884','地名0885','地名0886','地名0887','地名0888','地名0889','地名0890','地名0891','地名0892','地名0893','地名0894','地名0895','地名0896','地名0897','地名0898','地名0899','地名0900','地名0901','地名0902','地名0903','地名0904','地名0905','地名0906','地名0907','地名0908','地名0909','地名0910','地名0911','地名0912','地名0913','地名0914','地名0915','地名0916','地名0917','地名0918','地名0919','地名0920','地名0921','地名0922','地名0923','地名0924','地名0925','地名0926','地名0927','地名0928','地名0929','地名0930','地名0931','地名0932','地名0933','地名0934','地名0935','地名0936','地名0937','地名0938','地名0939','地名0940','地名0941','地名0942','地名0943','地名0944','地名0945','地名0946','地名0947','地名0948','地名0949','地名0950','地名0951','地名0952','地名0953','地名0954','地名0955','地名0956','地名0957','地名0958','地名0959','地名0960','地名0961','地名0962','地名0963','地名0964','地名0965','地名0966','地名0967','地名0968','地名0969','地名0970','地名0971','地名0972','地名0973','地名0974','地名0975','地名0976','地名0977','地名0978','地名0979','地名0980','地名0981','地名0982','地名0983','地名0984','地名0985','地名0986','地名0987','地名0988','地名0989','地名0990','地名0991','地名0992','地名0993','地名0994','地名0995','地名0996','地名0997','地名0998','地名0999','地名1000','地名1001','地名1002','地名1003','地名1004','地名1005','地名1006','地名1007','地名1008','地名1009','地名1010','地名1011','地名1012','地名1013','地名1014','地名1015','地名1016','地名1017','地名1018','地名1019','地名1020','地名1021','地名1022','地名1023','地名1024','地名1025','地名1026','地名1027','地名1028','地名1029','地名1030','地名1031','地名1032','地名1033','地名1034','地名1035','地名1036','地名1037','地名1038','地名1039','地名1040','地名1041','地名1042','地名1043','地名1044','地名1045','地名1046','地名1047','地名1048','地名1049','地名1050','地名1051','地名1052','地名1053','地名1054','地名1055','地名1056','地名1057','地名1058','地名1059','地名1060','地名1061','地名1062','地名1063','地名1064','地名1065','地名1066','地名1067','地名1068','地名1069','地名1070','地名1071','地名1072','地名1073','地名1074','地名1075','地名1076','地名1077','地名1078','地名1079','地名1080','地名1081','地名1082','地名1083','地名1084','地名1085','地名1086','地名1087','地名1088','地名1089','地名1090','地名1091','地名1092','地名1093','地名1094','地名1095','地名1096','地名1097','地名1098','地名1099','地名1100','地名1101','地名1102','地名1103','地名1104','地名1105','地名1106','地名1107','地名1108','地名1109','地名1110','地名1111','地名1112','地名1113','地名1114','地名1115','地名1116','地名1117','地名1118','地名1119','地名1120','地名1121','地名1122','地名1123','地名1124','地名1125','地名1126','地名1127','地名1128','地名1129','地名1130','地名1131','地名1132','地名1133','地名1134','地名1135','地名1136','地名1137','地名1138','地名1139','地名1140','地名1141','地名1142','地名1143','地名1144','地名1145','地名1146','地名1147','地名1148','地名1149','地名1150','地名1151','地名1152','地名1153','地名1154','地名1155','地名1156','地名1157','地名1158','地名1159','地名1160','地名1161','地名1162','地名1163','地名1164','地名1165','地名1166','地名1167','地名1168','地名1169','地名1170','地名1171','地名1172','地名1173','地名1174','地名1175','地名1176','地名1177','地名1178','地名1179','地名1180','地名1181','地名1182','地名1183','地名1184','地名1185','地名1186','地名1187','地名1188','地名1189','地名1190','地名1191','地名1192','地名1193','地名1194','地名1195','地名1196','地名1197','地名1198','地名1199','地名1200','地名1201','地名1202','地名1203','地名1204','地名1205','地名1206','地名1207','地名1208','地名1209','地名1210','地名1211','地名1212','地名1213','地名1214','地名1215','地名1216','地名1217','地名1218','地名1219','地名1220','地名1221','地名1222','地名1223','地名1224','地名1225','地名1226','地名1227','地名1228','地名1229','地名1230','地名1231','地名1232','地名1233','地名1234','地名1235','地名1236','地名1237','地名1238','地名1239','地名1240','地名1241','地名1242','地名1243','地名1244','地名1245','地名1246','地名1247','地名1248','地名1249','地名1250','地名1251','地名1252','地名1253','地名1254','地名1255','地名1256','地名1257','地名1258','地名1259','地名1260','地名1261','地名1262','地名1263','地名1264','地名1265','地名1266','地名1267','地名1268','地名1269','地名1270','地名1271','地名1272','地名1273','地名1274','地名1275','地名1276','地名1277','地名1278','地名1279','地名1280','地名1281','地名1282','地名1283','地名1284','地名1285','地名1286','地名1287','地名1288','地名1289','地名1290','地名1291','地名1292','地名1293','地名1294','地名1295','地名1296','地名1297','地名1298','地名1299','地名1300','地名1301','地名1302','地名1303','地名1304','地名1305','地名1306','地名1307','地名1308','地名1309','地名1310','地名1311','地名1312','地名1313','地名1314','地名1315','地名1316','地名1317','地名1318','地名1319','地名1320','地名1321','地名1322','地名1323','地名1324','地名1325','地名1326','地名1327','地名1328','地名1329','地名1330','地名1331','地名1332','地名1333','地名1334','地名1335','地名1336','地名1337','地名1338','地名1339','地名1340','地名1341','地名1342','地名1343','地名1344','地名1345','地名1346','地名1347','地名1348','地名1349','地名1350','地名1351','地名1352','地名1353','地名1354','地名1355','地名1356','地名1357','地名1358','地名1359','地名1360','地名1361','地名1362','地名1363','地名1364','地名1365','地名1366','地名1367','地名1368','地名1369','地名1370','地名1371','地名1372','地名1373','地名1374','地名1375','地名1376','地名1377','地名1378','地名1379','地名1380','地名1381','地名1382','地名1383','地名1384','地名1385','地名1386','地名1387','地名1388','地名1389','地名1390','地名1391','地名1392','地名1393','地名1394','地名1395','地名1396','地名1397','地名1398','地名1399','地名1400','地名1401','地名1402','地名1403','地名1404','地名1405','地名1406','地名1407','地名1408','地名1409','地名1410','地名1411','地名1412','地名1413','地名1414','地名1415','地名1416','地名1417','地名1418','地名1419','地名1420','地名1421','地名1422','地名1423','地名1424','地名1425','地名1426','地名1427','地名1428','地名1429','地名1430','地名1431','地名1432','地名1433','地名1434','地名1435','地名1436','地名1437','地名1438','地名1439','地名1440','地名1441','地名1442','地名1443','地名1444','地名1445','地名1446','地名1447','地名1448','地名1449','地名1450','地名1451','地名1452','地名1453','地名1454','地名1455','地名1456','地名1457','地名1458','地名1459','地名1460','地名1461','地名1462','地名1463','地名1464','地名1465','地名1466','地名1467','地名1468','地名1469','地名1470','地名1471','地名1472','地名1473','地名1474','地名1475','地名1476','地名1477','地名1478','地名1479','地名1480','地名1481','地名1482','地名1483','地名1484','地名1485','地名1486','地名1487','地名1488','地名1489','地名1490','地名1491','地名1492','地名1493','地名1494','地名1495','地名1496','地名1497','地名1498','地名1499','地名1500','地名1501','地名1502','地名1503','地名1504','地名1505','地名1506','地名1507','地名1508','地名1509','地名1510','地名1511','地名1512','地名1513','地名1514','地名1515','地名1516','地名1517','地名1518','地名1519','地名1520','地名1521','地名1522','地名1523','地名1524','地名1525','地名1526','地名1527','地名1528','地名1529','地名1530','地名1531','地名1532','地名1533','地名1534','地名1535','地名1536','地名1537','地名1538','地名1539','地名1540','地名1541','地名1542','地名1543','地名1544','地名1545','地名1546','地名1547','地名1548','地名1549','地名1550','地名1551','地名1552','地名1553','地名1554','地名1555','地名1556','地名1557','地名1558','地名1559','地名1560','地名1561','地名1562','地名1563','地名1564','地名1565','地名1566','地名1567','地名1568','地名1569','地名1570','地名1571','地名1572','地名1573','地名1574','地名1575','地名1576','地名1577','地名1578','地名1579','地名1580','地名1581','地名1582','地名1583','地名1584','地名1585','地名1586','地名1587','地名1588','地名1589','地名1590','地名1591','地名1592','地名1593','地名1594','地名1595','地名1596','地名1597','地名1598','地名1599','地名1600','地名1601','地名1602','地名1603','地名1604','地名1605','地名1606','地名1607','地名1608','地名1609','地名1610','地名1611','地名1612','地名1613','地名1614','地名1615','地名1616','地名1617','地名1618','地名1619','地名1620','地名1621','地名1622','地名1623','地名1624','地名1625','地名1626','地名1627','地名1628','地名1629','地名1630','地名1631','地名1632','地名1633','地名1634','地名1635','地名1636','地名1637','地名1638','地名1639','地名1640','地名1641','地名1642','地名1643','地名1644','地名1645','地名1646','地名1647','地名1648','地名1649','地名1650','地名1651','地名1652','地名1653','地名1654','地名1655','地名1656','地名1657','地名1658','地名1659','地名1660','地名1661','地名1662','地名1663','地名1664','地名1665','地名1666','地名1667','地名1668','地名1669','地名1670','地名1671','地名1672','地名1673','地名1674','地名1675','地名1676','地名1677','地名1678','地名1679','地名1680','地名1681','地名1682','地名1683','地名1684','地名1685','地名1686','地名1687','地名1688','地名1689','地名1690','地名1691','地名1692','地名1693','地名1694','地名1695','地名1696','地名1697','地名1698','地名1699','地名1700','地名1701','地名1702','地名1703','地名1704','地名1705','地名1706','地名1707','地名1708','地名1709','地名1710','地名1711','地名1712','地名1713','地名1714','地名1715','地名1716','地名1717','地名1718','地名1719','地名1720','地名1721','地名1722','地名1723','地名1724','地名1725','地名1726','地名1727','地名1728','地名1729','地名1730','地名1731','地名1732','地名1733','地名1734','地名1735','地名1736','地名1737','地名1738','地名1739','地名1740','地名1741','地名1742','地名1743','地名1744','地名1745','地名1746','地名1747','地名1748','地名1749','地名1750','地名1751','地名1752','地名1753','地名1754','地名1755','地名1756','地名1757','地名1758','地名1759','地名1760','地名1761','地名1762','地名1763','地名1764','地名1765','地名1766','地名1767','地名1768','地名1769','地名1770','地名1771','地名1772','地名1773','地名1774','地名1775','地名1776','地名1777','地名1778','地名1779','地名1780','地名1781','地名1782','地名1783','地名1784','地名1785','地名1786','地名1787','地名1788','地名1789','地名1790','地名1791','地名1792','地名1793','地名1794','地名1795','地名1796','地名1797','地名1798','地名1799','地名1800','地名1801','地名1802','地名1803','地名1804','地名1805','地名1806','地名1807','地名1808','地名1809','地名1810','地名1811','地名1812','地名1813','地名1814','地名1815','地名1816','地名1817','地名1818','地名1819','地名1820','地名1821','地名1822','地名1823','地名1824','地名1825','地名1826','地名1827','地名1828','地名1829','地名1830','地名1831','地名1832','地名1833','地名1834','地名1835','地名1836','地名1837','地名1838','地名1839','地名1840','地名1841','地名1842','地名1843','地名1844','地名1845','地名1846','地名1847','地名1848','地名1849','地名1850','地名1851','地名1852','地名1853','地名1854','地名1855','地名1856','地名1857','地名1858','地名1859','地名1860','地名1861','地名1862','地名1863','地名1864','地名1865','地名1866','地名1867','地名1868','地名1869','地名1870','地名1871','地名1872','地名1873','地名1874','地名1875','地名1876','地名1877','地名1878','地名1879','地名1880','地名1881','地名1882','地名1883','地名1884','地名1885','地名1886','地名1887','地名1888','地名1889','地名1890','地名1891','地名1892','地名1893','地名1894','地名1895','地名1896','地名1897','地名1898','地名1899','地名1900','地名1901','地名1902','地名1903','地名1904','地名1905','地名1906','地名1907','地名1908','地名1909','地名1910','地名1911','地名1912','地名1913','地名1914','地名1915','地名1916','地名1917','地名1918','地名1919','地名1920','地名1921','地名1922','地名1923','地名1924','地名1925','地名1926','地名1927','地名1928','地名1929','地名1930','地名1931','地名1932','地名1933','地名1934','地名1935','地名1936','地名1937','地名1938','地名1939','地名1940','地名1941','地名1942','地名1943','地名1944','地名1945','地名1946','地名1947','地名1948','地名1949','地名1950','地名1951','地名1952','地名1953','地名1954','地名1955','地名1956','地名1957','地名1958','地名1959','地名1960','地名1961','地名1962','地名1963','地名1964','地名1965','地名1966','地名1967','地名1968','地名1969','地名1970','地名1971','地名1972','地名1973','地名1974','地名1975','地名1976','地名1977','地名1978','地名1979','地名1980','地名1981','地名1982','地名1983','地名1984','地名1985','地名1986','地名1987','地名1988','地名1989','地名1990','地名1991','地名1992','地名1993','地名1994','地名1995','地名1996','地名1997','地名1998','地名1999','地名2000','地名2001','地名2002','地名2003','地名2004','地名2005','地名2006','地名2007','地名2008','地名2009','地名2010','地名2011','地名2012','地名2013','地名2014','地名2015','地名2016','地名2017','地名2018','地名2019','地名2020','地名2021','地名2022','地名2023','地名2024','地名2025','地名2026','地名2027','地名2028','地名2029','地名2030','地名2031','地名2032','地名2033','地名2034','地名2035','地名2036','地名2037','地名2038','地名2039','地名2040','地名2041','地名2042','地名2043','地名2044','地名2045','地名2046','地名2047','地名2048'],
@@ -374,7 +379,7 @@ var SAMPLE_KEYS = {
 };
 
 // 英文用户用公链地址，其他用母语诗句地址
-var ADDR_SAMPLES = {
+const ADDR_SAMPLES = {
   zh:{main:'龙凤虎 · 举头望明月', num:'3829461'},
   en:{main:'TQn4Hj8mKx3fR7vL2pN9', num:'(公链地址)'},
   ja:{main:'桜富士 · 古池や蛙飛び', num:'3829461'},
@@ -404,20 +409,20 @@ var ADDR_SAMPLES = {
   ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
 };
 
-var CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--'
+const CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--'
 // 如果有真实钱包，使用真实 TRX 地址
 ;
 // ETH/BTC 地址动态读取（不用 const 硬编码）
 function getEthAddr() { return (REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : '--'; }
 function getBtcAddr() { return (REAL_WALLET && REAL_WALLET.btcAddress) ? REAL_WALLET.btcAddress : '--'; }
-var ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
+const ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
 
-var currentLang = detectDeviceLang();
-// MAIN_PAGES in globals.js
-var TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
+let currentLang = detectDeviceLang();
+const MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
+const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
 
-var WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
-var WW_PAGE_SEO = {
+const WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
+const WW_PAGE_SEO = {
   'page-welcome': { title: '欢迎 — WorldToken 多语言钱包', description: '创建或导入钱包：万语地址与多链资产管理。' },
   'page-create': { title: '创建钱包 — WorldToken', description: '生成 BIP39 助记词，派生 TRX、ETH、BTC 地址。' },
   'page-key': { title: '备份助记词 — WorldToken', description: '请安全抄写并离线保存助记词，勿截图或上传网络。' },
@@ -628,11 +633,11 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) {}
   applySeoForPage(pageId);
-  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   const activePage=document.getElementById(pageId);
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
-  activePage.style.display='flex';
+  activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
     var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen;
@@ -643,7 +648,7 @@ function goTo(pageId, opts) {
       var _sel = document.getElementById('mnemonicLength');
       if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
       showWalletLoading();
-      applyCreateWalletToTemp(12).then(function() {
+      generateTempWallet(12).then(function() {
         hideWalletLoading();
         if (typeof renderKeyGrid === 'function') renderKeyGrid();
       }).catch(function(e) {
@@ -839,7 +844,7 @@ function renderKeyGrid() {
   let words;
   const isEn = currentLang === 'en';
   const tw = window.TEMP_WALLET;
-  const enMnemonic = tw && tw.mnemonic;
+  const enMnemonic = tw && tw.enMnemonic;
   if (!enMnemonic) {
     goTo('page-create');
     return;
@@ -847,8 +852,14 @@ function renderKeyGrid() {
   const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
   if (isEn) {
     words = enWords;
+    if (tw) tw.words = words;
   } else {
     words = enWordsToLangKeyTableWords(enWords, currentLang);
+    if (tw) {
+      tw.displayLang = currentLang;
+      tw.displayWords = words;
+      tw.words = words;
+    }
   }
   try {
     // 只更新警告文字，不覆盖用户选择的词数
@@ -881,6 +892,9 @@ function renderKeyGrid() {
     d.innerHTML=`<div class="word-num">${String(i+1).padStart(2,'0')}</div><div class="word-val" style="font-size:${isSmall?'11px':'13px'}">${w}</div>`;
     grid.appendChild(d);
   });
+  if (tw) {
+    tw.words = words.slice();
+  }
   if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
 }
 
@@ -929,11 +943,8 @@ function updateHomeBackupBanner() {
 function getMnemonicStrengthDisplay() {
   var n = 12;
   // 密钥页以 TEMP_WALLET 词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
-  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
-    var wct = window.TEMP_WALLET.wordCount;
-    if (![12, 15, 18, 21, 24].includes(wct)) {
-      wct = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean).length;
-    }
+  if (window.TEMP_WALLET && window.TEMP_WALLET.enMnemonic) {
+    var wct = window.TEMP_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
     if ([12, 15, 18, 21, 24].includes(wct)) n = wct;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
@@ -955,8 +966,8 @@ function updateMnemonicStrengthIndicator() {
   elLevel.textContent = d.level;
 }
 
-var currentQRChain = 'native';
-var QR_CHAIN_DATA = {
+let currentQRChain = 'native';
+const QR_CHAIN_DATA = {
   native: { label:'万语地址', color:'var(--gold)' },
   trx: { label:'TRX 公链地址', color:'#ff9a9a' },
   eth: { label:'ETH 公链地址', color:'#aaaaff' },
@@ -993,10 +1004,16 @@ function updateQRDisplay() {
 // KEYWORDS_ZH 已迁移到 KW_ZH
 // KEYWORDS_EN 已迁移到 KW_EN
 // Must not reference KW_ZH here — const KW_ZH is declared later (TDZ).
-var currentKeyword = '举头望明月';
+let currentKeyword = '举头望明月';
 
 function claimHongbao() {
   submitClaim(); // 调用真实领取
+}
+
+function copyKeyword() {
+  navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
+  const btn = event?.target?.closest('div');
+  if(btn) { const old = btn.textContent; btn.textContent = '✅ 已复制'; setTimeout(()=>btn.textContent=old, 1500); }
 }
 
 function parseAssetDisplayBalance(balId) {
@@ -1091,6 +1108,7 @@ async function loadTrxResource() {
   }
 }
 
+
 function wwGetIdleLockMinutes() {
   try {
     var v = localStorage.getItem('ww_lock_idle_min');
@@ -1135,9 +1153,9 @@ function wwTickIdleLock() {
   }
 }
 
-var TRON_GRID = 'https://api.trongrid.io';
-var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-var ETH_RPC = 'https://eth.llamarpc.com';
+const TRON_GRID = 'https://api.trongrid.io';
+const USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+const ETH_RPC = 'https://eth.llamarpc.com';
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
@@ -1181,9 +1199,9 @@ async function broadcastRealTransfer() {
 }
 
 // ══ 转账系统 ══
-var transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
+let transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
 
-var WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
+const WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
 function getRecentTransferAddrs() {
   try {
     const raw = localStorage.getItem(WW_RECENT_ADDR_KEY);
@@ -1200,7 +1218,7 @@ function saveRecentTransferAddr(addr) {
   try { localStorage.setItem(WW_RECENT_ADDR_KEY, JSON.stringify(list)); } catch(e) {}
 }
 
-var WW_CONTACTS_KEY = 'ww_transfer_contacts';
+const WW_CONTACTS_KEY = 'ww_transfer_contacts';
 function getTransferContacts() {
   try {
     const raw = localStorage.getItem(WW_CONTACTS_KEY);
@@ -1218,6 +1236,7 @@ function removeTransferContact(addr) {
   setTransferContacts(getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== t));
   renderTransferContactsList();
 }
+
 
 function renderTransferContactsList() {
   const box = document.getElementById('transferContactsList');
@@ -1293,7 +1312,7 @@ function transferSpeedHint(coinId, sp) {
   };
   return ((m[coinId] || m.usdt)[sp]) || m.usdt.normal;
 }
-var _wwTickerInterval = null;
+let _wwTickerInterval = null;
 async function refreshHomePriceTicker() {
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tron,tether&vs_currencies=usd');
@@ -1426,6 +1445,12 @@ function wwTransferWhitelistCheck(rawAddr) {
   } catch (e) { return true; }
 }
 
+var WW_DAO_PROPOSALS = [
+  { id: 'p1', title: '是否将默认滑点提示调整为 0.5%？', summary: '减少新手因滑点过小导致的失败交易（示意）。' },
+  { id: 'p2', title: '是否在设置中默认开启隐私模式？', summary: '首屏隐藏余额，需长按或 PIN 查看（示意）。' },
+  { id: 'p3', title: '是否增加 TRX Gas 不足时的弹窗提醒？', summary: '当 TRX 余额低于阈值时强提醒（示意）。' }
+];
+
 function computeWalletReputationScore() {
   var txs = (typeof window._wwTxHistoryCache !== 'undefined' && window._wwTxHistoryCache) ? window._wwTxHistoryCache : [];
   var nTx = Array.isArray(txs) ? Math.min(txs.length, 200) : 0;
@@ -1477,6 +1502,13 @@ function updateCrossChainSwapCompare() {
   if (best) best.textContent = amtIn > 0 ? better : '';
 }
 
+var WW_LENDING_MARKETS = [
+  { asset: 'USDT', chain: 'TRON', supplyApy: '3.8%', borrowApr: '5.2%', color: '#26a17b' },
+  { asset: 'USDC', chain: 'Ethereum', supplyApy: '4.1%', borrowApr: '5.9%', color: '#2775ca' },
+  { asset: 'ETH', chain: 'Ethereum', supplyApy: '2.4%', borrowApr: '3.6%', color: '#627eea' },
+  { asset: 'TRX', chain: 'TRON', supplyApy: '1.9%', borrowApr: '4.0%', color: '#ff0013' }
+];
+
 function wwOptionsSpotPrice(u) {
   var map = { ETH: 3200, BTC: 64000, TRX: 0.13 };
   return map[u] || 1;
@@ -1507,6 +1539,18 @@ function wwOptionsPopulate() {
 }
 
 var WW_YIELD_AGG_PROTOCOLS = ['Aave V3', 'Compound V3', 'Venus'];
+
+var WW_LAUNCHPAD_PROJECTS = [
+  { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 USDT', status: '即将开始' },
+  { name: 'TronBoost', chain: 'TRON', date: '2026-04-22', allocation: '2,000 TRX', status: '白名单' },
+  { name: 'MetaVault', chain: 'BSC', date: '2026-05-01', allocation: 'TBD', status: '筹备中' }
+];
+
+var WW_SOCIAL_LEADERBOARD_DEMO = [
+  { addr: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', label: 'AlphaVault', roi: 42.3, win: 68 },
+  { addr: 'TXYZopYRdj2D9XRtbG411XZZ3kMfsVk8Q6', label: 'TronWhale', roi: 28.1, win: 55 },
+  { addr: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', label: 'vitalik.eth', roi: 19.4, win: 52 }
+];
 
 function wwOnchainMessagingPopulate() {
   var el = document.getElementById('wwOnchainMsgPreview');
@@ -1767,7 +1811,7 @@ function closeTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.re
 function closeTransferConfirm() { _safeEl('transferConfirmOverlay').classList.remove('show'); }
 
 // ══ 多文化礼金系统 ══
-var GIFT_CULTURE = {
+const GIFT_CULTURE = {
   zh: { name:'礼物', icon:'🎁', color:'#cc2200', desc:'恭喜发财', festival:'春节·中秋·生日' },
   ja: { name:'お年玉', icon:'🎍', color:'#8b0000', desc:'新年おめでとう', festival:'お正月·お祝い' },
   ko: { name:'세뱃돈', icon:'🎎', color:'#9b0000', desc:'새해 복 많이 받으세요', festival:'설날·추석' },
@@ -1810,20 +1854,27 @@ function updateGiftUI() {
 }
 
 // ══ 礼物口令系统 ══
-var KW_ZH = ['举头望明月','春风得意马蹄','柳暗花明又一村','飞流直下三千尺','万紫千红总是春','轻舟已过万重山','千里江陵一日还','接天莲叶无穷碧','春色满园关不住','山重水复疑无路','白日依山尽黄河','烟花三月下扬州','孤帆远影碧空尽','不识庐山真面目','停车坐爱枫林晚','明月几时有把酒','相见时难别亦难','此情可待成追忆','衣带渐宽终不悔','山高月小水落石','但愿人长久千里','海上生明月天涯','春眠不觉晓处处','床前明月光疑是','独在异乡为异客','知否知否应是绿','天生我材必有用','长风破浪会有时','会当凌绝顶一览','青山遮不住毕竟'];
-var KW_EN = ['Fortune smiles today','Golden harvest comes','Every cloud silver lining','Stars align tonight','Lucky winds blow now'];
-var KW_JA = ['古池や蛙飛び込む','春の海終日のたり','菜の花や月は東に','五月雨を集めて早し','閑さや岩にしみ入る'];
-var KW_AR = ['الصبر مفتاح الفرج','نور وبركة وسعادة','خير وأمل وفرحة'];
-var KW_RU = ['Я помню чудное мгновенье','Белеет парус одинокой','Мороз и солнце день чудесный'];
-var KW_ES = ['Quien madruga Dios le ayuda','No hay mal que por bien no venga','A buen entendedor pocas palabras'];
-var KW_FR = ['La vie en rose toujours','Tout vient à point qui sait attendre','Mieux vaut tard que jamais'];
+const KW_ZH = ['举头望明月','春风得意马蹄','柳暗花明又一村','飞流直下三千尺','万紫千红总是春','轻舟已过万重山','千里江陵一日还','接天莲叶无穷碧','春色满园关不住','山重水复疑无路','白日依山尽黄河','烟花三月下扬州','孤帆远影碧空尽','不识庐山真面目','停车坐爱枫林晚','明月几时有把酒','相见时难别亦难','此情可待成追忆','衣带渐宽终不悔','山高月小水落石','但愿人长久千里','海上生明月天涯','春眠不觉晓处处','床前明月光疑是','独在异乡为异客','知否知否应是绿','天生我材必有用','长风破浪会有时','会当凌绝顶一览','青山遮不住毕竟'];
+const KW_EN = ['Fortune smiles today','Golden harvest comes','Every cloud silver lining','Stars align tonight','Lucky winds blow now'];
+const KW_JA = ['古池や蛙飛び込む','春の海終日のたり','菜の花や月は東に','五月雨を集めて早し','閑さや岩にしみ入る'];
+const KW_AR = ['الصبر مفتاح الفرج','نور وبركة وسعادة','خير وأمل وفرحة'];
+const KW_RU = ['Я помню чудное мгновенье','Белеет парус одинокой','Мороз и солнце день чудесный'];
+const KW_ES = ['Quien madruga Dios le ayuda','No hay mal que por bien no venga','A buen entendedor pocas palabras'];
+const KW_FR = ['La vie en rose toujours','Tout vient à point qui sait attendre','Mieux vaut tard que jamais'];
 
-var LANG_KW = {zh:KW_ZH,en:KW_EN,ja:KW_JA,ar:KW_AR,ru:KW_RU,es:KW_ES,fr:KW_FR};
+const LANG_KW = {zh:KW_ZH,en:KW_EN,ja:KW_JA,ar:KW_AR,ru:KW_RU,es:KW_ES,fr:KW_FR};
 
-var hbExpiry = 24;
-var hbType = 'normal';
+let hbExpiry = 24;
+let hbType = 'normal';
 
-var BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
+const BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
+
+function copyKw() {
+  navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
+  const btn = document.getElementById('copyKwBtn');
+  btn.querySelector('div:last-child').textContent = '✅ 已复制';
+  setTimeout(()=>{ btn.querySelector('div:last-child').textContent = '复制口令'; }, 2000);
+}
 
 function submitClaim() {
   const kw = document.getElementById('claimInput').value.trim();
@@ -1877,7 +1928,23 @@ function submitClaim() {
   goTo('page-claimed');
 }
 
-var hbCount = 5;
+let hbCount = 5;
+
+function changeCount(delta) {
+  hbCount = Math.max(1, Math.min(100, hbCount+delta));
+  document.getElementById('hbCountVal').textContent = hbCount;
+  (_safeEl('hbCountDisplay')||document.getElementById('hbCountVal')).textContent = hbCount+' 个';
+  updateHbPreview();
+}
+
+function chgCnt(delta) {
+  hbCount = Math.max(1, Math.min(20, hbCount + delta));
+  const el = document.getElementById('hbCountVal');
+  if(el) el.textContent = hbCount;
+  const label = document.getElementById('hbCountLabel');
+  if(label) label.textContent = hbCount + ' 个';
+  updateHbPreview();
+}
 
 function updateHbPreview() {
   const amount = parseFloat(document.getElementById('hbAmount')?.value)||0;
@@ -1887,8 +1954,8 @@ function updateHbPreview() {
   if(tl) tl.textContent = hbType==='lucky' ? '随机金额' : '每人金额';
 }
 
-var CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
-var currencyIdx = 0;
+const CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
+let currencyIdx = 0;
 
 function updateSettingsPage() {
   const info = LANG_INFO[currentLang]||{name:'中文'};
@@ -1977,7 +2044,7 @@ function requestPushPermissionOnFirstLaunch() {
 }
 
 // ══ 兑换系统 ══
-var COINS = [
+const COINS = [
   {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', bg:'rgba(38,161,123,0.15)', bal:0, price:1},
   {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
   {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
@@ -1985,9 +2052,9 @@ var COINS = [
   {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', bg:'rgba(255,215,0,0.12)', bal:0, price:312},
 ];
 
-var swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
-var swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
-var pickerTarget = 'from';
+let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
+let swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
+let pickerTarget = 'from';
 
 function renderSwapUI() {
   const f=swapFrom, t=swapTo;
@@ -2024,7 +2091,20 @@ function calcSwap() {
 }
 
 // 从 CoinGecko 拉实时价格
-var COIN_GECKO_IDS = { usdt:'tether', trx:'tron', eth:'ethereum', btc:'bitcoin', bnb:'binancecoin' };
+const COIN_GECKO_IDS = { usdt:'tether', trx:'tron', eth:'ethereum', btc:'bitcoin', bnb:'binancecoin' };
+async function loadSwapPrices() {
+  try {
+    const ids = ['tether','tron','ethereum','bitcoin','binancecoin'].join(',');
+    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+    const d = await r.json();
+    const priceMap = { usdt: d.tether?.usd||1, trx: d.tron?.usd||0.12, eth: d.ethereum?.usd||2500, btc: d.bitcoin?.usd||60000, bnb: d.binancecoin?.usd||400 };
+    // 更新 COINS 价格
+    COINS.forEach(coin => { if(priceMap[coin.id]) coin.price = priceMap[coin.id]; });
+    calcSwap();
+    try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc2) {}
+    console.log('兑换价格已更新');
+  } catch(e) { console.log('价格加载失败，使用默认'); }
+}
 
 function closeCoinPicker() { const _ovcoinPi2 = document.getElementById('coinPickerOverlay'); if(_ovcoinPi2) _ovcoinPi2.classList.remove('show'); }
 
@@ -2052,6 +2132,7 @@ function openDex() {
     window.open(`https://app.uniswap.org/swap?inputCurrency=${inToken}&outputCurrency=${outToken}`, '_blank');
   }
 }
+
 
 // ── 导入钱包 ──────────────────────────────────────────────────
 function initImportGrid(count) {
@@ -2086,123 +2167,10 @@ function syncImportPaste() {
   updateImportWordCount();
 }
 
-/** 粘贴区变化时同步格子行数与内容 */
-function syncImportGrid(text) {
-  const words = String(text || '').trim().split(/[\s,]+/).filter(Boolean);
-  const validLengths = [12, 15, 18, 21, 24];
-  var targetLen = 12;
-  if (validLengths.indexOf(words.length) >= 0) targetLen = words.length;
-  else if (words.length > 24) targetLen = 24;
-  else if (words.length > 0) {
-    var found = validLengths.find(function(l) { return l >= words.length; });
-    targetLen = found != null ? found : 24;
-  }
-  initImportGrid(targetLen);
-  for (var i = 0; i < targetLen; i++) {
-    var inp = document.getElementById('iw_' + i);
-    if (inp) inp.value = words[i] || '';
-  }
-  syncImportPaste();
-}
-
-/** 汇总导入区助记词字符串（空格规范化） */
-function getMnemonicFromImport() {
-  try { syncImportPaste(); } catch (e) {}
-  var paste = document.getElementById('importPaste');
-  var t = paste && paste.value ? paste.value.trim() : '';
-  if (!t) {
-    var words = [];
-    var len = importGridWordCount || 12;
-    for (var i = 0; i < len; i++) {
-      var inp = document.getElementById('iw_' + i);
-      if (inp && inp.value.trim()) words.push(inp.value.trim());
-    }
-    t = words.join(' ');
-  }
-  return t.replace(/\s+/g, ' ').trim();
-}
-
-/**
- * 导入钱包：使用 core/wallet.js 的 importWallet；成功写入 REAL_WALLET（仅公开地址）并加密保存（若已设 PIN）
- */
-async function doImportWallet() {
-  var errEl = document.getElementById('importError');
-  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
-  var mnemonicRaw = getMnemonicFromImport();
-  if (!mnemonicRaw) {
-    showToast('❌ 请输入助记词', 'error');
-    return;
-  }
-  showWalletLoading();
-  try {
-    var result = typeof importWallet === 'function' ? importWallet(mnemonicRaw) : null;
-    if (!result) {
-      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '助记词无效，请检查后重试'; }
-      showToast('❌ 助记词无效，请检查后重试', 'error');
-      return;
-    }
-    var pin = '';
-    try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
-    var pub = {
-      ethAddress: result.eth.address,
-      trxAddress: result.trx.address,
-      btcAddress: result.btc.address,
-      createdAt: result.createdAt,
-      hasEncrypted: !!pin,
-      backedUp: false
-    };
-    REAL_WALLET = pub;
-    window.REAL_WALLET = pub;
-    if (pin) {
-      var flatForStore = {
-        mnemonic: result.mnemonic,
-        enMnemonic: result.mnemonic,
-        words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
-        ethAddress: result.eth.address,
-        trxAddress: result.trx.address,
-        btcAddress: result.btc.address,
-        privateKey: result.eth.privateKey,
-        trxPrivateKey: result.trx.privateKey,
-        createdAt: result.createdAt,
-        backedUp: false
-      };
-      await saveWalletSecure(flatForStore, pin);
-    } else {
-      if (typeof _saveWalletPlainPublicOnly === 'function') {
-        _saveWalletPlainPublicOnly({
-          ethAddress: result.eth.address,
-          trxAddress: result.trx.address,
-          btcAddress: result.btc.address,
-          createdAt: result.createdAt,
-          backedUp: false
-        });
-      } else {
-        try {
-          localStorage.setItem('ww_wallet', JSON.stringify({
-            ethAddress: result.eth.address,
-            trxAddress: result.trx.address,
-            btcAddress: result.btc.address,
-            createdAt: result.createdAt,
-            backedUp: false
-          }));
-        } catch (e2) {}
-      }
-    }
-    try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
-    try { if (typeof updateAddr === 'function') updateAddr(); } catch (e4) {}
-    var tb = document.getElementById('tabBar');
-    if (tb) tb.style.display = 'flex';
-    setTimeout(function() { try { loadBalances(); } catch (e5) {} }, 500);
-    goTo('page-home');
-    showToast('✅ 钱包导入成功！', 'success');
-  } finally {
-    hideWalletLoading();
-  }
-}
-
 // ── 从导入格子获取助记词 ──────────────────────────────────────────
 
 // ── 二维码生成 ──────────────────────────────────────────────────
+
 
 // 更新二维码（当地址改变时调用）
 
@@ -2352,7 +2320,27 @@ function wwEstUsdForTransfer(amtNum) {
   } catch (e) { p = c.price || 1; }
   return Math.max(0, amtNum * (parseFloat(p) || 1));
 }
-
+function wwSpendGateBeforeConfirm(amtNum) {
+  var cfg = {};
+  try { cfg = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { cfg = {}; }
+  if (!cfg || !cfg.en) return true;
+  var d = new Date().toISOString().slice(0, 10);
+  if (cfg.day !== d) { cfg.day = d; cfg.usedUsd = 0; try { localStorage.setItem('ww_spend_limit_v1', JSON.stringify(cfg)); } catch (e2) {} }
+  var lim = parseFloat(cfg.dailyUsd) || 0;
+  if (!(lim > 0)) return true;
+  var est = wwEstUsdForTransfer(amtNum);
+  var used = parseFloat(cfg.usedUsd) || 0;
+  if (used + est <= lim + 1e-6) return true;
+  var pin = prompt('本笔约 $' + est.toFixed(2) + '，今日已累计约 $' + used.toFixed(2) + '，已超过每日限额 $' + lim.toFixed(2) + '。输入 6 位 PIN 以本次继续');
+  if (pin === null) return false;
+  var saved = '';
+  try { saved = localStorage.getItem('ww_pin') || ''; } catch (e3) { saved = ''; }
+  if (!saved || String(pin) !== saved) {
+    if (typeof showToast === 'function') showToast('PIN 不正确或未设置 PIN', 'error');
+    return false;
+  }
+  return true;
+}
 function wwRecordSpendAfterBroadcast(amtNum) {
   var cfg = {};
   try { cfg = JSON.parse(localStorage.getItem('ww_spend_limit_v1') || '{}'); } catch (e) { cfg = {}; }
@@ -2424,7 +2412,7 @@ function loadHbRecords() {
 }
 
 // ── 安全 getElementById（防止 null 导致崩溃）──────────────────────
-var _origGetEl = document.getElementById.bind(document);
+const _origGetEl = document.getElementById.bind(document);
 document.getElementById = function(id) {
   const el = _origGetEl(id);
   return el; // 返回真实元素或 null，调用处自行处理
@@ -2451,13 +2439,13 @@ function showToast(msg, type='info', duration=2500) {
 }
 
 // ── 余额查询 ──────────────────────────────────────────────────
-var priceCache = null;
-var priceCacheTime = 0;
+let priceCache = null;
+let priceCacheTime = 0;
 
 // ── 加密资讯 ──────────────────────────────────────────────────
-var newsLoading = false;
-var newsCache = null;
-var newsCacheTime = 0;
+let newsLoading = false;
+let newsCache = null;
+let newsCacheTime = 0;
 
 // 切换助记词词数：从熵重新生成全新 BIP39 助记词（不截断旧词），并立即刷新网格
 async function changeMnemonicLength(n) {
@@ -2473,7 +2461,7 @@ async function changeMnemonicLength(n) {
   // 重新生成指定词数的钱包
   showWalletLoading();
   try {
-    await applyCreateWalletToTemp(wordCount);
+    await generateTempWallet(wordCount);
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
   } catch(e) {
     if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
@@ -2482,47 +2470,40 @@ async function changeMnemonicLength(n) {
   }
 }
 
+
 // ── 助记词验证 ──────────────────────────────────────────────
 var verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  // 优先 TEMP_WALLET.mnemonic（密钥页仅内存助记词，展示词与 renderKeyGrid 一致）
+  // 优先 TEMP_WALLET.words（密钥页仅内存助记词）
   let words;
-  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
-    const enWords = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
-    if (enWords.length >= 12) {
-      words = currentLang === 'en'
-        ? enWords.slice()
-        : enWordsToLangKeyTableWords(enWords, currentLang);
-    }
-  }
-  if (!words || words.length < 12) {
-    if (REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
-      words = REAL_WALLET.words.slice();
+  if (window.TEMP_WALLET && window.TEMP_WALLET.words && window.TEMP_WALLET.words.length >= 12) {
+    words = window.TEMP_WALLET.words.slice();
+  } else if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
+    words = REAL_WALLET.words.slice();
+  } else {
+    // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
+    var nPick = 12;
+    if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
+      nPick = currentMnemonicLength;
     } else {
-      // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
-      var nPick = 12;
-      if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
-        nPick = currentMnemonicLength;
-      } else {
-        var _selV = document.getElementById('mnemonicLength');
-        if (_selV && _selV.value) {
-          var _pv = parseInt(_selV.value, 10);
-          if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
-        }
+      var _selV = document.getElementById('mnemonicLength');
+      if (_selV && _selV.value) {
+        var _pv = parseInt(_selV.value, 10);
+        if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
       }
-      const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
-      const indices = [];
-      while(indices.length < nPick) {
-        const idx = Math.floor(Math.random() * pool.length);
-        if(!indices.includes(idx)) indices.push(idx);
-      }
-      words = indices.map(i => pool[i]);
-      if(!REAL_WALLET) REAL_WALLET = {};
-      REAL_WALLET.words = words;
-      REAL_WALLET.mnemonic = words.join(' ');
-      saveWallet(REAL_WALLET);
     }
+    const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    const indices = [];
+    while(indices.length < nPick) {
+      const idx = Math.floor(Math.random() * pool.length);
+      if(!indices.includes(idx)) indices.push(idx);
+    }
+    words = indices.map(i => pool[i]);
+    if(!REAL_WALLET) REAL_WALLET = {};
+    REAL_WALLET.words = words;
+    REAL_WALLET.mnemonic = words.join(' ');
+    saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   
@@ -2586,6 +2567,7 @@ function checkVerify() {
     if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
   }
 }
+
 
 function _resumeWalletAfterUnlock() {
   // 解密敏感数据并临时注入 REAL_WALLET
@@ -2698,6 +2680,7 @@ function closePinUnlock() {
   if(ov) ov.classList.remove('show');
 }
 
+
 function openPinSettingsDialog() {
   const cur = localStorage.getItem('ww_pin') || '';
   const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
@@ -2726,7 +2709,7 @@ try {
   setInterval(function() { try { if (typeof wwRecurringTick === 'function') wwRecurringTick(); } catch(e) {} }, 60000);
   wwApplyIdleLockLabel();
 } catch(e) {}
-var lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
+const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
 try { var _ap0 = document.querySelector('.page.active'); applySeoForPage(_ap0 && _ap0.id ? _ap0.id : 'page-welcome'); applyOfflineState(); window.addEventListener('online', applyOfflineState); window.addEventListener('offline', applyOfflineState); } catch(e) {}
 try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } catch (e) {}
 
