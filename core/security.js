@@ -110,10 +110,19 @@ function loadWalletPublic() {
  */
 async function decryptWalletSensitive(pin) {
   try {
-    var d = Store.getWallet();
-    if (!d || !d.encrypted) return null;
-    var text = await decryptWithPin(d.encrypted, pin);
-    return JSON.parse(text);
+    var d = localStorage.getItem('ww_wallet');
+    if (!d) return null;
+    var parsed = JSON.parse(d);
+    if (!parsed.encrypted) return null;
+    var text = await decryptWithPin(parsed.encrypted, pin);
+    var obj = JSON.parse(text);
+    // 兼容新旧格式
+    return {
+      mnemonic: obj.mnemonic || obj.enMnemonic,
+      ethKey: obj.ethKey || obj.privateKey,
+      trxKey: obj.trxKey || obj.trxPrivateKey || obj.privateKey,
+      btcKey: obj.btcKey || ''
+    };
   } catch (e) {
     console.error('[decryptWalletSensitive]', e.message);
     return null;
