@@ -641,92 +641,45 @@
 
     <div class="page" id="page-swap">
       <div class="nav-bar">
-        <div class="nav-back"></div>
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">兑换</div>
         <div class="nav-right" onclick="goTo('page-swap-records')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
       </div>
-      <div class="swap-content">
+      <div class="swap-content" style="padding:16px 18px 24px">
 
-        <div class="swap-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span class="swap-label">从</span>
-            <span style="font-size:11px;color:var(--text-muted)">余额: <span id="swapFromBal">0</span> <span style="color:var(--gold);cursor:pointer" onclick="setSwapMax()">全部</span></span>
-          </div>
-          <div class="swap-row">
-            <div id="swapFromCoin" onclick="openCoinPicker('from')" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;flex-shrink:0;transition:all 0.2s">
-              <div id="swapFromIcon" style="width:30px;height:30px;border-radius:50%;background:rgba(38,161,123,0.15);display:flex;align-items:center;justify-content:center;font-size:16px">💚</div>
+        <div class="swap-card" style="margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">从</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:22px">💚</span>
               <div>
-                <div id="swapFromName" style="font-size:15px;font-weight:700;color:var(--text)">USDT</div>
-                <div id="swapFromChain" style="font-size:10px;color:var(--text-muted)">TRC-20</div>
+                <div style="font-size:16px;font-weight:700;color:var(--text)">USDT</div>
+                <div style="font-size:11px;color:var(--text-muted)">TRC-20</div>
               </div>
-              <span style="color:var(--text-muted);font-size:14px">›</span>
             </div>
-            <input id="swapAmountIn" class="swap-input" value="100" type="number" oninput="calcSwap()" style="flex:1;text-align:right;font-size:26px" />
+            <span style="font-size:11px;color:var(--text-muted)">余额 <span id="swapFromBal" style="color:var(--text)">0</span> · <span style="color:var(--gold);cursor:pointer" onclick="setSwapMax()">全部</span></span>
           </div>
-          <div style="font-size:11px;color:var(--text-muted);text-align:right;margin-top:6px">≈ <span id="swapInUSD">$100.00</span></div>
+          <input id="swapAmountIn" class="swap-input" value="" type="number" inputmode="decimal" min="0" step="any" placeholder="0" oninput="calcSwap()" style="width:100%;box-sizing:border-box;text-align:right;font-size:26px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" />
         </div>
 
-        <div class="swap-arrow" onclick="swapCoins()" style="cursor:pointer;transition:transform 0.3s" id="swapArrowBtn">⇅</div>
-
-        <div class="swap-card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span class="swap-label">到</span>
-            <span style="font-size:11px;color:var(--text-muted)">预估到账</span>
-          </div>
-          <div class="swap-row">
-            <div id="swapToCoin" onclick="openCoinPicker('to')" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:8px 12px;cursor:pointer;flex-shrink:0;transition:all 0.2s">
-              <div id="swapToIcon" style="width:30px;height:30px;border-radius:50%;background:rgba(255,80,80,0.12);display:flex;align-items:center;justify-content:center;font-size:16px">🔴</div>
+        <div class="swap-card" style="margin-bottom:18px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">到</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:22px">🔴</span>
               <div>
-                <div id="swapToName" style="font-size:15px;font-weight:700;color:var(--text)">TRX</div>
-                <div id="swapToChain" style="font-size:10px;color:var(--text-muted)">Tron</div>
+                <div style="font-size:16px;font-weight:700;color:var(--text)">TRX</div>
+                <div style="font-size:11px;color:var(--text-muted)">Tron</div>
               </div>
-              <span style="color:var(--text-muted);font-size:14px">›</span>
             </div>
-            <div style="flex:1;text-align:right">
-              <div id="swapAmountOut" style="font-size:26px;font-weight:700;color:var(--text)">0.00</div>
-              <div style="font-size:11px;color:var(--text-muted);margin-top:2px">≈ <span id="swapOutUSD">$0.00</span></div>
+            <div style="text-align:right">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">预估获得</div>
+              <div id="swapAmountOut" style="font-size:24px;font-weight:700;color:var(--gold)">0</div>
             </div>
           </div>
         </div>
 
-        <div class="swap-info" style="margin-bottom:16px">
-          <div class="swap-info-row">
-            <span>汇率</span>
-            <span class="swap-info-val" id="swapRate">1 USDT ≈ — TRX</span>
-          </div>
-          <div class="swap-info-row">
-            <span>手续费</span>
-            <span class="swap-info-val gold" id="swapFee">0.30%（0.30 USDT）</span>
-          </div>
-          <div class="swap-info-row" style="margin-bottom:0">
-            <span>预计到账</span>
-            <span class="swap-info-val">约 30 秒</span>
-          </div>
-        </div>
-
-        <div id="wwCrossChainCompare" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px;font-size:12px">
-          <div style="font-weight:700;margin-bottom:10px;color:var(--text);display:flex;align-items:center;gap:6px">🌐 跨链路由比价 <span style="font-size:10px;font-weight:500;color:var(--text-muted)">（参考）</span></div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
-              <div>
-                <div style="font-size:11px;color:var(--text-muted)">TRON 生态（SunSwap 等）</div>
-                <div id="wwSwapCompareTron" style="font-weight:700;color:var(--text);margin-top:2px">—</div>
-              </div>
-              <span id="wwSwapCompareBadgeTron" style="font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bg3);color:var(--text-muted);align-self:center">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
-              <div>
-                <div style="font-size:11px;color:var(--text-muted)">以太坊主网（Uniswap 等）</div>
-                <div id="wwSwapCompareEth" style="font-weight:700;color:var(--text);margin-top:2px">—</div>
-              </div>
-              <span id="wwSwapCompareBadgeEth" style="font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bg3);color:var(--text-muted);align-self:center">—</span>
-            </div>
-          </div>
-          <div id="wwSwapCompareBest" style="font-size:11px;color:var(--gold);margin-top:10px;line-height:1.5"></div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.55">同额输入下两条链的<b>参考</b>预估到账；跨链需先桥接资产，实际以各 DEX 报价、滑点与 Gas 为准。</div>
-        </div>
-
-        <button class="btn-primary" onclick="doSwap()">⚡ 立即兑换</button>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0" onclick="doSwap()">⚡ 前往 SunSwap 兑换</button>
       </div>
     </div>
 
@@ -923,14 +876,6 @@
 
 
 
-    <!-- 兑换选币弹窗 -->
-    <div class="overlay" id="coinPickerOverlay" onclick="if(event.target===this)closeCoinPicker()">
-      <div class="overlay-sheet" style="padding:20px;max-height:70vh;overflow-y:auto">
-        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择代币</div>
-        <div id="coinPickerList"></div>
-      </div>
-    </div>
-
     <!-- 兑换确认弹窗 -->
     <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this)this.classList.remove('show')">
       <div class="overlay-sheet" style="padding:24px">
@@ -950,7 +895,7 @@
           </div>
         </div>
         <div style="background:rgba(255,180,0,0.06);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#aa8844">
-          ⚡ 将跳转到 SunSwap / Uniswap 完成链上兑换
+          ⚡ 将打开 SunSwap（TRON）完成 USDT → TRX 链上兑换
         </div>
         <div style="display:flex;gap:10px">
           <button class="btn-secondary" class="u4" onclick="const _ovswapCo2 = document.getElementById('swapConfirmOverlay'); if(_ovswapCo2) _ovswapCo2.classList.remove('show')">取消</button>
