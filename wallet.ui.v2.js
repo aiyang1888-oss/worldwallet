@@ -3002,3 +3002,69 @@ async function doImportWallet() {
     hideWalletLoading();
   }
 }
+
+
+// ══ 礼物系统 V1 ══
+
+function createGift() {
+  var amtEl = document.getElementById('giftAmount');
+  var msgEl = document.getElementById('giftMessage');
+  if (!amtEl) { showToast('请输入金额', 'error'); return; }
+  var amount = parseFloat(amtEl.value) || 0;
+  if (amount <= 0) { showToast('请输入有效金额', 'error'); return; }
+  var message = msgEl ? msgEl.value.trim() : '';
+
+  // 生成6位随机口令
+  var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  var keyword = '';
+  for (var i = 0; i < 6; i++) keyword += chars[Math.floor(Math.random() * chars.length)];
+
+  // 存储
+  var allHb = {};
+  try { allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}'); } catch(e) {}
+  allHb[keyword] = {
+    amount: amount,
+    message: message,
+    from: (REAL_WALLET && REAL_WALLET.trxAddress) || 'unknown',
+    created: Date.now(),
+    claimed: false
+  };
+  localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
+
+  // 显示口令
+  var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + keyword;
+  showToast('🎁 礼物创建成功！口令: ' + keyword, 'success', 5000);
+
+  // 清空输入
+  if (amtEl) amtEl.value = '';
+  if (msgEl) msgEl.value = '';
+
+  // 复制到剪贴板
+  try { navigator.clipboard.writeText('🎁 我给你发了一个WorldToken礼物！口令：' + keyword + ' 打开链接领取 👉 ' + shareUrl); } catch(e) {}
+
+  if (typeof updateGiftUI === 'function') updateGiftUI();
+}
+
+function updateGiftUI() {
+  var allHb = {};
+  try { allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}'); } catch(e) {}
+  var keys = Object.keys(allHb);
+  var listEl = document.getElementById('giftSentList');
+  if (!listEl) return;
+  if (keys.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted)">还没有创建过礼物</div>';
+    return;
+  }
+  listEl.innerHTML = keys.reverse().map(function(k) {
+    var g = allHb[k];
+    var status = g.claimed ? '✅ 已领取' : '⏳ 待领取';
+    var time = new Date(g.created).toLocaleString();
+    return '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+      '<span style="color:var(--gold);font-weight:700">' + g.amount + ' USDT</span>' +
+      '<span style="font-size:11px;color:var(--text-muted)">' + status + '</span></div>' +
+      '<div style="font-size:12px;color:var(--text-muted);margin-top:4px">口令: <b style="color:var(--text)">' + k + '</b></div>' +
+      (g.message ? '<div style="font-size:12px;color:var(--text-muted);margin-top:2px">' + g.message + '</div>' : '') +
+      '<div style="font-size:10px;color:var(--text-muted);margin-top:4px">' + time + '</div></div>';
+  }).join('');
+}
