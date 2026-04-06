@@ -419,11 +419,7 @@
         </div>
 
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-            <span id="transferCoinIcon" style="font-size:18px">💚</span>
-            <span id="transferCoinName" style="font-size:15px;font-weight:700;color:var(--text)">USDT</span>
-            <span style="font-size:11px;color:var(--text-muted)">TRC-20</span>
-          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">金额（USDT · TRC-20）</div>
           <input id="transferAmount" type="number" placeholder="0.00" oninput="calcTransferFee()" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
           <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
             当前余额: <span id="transferBal">0</span> USDT
@@ -447,10 +443,10 @@
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">转账确认</div>
           <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 USDT</div>
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">→ <span id="confirmRecipient"></span></div>
-          <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:var(--text-muted);text-align:left;line-height:2">
+          <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:var(--text-muted);text-align:left;line-height:1.8">
             <div class="u9"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 USDT</span></div>
-            <div class="u9"><span>实际到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
-            <div class="u9"><span>链路</span><span id="confirmChain">TRC-20</span></div>
+            <div class="u9"><span>到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
+            <div class="u9"><span>网络</span><span id="confirmChain">TRC-20</span></div>
           </div>
           <div style="display:flex;gap:10px">
             <button style="flex:1;background:var(--bg3);color:var(--text-muted);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;cursor:pointer" onclick="closeTransferConfirm()">取消</button>
