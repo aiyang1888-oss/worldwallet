@@ -1859,111 +1859,94 @@ function shakeTransferAmountTooHigh() {
 }
 
 function detectAddrType() {
-  const addr = document.getElementById('transferAddr').value.trim();
-  const tag = document.getElementById('addrTypeTag');
-  const icon = document.getElementById('addrTypeIcon');
-  const name = document.getElementById('addrTypeName');
+  const ta = document.getElementById('transferAddr');
+  const addr = ta ? ta.value.trim() : '';
   const box = document.getElementById('transferAddrBox');
-  const recipient = document.getElementById('recipientCard');
   const btn = document.getElementById('transferBtn');
-
-  if(!addr) {
-    tag.style.display='none';
-    recipient.style.display='none';
-    box.style.borderColor='var(--border)';
-    btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
+  if (!addr) {
+    if (box) box.style.borderColor = 'var(--border)';
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed'; }
     calcTransferFee();
     return;
   }
-
-  let type='', chainName='', isWorldToken=false;
-
-  // 识别地址类型
-  if(addr.includes('·') || addr.length < 30) {
-    type='🌍'; chainName='WorldToken 万语地址'; isWorldToken=true;
-  } else if(addr.startsWith('T') && addr.length>=34) {
-    type='🔴'; chainName='TRX · Tron 链';
-  } else if(addr.startsWith('0x') && addr.length>=42) {
-    type='🔷'; chainName='ETH · Ethereum 链';
-  } else if(addr.startsWith('bc1') || addr.startsWith('1') || addr.startsWith('3')) {
-    type='🟠'; chainName='BTC · Bitcoin 链';
-  } else {
-    type='❓'; chainName='未识别地址格式';
-  }
-
-  tag.style.display='block';
-  icon.textContent=type+' ';
-  name.textContent=chainName;
-  box.style.borderColor='rgba(200,168,75,0.4)';
-
-  // WorldToken用户显示收款人卡片
-  if(isWorldToken && addr.includes('·')) {
-    const parts = addr.split('·');
-    document.getElementById('recipientName').textContent = parts[0].trim();
-    document.getElementById('recipientAddr').textContent = parts[1]?.trim()+' · '+parts[2]?.trim() || 'WorldToken 用户';
-    recipient.style.display='block';
-  } else {
-    recipient.style.display='none';
-  }
-
+  if (box) box.style.borderColor = 'rgba(200,168,75,0.4)';
   calcTransferFee();
 }
 
 function checkTransferReady() {
-  const addr = document.getElementById('transferAddr').value.trim();
-  const amt = parseFloat(document.getElementById('transferAmount').value)||0;
+  const addr = document.getElementById('transferAddr') && document.getElementById('transferAddr').value.trim();
+  const amt = parseFloat(document.getElementById('transferAmount') && document.getElementById('transferAmount').value) || 0;
   const btn = document.getElementById('transferBtn');
   const feeRow = document.getElementById('transferFeeRow');
   const bal = Number(transferCoin.bal) || 0;
   const over = amt > bal + 1e-10;
-  if(addr || amt > 0) {
-    feeRow.style.display='block';
-  } else {
-    feeRow.style.display='none';
+  if (feeRow) {
+    if (addr || amt > 0) feeRow.style.display = 'block';
+    else feeRow.style.display = 'none';
   }
   const offline = (typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false);
-  if(offline) {
-    btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
+  if (!btn) return;
+  if (offline) {
+    btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
     return;
   }
-  if(addr && amt > 0 && !over) {
-    btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer';
+  if (addr && amt > 0 && !over) {
+    btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
   } else {
-    btn.disabled=true; btn.style.opacity='0.4'; btn.style.cursor='not-allowed';
+    btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
   }
 }
 
 function calcTransferFee() {
-  const amt = parseFloat(document.getElementById('transferAmount').value)||0;
-  const coinData = COINS.find(c=>c.id===transferCoin.id) || transferCoin;
-  const price = coinData.price || transferCoin.price || 1;
+  try {
+    var uc = typeof COINS !== 'undefined' && COINS.find && COINS.find(function (c) { return c && c.id === transferCoin.id; });
+    if (uc) { transferCoin.bal = uc.bal; transferCoin.price = uc.price; }
+  } catch (_e) {}
+  const amtEl = document.getElementById('transferAmount');
+  const amt = amtEl ? (parseFloat(amtEl.value) || 0) : 0;
+  const coinData = (typeof COINS !== 'undefined' && COINS.find) ? COINS.find(function (c) { return c.id === transferCoin.id; }) : null;
+  const price = (coinData && coinData.price) || transferCoin.price || 1;
   const nf = getNetworkFeeEstimateLines(transferCoin.id);
+  const hintEl = document.getElementById('transferFeeHint');
   const netEl = document.getElementById('transferNetworkFee');
-  if(netEl) netEl.textContent = nf.line + ' · ' + nf.sub;
   const gasLineEl = document.getElementById('transferGasFeeLine');
-  if(gasLineEl) gasLineEl.textContent = nf.line + ' · ' + nf.sub;
+  if (netEl) netEl.textContent = nf.line + ' · ' + nf.sub;
+  if (gasLineEl) gasLineEl.textContent = nf.line + ' · ' + nf.sub;
+  const balEl = document.getElementById('transferBal');
+  if (balEl) {
+    var b = Number(transferCoin.bal) || 0;
+    balEl.textContent = (isFinite(b) ? b : 0).toLocaleString(undefined, { maximumFractionDigits: 8 });
+  }
   const usdToCny = 7.24;
   const cnyEl = document.getElementById('transferCNY');
-  if(amt <= 0) {
-    document.getElementById('transferFee').textContent = '—';
-    document.getElementById('transferActual').textContent = '—';
-    document.getElementById('transferUSD').textContent = '$0.00';
-    if(cnyEl) cnyEl.textContent = '0.00';
+  const feeEl = document.getElementById('transferFee');
+  const actEl = document.getElementById('transferActual');
+  const usdEl = document.getElementById('transferUSD');
+  const chainEl = document.getElementById('transferChain');
+  if (amt <= 0) {
+    if (feeEl) feeEl.textContent = '—';
+    if (actEl) actEl.textContent = '—';
+    if (usdEl) usdEl.textContent = '$0.00';
+    if (cnyEl) cnyEl.textContent = '0.00';
+    if (hintEl) hintEl.textContent = nf.line + ' · ' + nf.sub + '（TRC-20 USDT 转账需消耗能量 / 带宽）';
   } else {
     const feeNum = amt * 0.003;
     const fee = feeNum.toFixed(4);
     const actual = (amt - feeNum).toFixed(4);
-    document.getElementById('transferFee').textContent = fee+' '+transferCoin.name;
-    document.getElementById('transferActual').textContent = actual+' '+transferCoin.name;
-    document.getElementById('transferUSD').textContent = '$'+(amt*price).toFixed(2);
-    if(cnyEl) cnyEl.textContent = (amt*price*usdToCny).toFixed(2);
+    if (feeEl) feeEl.textContent = fee + ' ' + transferCoin.name;
+    if (actEl) actEl.textContent = actual + ' ' + transferCoin.name;
+    if (usdEl) usdEl.textContent = '$' + (amt * price).toFixed(2);
+    if (cnyEl) cnyEl.textContent = (amt * price * usdToCny).toFixed(2);
+    if (hintEl) {
+      hintEl.textContent = nf.line + ' · ' + nf.sub + ' · 应用内手续费约 ' + fee + ' ' + transferCoin.name + '，到账约 ' + actual + ' ' + transferCoin.name;
+    }
   }
   const _spd = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
-  document.getElementById('transferChain').textContent = transferCoin.chain+' · '+(typeof transferSpeedHint==='function'?transferSpeedHint(transferCoin.id,_spd):'约30秒');
+  if (chainEl) chainEl.textContent = transferCoin.chain + ' · ' + (typeof transferSpeedHint === 'function' ? transferSpeedHint(transferCoin.id, _spd) : '约30秒');
   const bal = Number(transferCoin.bal) || 0;
-  if(amt > bal + 1e-10) shakeTransferAmountTooHigh();
+  if (amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
-  try { if(typeof wwUpdateTxSimulation==='function') wwUpdateTxSimulation(); } catch(_ws) {}
+  try { if (typeof wwUpdateTxSimulation === 'function') wwUpdateTxSimulation(); } catch (_ws) {}
 }
 
 function wwGasManagerRender() {
@@ -2015,9 +1998,52 @@ function wwUpdateTxSimulation() {
   host.textContent = lines.join('\n');
 }
 
-function closeTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.remove('show'); }
+function openTransferCoinPicker() {}
 
-function closeTransferConfirm() { _safeEl('transferConfirmOverlay').classList.remove('show'); }
+function closeTransferCoinPicker() {
+  var el = document.getElementById('transferCoinOverlay');
+  if (el) el.classList.remove('show');
+}
+
+function doTransfer() {
+  var ta = document.getElementById('transferAddr');
+  var amtInp = document.getElementById('transferAmount');
+  var addr = ta ? ta.value.trim() : '';
+  var amt = amtInp ? amtInp.value : '';
+  if (!addr) { if (typeof showToast === 'function') showToast('❌ 请输入接收地址', 'error'); return; }
+  if (!amt || parseFloat(amt) <= 0) { if (typeof showToast === 'function') showToast('❌ 请输入有效金额', 'error'); return; }
+  var amtNum = parseFloat(amt) || 0;
+  var bal = Number(transferCoin.bal) || 0;
+  if (amtNum > bal + 1e-10) { if (typeof showToast === 'function') showToast('❌ 金额超过可用余额', 'error'); shakeTransferAmountTooHigh(); return; }
+  if (!REAL_WALLET) { if (typeof showToast === 'function') showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
+  if ((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+    if (typeof showToast === 'function') showToast('📡 当前无网络，请联网后再发送', 'warning');
+    return;
+  }
+  if (typeof wwSpendGateBeforeConfirm === 'function') {
+    var _g = wwSpendGateBeforeConfirm(amtNum);
+    if (_g === false) return;
+  }
+  var fee = (amtNum * 0.003).toFixed(2);
+  var actual = (amtNum - amtNum * 0.003).toFixed(2);
+  var ca = document.getElementById('confirmAmount');
+  var cr = document.getElementById('confirmRecipient');
+  var cf = document.getElementById('confirmFee');
+  var cact = document.getElementById('confirmActual');
+  var cch = document.getElementById('confirmChain');
+  if (ca) ca.textContent = amt + ' ' + transferCoin.name;
+  if (cr) cr.textContent = addr.length > 20 ? addr.slice(0, 20) + '...' : addr;
+  if (cf) cf.textContent = fee + ' ' + transferCoin.name;
+  if (cact) cact.textContent = actual + ' ' + transferCoin.name;
+  if (cch) cch.textContent = transferCoin.chain;
+  var ov = document.getElementById('transferConfirmOverlay');
+  if (ov) ov.classList.add('show');
+}
+
+function closeTransferConfirm() {
+  var el = document.getElementById('transferConfirmOverlay');
+  if (el) el.classList.remove('show');
+}
 
 // ══ 多文化礼金系统 ══
 var GIFT_CULTURE = {
@@ -2380,17 +2406,15 @@ function calcSwap() {
 
 async function loadSwapPrices() {
   try {
-    var r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin,binancecoin&vs_currencies=usd');
+    var r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron&vs_currencies=usd');
     var d = await r.json();
-    var priceMap = {
-      usdt: d.tether && d.tether.usd ? d.tether.usd : 1,
-      trx: d.tron && d.tron.usd ? d.tron.usd : 0.12,
-      eth: d.ethereum && d.ethereum.usd ? d.ethereum.usd : 2500,
-      btc: d.bitcoin && d.bitcoin.usd ? d.bitcoin.usd : 60000,
-      bnb: d.binancecoin && d.binancecoin.usd ? d.binancecoin.usd : 400
-    };
+    var ut = d.tether && d.tether.usd ? d.tether.usd : 1;
+    var tr = d.tron && d.tron.usd ? d.tron.usd : 0.12;
     if (typeof COINS !== 'undefined' && COINS.forEach) {
-      COINS.forEach(function (coin) { if (priceMap[coin.id]) coin.price = priceMap[coin.id]; });
+      COINS.forEach(function (coin) {
+        if (coin.id === 'usdt') coin.price = ut;
+        if (coin.id === 'trx') coin.price = tr;
+      });
     }
     calcSwap();
   } catch (e) {
@@ -2416,28 +2440,10 @@ function doSwap() {
     if (typeof showToast === 'function') showToast('请输入兑换金额', 'warning');
     return;
   }
-  var out = (_safeEl('swapAmountOut') || {}).textContent || '0';
-  var overlay = document.getElementById('swapConfirmOverlay');
-  if (overlay) {
-    var cf = _safeEl('swapConfirmFrom');
-    var ct = _safeEl('swapConfirmTo');
-    var cr = _safeEl('swapConfirmRate');
-    if (cf) cf.textContent = amt + ' USDT';
-    if (ct) ct.textContent = out + ' TRX';
-    var u = swapUsdtCoin();
-    var t = swapTrxCoin();
-    var pFrom = (u && u.price) ? u.price : 1;
-    var pTo = (t && t.price) ? t.price : 0.12;
-    if (cr) cr.textContent = '1 USDT ≈ ' + (pTo > 0 ? (pFrom / pTo).toFixed(6) : '—') + ' TRX';
-    overlay.classList.add('show');
-  } else {
-    openDex();
-  }
+  openDex();
 }
 
 function openDex() {
-  var closeOverlay = document.getElementById('swapConfirmOverlay');
-  if (closeOverlay) closeOverlay.classList.remove('show');
   window.open('https://sunswap.com/#/v3?inputCurrency=' + WW_SUNSWAP_USDT + '&outputCurrency=' + WW_SUNSWAP_TRX, '_blank');
 }
 

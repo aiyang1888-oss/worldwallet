@@ -409,171 +409,36 @@
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
         <div class="nav-title">转账</div>
-        <div class="nav-right" onclick="goTo('page-home')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+        <div class="nav-right"></div>
       </div>
       <div style="padding:20px 18px;flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0">
 
-        <!-- 地址输入区 -->
         <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s;position:relative" id="transferAddrBox">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">收款地址</div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <textarea id="transferAddr" rows="2" placeholder="输入万语地址或公链地址" oninput="detectAddrType();updateTransferAddrBook()" onfocus="detectAddrType();if(document.getElementById('transferAddr').value.trim())updateTransferAddrBook()" onblur="setTimeout(hideTransferAddrBook,180)" autocomplete="off" style="flex:1;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
-          </div>
-          <!-- 地址识别标签 -->
-          <div id="addrTypeTag" style="margin-top:8px;display:none">
-            <span id="addrTypeIcon" style="font-size:12px"></span>
-            <span id="addrTypeName" style="font-size:11px;color:var(--text-muted)"></span>
-          </div>
-          <div id="transferAddrBook" class="transfer-addr-dd" class="u5" onclick="event.preventDefault()"></div>
+          <textarea id="transferAddr" rows="2" placeholder="TRC20 地址（以 T 开头）" oninput="detectAddrType()" autocomplete="off" style="width:100%;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
         </div>
 
-        <div id="batchSendPanel" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:1px">批量地址（每行一个，使用下方统一金额分别发送）</div>
-          <textarea id="batchTransferLines" rows="5" placeholder="每行一个收款地址（Tron / ETH 等）" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:13px;color:var(--text);resize:vertical;line-height:1.5;font-family:ui-monospace,monospace"></textarea>
-          <button type="button" class="btn-primary" style="width:100%;margin-top:10px" onclick="runBatchTransfer()">向列表批量发送</button>
-        </div>
-        <div style="text-align:center;margin-bottom:12px">
-          <span id="batchSendToggle" style="font-size:12px;color:var(--gold);cursor:pointer;user-select:none" onclick="toggleBatchSendPanel()">📋 批量发送</span>
-        </div>
-
-        <div class="transfer-contacts-card" id="transferContactsCard">
-          <div class="transfer-contacts-head">
-            <span class="transfer-contacts-title">常用联系人</span>
-            <span class="transfer-contact-add" onclick="toggleContactAddForm()">添加</span>
-          </div>
-          <div id="transferContactsList"></div>
-          <div id="transferContactAddForm" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
-            <input id="contactNickInput" type="text" placeholder="昵称（如：张三）" maxlength="32" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);margin-bottom:8px;font-size:14px;box-sizing:border-box" />
-            <button type="button" class="btn-primary" class="u13" onclick="saveContactFromForm()">保存当前收款地址</button>
-          </div>
-        </div>
-
-        <!-- 收款人信息（识别后显示）-->
-        <div id="recipientCard" style="display:none;background:linear-gradient(135deg,#12120a,#1a1a08);border:1px solid rgba(200,168,75,0.3);border-radius:16px;padding:14px 16px;margin-bottom:14px">
-          <div class="u7">
-            <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#c8a84b,#f0d070);display:flex;align-items:center;justify-content:center;font-size:20px">🌍</div>
-            <div>
-              <div style="font-size:11px;font-weight:700;color:var(--gold-light);word-break:break-all" id="recipientName"></div>
-              <div style="font-size:11px;color:var(--text-muted)" id="recipientAddr">WorldToken 用户</div>
-            </div>
-            <div style="margin-left:auto;font-size:10px;color:var(--green);background:rgba(74,200,74,0.1);border:1px solid rgba(74,200,74,0.2);border-radius:6px;padding:2px 8px">✓ 已验证</div>
-          </div>
-        </div>
-
-        <!-- 金额输入 -->
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-            <!-- 币种选择 -->
-            <div onclick="openTransferCoinPicker()" style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:6px 10px;cursor:pointer;flex-shrink:0">
-              <span id="transferCoinIcon" style="font-size:18px">💚</span>
-              <span id="transferCoinName" style="font-size:14px;font-weight:700;color:var(--text)">USDT</span>
-              <span style="color:var(--text-muted);font-size:12px">›</span>
-            </div>
-            <input id="transferAmount" type="number" placeholder="0.00" oninput="calcTransferFee()" style="flex:1;min-width:0;width:100%;background:none;border:none;font-size:32px;font-weight:700;color:#e0e0f0;outline:none;text-align:right;display:block" />
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <span id="transferCoinIcon" style="font-size:18px">💚</span>
+            <span id="transferCoinName" style="font-size:15px;font-weight:700;color:var(--text)">USDT</span>
+            <span style="font-size:11px;color:var(--text-muted)">TRC-20</span>
           </div>
-          <div id="transferQuickAmountRow" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
-            <button type="button" class="ww-quick-amt" onclick="setTransferQuickAmount(10)">10 USDT</button>
-            <button type="button" class="ww-quick-amt" onclick="setTransferQuickAmount(50)">50 USDT</button>
-            <button type="button" class="ww-quick-amt" onclick="setTransferQuickAmount(100)">100 USDT</button>
-            <button type="button" class="ww-quick-amt" onclick="setTransferQuickAmount(500)">500 USDT</button>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:11px;color:var(--text-muted);flex-wrap:wrap">
-            <span>余额: <span id="transferBal">0</span> USDT <span style="color:var(--gold);cursor:pointer" onclick="setTransferMax()">全部</span></span>
-            <span style="text-align:right;line-height:1.5">≈ <span id="transferUSD">$0.00</span><br/>≈ ¥<span id="transferCNY">0.00</span></span>
+          <input id="transferAmount" type="number" placeholder="0.00" oninput="calcTransferFee()" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
+          <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
+            当前余额: <span id="transferBal">0</span> USDT
           </div>
         </div>
 
-        <div id="transferSpeedRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:12px 16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:0.5px">交易速度（网络费档位）</div>
-          <div style="display:flex;gap:8px">
-            <button type="button" class="ww-speed-btn" data-speed="slow" onclick="setTransferFeeSpeed('slow')">慢</button>
-            <button type="button" class="ww-speed-btn" data-speed="normal" onclick="setTransferFeeSpeed('normal')">标准</button>
-            <button type="button" class="ww-speed-btn" data-speed="fast" onclick="setTransferFeeSpeed('fast')">快</button>
-          </div>
-          <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.45">链上实际费用以网络为准；较快档位会提高能量 / Gas 上限以优先确认。</div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:20px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">网络费（预估）</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.5" id="transferFeeHint">—</div>
         </div>
 
-        <div id="transferGasSummaryRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:10px 14px;margin-bottom:14px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:12px">
-            <span style="color:var(--text-muted);flex-shrink:0">预估 Gas / 网络费</span>
-            <span style="color:var(--text);text-align:right;font-size:11px;line-height:1.45;word-break:break-word" id="transferGasFeeLine">—</span>
-          </div>
-        </div>
-
-        <div id="wwMevToggleRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div style="flex:1;min-width:200px">
-            <div style="font-size:13px;font-weight:600;color:var(--text)">MEV 保护（示意）</div>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.45">开启后优先通过私有中继 / 私有内存池路由（本地开关，实际路由取决于钱包后端）。</div>
-          </div>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none">
-            <input type="checkbox" id="wwMevToggle" onchange="wwMevSave()" style="width:18px;height:18px;accent-color:var(--gold)" />
-            <span style="font-size:12px;color:var(--text-muted)">私有中继</span>
-          </label>
-        </div>
-
-        <div id="wwTxSimulatePanel" style="background:rgba(98,126,234,0.06);border:1px solid rgba(98,126,234,0.28);border-radius:14px;padding:12px 14px;margin-bottom:14px">
-          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)">🔍 交易模拟预览</div>
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.5">根据当前表单估算将发生的动作（本地示意，非链上 eth_call）。</div>
-          <pre id="wwTxSimulateBody" style="margin:0;white-space:pre-wrap;word-break:break-word;font-size:11px;line-height:1.55;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg3);padding:10px;border-radius:10px;border:1px solid var(--border);min-height:72px"></pre>
-        </div>
-
-        <!-- 手续费 -->
-        <div id="transferFeeRow" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 16px;margin-bottom:20px">
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-            <span style="color:var(--text-muted)">手续费（约0.3%）</span>
-            <span style="color:var(--text)" id="transferFee">0.30 USDT</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
-            <span style="color:var(--text-muted)">实际到账</span>
-            <span style="color:var(--gold-light);font-weight:600" id="transferActual">—</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px">
-            <span style="color:var(--text-muted)">链路</span>
-            <span style="color:var(--text)" id="transferChain">TRC-20 · 约30秒</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-size:12px;align-items:flex-start;gap:10px;padding-top:8px;border-top:1px solid var(--border)">
-            <span style="color:var(--text-muted);flex-shrink:0">预估网络费</span>
-            <span style="color:var(--text);text-align:right;font-size:11px;line-height:1.45;word-break:break-word" id="transferNetworkFee">—</span>
-          </div>
-        </div>
-
-        <div class="u4"></div>
-
-        <!-- 发送按钮 -->
         <button class="btn-primary" id="transferBtn" onclick="doTransfer()" style="opacity:0.4;cursor:not-allowed" disabled>
-          发送
+          确认转账
         </button>
 
-      </div>
-
-      <!-- 币种选择弹窗 -->
-      <div class="qr-overlay" id="transferCoinOverlay" onclick="closeTransferCoinPicker()">
-        <div style="background:var(--bg2);border-radius:24px 24px 0 0;width:100%;position:absolute;bottom:0;padding:20px 18px 36px" onclick="event.stopPropagation()">
-          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px">选择发送币种</div>
-          <div class="u12">
-            <!-- USDT -->
-            <div onclick="selectTransferCoin('usdt')" style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(200,168,75,0.1),rgba(200,168,75,0.04));border:1.5px solid rgba(200,168,75,0.3);border-radius:14px;padding:12px;cursor:pointer">
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(38,161,123,0.15);display:flex;align-items:center;justify-content:center;font-size:18px">💚</div>
-              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">USDT</div><div style="font-size:11px;color:var(--text-muted)">TRC-20 · Tron</div></div>
-              <div class="u6"><div style="font-size:14px;color:var(--text)">8,500</div><div style="font-size:11px;color:var(--text-muted)">≈ $8,500</div></div>
-            </div>
-            <div onclick="selectTransferCoin('trx')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,80,80,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🔴</div>
-              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">TRX</div><div style="font-size:11px;color:var(--text-muted)">Tron</div></div>
-              <div class="u6"><div style="font-size:14px;color:var(--text)" id="transferTrxBal">--</div><div style="font-size:11px;color:var(--text-muted)" id="transferTrxVal">$--</div></div>
-            </div>
-            <div onclick="selectTransferCoin('eth')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(100,100,255,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🔷</div>
-              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">ETH</div><div style="font-size:11px;color:var(--text-muted)">Ethereum</div></div>
-              <div class="u6"><div style="font-size:14px;color:var(--text)" id="transferEthBal">--</div><div style="font-size:11px;color:var(--text-muted)">$--</div></div>
-            </div>
-            <div onclick="selectTransferCoin('btc')" style="display:flex;align-items:center;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer">
-              <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,165,0,0.12);display:flex;align-items:center;justify-content:center;font-size:18px">🟠</div>
-              <div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">BTC</div><div style="font-size:11px;color:var(--text-muted)">Bitcoin</div></div>
-              <div class="u6"><div style="font-size:14px;color:var(--text)" id="transferBtcBal">--</div><div style="font-size:11px;color:var(--text-muted)">$--</div></div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- 确认弹窗 -->
@@ -594,6 +459,8 @@
         </div>
       </div>
     </div>
+
+
 
 
 
@@ -643,7 +510,7 @@
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">兑换</div>
-        <div class="nav-right" onclick="goTo('page-swap-records')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+        <div class="nav-right" onclick="if(typeof showToast==='function')showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
       </div>
       <div class="swap-content" style="padding:16px 18px 24px">
 
@@ -769,6 +636,23 @@
       </div>
     </div>
 
+    <!-- ═══ 领取成功页 ═══ -->
+    <div class="page" id="page-claimed">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">领取成功</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding-top:20px;text-align:center">
+        <div style="font-size:56px;margin-bottom:12px">🎉</div>
+        <div style="font-size:22px;font-weight:800;color:var(--gold);margin-bottom:10px">礼物领取成功</div>
+        <div id="claimedAmount" style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px">0 USDT</div>
+        <div id="claimedMessage" style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:22px"></div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px" onclick="goTo('page-home')">返回首页</button>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px 0" onclick="goTo('page-hongbao')">继续看礼物</button>
+      </div>
+    </div>
+
     <!-- ═══ 礼物记录页 ═══ -->
     <div class="page" id="page-hb-records">
       <div class="nav-bar">
@@ -874,35 +758,6 @@
 
 </div>
 
-
-
-    <!-- 兑换确认弹窗 -->
-    <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this)this.classList.remove('show')">
-      <div class="overlay-sheet" style="padding:24px">
-        <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;text-align:center">确认兑换</div>
-        <div style="background:var(--bg2);border-radius:14px;padding:16px;margin-bottom:16px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-            <span style="color:var(--text-muted);font-size:13px">支付</span>
-            <span style="color:var(--text);font-weight:600" id="swapConfirmFrom">--</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-            <span style="color:var(--text-muted);font-size:13px">获得（约）</span>
-            <span style="color:var(--gold);font-weight:600" id="swapConfirmTo">--</span>
-          </div>
-          <div class="u9">
-            <span style="color:var(--text-muted);font-size:13px">汇率</span>
-            <span style="color:var(--text-muted);font-size:12px" id="swapConfirmRate">--</span>
-          </div>
-        </div>
-        <div style="background:rgba(255,180,0,0.06);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:11px;color:#aa8844">
-          ⚡ 将打开 SunSwap（TRON）完成 USDT → TRX 链上兑换
-        </div>
-        <div style="display:flex;gap:10px">
-          <button class="btn-secondary" class="u4" onclick="const _ovswapCo2 = document.getElementById('swapConfirmOverlay'); if(_ovswapCo2) _ovswapCo2.classList.remove('show')">取消</button>
-          <button class="btn-primary" class="u4" onclick="openDex()">前往兑换 →</button>
-        </div>
-      </div>
-    </div>
 
 
     <!-- 礼物发送成功弹窗 -->
