@@ -2580,7 +2580,7 @@ function checkVerify() {
     // 验证通过，显示成功页
     if (typeof markBackupDone === 'function') markBackupDone();
     updateAddr();
-    goTo('page-verify-success');
+    showToast('✅ 验证通过！钱包已安全创建', 'success'); goTo('page-home');
     setTimeout(function() {
       var hasPin = false;
       try {
