@@ -190,10 +190,11 @@ async function sendTx(chain, to, amount, privateKey) {
 
 async function _sendTRX(to, amount, privateKey) {
   await _loadTronWeb();
+  var pk = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
   var tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(privateKey);
+  tw.setPrivateKey(pk);
   var sun = Math.floor(amount * 1e6);
-  var from = tw.address.fromPrivateKey(privateKey);
+  var from = tw.address.fromPrivateKey(pk);
   var tx = await tw.transactionBuilder.sendTrx(to, sun, from);
   var signed = await tw.trx.sign(tx);
   var result = await tw.trx.sendRawTransaction(signed);
@@ -214,10 +215,11 @@ async function _sendETH(to, amount, privateKey) {
 
 async function _sendUSDT(to, amount, privateKey) {
   await _loadTronWeb();
+  var pk = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
   var tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(privateKey);
+  tw.setPrivateKey(pk);
   var sun = Math.floor(amount * 1e6);
-  var from = tw.address.fromPrivateKey(privateKey);
+  var from = tw.address.fromPrivateKey(pk);
   var tx = await tw.transactionBuilder.triggerSmartContract(
     USDT_TRC20, 'transfer(address,uint256)',
     { feeLimit: 20000000 },

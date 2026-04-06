@@ -1,5 +1,5 @@
 // WorldToken Service Worker v20260405 - 每次更新版本号强制刷新
-const CACHE = 'worldtoken-v202604060822';
+const CACHE = 'worldtoken-v202604060825';
 const ASSETS = [
   '/wallet.html',
   '/manifest.json',
