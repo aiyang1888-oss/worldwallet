@@ -139,7 +139,7 @@ function _saveWalletPlainPublicOnly(w) {
 function saveWallet(w) {
   // 如果有 PIN，使用加密存储；否则只存公开信息
   var pin = '';
-  try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
+  try { pin = Store.getPin(); } catch(e) {}
   if (pin) {
     saveWalletSecure(w, pin).catch(function(e) {
       console.error('[saveWallet] 加密存储失败，降级明文:', e);
@@ -272,70 +272,62 @@ async function generateTempWallet(forcedWordCount) {
   return w;
 }
 
+/**
+ * 恢复/导入钱包：与 core/wallet.js 的 importWallet 一致；REAL_WALLET 仅公开地址；有 PIN 则加密保存。
+ */
 async function restoreWallet(mnemonic) {
-  if(typeof ethers === 'undefined') return null;
-  try {
-    const inputWords = mnemonic.trim().split(/\s+/);
-    if(![12,15,18,21,24].includes(inputWords.length)) {
-      showToast(`❌ 助记词必须是12/15/18/21/24个词，当前${inputWords.length}个`, 'error');
-      return null;
-    }
-    // 自动检测语言并转换为英文BIP39（若输入非英文词）
-    let enMnemonicStr = mnemonic.trim();
-    let detectedLang = 'en';
-    const firstWord = inputWords[0];
-    if (firstWord && !/^[a-z]+$/.test(firstWord)) {
-      // 非英文，尝试所有语言词库匹配
-      for (const lang of Object.keys(WT_LANG_INDEX || {})) {
-        if (lang === 'en') continue;
-        const idx = (WT_LANG_INDEX[lang] || {})[firstWord];
-        if (idx !== undefined) {
-          detectedLang = lang;
-          enMnemonicStr = mnemonicFromLang(mnemonic.trim(), lang);
-          break;
-        }
-      }
-    }
-    const words = enMnemonicStr.split(' ');
-    const wallet = ethers.Wallet.fromMnemonic(enMnemonicStr);
-    const trxWallet = ethers.Wallet.fromMnemonic(enMnemonicStr, "m/44'/195'/0'/0/0");
-    // 将 ETH 地址转换为正确的 TRX 地址（Base58Check）
-    let trxAddr = '';
-    try {
-      if(typeof TronWeb !== 'undefined') {
-        trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-      } else {
-        trxAddr = 'T' + trxWallet.address.slice(2, 36); // fallback
-      }
-    } catch(e) { trxAddr = 'T' + trxWallet.address.slice(2, 36); }
-    // BTC 地址（m/44'/0'/0'/0/0）
-    let btcAddr2 = '';
-    try {
-      const btcWallet = ethers.Wallet.fromMnemonic(enMnemonicStr, "m/44'/0'/0'/0/0");
-      // 简化：用 ETH 地址格式存储 BTC 未压缩公钥（实际BTC地址需更多处理）
-      btcAddr2 = btcWallet.address; // 暂用ETH格式，后续可升级
-    } catch(e) {}
-    const w = {
-      mnemonic: enMnemonicStr,
-      enMnemonic: enMnemonicStr,           // 真实英文BIP39助记词
-      inputMnemonic: mnemonic.trim(),      // 用户输入的原始词（可能是其他语言）
-      inputLang: detectedLang,
-      words: words,
-      ethAddress: wallet.address,
-      trxAddress: trxAddr,
-      privateKey: wallet.privateKey,       // ETH private key
-      trxPrivateKey: trxWallet.privateKey,  // TRX private key
-      btcAddress: btcAddr2,                 // BTC address (simplified)
-      createdAt: Date.now()
-    };
-    REAL_WALLET = w;
-    saveWallet(w);
-    applyReferralCredit();
-    return w;
-  } catch(e) {
+  var raw = String(mnemonic || '').trim().replace(/\s+/g, ' ');
+  if (!raw) {
+    showToast('❌ 请输入助记词', 'error');
+    return null;
+  }
+  if (typeof importWallet !== 'function') {
+    showToast('❌ 钱包核心未加载', 'error');
+    return null;
+  }
+  var result = importWallet(raw);
+  if (!result) {
     showToast('❌ 助记词无效，请检查后重试', 'error');
     return null;
   }
+  var pin = '';
+  try { pin = Store.getPin().trim(); } catch (e) {}
+  var pub = {
+    ethAddress: result.eth.address,
+    trxAddress: result.trx.address,
+    btcAddress: result.btc.address,
+    createdAt: result.createdAt,
+    hasEncrypted: !!pin,
+    backedUp: false
+  };
+  REAL_WALLET = pub;
+  window.REAL_WALLET = pub;
+  if (pin) {
+    var flatForStore = {
+      mnemonic: result.mnemonic,
+      enMnemonic: result.mnemonic,
+      words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
+      ethAddress: result.eth.address,
+      trxAddress: result.trx.address,
+      btcAddress: result.btc.address,
+      privateKey: result.eth.privateKey,
+      trxPrivateKey: result.trx.privateKey,
+      createdAt: result.createdAt,
+      backedUp: false
+    };
+    await saveWalletSecure(flatForStore, pin);
+  } else {
+    _saveWalletPlainPublicOnly({
+      ethAddress: result.eth.address,
+      trxAddress: result.trx.address,
+      btcAddress: result.btc.address,
+      createdAt: result.createdAt,
+      backedUp: false
+    });
+  }
+  try { applyReferralCredit(); } catch (e2) {}
+  try { if (typeof updateAddr === 'function') updateAddr(); } catch (e3) {}
+  return pub;
 }
 
 function mnemonicToLang(mnemonic, lang) {

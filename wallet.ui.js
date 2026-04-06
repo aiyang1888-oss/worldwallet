@@ -564,7 +564,7 @@ function offerTotpAfterPinSave() {
 }
 
 function startTotpSetup() {
-  const pin = localStorage.getItem('ww_pin');
+  const pin = Store.getPin();
   if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
   const secretB32 = wwGenerateTotpSecretB32();
   window._wwTotpPendingSecret = secretB32;
@@ -1064,11 +1064,20 @@ async function loadTrxResource() {
   var bwEl = document.getElementById('trxBandwidthText');
   if(!card || !REAL_WALLET || !REAL_WALLET.trxAddress) { if(card) card.style.display = 'none'; return; }
   try {
-    var r = await fetch(TRON_GRID + '/wallet/getaccountresource', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address: REAL_WALLET.trxAddress, visible: true })
-    });
+    var r = await fetch(
+      TRON_GRID + '/wallet/getaccountresource',
+      typeof wtTronGridFetchInit === 'function'
+        ? wtTronGridFetchInit({
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: REAL_WALLET.trxAddress, visible: true })
+          })
+        : {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: REAL_WALLET.trxAddress, visible: true })
+          }
+    );
     var d = await r.json();
     if(!d || (d.EnergyLimit === undefined && d.NetLimit === undefined && d.freeNetLimit === undefined)) {
       card.style.display = 'none';
@@ -1114,7 +1123,7 @@ function wwResetActivityClock() {
 function wwTickIdleLock() {
   var mins = wwGetIdleLockMinutes();
   if(!mins) return;
-  if(!localStorage.getItem('ww_pin')) return;
+  if(!Store.getPin()) return;
   if(!REAL_WALLET) return;
   var pov = document.getElementById('pinUnlockOverlay');
   var tov = document.getElementById('totpUnlockOverlay');
@@ -2142,7 +2151,7 @@ async function doImportWallet() {
       return;
     }
     var pin = '';
-    try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
+    try { pin = Store.getPin().trim(); } catch (e) {}
     var pub = {
       ethAddress: result.eth.address,
       trxAddress: result.trx.address,
@@ -2242,7 +2251,7 @@ function renderTxHistoryFromCache() {
 function getWalletSecurityBreakdown() {
   var pinOk = false;
   try {
-    var p = localStorage.getItem('ww_pin');
+    var p = Store.getPin();
     pinOk = !!(p && String(p).length >= 4);
   } catch (e) {}
   var backed = false;
@@ -2590,7 +2599,7 @@ function checkVerify() {
 function _resumeWalletAfterUnlock() {
   // 解密敏感数据并临时注入 REAL_WALLET
   var pin = '';
-  try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
+  try { pin = Store.getPin(); } catch(e) {}
   if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
     decryptSensitive(pin).then(function(sensitive) {
       if (sensitive && REAL_WALLET) {
@@ -2625,7 +2634,7 @@ function wwB64Bytes(u8) {
 }
 
 function continueAfterPinCheck() {
-  const pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin');
+  const pin = Store.getPin();
   if(!pin) { _resumeWalletAfterUnlock(); return; }
   const ov = document.getElementById('pinUnlockOverlay');
   const inp = document.getElementById('pinUnlockInput');
@@ -2642,7 +2651,7 @@ function continueAfterPinCheck() {
 }
 function submitPageRestorePin() {
   var want = '';
-  try { want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || ''; } catch (e) {}
+  try { want = Store.getPin(); } catch (e) {}
   const inp = document.getElementById('pinRestorePageInput');
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
@@ -2669,7 +2678,7 @@ function submitPageRestorePin() {
   }
 }
 function submitPinUnlock() {
-  const want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || '';
+  const want = Store.getPin();
   const inp = document.getElementById('pinUnlockInput');
   const got = inp ? inp.value.trim() : '';
   const ov = document.getElementById('pinUnlockOverlay');
@@ -2699,13 +2708,13 @@ function closePinUnlock() {
 }
 
 function openPinSettingsDialog() {
-  const cur = localStorage.getItem('ww_pin') || '';
+  const cur = Store.getPin();
   const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
   if(a === null) return;
   const t = a.trim();
-  if(t === '') { localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
+  if(t === '') { Store.clearPin(); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
   if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
-  localStorage.setItem('ww_pin', t);
+  Store.setPin(t);
   showToast('PIN 已保存', 'success');
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();

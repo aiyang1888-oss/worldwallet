@@ -5,6 +5,8 @@
 
 
 <meta charset="UTF-8">
+<!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
+<meta name="wt-tron-api-key" content="">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https: http:; img-src 'self' data: https:; font-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldToken</title>
@@ -1508,6 +1510,7 @@
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript" integrity="sha384-Htz1SE4Sl5aitpvFgr2j0sfsGUIuSXI6t8hEyrlQ93zflEF3a29bH2AvkUROUw7J" crossorigin="anonymous"></script>
 <script src="js/globals.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/api-config.js"></script>
 <script src="core/security.js"></script>
 <script src="core/wallet.js"></script>
 <script src="wordlists.js"></script>
@@ -1519,13 +1522,10 @@
 
 
 <script type="application/ld+json">
-
-
-{"@context":"https://schema.org","@type":"WebApplication","name":"WorldToken","applicationCategory":"FinanceApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"全球多语言加密钱包：万语地址、多链资产与转账。","url":"https://worldtoken.cc/wallet.html"}
-
+{"@graph":[
+{"@context":"https://schema.org","@type":"WebApplication","name":"WorldToken","applicationCategory":"FinanceApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"全球多语言加密钱包：万语地址、多链资产与转账。","url":"https://worldtoken.cc/wallet.html"},
 {"@context":"https://schema.org","@type":"WebPage","name":"WorldToken","description":"全球多语言加密钱包，支持万语地址与 TRX、ETH、USDT、BTC。","url":"https://worldtoken.cc/wallet.html","isPartOf":{"@type":"WebSite","name":"WorldToken","url":"https://worldtoken.cc/"}}
-
-
+]}
 </script>
 <style media="print">
 @media print {
