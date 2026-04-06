@@ -173,6 +173,8 @@ var WW_APP_VERSION = '1.0.0';
 var currentMnemonicLength = 12;
 /** 导入页格子词数（与 #importGrid 一致；勿与密钥页 currentMnemonicLength 混用） */
 var importGridWordCount = 12;
+/** 首次创建/导入/PIN 引导期间为 true：禁止弹出 Google Authenticator（TOTP）绑定 */
+window._wwInFirstRun = false;
 
 // ⚠️ 注意：私钥存储于 localStorage，仅供演示，生产环境应加密
 // ── 钱包加密存储模块 ───────────────────────────────────────────
@@ -279,6 +281,7 @@ var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb',
 
 
 async function createNewWallet() {
+  try { window._wwInFirstRun = true; } catch (_fr0) {}
   showWalletLoading();
   try {
     var w = await createWallet(12);
@@ -467,7 +470,7 @@ var WW_PAGE_SEO = {
   'page-key-verify': { title: '验证助记词 — WorldToken', description: '按提示输入助记词以确认您已正确备份。' },
   'page-home': { title: '资产 — WorldToken', description: '查看余额、快捷转账、兑换与交易记录。' },
   'page-addr': { title: '收款地址 — WorldToken', description: '展示 TRX / ETH / BTC 地址与收款二维码。' },
-  'page-transfer': { title: '转账 — WorldToken', description: '向万语地址或公链地址发送 USDT、TRX、ETH、BTC。' },
+  'page-transfer': { title: '转账 — WorldToken', description: '向 TRC-20 地址发送 USDT。' },
   'page-swoosh': { title: '处理中 — WorldToken', description: '交易正在提交。' },
   'page-transfer-success': { title: '转账成功 — WorldToken', description: '转账已提交，可查看摘要与分享。' },
   'page-settings': { title: '设置 — WorldToken', description: 'PIN、两步验证、备份与隐私相关选项。' },
@@ -601,13 +604,12 @@ function closePinSetupOverlay() {
 }
 
 function openPinSetupOverlay() {
+  try { window._wwInFirstRun = true; } catch (_frPin) {}
   try {
     if (typeof closeTotpSetup === 'function') closeTotpSetup();
-    else {
-      var _to = document.getElementById('totpSetupOverlay');
-      if (_to) _to.classList.remove('show');
-      window._wwTotpPendingSecret = null;
-    }
+    var _to = document.getElementById('totpSetupOverlay');
+    if (_to) _to.classList.remove('show');
+    window._wwTotpPendingSecret = null;
   } catch (_e) {}
   const el = document.getElementById('pinSetupOverlay');
   window._pinSetupValue = '';
@@ -666,6 +668,7 @@ async function finalizeImportedWalletAfterPin(pin) {
   var tb = document.getElementById('tabBar');
   if (tb) tb.style.display = 'flex';
   goTo('page-home');
+  try { window._wwInFirstRun = false; } catch (_fr1) {}
   showToast('✅ PIN 设置成功，钱包已恢复', 'success');
 }
 
@@ -702,9 +705,11 @@ function handlePinSetupKey(key) {
   finalizeImportedWalletAfterPin(val).then(function(){ closePinSetupOverlay(); }).catch(function(e){ showToast((e && e.message) || 'PIN 设置失败', 'error'); });
 }
 
+/** 保留接口；永不自动打开 TOTP（与首次引导解耦） */
 function offerTotpAfterPinSave() {}
 
 function startTotpSetup() {
+  if (window._wwInFirstRun) return;
   const pin = localStorage.getItem('ww_pin');
   if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
   const secretB32 = wwGenerateTotpSecretB32();
@@ -801,7 +806,7 @@ function goTo(pageId, opts) {
     }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-if(pageId==='page-import') { initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
+if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
@@ -842,6 +847,7 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
     try { if(typeof wwGasManagerRender==='function') setTimeout(wwGasManagerRender, 30); } catch(_wg) {}
   }
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
+  if (pageId === 'page-home' && window._wwInFirstRun) { try { if (localStorage.getItem('ww_pin')) window._wwInFirstRun = false; } catch (_frH) {} }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
   if(pageId==='page-addr') {
@@ -861,7 +867,6 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
       const cb = (_safeEl('chainBtc') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* chainBtc fallback */; if(cb) cb.textContent = btc;
     }
   }
-  if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
     // 有钱包时显示导航栏
@@ -876,10 +881,7 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
     if (REAL_WALLET && REAL_WALLET.ethAddress && typeof updateQRCode === 'function') setTimeout(updateQRCode, 250);
   }
   if(pageId==='page-transfer') {
-    if(typeof initTransferFeeSpeedUI==='function') initTransferFeeSpeedUI();
     calcTransferFee();
-    renderTransferContactsList();
-    try { if(typeof wwMevToggleInit==='function') wwMevToggleInit(); } catch(_wm) {}
   }
   if(pageId==='page-dapp') {
     setTimeout(function() {
