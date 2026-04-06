@@ -153,7 +153,7 @@ body {
   overflow-y: auto; overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  display: flex; flex-direction: column;
+  display: none; flex-direction: column;
   background: var(--bg);
   opacity: 0;
   visibility: hidden;
@@ -172,7 +172,7 @@ body {
   border-radius: 6px;
 }
 .page.active {
-  display: flex;
+  display: flex !important;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
