@@ -172,7 +172,7 @@ body {
   border-radius: 6px;
 }
 .page.active {
-  display: flex;
+  display: flex !important;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
