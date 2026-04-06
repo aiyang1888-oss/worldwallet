@@ -2822,3 +2822,77 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     }
   } catch(_) {}
 })();
+
+
+async function doImportWallet() {
+  var errEl = document.getElementById('importError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  var mnemonicRaw = getMnemonicFromImport();
+  if (!mnemonicRaw) {
+    showToast('❌ 请输入助记词', 'error');
+    return;
+  }
+  showWalletLoading();
+  try {
+    var result = typeof importWallet === 'function' ? importWallet(mnemonicRaw) : null;
+    if (!result) {
+      if (errEl) { errEl.style.display = 'block'; errEl.textContent = '助记词无效，请检查后重试'; }
+      showToast('❌ 助记词无效，请检查后重试', 'error');
+      return;
+    }
+    var pin = '';
+    try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
+    window.REAL_WALLET = {
+      ethAddress: result.eth.address,
+      trxAddress: result.trx.address,
+      btcAddress: result.btc.address,
+      createdAt: result.createdAt,
+      hasEncrypted: !!pin,
+      backedUp: false
+    };
+    if (pin) {
+      var flatForStore = {
+        mnemonic: result.mnemonic,
+        enMnemonic: result.mnemonic,
+        words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
+        ethAddress: result.eth.address,
+        trxAddress: result.trx.address,
+        btcAddress: result.btc.address,
+        privateKey: result.eth.privateKey,
+        trxPrivateKey: result.trx.privateKey,
+        createdAt: result.createdAt,
+        backedUp: false
+      };
+      await saveWalletSecure(flatForStore, pin);
+    } else {
+      if (typeof _saveWalletPlainPublicOnly === 'function') {
+        _saveWalletPlainPublicOnly({
+          ethAddress: result.eth.address,
+          trxAddress: result.trx.address,
+          btcAddress: result.btc.address,
+          createdAt: result.createdAt,
+          backedUp: false
+        });
+      } else {
+        try {
+          localStorage.setItem('ww_wallet', JSON.stringify({
+            ethAddress: result.eth.address,
+            trxAddress: result.trx.address,
+            btcAddress: result.btc.address,
+            createdAt: result.createdAt,
+            backedUp: false
+          }));
+        } catch (e2) {}
+      }
+    }
+    try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
+    try { if (typeof updateAddr === 'function') updateAddr(); } catch (e4) {}
+    var tb = document.getElementById('tabBar');
+    if (tb) tb.style.display = 'flex';
+    setTimeout(function() { try { loadBalances(); } catch (e5) {} }, 500);
+    goTo('page-home');
+    showToast('✅ 钱包导入成功！', 'success');
+  } finally {
+    hideWalletLoading();
+  }
+}
