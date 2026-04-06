@@ -2,12 +2,10 @@
 // 所有 localStorage 操作通过 Store 对象
 
 var Store = {
-  /** 读取（JSON 值解析为对象；缺失键返回 null；非 JSON 原样返回字符串） */
+  /** 读取（自动 JSON 解析） */
   get: function(key) {
-    var raw = localStorage.getItem(key);
-    if (raw === null) return null;
-    try { return JSON.parse(raw); }
-    catch (e) { return raw; }
+    try { return JSON.parse(localStorage.getItem(key)); }
+    catch(e) { return localStorage.getItem(key); }
   },
 
   /** 写入（自动 JSON 序列化） */
@@ -28,24 +26,7 @@ var Store = {
 
   // ── 快捷方法 ──
 
-  /**
-   * 始终返回字符串，避免 JSON.parse 把纯数字 PIN 变成 number 导致与输入比较失败。
-   * 兼容旧键名 ww_unlock_pin（与 ww_pin 不一致时迁移到 ww_pin）。
-   */
-  getPin: function() {
-    var raw = localStorage.getItem('ww_pin');
-    if (raw === null || raw === '') {
-      var leg = localStorage.getItem('ww_unlock_pin');
-      if (leg !== null && leg !== '') {
-        try {
-          localStorage.setItem('ww_pin', leg);
-          localStorage.removeItem('ww_unlock_pin');
-        } catch (e) {}
-        raw = leg;
-      }
-    }
-    return raw === null || raw === '' ? '' : String(raw);
-  },
+  getPin: function() { return this.get('ww_pin') || ''; },
   setPin: function(v) { this.set('ww_pin', v); },
   clearPin: function() { this.remove('ww_pin'); },
 

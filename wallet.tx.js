@@ -5,6 +5,23 @@ function confirmTransfer() {
     showToast('📡 当前无网络，无法完成转账', 'warning');
     return;
   }
+  const addrPre = document.getElementById('transferAddr') && document.getElementById('transferAddr').value.trim();
+  const amtPre = parseFloat(document.getElementById('transferAmount') && document.getElementById('transferAmount').value);
+  const coinPre = transferCoin.id;
+  if (!addrPre) { showToast('❌ 请输入收款地址', 'error'); return; }
+  if (coinPre === 'trx' || coinPre === 'usdt') {
+    if (addrPre[0] !== 'T') { showToast('❌ TRX / USDT-TRC20 收款地址须以 T 开头', 'error'); return; }
+  } else if (coinPre === 'eth') {
+    if (!addrPre.startsWith('0x') || addrPre.length < 10) { showToast('❌ ETH 收款地址须为 0x 开头的有效地址', 'error'); return; }
+  }
+  if (!isFinite(amtPre) || amtPre <= 0) { showToast('❌ 请输入有效转账金额', 'error'); return; }
+  var balPre = 0;
+  if (typeof COINS !== 'undefined' && COINS.length) {
+    var cf = COINS.filter(function (c) { return c.id === coinPre; })[0];
+    if (cf) balPre = Number(cf.bal) || 0;
+  }
+  if (balPre < amtPre) { showToast('❌ 余额不足', 'error'); return; }
+
   closeTransferConfirm();
   // 填充成功页数据
   const amt = document.getElementById('transferAmount').value;
@@ -155,7 +172,7 @@ async function sendUSDT_TRC20(toAddr, amount) {
 }
 
 async function loadBalances() {
-  if(!REAL_WALLET || !REAL_WALLET.trxAddress) return;
+  if (!REAL_WALLET || (!REAL_WALLET.ethAddress && !REAL_WALLET.trxAddress)) return;
   const tbd = document.getElementById('totalBalanceDisplay');
   const tbs = document.getElementById('totalBalanceSub');
   if(tbd) tbd.classList.add('home-balance--loading');
@@ -175,8 +192,7 @@ async function loadBalances() {
       typeof getBalance === 'function'
         ? getBalance({
             eth: REAL_WALLET.ethAddress || '',
-            trx: REAL_WALLET.trxAddress || '',
-            btc: REAL_WALLET.btcAddress || ''
+            trx: REAL_WALLET.trxAddress || ''
           })
         : Promise.resolve({ eth: 0, trx: 0, usdt: 0, btc: 0, totalUsd: 0 }),
       getPrices()
@@ -185,7 +201,15 @@ async function loadBalances() {
     const usdtBal = bal.usdt;
     const trxBal = bal.trx;
     const ethBal = bal.eth;
-    const btcBal = bal.btc || 0;
+
+    let btcBal = 0;
+    try {
+      if (REAL_WALLET.btcAddress) {
+        const btcRes = await fetch(`https://mempool.space/api/address/${REAL_WALLET.btcAddress}`);
+        const btcData = await btcRes.json();
+        btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
+      }
+    } catch(e) { console.log('BTC query skipped'); }
 
     const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
     const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
@@ -194,7 +218,7 @@ async function loadBalances() {
     const trxUsd = trxBal * prices.trx;
     const ethUsd = ethBal * prices.eth;
     const btcUsd = btcBal * (prices.btc || 60000);
-    const total = bal.totalUsd;
+    const total = bal.totalUsd + btcUsd;
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
@@ -286,9 +310,7 @@ async function loadTxHistory() {
     // TRX 转账记录
     const trxAddr = REAL_WALLET.trxAddress;
     if(trxAddr && trxAddr.startsWith('T')) {
-      const _tg = typeof TRON_GRID !== 'undefined' ? TRON_GRID : 'https://api.trongrid.io';
-      const _fi = typeof wtTronGridFetchInit === 'function' ? wtTronGridFetchInit({}) : {};
-      const r1 = await fetch(`${_tg}/v1/accounts/${trxAddr}/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`, _fi);
+      const r1 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`);
       const d1 = await r1.json();
       if(d1.data) {
         for(const tx of d1.data.slice(0,5)) {
@@ -308,7 +330,7 @@ async function loadTxHistory() {
       }
 
       // TRX 原生交易
-      const r2 = await fetch(`${_tg}/v1/accounts/${trxAddr}/transactions?limit=5&only_confirmed=true`, _fi);
+      const r2 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions?limit=5&only_confirmed=true`);
       const d2 = await r2.json();
       if(d2.data) {
         for(const tx of d2.data.slice(0,3)) {

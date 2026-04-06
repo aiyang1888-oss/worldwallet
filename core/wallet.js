@@ -95,7 +95,7 @@ function deriveAddress(mnemonic) {
 
 /**
  * 查询多链余额
- * @param {{eth:string, trx:string, btc?:string}} addresses - 地址（btc 可选）
+ * @param {{eth:string, trx:string}} addresses - 地址
  * @returns {Promise<{eth:number, trx:number, usdt:number, btc:number, totalUsd:number}>}
  */
 async function getBalance(addresses) {
@@ -103,60 +103,44 @@ async function getBalance(addresses) {
   var prices = { eth: 0, trx: 0, btc: 0 };
 
   try {
-    var btcUrl = addresses.btc
-      ? 'https://mempool.space/api/address/' + encodeURIComponent(addresses.btc)
-      : null;
-
-    var fetches = [
-      fetch('https://min-api.cryptocompare.com/data/pricemulti?fsyms=ETH,TRX,BTC&tsyms=USD')
+    // 并发查询价格和余额
+    var [priceData, trxData] = await Promise.all([
+      fetch('https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD')
         .then(function(r) { return r.json(); }).catch(function() { return {}; }),
-      fetch(
-        TRON_GRID + '/v1/accounts/' + addresses.trx,
-        typeof wtTronGridFetchInit === 'function' ? wtTronGridFetchInit({}) : {}
-      )
+      fetch(TRON_GRID + '/v1/accounts/' + addresses.trx)
         .then(function(r) { return r.json(); }).catch(function() { return {}; })
-    ];
-    if (btcUrl) {
-      fetches.push(fetch(btcUrl).then(function(r) { return r.json(); }).catch(function() { return {}; }));
-    }
+    ]);
 
-    var responses = await Promise.all(fetches);
-    var priceMulti = responses[0];
-    var trxData = responses[1];
-    var btcData = btcUrl ? responses[2] : null;
+    // 价格
+    if (priceData && priceData.USD) prices.eth = priceData.USD;
 
-    if (priceMulti && priceMulti.ETH && priceMulti.ETH.USD) prices.eth = priceMulti.ETH.USD;
-    if (priceMulti && priceMulti.TRX && priceMulti.TRX.USD) prices.trx = priceMulti.TRX.USD;
-    if (priceMulti && priceMulti.BTC && priceMulti.BTC.USD) prices.btc = priceMulti.BTC.USD;
-
+    // TRX 余额
     if (trxData && trxData.data && trxData.data[0]) {
       var acct = trxData.data[0];
       result.trx = (acct.balance || 0) / 1e6;
+      // USDT TRC20
       var trc20 = acct.trc20 || [];
       trc20.forEach(function(t) {
         if (Object.keys(t)[0] === USDT_TRC20) {
-          result.usdt = parseInt(Object.values(t)[0], 10) / 1e6;
+          result.usdt = parseInt(Object.values(t)[0]) / 1e6;
         }
       });
     }
 
-    if (btcData && btcData.chain_stats) {
-      var funded = btcData.chain_stats.funded_txo_sum || 0;
-      var spent = btcData.chain_stats.spent_txo_sum || 0;
-      result.btc = (funded - spent) / 1e8;
-    }
-
+    // ETH 余额
     try {
       var provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
       var ethBal = await provider.getBalance(addresses.eth);
       result.eth = parseFloat(ethers.utils.formatEther(ethBal));
     } catch (e) {}
 
+    // 总 USD
     result.totalUsd =
       result.usdt +
       result.trx * (prices.trx || 0.25) +
-      result.eth * (prices.eth || 0) +
+      result.eth * prices.eth +
       result.btc * (prices.btc || 60000);
+
   } catch (e) {
     console.error('[getBalance]', e.message);
   }
