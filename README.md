@@ -1,50 +1,69 @@
-# Welcome to your Expo app 👋
+# WorldWallet
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Multi-chain crypto wallet: mnemonic create/import, balances, and transfers (ETH / TRX / USDT-TRC20 / BTC). The main app lives in **`wallet-shell/`** (plain HTML/CSS/JS) with logic in **`wallet-shell/core/`**.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Create / import wallet** — BIP39 via `core/wallet.js`; optional PIN + encryption in `core/security.js`.
+- **Home & balances** — `getBalance` + UI in `wallet.ui.js` / `wallet.tx.js`.
+- **Send** — `sendTx` for TRX, ETH, USDT (TRC-20).
+- **Optional React Native client** — See **`client/`** (separate app; not required for the web wallet).
 
-   ```bash
-   npm install
-   ```
+## Web app (`wallet-shell/`)
 
-2. Start the app
+| Path | Role |
+|------|------|
+| `wallet-shell/index.html` | App shell |
+| `wallet-shell/core/wallet.js` | `createWallet`, `importWallet`, `deriveAddress`, `getBalance`, `sendTx` |
+| `wallet-shell/core/security.js` | PIN, AES-GCM |
+| `wallet-shell/js/api-config.js` | Optional TronGrid API key via `<meta name="wt-tron-api-key">` (no keys in repo) |
+| `dist/wallet.html` | Deployed copy; run `./scripts/sync-dist.sh` or `./deploy.sh` |
 
-   ```bash
-   npx expo start
-   ```
+### Run locally
 
-In the output, you'll find options to open the app in a
+Open `wallet-shell/index.html` in a browser, or serve `wallet-shell/` with any static server.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Deploy
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- **`./scripts/sync-dist.sh`** — Copies shell → `dist/` (no git).
+- **`NO_PUSH=1 ./deploy.sh "msg"`** — Full sync + optional git in `dist/`.
 
-## Get a fresh project
+### PIN storage
 
-When you're ready, run:
+Use `Store.getPin()` / `Store.setPin()` from `wallet-shell/js/storage.js`. Legacy `ww_unlock_pin` is migrated to `ww_pin`.
+
+---
+
+## React Native client (`client/`)
+
+The **`client/`** package is an optional UI shell. It is **not** the same stack as `wallet-shell/` (no Expo app in this repo unless you add it).
+
+### Picker (important)
+
+`Picker` was **removed from `react-native`** in newer releases; importing it from `react-native` is deprecated/broken.
+
+- **Use** `@react-native-picker/picker` (see `client/src/components/CurrencySelector.js`).
+- Install from the `client/` directory:
 
 ```bash
-npm run reset-project
+cd client
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Do **not** use:
 
-## Learn more
+```javascript
+import { Picker } from 'react-native'; // deprecated / removed
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Use:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```javascript
+import { Picker } from '@react-native-picker/picker';
+```
 
-## Join the community
+---
 
-Join our community of developers creating universal apps.
+## License
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+See project files for license terms (if applicable).

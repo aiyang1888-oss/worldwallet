@@ -1,0 +1,54 @@
+--- a/wallet-shell/wallet.ui.js
++++ b/wallet-shell/wallet.ui.js
+@@ -3117,17 +3117,45 @@ function syncImportGrid(text) {
+   else window.addEventListener('load', run);
+ })();
+ 
+-// ── 刷新恢复当前页 ────────────────────────────────────────────────
++// ── 刷新恢复当前页（BUG-002 已修复）────────────────────────────────
+ (function() {
+   var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings'];
+   try {
+     var last = sessionStorage.getItem('ww_last_page');
+     var hasWallet = false;
+     try {
+       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+       hasWallet = !!(_d && _d.ethAddress);
+     } catch (_e) {}
+-    if (hasWallet) return;
++    
++    // 🔴 FIX BUG-002: 如果没有钱包，停留在欢迎页，不恢复任何页面，强制隐藏所有弹窗
++    if (!hasWallet) {
++      setTimeout(function() {
++        // 移除所有弹窗的 show class 和内联样式
++        var overlays = [
++          'walletLoadingOverlay', 
++          'pinUnlockOverlay',
++          'totpUnlockOverlay',
++          'totpSetupOverlay',
++          'pinSetupOverlay',
++          'worldAddressModal',
++          'transferConfirmOverlay',
++          'hbSuccessOverlay'
++        ];
++        overlays.forEach(function(id) {
++          var el = document.getElementById(id);
++          if (el) {
++            el.classList.remove('show');
++            el.style.display = 'none';
++          }
++        });
++        
++        // 确保欢迎页激活
++        var welcome = document.getElementById('page-welcome');
++        if (welcome && !welcome.classList.contains('active')) {
++          goTo('page-welcome');
++        }
++      }, 10);
++      return;
++    }
++    
++    // 有钱包时才恢复上次页面
+     if (last && ALLOW_RESTORE.includes(last) && document.getElementById(last)) {
+       setTimeout(function() { goTo(last); }, 50);
+     }
