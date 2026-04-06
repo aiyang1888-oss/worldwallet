@@ -601,6 +601,14 @@ function closePinSetupOverlay() {
 }
 
 function openPinSetupOverlay() {
+  try {
+    if (typeof closeTotpSetup === 'function') closeTotpSetup();
+    else {
+      var _to = document.getElementById('totpSetupOverlay');
+      if (_to) _to.classList.remove('show');
+      window._wwTotpPendingSecret = null;
+    }
+  } catch (_e) {}
   const el = document.getElementById('pinSetupOverlay');
   window._pinSetupValue = '';
   window._pinSetupFirst = '';
@@ -694,15 +702,7 @@ function handlePinSetupKey(key) {
   finalizeImportedWalletAfterPin(val).then(function(){ closePinSetupOverlay(); }).catch(function(e){ showToast((e && e.message) || 'PIN 设置失败', 'error'); });
 }
 
-function offerTotpAfterPinSave() {
-  if (wwTotpEnabled()) return;
-  setTimeout(function() {
-    try {
-      if (!confirm('是否启用 Google Authenticator 两步验证？\n启用后解锁钱包时需输入 PIN 与动态码。')) return;
-      startTotpSetup();
-    } catch (e) {}
-  }, 120);
-}
+function offerTotpAfterPinSave() {}
 
 function startTotpSetup() {
   const pin = localStorage.getItem('ww_pin');
@@ -1928,7 +1928,7 @@ function calcTransferFee() {
     if (actEl) actEl.textContent = '—';
     if (usdEl) usdEl.textContent = '$0.00';
     if (cnyEl) cnyEl.textContent = '0.00';
-    if (hintEl) hintEl.textContent = nf.line + ' · ' + nf.sub + '（TRC-20 USDT 转账需消耗能量 / 带宽）';
+    if (hintEl) hintEl.textContent = nf.line + ' · ' + nf.sub + ' · TRC-20 需能量/带宽';
   } else {
     const feeNum = amt * 0.003;
     const fee = feeNum.toFixed(4);
@@ -1938,7 +1938,7 @@ function calcTransferFee() {
     if (usdEl) usdEl.textContent = '$' + (amt * price).toFixed(2);
     if (cnyEl) cnyEl.textContent = (amt * price * usdToCny).toFixed(2);
     if (hintEl) {
-      hintEl.textContent = nf.line + ' · ' + nf.sub + ' · 应用内手续费约 ' + fee + ' ' + transferCoin.name + '，到账约 ' + actual + ' ' + transferCoin.name;
+      hintEl.textContent = '约 ' + fee + ' ' + transferCoin.name + ' 费 · 到账约 ' + actual + ' ' + transferCoin.name + ' · ' + nf.sub;
     }
   }
   const _spd = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
@@ -2410,11 +2410,11 @@ async function loadSwapPrices() {
     var d = await r.json();
     var ut = d.tether && d.tether.usd ? d.tether.usd : 1;
     var tr = d.tron && d.tron.usd ? d.tron.usd : 0.12;
-    if (typeof COINS !== 'undefined' && COINS.forEach) {
-      COINS.forEach(function (coin) {
-        if (coin.id === 'usdt') coin.price = ut;
-        if (coin.id === 'trx') coin.price = tr;
-      });
+    if (typeof COINS !== 'undefined' && COINS.find) {
+      var cu = COINS.find(function (c) { return c && c.id === 'usdt'; });
+      var ct = COINS.find(function (c) { return c && c.id === 'trx'; });
+      if (cu) cu.price = ut;
+      if (ct) ct.price = tr;
     }
     calcSwap();
   } catch (e) {
@@ -2440,10 +2440,6 @@ function doSwap() {
     if (typeof showToast === 'function') showToast('请输入兑换金额', 'warning');
     return;
   }
-  openDex();
-}
-
-function openDex() {
   window.open('https://sunswap.com/#/v3?inputCurrency=' + WW_SUNSWAP_USDT + '&outputCurrency=' + WW_SUNSWAP_TRX, '_blank');
 }
 
@@ -3062,7 +3058,6 @@ function openPinSettingsDialog() {
   localStorage.setItem('ww_pin', t);
   showToast('PIN 已保存', 'success');
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
-  if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
 }
 
 // 时钟
