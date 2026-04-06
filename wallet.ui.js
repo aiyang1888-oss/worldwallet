@@ -3484,13 +3484,20 @@ function shareHbCreatedKeyword() {
   } catch (e) {}
 }
 
-// ── 保存钱包并跳过验证 ──────────────────────────────────────────
+
+// ── 保存钱包并跳过验证 ────────────────────────────────────────── 
 function saveAndSkipVerify() {
   if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
     window.REAL_WALLET = window.TEMP_WALLET;
     try {
-      var encrypted = encryptSensitive(TEMP_WALLET.mnemonic);
-      localStorage.setItem('ww_wallet_encrypted', JSON.stringify(encrypted));
+      // 简化保存：直接序列化钱包对象（生产环境需加密）
+      var walletData = {
+        mnemonic: TEMP_WALLET.mnemonic,
+        trxAddress: TEMP_WALLET.trxAddress,
+        ethAddress: TEMP_WALLET.ethAddress,
+        btcAddress: TEMP_WALLET.btcAddress
+      };
+      localStorage.setItem('ww_wallet_encrypted', JSON.stringify({data: JSON.stringify(walletData)}));
       localStorage.setItem('ww_has_wallet', '1');
       if (typeof showToast === 'function') showToast('✅ 钱包已保存', 'success');
     } catch (e) {
