@@ -3127,6 +3127,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       hasWallet = !!(_d && _d.ethAddress);
     } catch (_e) {}
     if (hasWallet) return;
+    if (!hasWallet) { setTimeout(function(){ goTo("page-welcome"); }, 50); return; }
     if (!hasWallet) { 
       setTimeout(function(){ goTo('page-welcome'); }, 50); 
       return; 
