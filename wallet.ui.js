@@ -3092,7 +3092,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   window.addEventListener('hashchange', function () {
     wwApplyHashRoute();
   });
-  setTimeout(wwApplyHashRoute, 0);
+ // setTimeout(wwApplyHashRoute, 0);
 })();
 
     if ('serviceWorker' in navigator) {
