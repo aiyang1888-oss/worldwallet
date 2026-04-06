@@ -75,8 +75,34 @@
       </div>
     </div>
 
-    <!-- ══ PIN 解锁（原密码恢复入口） ══ -->
-    
+    <!-- PIN 解锁（本机 PIN 进入钱包） -->
+    <div class="page" id="page-password-restore">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">PIN 解锁</div>
+      </div>
+      <div class="ww-pin-restore-content" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;min-height:0">
+        <div style="text-align:center;margin-bottom:30px;">
+          <div style="font-size:48px;margin-bottom:20px;">🔐</div>
+          <h3 style="margin:10px 0;color:var(--text);font-size:18px;font-weight:700;">输入 PIN 码</h3>
+          <p style="color:var(--text-muted);font-size:14px;line-height:1.5;">请输入您的 6 位 PIN 码解锁钱包</p>
+        </div>
+        <div id="pinRestoreDisplay" class="ww-pin-restore-dots" style="display:flex;gap:12px;margin:20px 0;">
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+          <div class="pin-dot"></div>
+        </div>
+        <div id="pinRestoreError" style="display:none;color:var(--red);font-size:14px;margin:10px 0;text-align:center;max-width:280px;"></div>
+        <div id="pinRestoreKeypad" class="pin-keypad ww-pin-restore-keypad" style="width:100%;max-width:280px;margin-top:20px;"></div>
+        <div style="margin-top:30px;text-align:center;">
+          <a href="#" onclick="goTo('page-import');return false;" style="color:var(--gold);font-size:14px;text-decoration:none;">忘记 PIN？使用助记词恢复 →</a>
+        </div>
+      </div>
+    </div>
+
     <!-- 创建页 -->
     <div class="page" id="page-create">
       <div class="nav-bar">

@@ -846,6 +846,7 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     try { if(typeof wwGaslessPopulate==='function') wwGaslessPopulate(); } catch(_gsp) {}
     try { if(typeof wwGasManagerRender==='function') setTimeout(wwGasManagerRender, 30); } catch(_wg) {}
   }
+  if(pageId==='page-password-restore') { try { initPinRestore(); } catch(_pr) {} }
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
@@ -868,6 +869,10 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   }
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
+    if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+      setTimeout(function () { goTo('page-welcome'); }, 50);
+      return;
+    }
     // 有钱包时显示导航栏
     if(REAL_WALLET && REAL_WALLET.ethAddress) {
       document.getElementById('tabBar').style.display = 'flex';
@@ -2934,6 +2939,133 @@ function checkVerify() {
   }
 }
 
+// ── PIN 恢复页（page-password-restore）──────────────────────────────
+var _pinRestoreBuffer = '';
+
+function initPinRestore() {
+  _pinRestoreBuffer = '';
+  updatePinRestoreDisplay();
+  var errorDiv = document.getElementById('pinRestoreError');
+  if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
+  var keypad = document.getElementById('pinRestoreKeypad');
+  if (keypad && !keypad.dataset.ready) {
+    var keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
+    keypad.innerHTML = keys.map(function (k) {
+      if (!k) return '<div></div>';
+      if (k === 'del') return '<button type="button" class="pin-key pin-key-sub" onclick="handlePinRestoreKey(\'del\')">⌫</button>';
+      return '<button type="button" class="pin-key" onclick="handlePinRestoreKey(\'' + k + '\')">' + k + '</button>';
+    }).join('');
+    keypad.dataset.ready = '1';
+  }
+  try { if (typeof loadWallet === 'function') loadWallet(); } catch (_lw) {}
+}
+
+function updatePinRestoreDisplay() {
+  var dots = document.querySelectorAll('#pinRestoreDisplay .pin-dot');
+  dots.forEach(function (dot, i) {
+    dot.classList.toggle('filled', i < _pinRestoreBuffer.length);
+  });
+}
+
+function handlePinRestoreKey(key) {
+  tapHaptic(12);
+  var errorDiv = document.getElementById('pinRestoreError');
+  if (key === 'del') {
+    _pinRestoreBuffer = _pinRestoreBuffer.slice(0, -1);
+    if (errorDiv) errorDiv.style.display = 'none';
+  } else if (_pinRestoreBuffer.length < 6 && /^\d$/.test(String(key))) {
+    _pinRestoreBuffer += key;
+  }
+  updatePinRestoreDisplay();
+  if (_pinRestoreBuffer.length === 6) {
+    setTimeout(function () { verifyPinRestore(); }, 300);
+  }
+}
+
+function verifyPinRestore() {
+  showWalletLoading();
+  setTimeout(function () {
+    try {
+      if (typeof loadWallet === 'function') loadWallet();
+      var w = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+      if (!w || !w.ethAddress) {
+        hideWalletLoading();
+        showPinRestoreError('未找到钱包数据，请使用助记词导入');
+        _pinRestoreBuffer = '';
+        updatePinRestoreDisplay();
+        return;
+      }
+      var pin = _pinRestoreBuffer;
+      if (w.hasEncrypted) {
+        if (typeof decryptSensitive !== 'function') {
+          hideWalletLoading();
+          showPinRestoreError('无法解密，请刷新页面重试');
+          _pinRestoreBuffer = '';
+          updatePinRestoreDisplay();
+          return;
+        }
+        decryptSensitive(pin).then(function (sensitive) {
+          hideWalletLoading();
+          if (!sensitive) {
+            showPinRestoreError('PIN 码错误，请重试');
+            _pinRestoreBuffer = '';
+            updatePinRestoreDisplay();
+            return;
+          }
+          REAL_WALLET.privateKey = sensitive.privateKey;
+          REAL_WALLET.trxPrivateKey = sensitive.trxPrivateKey;
+          REAL_WALLET.mnemonic = sensitive.mnemonic;
+          REAL_WALLET.enMnemonic = sensitive.enMnemonic;
+          REAL_WALLET.words = sensitive.words;
+          try { window.REAL_WALLET = REAL_WALLET; } catch (_rw) {}
+          finishPinRestoreSuccess();
+        }).catch(function (e) {
+          hideWalletLoading();
+          try { console.error('[verifyPinRestore]', e); } catch (_e) {}
+          showPinRestoreError('PIN 码错误，请重试');
+          _pinRestoreBuffer = '';
+          updatePinRestoreDisplay();
+        });
+        return;
+      }
+      var want = '';
+      try { want = localStorage.getItem('ww_pin') || ''; } catch (_p) {}
+      hideWalletLoading();
+      if (pin === want && want.length === 6) {
+        finishPinRestoreSuccess();
+      } else {
+        showPinRestoreError('PIN 码错误，请重试');
+        _pinRestoreBuffer = '';
+        updatePinRestoreDisplay();
+      }
+    } catch (e) {
+      hideWalletLoading();
+      showPinRestoreError('PIN 码错误，请重试');
+      _pinRestoreBuffer = '';
+      updatePinRestoreDisplay();
+    }
+  }, 300);
+}
+
+function finishPinRestoreSuccess() {
+  _pinRestoreBuffer = '';
+  updatePinRestoreDisplay();
+  if (typeof showToast === 'function') showToast('✅ PIN 验证成功！', 'success');
+  if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
+    showTotpUnlockOverlay();
+  } else {
+    try { window._wwForceIdleLock = false; } catch (_fl) {}
+    _resumeWalletAfterUnlock();
+  }
+}
+
+function showPinRestoreError(msg) {
+  var errorDiv = document.getElementById('pinRestoreError');
+  if (errorDiv) {
+    errorDiv.textContent = msg;
+    errorDiv.style.display = 'block';
+  }
+}
 
 function _resumeWalletAfterUnlock() {
   // 解密敏感数据并临时注入 REAL_WALLET
