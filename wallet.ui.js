@@ -663,6 +663,9 @@ async function finalizeImportedWalletAfterPin(pin) {
     hasEncrypted: true,
     backedUp: !!flat.backedUp
   };
+  delete window.REAL_WALLET.privateKey;
+  delete window.REAL_WALLET.trxPrivateKey;
+  delete window.REAL_WALLET.mnemonic;
   try { if (typeof updateAddr === 'function') updateAddr(); } catch(e) {}
   try { if (typeof loadBalances === 'function') setTimeout(loadBalances, 500); } catch(e) {}
   var tb = document.getElementById('tabBar');
@@ -3018,6 +3021,9 @@ function verifyPinRestore() {
           REAL_WALLET.enMnemonic = sensitive.enMnemonic;
           REAL_WALLET.words = sensitive.words;
           try { window.REAL_WALLET = REAL_WALLET; } catch (_rw) {}
+          delete window.REAL_WALLET.privateKey;
+          delete window.REAL_WALLET.trxPrivateKey;
+          delete window.REAL_WALLET.mnemonic;
           finishPinRestoreSuccess();
         }).catch(function (e) {
           hideWalletLoading();
@@ -3369,6 +3375,9 @@ async function doImportWallet() {
       hasEncrypted: false,
       backedUp: false
     };
+    delete window.REAL_WALLET.privateKey;
+    delete window.REAL_WALLET.trxPrivateKey;
+    delete window.REAL_WALLET.mnemonic;
 
     try { localStorage.setItem('ww_import_pending', JSON.stringify(flatForStore)); } catch (e) {}
     try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
