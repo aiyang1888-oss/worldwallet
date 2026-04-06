@@ -943,8 +943,8 @@ function updateHomeBackupBanner() {
 function getMnemonicStrengthDisplay() {
   var n = 12;
   // 密钥页以 TEMP_WALLET 词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
-  if (window.TEMP_WALLET && window.TEMP_WALLET.enMnemonic) {
-    var wct = window.TEMP_WALLET.enMnemonic.trim().split(/\s+/).filter(Boolean).length;
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    var wct = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean).length;
     if ([12, 15, 18, 21, 24].includes(wct)) n = wct;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
@@ -2475,13 +2475,15 @@ async function changeMnemonicLength(n) {
 var verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  // 优先 TEMP_WALLET.words（密钥页仅内存助记词）
-  let words;
-  if (window.TEMP_WALLET && window.TEMP_WALLET.words && window.TEMP_WALLET.words.length >= 12) {
-    words = window.TEMP_WALLET.words.slice();
-  } else if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
-    words = REAL_WALLET.words.slice();
-  } else {
+  // 优先 TEMP_WALLET.mnemonic（core/wallet 格式：{ mnemonic, wordCount, eth, trx, btc }，无 .words / .enMnemonic）
+  let words = null;
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    words = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+  }
+  if ((!words || words.length < 12) && REAL_WALLET && REAL_WALLET.mnemonic) {
+    words = REAL_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+  }
+  if (!words || words.length < 12) {
     // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
     var nPick = 12;
     if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
@@ -2501,9 +2503,28 @@ function startVerify() {
     }
     words = indices.map(i => pool[i]);
     if(!REAL_WALLET) REAL_WALLET = {};
-    REAL_WALLET.words = words;
     REAL_WALLET.mnemonic = words.join(' ');
+    REAL_WALLET.wordCount = words.length;
     saveWallet(REAL_WALLET);
+  }
+  // 验证开始时若存在完整 TEMP_WALLET，将链上地址与密钥写入 REAL_WALLET 并持久化（wallet.core saveWallet：有 PIN 则加密存私钥）
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic && (window.TEMP_WALLET.eth || window.TEMP_WALLET.ethAddress)) {
+    var tw = window.TEMP_WALLET;
+    var nested = tw.eth && tw.eth.address;
+    REAL_WALLET = {
+      ethAddress: nested ? tw.eth.address : tw.ethAddress,
+      trxAddress: nested ? tw.trx.address : tw.trxAddress,
+      btcAddress: nested ? tw.btc.address : (tw.btcAddress || ''),
+      createdAt: tw.createdAt != null ? tw.createdAt : Date.now(),
+      mnemonic: tw.mnemonic,
+      wordCount: tw.wordCount || words.length,
+      privateKey: nested ? tw.eth.privateKey : tw.privateKey,
+      trxPrivateKey: nested ? tw.trx.privateKey : tw.trxPrivateKey,
+      enMnemonic: tw.mnemonic,
+      words: words.slice()
+    };
+    window.REAL_WALLET = REAL_WALLET;
+    if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   
@@ -2560,7 +2581,16 @@ function checkVerify() {
     if (typeof markBackupDone === 'function') markBackupDone();
     updateAddr();
     goTo('page-verify-success');
-    // 用户手动点按钮进入首页（已移除自动跳转）
+    setTimeout(function() {
+      var hasPin = false;
+      try {
+        hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+      } catch (_p0) {}
+      if (!hasPin && typeof openPinSettingsDialog === 'function') {
+        if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
+        openPinSettingsDialog();
+      }
+    }, 450);
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
