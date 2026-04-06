@@ -3127,6 +3127,10 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       hasWallet = !!(_d && _d.ethAddress);
     } catch (_e) {}
     if (hasWallet) return;
+    if (!hasWallet) { 
+      setTimeout(function(){ goTo('page-welcome'); }, 50); 
+      return; 
+    }
     if (last && ALLOW_RESTORE.includes(last) && document.getElementById(last)) {
       setTimeout(function() { goTo(last); }, 50);
     }
