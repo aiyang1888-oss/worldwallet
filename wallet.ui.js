@@ -280,7 +280,8 @@ const BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb
 async function createNewWallet() {
   showWalletLoading();
   try {
-    await generateTempWallet(12);
+    var w = await createWallet(12);
+    window.TEMP_WALLET = w;
     goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
     if (typeof showToast === 'function')
@@ -673,15 +674,18 @@ function goTo(pageId, opts) {
       if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
       syncKeyPageLangSelect();
       showWalletLoading();
-      generateTempWallet(12).then(function() {
-        hideWalletLoading();
-        syncKeyPageLangSelect();
-        if (typeof renderKeyGrid === 'function') renderKeyGrid();
-      }).catch(function(e) {
-        hideWalletLoading();
-        if (typeof showToast === 'function')
-          showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '生成失败', 'error');
-      });
+      Promise.resolve(createWallet(12))
+        .then(function (w) {
+          window.TEMP_WALLET = w;
+          hideWalletLoading();
+          syncKeyPageLangSelect();
+          if (typeof renderKeyGrid === 'function') renderKeyGrid();
+        })
+        .catch(function (e) {
+          hideWalletLoading();
+          if (typeof showToast === 'function')
+            showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '生成失败', 'error');
+        });
     }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
@@ -772,9 +776,9 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
       } catch(e) {}
     }, 200);
   }
-  if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
-    setTimeout(loadTxHistory, 500);
-    setTimeout(loadBalances, 500);
+  if (pageId === 'page-home' && REAL_WALLET) {
+    if (REAL_WALLET.trxAddress) setTimeout(loadTxHistory, 500);
+    if (REAL_WALLET.ethAddress) setTimeout(loadBalances, 500);
   }
   try { if (typeof wwUpdateScrollTopBtn === 'function') wwUpdateScrollTopBtn(); } catch (e) {}
   try {
@@ -2487,7 +2491,8 @@ async function changeMnemonicLength(n) {
   // 重新生成指定词数的钱包
   showWalletLoading();
   try {
-    await generateTempWallet(wordCount);
+    var w = await createWallet(wordCount);
+    window.TEMP_WALLET = w;
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
   } catch(e) {
     if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
