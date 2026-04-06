@@ -418,6 +418,29 @@ function getBtcAddr() { return (REAL_WALLET && REAL_WALLET.btcAddress) ? REAL_WA
 const ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
 
 let currentLang = detectDeviceLang();
+/** 密钥页助记词显示语言（与 wordlists 语言键一致） */
+const WW_KEY_PAGE_LANGS = ['zh', 'en', 'ja', 'ko', 'es', 'fr', 'ar', 'ru', 'pt', 'hi'];
+
+function switchLang(lang) {
+  if (WW_KEY_PAGE_LANGS.indexOf(lang) === -1) return;
+  currentLang = lang;
+  try {
+    var kl = document.getElementById('keyPageLang');
+    if (kl) kl.value = lang;
+  } catch (e) {}
+  if (typeof renderKeyGrid === 'function') renderKeyGrid();
+}
+
+function syncKeyPageLangSelect() {
+  try {
+    var kl = document.getElementById('keyPageLang');
+    if (!kl) return;
+    var v = WW_KEY_PAGE_LANGS.indexOf(currentLang) >= 0 ? currentLang : 'zh';
+    kl.value = v;
+    if (kl.value !== v) kl.value = 'zh';
+  } catch (e2) {}
+}
+
 const MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
 const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
 
@@ -642,14 +665,17 @@ function goTo(pageId, opts) {
   if(pageId==='page-key') {
     var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen;
     if (_skipKey) {
+      syncKeyPageLangSelect();
       if (typeof renderKeyGrid === 'function') renderKeyGrid();
     } else {
       currentMnemonicLength = 12;
       var _sel = document.getElementById('mnemonicLength');
       if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
+      syncKeyPageLangSelect();
       showWalletLoading();
       generateTempWallet(12).then(function() {
         hideWalletLoading();
+        syncKeyPageLangSelect();
         if (typeof renderKeyGrid === 'function') renderKeyGrid();
       }).catch(function(e) {
         hideWalletLoading();
@@ -844,7 +870,7 @@ function renderKeyGrid() {
   let words;
   const isEn = currentLang === 'en';
   const tw = window.TEMP_WALLET;
-  const enMnemonic = tw && tw.enMnemonic;
+  const enMnemonic = tw && (tw.mnemonic || tw.enMnemonic);
   if (!enMnemonic) {
     goTo('page-create');
     return;

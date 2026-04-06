@@ -102,8 +102,22 @@
       <div class="nav-bar">
         <div class="nav-back" onclick="goTo(window._keyBackPage||'page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">我的密钥</div>
-        <div class="nav-right" class="u11">
+        <div class="nav-right u11" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
           <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
+          <select id="keyPageLang" name="ww-key-lang" autocomplete="off" data-form-type="other" data-lpignore="true" onchange="switchLang(this.value)"
+            style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 4px;cursor:pointer;outline:none;max-width:130px"
+            title="助记词网格显示语言（英文为 BIP39 原文）">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+            <option value="pt">Português</option>
+            <option value="hi">हिन्दी</option>
+          </select>
           <select id="mnemonicLength" name="ww-mnemonic-length" autocomplete="off" data-form-type="other" data-lpignore="true" onchange="changeMnemonicLength(this.value)"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none"
             title="词数与下方网格一致；每次进入本页默认 12 词；切换词数将生成全新随机助记词；所选词数不跨会话保存">
