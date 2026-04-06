@@ -326,7 +326,7 @@ window.addEventListener('pageshow', function () {
 // 强刷后进入应用最开始的页面（欢迎页），不恢复 URL hash 深链
 document.querySelectorAll('.page').forEach(p => {
   p.classList.remove('active');
-  p.style.display = '';
+  p.style.display = 'none';
 });
 try {
   if (typeof history !== 'undefined' && history.replaceState) {
@@ -628,11 +628,11 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) {}
   applySeoForPage(pageId);
-  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const activePage=document.getElementById(pageId);
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
-  activePage.style.display='';
+  activePage.style.display='flex';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
     var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen;
