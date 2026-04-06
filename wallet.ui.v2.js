@@ -594,6 +594,104 @@ function wwTotpEnabled() {
 function closePinSetupOverlay() {
   const el = document.getElementById('pinSetupOverlay');
   if (el) el.classList.remove('show');
+  window._pinSetupValue = '';
+  window._pinSetupFirst = '';
+  window._pinSetupMode = 'create';
+  renderPinSetupUI();
+}
+
+function openPinSetupOverlay() {
+  const el = document.getElementById('pinSetupOverlay');
+  window._pinSetupValue = '';
+  window._pinSetupFirst = '';
+  window._pinSetupMode = 'create';
+  renderPinSetupUI();
+  if (el) el.classList.add('show');
+}
+
+function renderPinSetupUI() {
+  var dots = document.getElementById('pinDots');
+  var keypad = document.getElementById('pinKeypad');
+  var title = document.getElementById('pinSetupTitle');
+  var hint = document.getElementById('pinSetupHint');
+  var val = window._pinSetupValue || '';
+  var first = window._pinSetupFirst || '';
+  var mode = window._pinSetupMode || 'create';
+  if (title) title.textContent = mode === 'confirm' ? '确认 PIN' : '设置 PIN';
+  if (hint) hint.textContent = mode === 'confirm' ? '请再次输入 6 位数字' : '请输入 6 位数字';
+  if (dots) {
+    dots.innerHTML = '';
+    for (var i = 0; i < 6; i++) {
+      dots.innerHTML += '<span style="width:12px;height:12px;border-radius:50%;display:inline-block;margin:0 6px;background:' + (i < val.length ? 'var(--gold)' : 'rgba(255,255,255,0.15)') + '"></span>';
+    }
+  }
+  if (keypad && !keypad.dataset.ready) {
+    var keys = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
+    keypad.innerHTML = keys.map(function(k){
+      if (!k) return '<div></div>';
+      return '<button type="button" class="btn-secondary" style="height:48px;font-size:20px" onclick="handlePinSetupKey(\''+k+'\')">'+k+'</button>';
+    }).join('');
+    keypad.dataset.ready = '1';
+  }
+}
+
+async function finalizeImportedWalletAfterPin(pin) {
+  var raw = localStorage.getItem('ww_import_pending');
+  if (!raw) return;
+  var flat = JSON.parse(raw);
+  localStorage.setItem('ww_pin', pin);
+  await saveWalletSecure(flat, pin);
+  localStorage.removeItem('ww_import_pending');
+  window.REAL_WALLET = {
+    mnemonic: flat.mnemonic,
+    ethAddress: flat.ethAddress,
+    trxAddress: flat.trxAddress,
+    btcAddress: flat.btcAddress,
+    privateKey: flat.privateKey,
+    trxPrivateKey: flat.trxPrivateKey,
+    createdAt: flat.createdAt,
+    hasEncrypted: true,
+    backedUp: !!flat.backedUp
+  };
+  try { if (typeof updateAddr === 'function') updateAddr(); } catch(e) {}
+  try { if (typeof loadBalances === 'function') setTimeout(loadBalances, 500); } catch(e) {}
+  var tb = document.getElementById('tabBar');
+  if (tb) tb.style.display = 'flex';
+  goTo('page-home');
+  showToast('✅ PIN 设置成功，钱包已恢复', 'success');
+}
+
+function handlePinSetupKey(key) {
+  var val = window._pinSetupValue || '';
+  if (key === '⌫') {
+    window._pinSetupValue = val.slice(0, -1);
+    renderPinSetupUI();
+    return;
+  }
+  if (!/^\d$/.test(key) || val.length >= 6) return;
+  val += key;
+  window._pinSetupValue = val;
+  renderPinSetupUI();
+  if (val.length < 6) return;
+
+  if ((window._pinSetupMode || 'create') === 'create') {
+    window._pinSetupFirst = val;
+    window._pinSetupValue = '';
+    window._pinSetupMode = 'confirm';
+    renderPinSetupUI();
+    return;
+  }
+
+  if (val !== (window._pinSetupFirst || '')) {
+    showToast('两次 PIN 不一致', 'error');
+    window._pinSetupValue = '';
+    window._pinSetupFirst = '';
+    window._pinSetupMode = 'create';
+    renderPinSetupUI();
+    return;
+  }
+
+  finalizeImportedWalletAfterPin(val).then(function(){ closePinSetupOverlay(); }).catch(function(e){ showToast((e && e.message) || 'PIN 设置失败', 'error'); });
 }
 
 function offerTotpAfterPinSave() {
@@ -3097,7 +3195,7 @@ async function doImportWallet() {
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
   var mnemonicRaw = getMnemonicFromImport();
   if (!mnemonicRaw) {
-    showToast('❌ 请输入助记词', 'error');
+    showToast('❌ 助记词格式错误，仅支持 12/15/18/21/24 词', 'error');
     return;
   }
   showWalletLoading();
@@ -3108,58 +3206,39 @@ async function doImportWallet() {
       showToast('❌ 助记词无效，请检查后重试', 'error');
       return;
     }
-    var pin = '';
-    try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
-    window.REAL_WALLET = {
+
+    var flatForStore = {
+      mnemonic: result.mnemonic,
+      enMnemonic: result.mnemonic,
+      words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
       ethAddress: result.eth.address,
       trxAddress: result.trx.address,
       btcAddress: result.btc.address,
+      privateKey: result.eth.privateKey,
+      trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
-      hasEncrypted: !!pin,
       backedUp: false
     };
-    if (pin) {
-      var flatForStore = {
-        mnemonic: result.mnemonic,
-        enMnemonic: result.mnemonic,
-        words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
-        ethAddress: result.eth.address,
-        trxAddress: result.trx.address,
-        btcAddress: result.btc.address,
-        privateKey: result.eth.privateKey,
-        trxPrivateKey: result.trx.privateKey,
-        createdAt: result.createdAt,
-        backedUp: false
-      };
-      await saveWalletSecure(flatForStore, pin);
-    } else {
-      if (typeof _saveWalletPlainPublicOnly === 'function') {
-        _saveWalletPlainPublicOnly({
-          ethAddress: result.eth.address,
-          trxAddress: result.trx.address,
-          btcAddress: result.btc.address,
-          createdAt: result.createdAt,
-          backedUp: false
-        });
-      } else {
-        try {
-          localStorage.setItem('ww_wallet', JSON.stringify({
-            ethAddress: result.eth.address,
-            trxAddress: result.trx.address,
-            btcAddress: result.btc.address,
-            createdAt: result.createdAt,
-            backedUp: false
-          }));
-        } catch (e2) {}
-      }
-    }
+
+    window.REAL_WALLET = {
+      mnemonic: result.mnemonic,
+      ethAddress: result.eth.address,
+      trxAddress: result.trx.address,
+      btcAddress: result.btc.address,
+      privateKey: result.eth.privateKey,
+      trxPrivateKey: result.trx.privateKey,
+      createdAt: result.createdAt,
+      hasEncrypted: false,
+      backedUp: false
+    };
+
+    try { localStorage.setItem('ww_import_pending', JSON.stringify(flatForStore)); } catch (e) {}
     try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
     try { if (typeof updateAddr === 'function') updateAddr(); } catch (e4) {}
     var tb = document.getElementById('tabBar');
     if (tb) tb.style.display = 'flex';
-    setTimeout(function() { try { loadBalances(); } catch (e5) {} }, 500);
-    goTo('page-home');
-    showToast('✅ 钱包导入成功！', 'success');
+    openPinSetupOverlay();
+    showToast('✅ 钱包导入成功，请先设置 PIN', 'success');
   } finally {
     hideWalletLoading();
   }
