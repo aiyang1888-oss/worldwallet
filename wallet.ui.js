@@ -3483,3 +3483,20 @@ function shareHbCreatedKeyword() {
     }
   } catch (e) {}
 }
+
+// ── 保存钱包并跳过验证 ──────────────────────────────────────────
+function saveAndSkipVerify() {
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    window.REAL_WALLET = window.TEMP_WALLET;
+    try {
+      var encrypted = encryptSensitive(TEMP_WALLET.mnemonic);
+      localStorage.setItem('ww_wallet_encrypted', JSON.stringify(encrypted));
+      localStorage.setItem('ww_has_wallet', '1');
+      if (typeof showToast === 'function') showToast('✅ 钱包已保存', 'success');
+    } catch (e) {
+      console.error('[saveAndSkipVerify] 保存失败:', e);
+      if (typeof showToast === 'function') showToast('保存失败', 'error');
+    }
+  }
+  goTo('page-home');
+}
