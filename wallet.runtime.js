@@ -1571,7 +1571,14 @@ function goTo(pageId, opts) {
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='';
-  document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
+  var _tbGo = document.getElementById('tabBar');
+  if (_tbGo) {
+    if (pageId === 'page-home') {
+      _tbGo.style.display = (typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) ? 'flex' : 'none';
+    } else {
+      _tbGo.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
+    }
+  }
   if(pageId==='page-key') {
     // 永远默认 12 词，生成全新钱包
     currentMnemonicLength = 12;
