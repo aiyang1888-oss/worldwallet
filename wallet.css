@@ -268,10 +268,12 @@ body {
     radial-gradient(ellipse 95% 75% at 50% -28%, rgba(228, 197, 108, 0.22) 0%, transparent 58%),
     radial-gradient(ellipse 55% 50% at 95% 85%, rgba(100, 80, 200, 0.09) 0%, transparent 52%),
     var(--bg) !important;
+  padding-top: 0 !important;
 }
 @media (min-width: 769px) {
   .page#page-welcome {
-    padding-top: env(safe-area-inset-top, 0px) !important;
+    top: 0 !important;
+    padding-top: 0 !important;
     padding-bottom: 80px !important;
     padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
     padding-right: max(20px, env(safe-area-inset-right, 0px)) !important;
@@ -279,7 +281,8 @@ body {
 }
 @media (max-width: 768px) {
   .page#page-welcome {
-    padding-top: env(safe-area-inset-top, 0px) !important;
+    top: 0 !important;
+    padding-top: 0 !important;
     padding-bottom: max(80px, env(safe-area-inset-bottom, 0px)) !important;
     padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
     padding-right: max(20px, env(safe-area-inset-right, 0px)) !important;
