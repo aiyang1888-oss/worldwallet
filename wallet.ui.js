@@ -168,11 +168,6 @@ var _safeEl = (id) => document.getElementById(id) || {
 };
 
 var REAL_WALLET = null;
-/** 是否已加载任一条链的公开地址（勿仅用 ethAddress，避免 TRX 等场景下首页空白/底栏消失） */
-function wwHasPublicWallet() {
-  var w = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-  return !!(w && (w.ethAddress || w.trxAddress || w.btcAddress));
-}
 var WW_APP_VERSION = '1.0.0';
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
 var currentMnemonicLength = 12;
@@ -236,7 +231,7 @@ var WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
 function updateReferralSettingsUI() {
   var linkEl = document.getElementById('settingsRefLink');
   var countEl = document.getElementById('settingsRefCount');
-  if (!wwHasPublicWallet()) {
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
     if (linkEl) linkEl.textContent = '创建或导入钱包后生成邀请链接';
     if (countEl) countEl.textContent = '—';
     return;
@@ -795,7 +790,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = wwHasPublicWallet() ? 'flex' : 'none';
+      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -826,15 +821,6 @@ function goTo(pageId, opts) {
     }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-  if (pageId === 'page-password-restore') {
-    try {
-      var _pri = document.getElementById('pinRestorePageInput');
-      var _pre = document.getElementById('pageRestorePinError');
-      if (_pri) _pri.value = '';
-      if (_pre) { _pre.style.display = 'none'; _pre.textContent = 'PIN错误'; }
-      setTimeout(function () { try { if (_pri) _pri.focus(); } catch (_pf) {} }, 150);
-    } catch (_pr0) {}
-  }
 if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
@@ -1113,7 +1099,7 @@ function updateHomeChainStrip() {
   const btcEl = document.getElementById('homeShortBtc');
   const btcWrap = document.getElementById('homeMiniBtcWrap');
   if (!strip || !trxEl || !ethEl) return;
-  if (!wwHasPublicWallet()) {
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
     trxEl.textContent = '—';
     ethEl.textContent = '—';
     if (btcEl) btcEl.textContent = '—';
@@ -1138,7 +1124,7 @@ function updateHomeChainStrip() {
 function updateHomeBackupBanner() {
   var b = document.getElementById('homeBackupBanner');
   if (!b) return;
-  var show = wwHasPublicWallet() && !REAL_WALLET.backedUp;
+  var show = REAL_WALLET && REAL_WALLET.ethAddress && !REAL_WALLET.backedUp;
   b.style.display = show ? 'block' : 'none';
 }
 
@@ -1338,11 +1324,15 @@ async function loadTrxResource() {
   var bwEl = document.getElementById('trxBandwidthText');
   if(!card || !REAL_WALLET || !REAL_WALLET.trxAddress) { if(card) card.style.display = 'none'; return; }
   try {
-    var r = await fetch(TRON_GRID + '/wallet/getaccountresource', {
+    var postInit = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ address: REAL_WALLET.trxAddress, visible: true })
-    });
+    };
+    var r = typeof wwFetchRetry === 'function'
+      ? await wwFetchRetry(TRON_GRID + '/wallet/getaccountresource', postInit)
+      : await fetch(TRON_GRID + '/wallet/getaccountresource', postInit);
+    if (!r.ok) { if (card) card.style.display = 'none'; return; }
     var d = await r.json();
     if(!d || (d.EnergyLimit === undefined && d.NetLimit === undefined && d.freeNetLimit === undefined)) {
       card.style.display = 'none';
@@ -1410,9 +1400,9 @@ function wwTickIdleLock() {
   }
 }
 
-var TRON_GRID = 'https://api.trongrid.io';
+if (typeof TRON_GRID === 'undefined') var TRON_GRID = 'https://api.trongrid.io';
 var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-var ETH_RPC = 'https://eth.llamarpc.com';
+if (typeof ETH_RPC === 'undefined') var ETH_RPC = 'https://rpc.ankr.com/eth';
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
@@ -1608,7 +1598,9 @@ function transferSpeedHint(coinId, sp) {
 var _wwTickerInterval = null;
 async function refreshHomePriceTicker() {
   try {
-    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd');
+    const cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd';
+    const r = typeof wwFetchRetry === 'function' ? await wwFetchRetry(cgUrl, { method: 'GET' }) : await fetch(cgUrl);
+    if (!r.ok) return;
     const d = await r.json();
     const fmt = function(x) {
       if(x === undefined || x === null || !isFinite(x)) return '—';
@@ -2452,7 +2444,9 @@ function calcSwap() {
 
 async function loadSwapPrices() {
   try {
-    var r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron&vs_currencies=usd');
+    var cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron&vs_currencies=usd';
+    var r = typeof wwFetchRetry === 'function' ? await wwFetchRetry(cgUrl, { method: 'GET' }) : await fetch(cgUrl);
+    if (!r.ok) throw new Error('cg ' + r.status);
     var d = await r.json();
     var ut = d.tether && d.tether.usd ? d.tether.usd : 1;
     var tr = d.tron && d.tron.usd ? d.tron.usd : 0.12;
@@ -3158,7 +3152,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress || _d.btcAddress));
+      hasWallet = !!(_d && _d.ethAddress);
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');

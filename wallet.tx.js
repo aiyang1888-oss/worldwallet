@@ -123,7 +123,7 @@ function confirmTransfer() {
 
 async function sendTRX(toAddr, amount) {
   await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
+  const tw = new TronWeb(typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
   const amtSun = Math.floor(amount * 1e6);
   const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
@@ -134,7 +134,7 @@ async function sendTRX(toAddr, amount) {
 }
 
 async function sendETH(toAddr, amount) {
-  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
+  const provider = typeof wwGetEthProvider === 'function' ? wwGetEthProvider() : new ethers.providers.JsonRpcProvider(ETH_RPC);
   const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
   const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
   const mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
@@ -158,7 +158,7 @@ async function sendETH(toAddr, amount) {
 
 async function sendUSDT_TRC20(toAddr, amount) {
   await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
+  const tw = new TronWeb(typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
   const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
   const tx = await tw.transactionBuilder.triggerSmartContract(
@@ -231,7 +231,9 @@ async function loadBalances() {
     set('valUsdt', fmtUsd(usdtUsd));
     // 更新涨跌幅（从 CoinGecko 获取）
     try {
-      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true');
+      const cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true';
+      const r2 = typeof wwFetchRetry === 'function' ? await wwFetchRetry(cgUrl, { method: 'GET' }) : await fetch(cgUrl);
+      if (!r2.ok) throw new Error('cg ' + r2.status);
       const d2 = await r2.json();
       const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
       if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
@@ -239,7 +241,7 @@ async function loadBalances() {
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
-    drawHomeBalanceChart(total);
+    if (typeof drawHomeBalanceChart === 'function') drawHomeBalanceChart(total);
     if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
     if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
     // 动态汇率（从价格接口获取，fallback 7.2）
@@ -274,8 +276,10 @@ async function loadBalances() {
 async function getPrices() {
   if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
   try {
-    // CoinGecko 免费价格 API（无需 key）
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd');
+    // CoinGecko 免费价格 API（无需 key）；遇 429 由 wwFetchRetry 退避重试
+    const cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd';
+    const res = typeof wwFetchRetry === 'function' ? await wwFetchRetry(cgUrl, { method: 'GET' }) : await fetch(cgUrl);
+    if (!res.ok) throw new Error('cg ' + res.status);
     const data = await res.json();
     priceCache = {
       usdt: data.tether?.usd || 1,
@@ -286,6 +290,7 @@ async function getPrices() {
     priceCacheTime = Date.now();
     return priceCache;
   } catch(e) {
+    if (priceCache) return priceCache;
     return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
   }
 }
@@ -302,8 +307,9 @@ async function loadTxHistory() {
     // TRX 转账记录
     const trxAddr = REAL_WALLET.trxAddress;
     if(trxAddr && trxAddr.startsWith('T')) {
-      const r1 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`);
-      const d1 = await r1.json();
+      const u1 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+      const r1 = typeof wwFetchRetry === 'function' ? await wwFetchRetry(u1, { method: 'GET' }) : await fetch(u1);
+      const d1 = r1.ok ? await r1.json() : {};
       if(d1.data) {
         for(const tx of d1.data.slice(0,5)) {
           const isOut = tx.from === trxAddr;
@@ -322,8 +328,9 @@ async function loadTxHistory() {
       }
 
       // TRX 原生交易
-      const r2 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions?limit=5&only_confirmed=true`);
-      const d2 = await r2.json();
+      const u2 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions?limit=5&only_confirmed=true';
+      const r2 = typeof wwFetchRetry === 'function' ? await wwFetchRetry(u2, { method: 'GET' }) : await fetch(u2);
+      const d2 = r2.ok ? await r2.json() : {};
       if(d2.data) {
         for(const tx of d2.data.slice(0,3)) {
           const contract = tx.raw_data?.contract?.[0];
