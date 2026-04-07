@@ -3052,6 +3052,9 @@ function initPinRestore() {
   }
   _pinRestoreBuffer = '';
   updatePinRestoreDisplay();
+  /* 再次进入本页时 .page 会保留上次 scrollTop，圆点/键盘可能偏出视口 */
+  var prPage = document.getElementById('page-password-restore');
+  if (prPage) { try { prPage.scrollTop = 0; } catch (_sc) {} }
   var errorDiv = document.getElementById('pinRestoreError');
   if (errorDiv) { errorDiv.style.display = 'none'; errorDiv.textContent = ''; }
   var keypad = document.getElementById('pinRestoreKeypad');
