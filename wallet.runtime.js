@@ -3821,12 +3821,19 @@ function updateHbPreview() {
   if(tl) tl.textContent = hbType==='lucky' ? '随机金额' : '每人金额';
 }
 function sendHongbao() {
-  const amount = document.getElementById('hbAmount').value;
-  document.getElementById('hbSuccessDesc').innerHTML = amount+' USDT · '+hbCount+'份礼物';
-  document.getElementById('hbSuccessKeyword').textContent = currentKeyword;
-  document.getElementById('hbSuccessOverlay').style.display = 'flex';
+  const amtEl = document.getElementById('hbAmount');
+  const amount = amtEl ? amtEl.value : '';
+  const desc = document.getElementById('hbSuccessDesc');
+  const kw = document.getElementById('hbSuccessKeyword');
+  const ov = document.getElementById('hbSuccessOverlay');
+  if (desc) desc.innerHTML = amount + ' USDT · ' + hbCount + '份礼物';
+  if (kw) kw.textContent = currentKeyword;
+  if (ov) ov.style.display = 'flex';
 }
-function hideHbSuccess() { document.getElementById('hbSuccessOverlay').style.display = 'none'; }
+function hideHbSuccess() {
+  var ov = document.getElementById('hbSuccessOverlay');
+  if (ov) ov.style.display = 'none';
+}
 
 
 function toggleCurrency() {
