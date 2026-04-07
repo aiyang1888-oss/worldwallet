@@ -488,6 +488,9 @@ function renderAddrWords() {
 }
 
 function openCustomizeAddr() {
+  try {
+    if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
+  } catch (_e) {}
   openWordEditor(0);
 }
 
@@ -495,6 +498,7 @@ function openWordEditor(idx) {
   var slot = typeof idx === 'number' ? idx : parseInt(String(idx), 10);
   if (slot !== slot || slot < 0 || slot > 9 || !ADDR_WORDS || ADDR_WORDS.length !== 10 || !ADDR_WORDS[slot]) {
     console.warn('[WanYuAddr] openWordEditor: invalid index', idx);
+    if (typeof showToast === 'function') showToast('地址词库未就绪，请稍后再试', 'warning');
     return;
   }
   idx = slot;
