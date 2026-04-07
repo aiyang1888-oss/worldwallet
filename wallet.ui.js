@@ -3254,32 +3254,13 @@ function continueAfterPinCheck() {
   }
 }
 function submitPageRestorePin() {
-  var want = '';
-  try { want = wwGetStoredPin(); } catch (e) {}
-  const inp = document.getElementById('pinRestorePageInput');
-  const err = document.getElementById('pageRestorePinError');
-  const panel = document.getElementById('pageRestorePinPanel');
-  if (!want) {
-    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
-    if (inp) inp.value = '';
-    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+  /* 与 keypad + _pinRestoreBuffer 一致；勿使用已移除的 #pinRestorePageInput / #pageRestorePinError */
+  if (_pinRestoreBuffer.length !== 6) {
+    var errShort = document.getElementById('pinRestoreError');
+    if (errShort) { errShort.textContent = '请输入 6 位 PIN'; errShort.style.display = 'block'; }
     return;
   }
-  const got = inp ? String(inp.value).trim() : '';
-  if (got === want) {
-    if (err) { err.style.display = 'none'; err.textContent = ''; }
-    if (inp) inp.value = '';
-    if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
-      showTotpUnlockOverlay();
-    } else {
-      window._wwForceIdleLock = false;
-      _resumeWalletAfterUnlock();
-    }
-  } else {
-    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
-    if (inp) inp.value = '';
-    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
-  }
+  verifyPinRestore();
 }
 function submitPinUnlock() {
   const want = wwGetStoredPin();
