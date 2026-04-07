@@ -598,6 +598,14 @@ body {
 .home-balance-chart-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
 .home-balance-chart-svg { width: 100%; height: 88px; display: block; }
 .home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
+/* 首页：近7日资产图与下方地址区紧贴，避免中间留白 */
+#page-home #homeBalanceChartWrap.home-balance-chart-wrap {
+  margin-bottom: 0 !important;
+}
+#page-home .home-addr-stack {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
 /* —— balance hide / scroll-top / tab swipe (patch) —— */
 .ww-balance-privacy-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-right: 2px; box-sizing: border-box; }
 .ww-balance-hide-btn {
