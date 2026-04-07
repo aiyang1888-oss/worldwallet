@@ -321,7 +321,10 @@ async function loadBalances() {
   } catch(e) {
     console.error('Balance load error:', e);
     if(tbd) tbd.classList.remove('home-balance--loading');
+    if(tbs) tbs.textContent = '暂时无法同步 · 请检查网络后点刷新';
     if(btn) btn.textContent = '刷新';
+    var balU = document.getElementById('balUsdt');
+    if(balU && balU.textContent === '...') balU.textContent = '--';
   }
 }
 
