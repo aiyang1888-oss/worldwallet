@@ -2363,12 +2363,29 @@ function shakeTransferAmountTooHigh() {
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
-  const addr = document.getElementById('transferAddr').value.trim();
+  var addrRaw = document.getElementById('transferAddr').value.trim();
   const coin = transferCoin.id;
-  if(!addr || addr.length < 26){showToast('地址格式无效','error');return false;}
+  var det = typeof detectAddressAndCoin === 'function' ? detectAddressAndCoin(addrRaw) : { type: 'unknown' };
+  var addr = addrRaw;
+  if (!addrRaw) { showToast('地址格式无效', 'error'); return false; }
+  // 万语：链上需 T 地址；仅当与本人万语完全一致时映射为本机 TRX 地址（自转/测通）
+  if ((coin === 'usdt' || coin === 'trx') && det.type === 'native') {
+    if (typeof getNativeAddr === 'function') {
+      var na = getNativeAddr();
+      if (na && String(addrRaw).replace(/\s+/g, '') === String(na).replace(/\s+/g, '') && REAL_WALLET.trxAddress) {
+        addr = REAL_WALLET.trxAddress;
+      } else {
+        showToast('万语收款请使用对方 TR 开头的 TRX 公链地址（解析服务接入后可直填万语）', 'error');
+        return false;
+      }
+    } else {
+      showToast('无法解析万语地址', 'error');
+      return false;
+    }
+  }
   if(coin==='eth' && !addr.match(/^0x[a-fA-F0-9]{40}$/)){showToast('以太坊地址格式错误','error');return false;}
   if((coin==='usdt'||coin==='trx') && !addr.match(/^T[a-zA-Z0-9]{33}$/)){showToast('TRON地址格式错误','error');return false;}
-  if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
+  if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addrRaw)) {
     showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
     return false;
   }
@@ -3761,7 +3778,50 @@ function pinUnlockClear() {
   try { inp.focus(); } catch(e) {}
 }
 
+/** 根据收款输入识别万语 / TRX / ETH / BTC，用于自动切换转账币种展示与预估费 */
+function detectAddressAndCoin(addrInput) {
+  var addr = (addrInput || '').trim();
+  if (!addr) return { coin: 'trx', addr: '', type: 'empty' };
+  if (/\d+-[\u4E00-\u9FFF]+-\d+/.test(addr)) {
+    return { coin: 'trx', addr: addr, type: 'native' };
+  }
+  if (/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    return { coin: 'eth', addr: addr, type: 'eth' };
+  }
+  if (/^T[a-zA-Z0-9]{33}$/.test(addr)) {
+    return { coin: 'trx', addr: addr, type: 'trx' };
+  }
+  if (/^(1|3|bc1)[a-zA-HJ-NP-Z0-9]{25,62}$/i.test(addr)) {
+    return { coin: 'btc', addr: addr, type: 'btc' };
+  }
+  return { coin: 'trx', addr: addr, type: 'unknown' };
+}
 
+/** 有输入时按地址同步 transferCoin（不写导航；与 selectTransferCoin 数据来源一致） */
+function syncTransferCoinFromAddrInput() {
+  var el = document.getElementById('transferAddr');
+  var trimmed = el ? String(el.value || '').trim() : '';
+  if (!trimmed) return;
+  var det = detectAddressAndCoin(trimmed);
+  var sid = det.coin;
+  var coinData = null;
+  try {
+    if (typeof COINS !== 'undefined' && COINS && typeof COINS.find === 'function') {
+      coinData = COINS.find(function (c) { return c && c.id === sid; });
+    }
+  } catch (_c) { coinData = null; }
+  var map = {
+    usdt:{id:'usdt',name:'USDT',chain:'TRC-20 · Tron',icon:'💚',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
+    trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
+    eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
+    btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
+  };
+  transferCoin = coinData || map[sid] || map.usdt;
+  try {
+    var uc = typeof COINS !== 'undefined' && COINS.find && COINS.find(function (c) { return c && c.id === transferCoin.id; });
+    if (uc) { transferCoin.bal = uc.bal; transferCoin.price = uc.price; }
+  } catch (_e) {}
+}
 
 function detectAddrType() {
   const ta = document.getElementById('transferAddr');
@@ -3796,14 +3856,17 @@ function detectAddrType() {
   }
 
   let type = '', chainName = '', isWorldToken = false;
-  if (addr.includes('·') || addr.length < 30) {
+  var detTag = detectAddressAndCoin(addr);
+  if (detTag.type === 'native') {
     type = '🌍'; chainName = 'WorldToken 万语地址'; isWorldToken = true;
-  } else if (addr.startsWith('T') && addr.length >= 34) {
+  } else if (detTag.type === 'trx') {
     type = '🔴'; chainName = 'TRX · Tron 链';
-  } else if (addr.startsWith('0x') && addr.length >= 42) {
+  } else if (detTag.type === 'eth') {
     type = '🔷'; chainName = 'ETH · Ethereum 链';
-  } else if (addr.startsWith('bc1') || addr.startsWith('1') || addr.startsWith('3')) {
+  } else if (detTag.type === 'btc') {
     type = '🟠'; chainName = 'BTC · Bitcoin 链';
+  } else if (addr.includes('·') || addr.length < 30) {
+    type = '🌍'; chainName = 'WorldToken 万语地址'; isWorldToken = true;
   } else {
     type = '❓'; chainName = '未识别地址格式';
   }
@@ -3813,12 +3876,18 @@ function detectAddrType() {
   if (name) name.textContent = chainName;
   if (box) box.style.borderColor = 'rgba(200,168,75,0.4)';
 
-  if (isWorldToken && addr.includes('·')) {
-    const parts = addr.split('·');
+  if (isWorldToken && (addr.includes('·') || detTag.type === 'native')) {
     const rn = document.getElementById('recipientName');
     const ra = document.getElementById('recipientAddr');
-    if (rn) rn.textContent = parts[0].trim();
-    if (ra) ra.textContent = (parts[1] && parts[2] ? (parts[1].trim() + ' · ' + parts[2].trim()) : '') || 'WorldToken 用户';
+    if (addr.includes('·')) {
+      const parts = addr.split('·');
+      if (rn) rn.textContent = parts[0].trim();
+      if (ra) ra.textContent = (parts[1] && parts[2] ? (parts[1].trim() + ' · ' + parts[2].trim()) : '') || 'WorldToken 用户';
+    } else {
+      const parts = addr.split('-');
+      if (rn) rn.textContent = ((parts[0] || '') + ' … ' + (parts[2] || '')).trim();
+      if (ra) ra.textContent = (parts[1] || '') || 'WorldToken 用户';
+    }
     if (recipient) recipient.style.display = 'block';
   } else if (recipient) {
     recipient.style.display = 'none';
@@ -3854,6 +3923,11 @@ function checkTransferReady() {
 }
 
 function calcTransferFee() {
+  try {
+    var addrElSync = document.getElementById('transferAddr');
+    var addrTrim = addrElSync ? String(addrElSync.value || '').trim() : '';
+    if (addrTrim) syncTransferCoinFromAddrInput();
+  } catch (_sync) {}
   try {
     var uc = typeof COINS !== 'undefined' && COINS.find && COINS.find(function (c) { return c && c.id === transferCoin.id; });
     if (uc) { transferCoin.bal = uc.bal; transferCoin.price = uc.price; }
@@ -4079,13 +4153,16 @@ function confirmTransfer() {
   }
 
   // 收件人 = 输入的对方地址（不同！）
-  const isWW = addr.includes('·');
+  var detSucc = typeof detectAddressAndCoin === 'function' ? detectAddressAndCoin(addr) : null;
+  const isWW = (detSucc && detSucc.type === 'native') || addr.includes('·');
   if(isWW) {
-    // WorldToken母语地址，拆解显示
-    const parts2 = addr.split('·').map(s=>s.trim());
+    // WorldToken 万语：「·」或 「数字-汉字-数字」
+    const parts2 = addr.includes('·') ? addr.split('·').map(s=>s.trim()) : addr.split('-').map(s=>s.trim());
     _safeEl('successToIcon').textContent = '🌍';
-    _safeEl('successToName').textContent = parts2[0]||addr;
-    _safeEl('successToAddr').textContent = (parts2[1]||'')+' · '+(parts2[2]||'') + ' · WorldToken';
+    _safeEl('successToName').textContent = (parts2[0] || '') + (parts2[2] ? (' … ' + parts2[2]) : '') || addr;
+    _safeEl('successToAddr').textContent = addr.includes('·')
+      ? ((parts2[1]||'')+' · '+(parts2[2]||'') + ' · WorldToken')
+      : ((parts2[1]||'') + ' · WorldToken 万语');
   } else {
     // 公链地址
     const chainIcon = addr.startsWith('T')?'🔴':addr.startsWith('0x')?'🔷':addr.startsWith('bc')?'🟠':'⛓️';
