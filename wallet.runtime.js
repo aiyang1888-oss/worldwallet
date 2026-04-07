@@ -6659,6 +6659,34 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   };
 })();
 
+function wwOpenBackupFromSettings() {
+  window._keyBackPage = 'page-settings';
+  if (typeof goTo === 'function') goTo('page-key');
+}
+
+function deleteWalletRow() {
+  if (!confirm('确定删除本机钱包？此操作会清空本地数据。')) return;
+  try {
+    localStorage.removeItem('ww_wallet');
+    localStorage.removeItem('ww_pin');
+    localStorage.removeItem('ww_hongbaos');
+  } catch (_ls) {}
+  try {
+    window.REAL_WALLET = null;
+  } catch (_rw) {}
+  if (typeof goTo === 'function') goTo('page-welcome');
+  if (typeof showToast === 'function') showToast('钱包已删除', 'success');
+}
+
+function wwSwapRecordsToast() {
+  if (typeof showToast === 'function') showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info');
+}
+
+function wwHideHbSuccessOverlay() {
+  var ho = document.getElementById('hbSuccessOverlay');
+  if (ho) ho.style.display = 'none';
+}
+
 // data-ww-fn：显式挂到 window，供 wallet.html 捕获阶段委托脚本读取 window[fnName]
 (function wwExposeDataWwFnHandlers() {
   try {
@@ -6695,5 +6723,9 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof startVerify === 'function') window.startVerify = startVerify;
     if (typeof submitClaim === 'function') window.submitClaim = submitClaim;
     if (typeof submitTotpUnlock === 'function') window.submitTotpUnlock = submitTotpUnlock;
+    if (typeof wwOpenBackupFromSettings === 'function') window.wwOpenBackupFromSettings = wwOpenBackupFromSettings;
+    if (typeof deleteWalletRow === 'function') window.deleteWalletRow = deleteWalletRow;
+    if (typeof wwSwapRecordsToast === 'function') window.wwSwapRecordsToast = wwSwapRecordsToast;
+    if (typeof wwHideHbSuccessOverlay === 'function') window.wwHideHbSuccessOverlay = wwHideHbSuccessOverlay;
   } catch (_ww) {}
 })();
