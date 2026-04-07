@@ -847,6 +847,20 @@ function goTo(pageId, opts) {
     var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
     if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
   }
+  if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
+    var _pwStore = null;
+    try {
+      _pwStore = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+    } catch (_e) {
+      _pwStore = {};
+    }
+    if (!wwWalletHasAnyChainAddress(_pwStore)) pageId = 'page-welcome';
+    else if (typeof loadWallet === 'function') {
+      try {
+        loadWallet();
+      } catch (_lw) {}
+    }
+  }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
@@ -979,6 +993,20 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   if (pageId === 'page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
     setTimeout(loadTxHistory, 500);
     setTimeout(loadBalances, 500);
+  }
+  if (pageId === 'page-password-restore') {
+    var _pri = document.getElementById('pinRestorePageInput');
+    var _pre = document.getElementById('pageRestorePinError');
+    if (_pre) {
+      _pre.style.display = 'none';
+      _pre.textContent = '';
+    }
+    if (_pri) _pri.value = '';
+    setTimeout(function () {
+      try {
+        if (_pri) _pri.focus();
+      } catch (_f) {}
+    }, 100);
   }
   try { if (typeof wwUpdateScrollTopBtn === 'function') wwUpdateScrollTopBtn(); } catch (e) {}
   try {
