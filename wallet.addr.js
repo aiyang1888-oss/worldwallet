@@ -610,7 +610,7 @@ function copyNative() {
   navigator.clipboard?.writeText(getNativeAddr()).catch(()=>{});
   const btn=document.getElementById('copyNativeBtn');
   if(btn){btn.textContent='✅ 已复制'; btn.classList.add('copied');}
-  setTimeout(()=>{btn.textContent='📋 复制';if(btn) btn.classList.remove('copied');},2000);
+  setTimeout(()=>{ if(btn){ btn.textContent='📋 复制'; btn.classList.remove('copied'); } },2000);
 }
 
 function copyBoth() {
