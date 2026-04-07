@@ -3300,7 +3300,8 @@ function submitPageRestorePin() {
 function submitPinUnlock() {
   const want = wwGetStoredPin();
   const inp = document.getElementById('pinUnlockInput');
-  const got = inp ? inp.value.trim() : '';
+  /* 与设置 PIN 一致为 6 位数字：粘贴「123 456」等含空白/分隔符时须先剥离非数字，否则误判为错误 */
+  const got = inp ? String(inp.value || '').replace(/\D/g, '').slice(0, 6) : '';
   const ov = document.getElementById('pinUnlockOverlay');
   const err = document.getElementById('pinUnlockError');
   const panel = document.getElementById('pinUnlockPanel');
@@ -3349,7 +3350,9 @@ function pinUnlockClear() {
   inp.addEventListener('input', function () {
     var err = document.getElementById('pinUnlockError');
     if (err) err.style.display = 'none';
-    var v = String(inp.value || '');
+    var raw = String(inp.value || '');
+    var v = raw.replace(/\D/g, '').slice(0, 6);
+    if (v !== raw) inp.value = v;
     if (/^\d{6}$/.test(v) && typeof submitPinUnlock === 'function') submitPinUnlock();
   });
 })();
