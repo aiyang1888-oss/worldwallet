@@ -343,6 +343,15 @@ async function createWallet(forcedWordCount) {
 }
 
 async function createNewWallet() {
+  // 清空旧的 PIN 数据（新建钱包时不应沿用上一钱包的 PIN 状态）
+  try {
+    localStorage.removeItem('ww_pin');
+    localStorage.removeItem('ww_pin_confirm');
+    localStorage.removeItem('ww_pin_setup_done');
+    localStorage.removeItem('ww_pin_hash');
+    localStorage.removeItem('ww_pin_set');
+    localStorage.removeItem('ww_unlock_pin');
+  } catch (_) {}
   try { window._wwInFirstRun = true; } catch (_fr0) {}
   showWalletLoading();
   try {

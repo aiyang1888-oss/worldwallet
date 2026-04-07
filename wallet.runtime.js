@@ -6249,33 +6249,33 @@ function checkVerify() {
     _safeEl('verifyError').style.display = 'none';
     if (typeof markBackupDone === 'function') markBackupDone();
     updateAddr();
-    var hasPin = false;
+    // 助记词验证通过后必须重新设置 PIN，避免残留旧钱包的 PIN 导致跳过设置页
     try {
-      hasPin = typeof wwHasPinConfigured === 'function' ? wwHasPinConfigured() : !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
-    } catch (_p0) {}
+      localStorage.removeItem('ww_pin');
+      localStorage.removeItem('ww_pin_confirm');
+      localStorage.removeItem('ww_pin_setup_done');
+      localStorage.removeItem('ww_pin_hash');
+      localStorage.removeItem('ww_pin_set');
+      localStorage.removeItem('ww_unlock_pin');
+    } catch (_) {}
     if (typeof showToast === 'function') showToast('✅ 验证通过！钱包已安全创建', 'success');
-    if (hasPin) {
-      try { window._wwInFirstRun = false; } catch (_frV) {}
-      goTo('page-home');
-    } else {
-      try { window._wwPinSetupDraft = ''; } catch (_pd) {}
-      var pi = document.getElementById('pinInput');
-      var pci = document.getElementById('pinConfirmInput');
-      var pvi = document.getElementById('pinVerifyInput');
-      if (pi) pi.value = '';
-      if (pci) pci.value = '';
-      if (pvi) pvi.value = '';
-      var pel = document.getElementById('pinError');
-      if (pel) pel.style.display = 'none';
-      var pve = document.getElementById('pinVerifyError');
-      if (pve) pve.style.display = 'none';
-      var pl = document.getElementById('pinLength');
-      var pcl = document.getElementById('pinConfirmLength');
-      if (pl) pl.textContent = '0';
-      if (pcl) pcl.textContent = '0';
-      goTo('page-pin-setup');
-      setTimeout(function () { if (pi) pi.focus(); }, 320);
-    }
+    try { window._wwPinSetupDraft = ''; } catch (_pd) {}
+    var pi = document.getElementById('pinInput');
+    var pci = document.getElementById('pinConfirmInput');
+    var pvi = document.getElementById('pinVerifyInput');
+    if (pi) pi.value = '';
+    if (pci) pci.value = '';
+    if (pvi) pvi.value = '';
+    var pel = document.getElementById('pinError');
+    if (pel) pel.style.display = 'none';
+    var pve = document.getElementById('pinVerifyError');
+    if (pve) pve.style.display = 'none';
+    var pl = document.getElementById('pinLength');
+    var pcl = document.getElementById('pinConfirmLength');
+    if (pl) pl.textContent = '0';
+    if (pcl) pcl.textContent = '0';
+    goTo('page-pin-setup');
+    setTimeout(function () { if (pi) pi.focus(); }, 320);
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
