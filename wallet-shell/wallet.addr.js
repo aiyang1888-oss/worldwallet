@@ -4,6 +4,8 @@
 var __wanYuInitAddrWordsCallCount = 0;
 /** 防止重复生成：已成功载入或生成 10 字 + 前后缀后设为 true */
 var __wanYuAddrInitialized = false;
+/** 防止 initAddrWords 重入（嵌套调用竞态） */
+var __wanYuInitLock = false;
 
 /** 优先 localStorage（避免页面占位符 38294651/92847361 覆盖已持久化的 8 位前后缀） */
 function _wanYuP8FromDomOrStorage(el, key, fallback8) {
@@ -514,8 +516,17 @@ function getNativeAddr() {
     var snap = localStorage.getItem('wallet_native_addr');
     if (snap && String(snap).split('-').length === 3 && ADDR_WORDS.length === 10) {
       var mid = String(snap).split('-')[1] || '';
-      var wj = ADDR_WORDS.map(function (w) { return w.word; }).join('');
-      if (mid === wj) return snap;
+      var valid = true;
+      var off = 0;
+      for (var j = 0; j < 10; j++) {
+        var w = ADDR_WORDS[j] && ADDR_WORDS[j].word;
+        if (!w || mid.slice(off, off + w.length) !== w) {
+          valid = false;
+          break;
+        }
+        off += w.length;
+      }
+      if (valid && off === mid.length) return snap;
     }
   } catch (_e) {}
   const prefix = _wanYuP8FromDomOrStorage(document.getElementById('addrPrefix'), 'wallet_prefix', '38294651');
