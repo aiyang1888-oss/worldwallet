@@ -716,6 +716,11 @@ async function finalizeImportedWalletAfterPin(pin) {
       btc: flat.btcAddress || ''
     }
   };
+  try {
+    if (typeof CHAIN_ADDR !== 'undefined') {
+      CHAIN_ADDR = flat.trxAddress ? String(flat.trxAddress) : '--';
+    }
+  } catch (_ch) {}
   try { if (typeof updateAddr === 'function') updateAddr(); } catch(e) {}
   try { if (typeof loadBalances === 'function') setTimeout(loadBalances, 500); } catch(e) {}
   var tb = document.getElementById('tabBar');
