@@ -1402,6 +1402,7 @@ function openTotpSettingsRow() {
   startTotpSetup();
 }
 function startTotpSetup() {
+  if (window._wwInFirstRun) return;
   if (!wwHasPinConfigured()) { showToast('请先设置 6 位 PIN', 'warning'); return; }
   const secretB32 = wwGenerateTotpSecretB32();
   window._wwTotpPendingSecret = secretB32;
