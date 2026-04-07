@@ -128,3 +128,98 @@ async function decryptWalletSensitive(pin) {
     return null;
   }
 }
+
+/**
+ * PIN 转 SHA-256 hash（加盐）
+ * @param {string} pin
+ * @returns {Promise<string>}
+ */
+async function hashPin(pin) {
+  var enc = new TextEncoder();
+  var data = enc.encode(pin + 'ww_salt_v1_2026');
+  var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+/**
+ * 验证 PIN 是否正确
+ * @param {string} pin
+ * @returns {Promise<boolean>}
+ */
+async function verifyPin(pin) {
+  var stored = Store.get('ww_pin_hash');
+  if (!stored) {
+    // 兼容旧版本：如果没有 hash，检查是否有明文 PIN
+    var oldPin = Store.getPin();
+    if (oldPin) {
+      // 首次升级，自动迁移
+      await savePinSecure(oldPin);
+      console.log('[PIN 迁移] 已转为 hash 存储');
+      return pin === oldPin;
+    }
+    return false;
+  }
+  var computed = await hashPin(pin);
+  return computed === stored;
+}
+
+/**
+ * 安全保存 PIN（hash 存储）
+ * @param {string} pin
+ * @returns {Promise<void>}
+ */
+async function savePinSecure(pin) {
+  var hash = await hashPin(pin);
+  Store.set('ww_pin_hash', hash);
+  // 清理旧的明文 PIN
+  Store.remove('ww_pin');
+  Store.remove('ww_unlock_pin');
+}
+
+// ── 会话私钥管理（闭包保护）──
+var _sessionPrivateKeys = null;
+var _keysClearTimer = null;
+
+/**
+ * 设置会话私钥（5分钟后自动清除）
+ * @param {{mnemonic:string, ethKey:string, trxKey:string, btcKey:string}} keys
+ */
+function setSessionKeys(keys) {
+  _sessionPrivateKeys = keys;
+  // 清除旧定时器
+  if (_keysClearTimer) clearTimeout(_keysClearTimer);
+  // 5分钟后自动清除
+  _keysClearTimer = setTimeout(function() {
+    _sessionPrivateKeys = null;
+    console.log('[安全] 会话私钥已自动清除');
+  }, 300000);
+}
+
+/**
+ * 获取会话私钥
+ * @returns {{mnemonic:string, ethKey:string, trxKey:string, btcKey:string}|null}
+ */
+function getSessionKeys() {
+  return _sessionPrivateKeys;
+}
+
+/**
+ * 手动清除会话私钥
+ */
+function clearSessionKeys() {
+  _sessionPrivateKeys = null;
+  if (_keysClearTimer) {
+    clearTimeout(_keysClearTimer);
+    _keysClearTimer = null;
+  }
+  console.log('[安全] 会话私钥已清除');
+}
+
+/**
+ * 检查会话是否已解锁
+ * @returns {boolean}
+ */
+function isSessionUnlocked() {
+  return _sessionPrivateKeys !== null;
+}
