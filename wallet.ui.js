@@ -798,6 +798,11 @@ function goTo(pageId, opts) {
       window._importBackTarget = curId;
     }
   } catch (_ib) {}
+  /* 无钱包时勿先渲染 page-home，否则会出现空白首页闪烁且 hash/SEO 与真实页不一致 */
+  if (pageId === 'page-home' && (!REAL_WALLET || !REAL_WALLET.ethAddress)) {
+    goTo('page-welcome');
+    return;
+  }
   applySeoForPage(pageId);
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const activePage=document.getElementById(pageId);
@@ -894,10 +899,6 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   }
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
-    if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
-      setTimeout(function () { goTo('page-welcome'); }, 50);
-      return;
-    }
     // 有钱包时显示导航栏
     if(REAL_WALLET && REAL_WALLET.ethAddress) {
       document.getElementById('tabBar').style.display = 'flex';
