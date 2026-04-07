@@ -3373,8 +3373,10 @@ function wwUpdateTxSimulation() {
 }
 
 function setTransferMax() {
-  document.getElementById('transferAmount').value = transferCoin.bal;
-  calcTransferFee();
+  var te = document.getElementById('transferAmount');
+  if (!te || typeof transferCoin === 'undefined' || !transferCoin) return;
+  te.value = transferCoin.bal;
+  if (typeof calcTransferFee === 'function') calcTransferFee();
 }
 
 function selectTransferCoin(id) {
