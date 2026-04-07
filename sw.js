@@ -1,4 +1,5 @@
 // WorldToken Service Worker v20260405 - 每次更新版本号强制刷新
+function safeLog() { try { console.log.apply(console, arguments); } catch (_e) {} }
 const CACHE = 'worldtoken-v202604060836';
 const ASSETS = [
   '/wallet.html',
@@ -20,7 +21,7 @@ self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => {
-        try { console.log('[SW] 删除旧缓存:', k); } catch (_e) {}
+        try { safeLog('[SW] 删除旧缓存:', k); } catch (_e) {}
         return caches.delete(k);
       }))
     ).then(() => self.clients.claim())
