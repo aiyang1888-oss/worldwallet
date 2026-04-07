@@ -2195,7 +2195,7 @@ function updateGiftUI() {
   const subtitle = document.getElementById('giftSubtitle');
   const preview = document.getElementById('giftPreview');
   const icon = document.getElementById('giftIcon');
-  const blessingInput = document.getElementById('hbBlessing');
+  const blessingInput = document.getElementById('hbMessage');
   const festivalTag = document.getElementById('giftFestival');
   if(title) title.textContent = g.name;
   if(subtitle) subtitle.textContent = g.festival;

@@ -4243,7 +4243,7 @@ function updateGiftUI() {
   const subtitle = document.getElementById('giftSubtitle');
   const preview = document.getElementById('giftPreview');
   const icon = document.getElementById('giftIcon');
-  const blessingInput = document.getElementById('hbBlessing');
+  const blessingInput = document.getElementById('hbMessage');
   const festivalTag = document.getElementById('giftFestival');
   if(title) title.textContent = g.name;
   if(subtitle) subtitle.textContent = g.festival;
@@ -4317,14 +4317,14 @@ function setExpiry(h) {
 
 function randomBlessing() {
   const b = BLESSINGS[Math.floor(Math.random()*BLESSINGS.length)];
-  document.getElementById('hbBlessing').value = b;
+  document.getElementById('hbMessage').value = b;
 }
 
 function createHongbao() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
   currentKeyword = genKeyword();
   const amount = parseFloat(document.getElementById('hbAmount').value) || 100;
-  const blessing = document.getElementById('hbBlessing').value;
+  const blessing = document.getElementById('hbMessage').value;
   const count = hbCount;
   const perPerson = hbType==='normal' ? (amount/count).toFixed(2) : null;
   const expireAt = Date.now() + hbExpiry * 3600 * 1000;
