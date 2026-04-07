@@ -1534,7 +1534,7 @@ async function submitTotpUnlock() {
   const ov = document.getElementById('totpUnlockOverlay');
   if (ov) ov.classList.remove('show');
   if (err) err.style.display = 'none';
-  _resumeWalletAfterUnlock();
+  await _resumeWalletAfterUnlock();
 }
 function closeTotpUnlock() {
   if(window._wwForceIdleLock) {
@@ -6274,11 +6274,12 @@ function checkVerify() {
 }
 
 
-function _resumeWalletAfterUnlock() {
-  // 解密敏感数据并临时注入 REAL_WALLET
+async function _resumeWalletAfterUnlock() {
+  // 解密敏感数据并临时注入 REAL_WALLET（须在进入首页 / 拉余额前完成，避免竞态）
   var pin = wwGetSessionPin();
   if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
-    decryptSensitive(pin).then(function(sensitive) {
+    try {
+      var sensitive = await decryptSensitive(pin);
       if (sensitive && REAL_WALLET) {
         REAL_WALLET.privateKey = sensitive.privateKey;
         REAL_WALLET.trxPrivateKey = sensitive.trxPrivateKey;
@@ -6286,7 +6287,9 @@ function _resumeWalletAfterUnlock() {
         REAL_WALLET.enMnemonic = sensitive.enMnemonic;
         REAL_WALLET.words = sensitive.words;
       }
-    }).catch(function(e) { console.error('[unlock decrypt]', e); });
+    } catch (e) {
+      console.error('[unlock decrypt]', e);
+    }
   }
   updateAddr();
   const tb = document.getElementById('tabBar');
@@ -6418,7 +6421,7 @@ function renderWwChartsPlaceholder() {
 }
 
 function continueAfterPinCheck() {
-  if (!wwHasPinConfigured()) { _resumeWalletAfterUnlock(); return; }
+  if (!wwHasPinConfigured()) { void _resumeWalletAfterUnlock(); return; }
   const ov = document.getElementById('pinUnlockOverlay');
   const inp = document.getElementById('pinUnlockInput');
   const err = document.getElementById('pinUnlockError');
@@ -6429,7 +6432,7 @@ function continueAfterPinCheck() {
     try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap) {}
     setTimeout(() => { try { inp.focus(); } catch(e) {} }, 200);
   } else {
-    _resumeWalletAfterUnlock();
+    void _resumeWalletAfterUnlock();
   }
 }
 async function submitPageRestorePin() {
@@ -6452,7 +6455,7 @@ async function submitPageRestorePin() {
       showTotpUnlockOverlay();
     } else {
       window._wwForceIdleLock = false;
-      _resumeWalletAfterUnlock();
+      await _resumeWalletAfterUnlock();
     }
   } else {
     if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
@@ -6474,7 +6477,7 @@ async function submitPinUnlock() {
       showTotpUnlockOverlay();
     } else {
       window._wwForceIdleLock = false;
-      _resumeWalletAfterUnlock();
+      await _resumeWalletAfterUnlock();
     }
   } else {
     if(err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
