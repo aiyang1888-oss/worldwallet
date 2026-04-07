@@ -498,17 +498,6 @@ function wwClearSessionPin() {
   _wwSessionPin = '';
 }
 
-function wwCleanupStorage() {
-  try {
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i);
-      if (key && (key.includes('_temp') || key.includes('_pending'))) {
-        try { localStorage.removeItem(key); } catch (e) {}
-      }
-    }
-  } catch (e) {}
-}
-
 function wwCleanupMemory() {
   if (REAL_WALLET) {
     REAL_WALLET.privateKey = null;
@@ -528,7 +517,17 @@ function wwCleanupMemory() {
   window._wwTxHistoryCache = null;
   clearTimeout(window._wwSessionPinTimeout);
   clearTimeout(window._wwIdleLockTimer);
-  wwCleanupStorage();
+}
+
+function wwCleanupStorage() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('_temp') || key.includes('_pending'))) {
+        try { localStorage.removeItem(key); } catch (e) {}
+      }
+    }
+  } catch (e) {}
 }
 
 document.addEventListener('visibilitychange', function() {
@@ -545,6 +544,7 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('beforeunload', function() {
   wwClearSessionPin();
   wwCleanupMemory();
+  try { wwCleanupStorage(); } catch (_wcs) {}
   try { sessionStorage.clear(); } catch (e) {}
 });
 
@@ -2412,6 +2412,7 @@ function wwTickIdleLock() {
     setTimeout(function() { try { inp.focus(); } catch(e) {} }, 200);
   }
   wwCleanupMemory();
+  try { wwCleanupStorage(); } catch (_wcs2) {}
   window._wwUnlockPreservePage = true;
   window._wwForceIdleLock = true;
 }
@@ -6544,15 +6545,18 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (obj === REAL_WALLET || (obj && typeof obj === 'object' && obj.privateKey)) {
       return '[SENSITIVE_DATA_FILTERED]';
     }
+    if (typeof obj === 'string' && (obj.includes('privateKey') || obj.includes('mnemonic'))) {
+      return '[SENSITIVE_DATA_FILTERED]';
+    }
     return obj;
   };
-  console.log = function(...args) {
-    originalLog.apply(console, args.map(sanitize));
+  console.log = function() {
+    return originalLog.apply(console, Array.from(arguments).map(sanitize));
   };
-  console.error = function(...args) {
-    originalError.apply(console, args.map(sanitize));
+  console.error = function() {
+    return originalError.apply(console, Array.from(arguments).map(sanitize));
   };
-  console.warn = function(...args) {
-    originalWarn.apply(console, args.map(sanitize));
+  console.warn = function() {
+    return originalWarn.apply(console, Array.from(arguments).map(sanitize));
   };
 })();
