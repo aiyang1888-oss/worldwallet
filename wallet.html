@@ -231,6 +231,24 @@
             <div class="asset-change up" id="chgUsdt">+0.01%</div>
           </div>
         </div>
+        <div class="asset-item" id="assetRowEth">
+          <div class="asset-icon" style="background:rgba(100,100,255,0.12)">🔷</div>
+          <div class="asset-info"><div class="asset-name">ETH</div><div class="asset-chain">Ethereum</div></div>
+          <div class="asset-right">
+            <div class="asset-amount" id="balEth">--</div>
+            <div class="asset-value" id="valEth">$--</div>
+            <div class="asset-change up" id="chgEth">+2.4%</div>
+          </div>
+        </div>
+        <div class="asset-item" id="btcAssetRow" class="u5">
+          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
+          <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
+          <div class="asset-right">
+            <div class="asset-amount" id="balBtc">--</div>
+            <div class="asset-value" id="valBtc">$--</div>
+            <div class="asset-change up" id="chgBtc">+1.2%</div>
+          </div>
+        </div>
 
       </div>
 
@@ -432,7 +450,7 @@
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
-        <div class="nav-back"></div>
+        <div class="nav-back" onclick="goTab('tab-home')" role="button" tabindex="0" aria-label="返回资产" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">设置</div>
       </div>
       <div class="u14">
