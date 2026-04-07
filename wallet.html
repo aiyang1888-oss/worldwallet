@@ -760,6 +760,65 @@
       </div>
     </div>
 
+    <!-- ═══ 口令展示页（创建礼物后） ═══ -->
+    <div class="page" id="page-hb-keyword">
+      <div class="nav-bar">
+        <div class="nav-back" data-ww-go="page-hongbao" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">口令已生成</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding:20px 18px;flex:1;overflow-y:auto">
+        <div style="background:linear-gradient(160deg,#6b0000,#b81800,#e03000);border-radius:24px;padding:28px 20px;margin-bottom:20px;position:relative;overflow:hidden">
+          <div style="position:absolute;right:-20px;top:-20px;font-size:120px;opacity:0.05">🎁</div>
+          <div style="font-size:44px;text-align:center;margin-bottom:12px">🎁</div>
+          <div style="font-size:15px;color:rgba(255,255,255,0.8);text-align:center;margin-bottom:18px" id="kwBlessingText">恭喜发财，万事如意</div>
+          <div style="background:rgba(0,0,0,0.25);border-radius:16px;padding:18px;text-align:center;margin-bottom:14px">
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:2px;margin-bottom:10px">口 令</div>
+            <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:5px;margin-bottom:10px" id="kwKeyword">举头望明月</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5)">朋友在WorldToken搜索此口令即可领取</div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.6)">
+            <span id="kwAmtText">100 USDT</span>
+            <span id="kwCntText">共5份礼物</span>
+            <span id="kwExpText">有效期24小时</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <div id="copyKwBtn" data-ww-fn="copyKw" style="flex:1;background:linear-gradient(135deg,rgba(200,168,75,0.15),rgba(200,168,75,0.05));border:1.5px solid rgba(200,168,75,0.4);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer;transition:all 0.2s">
+            <div style="font-size:20px;margin-bottom:4px">📋</div>
+            <div style="font-size:12px;color:var(--gold)">复制口令</div>
+          </div>
+          <div data-ww-fn="shareKw" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
+            <div style="font-size:20px;margin-bottom:4px">📤</div>
+            <div style="font-size:12px;color:var(--text-muted)">分享给朋友</div>
+          </div>
+          <div data-ww-fn="showHbQR" style="flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 0;text-align:center;cursor:pointer">
+            <div style="font-size:20px;margin-bottom:4px">📱</div>
+            <div style="font-size:12px;color:var(--text-muted)">二维码</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">发给朋友的文案（点击复制）</div>
+          <div id="kwShareText" data-ww-fn="copyShareText" style="font-size:13px;color:var(--text);line-height:1.7;cursor:pointer">
+            🎁 我给你发了一个WorldToken礼物！<br>
+            口令：<span style="color:var(--gold);font-weight:700" id="kwShareKeyword">举头望明月</span><br>
+            打开WorldToken → 输入口令 → 立即领取 💰<br>
+            <span style="color:var(--text-muted);font-size:11px">有效期24小时，先到先得</span>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;display:flex;justify-content:space-between">
+            <span>领取进度</span>
+            <span style="color:var(--gold)" id="kwProgress">0 / 5 已领取</span>
+          </div>
+          <div style="background:var(--bg3);border-radius:6px;height:6px;overflow:hidden">
+            <div id="kwProgressBar" style="background:linear-gradient(90deg,#c8a84b,#f0d070);height:100%;width:0%;transition:width 0.5s;border-radius:6px"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;text-align:center">等待朋友输入口令领取...</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ═══ 领取礼物页 ═══ -->
     <div class="page" id="page-claim">
       <div class="nav-bar">

@@ -6901,6 +6901,8 @@ function wwHideHbSuccessOverlay() {
     if (typeof confirmTotpSetup === 'function') window.confirmTotpSetup = confirmTotpSetup;
     if (typeof confirmTransfer === 'function') window.confirmTransfer = confirmTransfer;
     if (typeof copyHbCreatedKeyword === 'function') window.copyHbCreatedKeyword = copyHbCreatedKeyword;
+    if (typeof copyKw === 'function') window.copyKw = copyKw;
+    if (typeof copyShareText === 'function') window.copyShareText = copyShareText;
     if (typeof copyHomeAddr === 'function') window.copyHomeAddr = copyHomeAddr;
     if (typeof copyNative === 'function') window.copyNative = copyNative;
     if (typeof createGift === 'function') window.createGift = createGift;
@@ -6920,7 +6922,9 @@ function wwHideHbSuccessOverlay() {
     if (typeof promptWalletNotifications === 'function') window.promptWalletNotifications = promptWalletNotifications;
     if (typeof selectTransferCoin === 'function') window.selectTransferCoin = selectTransferCoin;
     if (typeof setSwapMax === 'function') window.setSwapMax = setSwapMax;
+    if (typeof showHbQR === 'function') window.showHbQR = showHbQR;
     if (typeof shareSuccess === 'function') window.shareSuccess = shareSuccess;
+    if (typeof shareKw === 'function') window.shareKw = shareKw;
     if (typeof shareHbCreatedKeyword === 'function') window.shareHbCreatedKeyword = shareHbCreatedKeyword;
     if (typeof startVerify === 'function') window.startVerify = startVerify;
     if (typeof submitClaim === 'function') window.submitClaim = submitClaim;
