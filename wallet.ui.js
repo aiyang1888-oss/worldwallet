@@ -3182,6 +3182,23 @@ function openPinSettingsDialog() {
   }
   /** 首次加载：hash 为空或指向不存在的 id 时，按 localStorage 钱包状态落到首页或欢迎页 */
   function wwEnsureInitialHashRoute() {
+    var claimKw = '';
+    try {
+      var _uClaim = new URL(location.href);
+      claimKw = String(_uClaim.searchParams.get('claim') || '').trim();
+    } catch (_eq) {}
+    if (claimKw) {
+      var _cinp = document.getElementById('claimInput');
+      if (_cinp) _cinp.value = claimKw.slice(0, 32);
+      try {
+        var _uStrip = new URL(location.href);
+        _uStrip.searchParams.delete('claim');
+        var _qs = _uStrip.search || '';
+        if (typeof history.replaceState === 'function') {
+          history.replaceState(null, '', _uStrip.pathname + _qs + (location.hash || ''));
+        }
+      } catch (_es) {}
+    }
     if (wwHashToPageId()) return;
     var hasWallet = false;
     try {
@@ -3192,6 +3209,10 @@ function openPinSettingsDialog() {
       try { loadWallet(); } catch (_lwBoot) {}
     }
     if (typeof goTo !== 'function') return;
+    if (claimKw) {
+      goTo('page-claim');
+      return;
+    }
     goTo(hasWallet ? 'page-home' : 'page-welcome');
   }
   window.addEventListener('hashchange', function () {
