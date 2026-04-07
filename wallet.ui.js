@@ -774,6 +774,33 @@ function showTotpUnlockOverlay() {
   if (ov) ov.classList.add('show');
 }
 
+async function submitTotpUnlock() {
+  const inp = document.getElementById('totpUnlockInput');
+  const err = document.getElementById('totpUnlockError');
+  const got = inp ? inp.value.trim() : '';
+  const sec = localStorage.getItem('ww_totp_secret');
+  if (!sec || !/^\d{6}$/.test(got)) {
+    if (err) err.style.display = 'block';
+    return;
+  }
+  if (typeof wwVerifyTotpCode !== 'function') {
+    if (err) err.style.display = 'block';
+    return;
+  }
+  const ok = await wwVerifyTotpCode(sec, got);
+  if (!ok) {
+    if (err) err.style.display = 'block';
+    if (inp) inp.value = '';
+    const pan = document.getElementById('totpUnlockPanel');
+    if (pan) { pan.classList.remove('wt-shake-wrong'); void pan.offsetWidth; pan.classList.add('wt-shake-wrong'); }
+    return;
+  }
+  const ov = document.getElementById('totpUnlockOverlay');
+  if (ov) ov.classList.remove('show');
+  if (err) err.style.display = 'none';
+  _resumeWalletAfterUnlock();
+}
+
 function closeTotpUnlock() {
   if(window._wwForceIdleLock) {
     if(typeof showToast==='function') showToast('请输入两步验证码以解锁', 'warning', 2200);
