@@ -4114,13 +4114,16 @@ function copyShareText() {
 }
 
 function onClaimInput() {
-  const v = document.getElementById('claimInput').value;
+  const inp = document.getElementById('claimInput');
   const box = document.getElementById('claimInputBox');
+  if (!inp || !box) return;
+  const v = String(inp.value || '');
   box.style.borderColor = v.length > 2 ? 'var(--gold)' : 'var(--border)';
 }
 
 function fillKeyword(kw) {
-  document.getElementById('claimInput').value = kw;
+  const inp = document.getElementById('claimInput');
+  if (inp) inp.value = kw != null ? String(kw) : '';
   onClaimInput();
 }
 
