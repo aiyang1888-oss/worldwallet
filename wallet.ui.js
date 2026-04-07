@@ -3353,12 +3353,28 @@ function openPinSettingsDialog() {
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
 }
 
-// 时钟
+// 时钟（须对齐系统分钟边界：若仅用 load 时刻 +60s 的 setInterval，在例如 :59 秒打开时整分钟会滞后约 1 分钟）
 function updateTime() {
-  const now=new Date();
-  document.getElementById('statusTime').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const now = new Date();
+  const el = document.getElementById('statusTime');
+  if (!el) return;
+  el.textContent = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
 }
-updateTime(); window._timeInterval = setInterval(updateTime,60000);
+updateTime();
+(function wwScheduleStatusClock() {
+  function arm() {
+    var now = new Date();
+    var delay = 60000 - (now.getSeconds() * 1000 + now.getMilliseconds());
+    if (delay < 50) delay = 50;
+    setTimeout(function () {
+      updateTime();
+      window._timeInterval = setInterval(updateTime, 60000);
+    }, delay);
+  }
+  try {
+    arm();
+  } catch (_clk) {}
+})();
 try {
   wwResetActivityClock();
   ['pointerdown','touchstart','keydown','scroll','click'].forEach(function(ev) {
