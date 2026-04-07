@@ -6223,6 +6223,8 @@ function wwHideHbSuccessOverlay() {
     if (typeof shareHbCreatedKeyword === 'function') window.shareHbCreatedKeyword = shareHbCreatedKeyword;
     if (typeof startVerify === 'function') window.startVerify = startVerify;
     if (typeof submitClaim === 'function') window.submitClaim = submitClaim;
+    if (typeof submitPageRestorePin === 'function') window.submitPageRestorePin = submitPageRestorePin;
+    if (typeof submitPinUnlock === 'function') window.submitPinUnlock = submitPinUnlock;
     if (typeof submitTotpUnlock === 'function') window.submitTotpUnlock = submitTotpUnlock;
     if (typeof wwOpenBackupFromSettings === 'function') window.wwOpenBackupFromSettings = wwOpenBackupFromSettings;
     if (typeof deleteWalletRow === 'function') window.deleteWalletRow = deleteWalletRow;
