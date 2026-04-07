@@ -563,6 +563,10 @@ body {
 .home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
 /* —— balance hide / scroll-top / tab swipe (patch) —— */
 .ww-balance-privacy-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-right: 2px; box-sizing: border-box; }
+/* 首页头部右上角为通知/地址入口预留空间，避免与「隐藏余额」按钮重叠 */
+.home-header .ww-balance-privacy-row {
+  padding-right: max(2px, calc(80px + env(safe-area-inset-right, 0px)));
+}
 .ww-balance-hide-btn {
   flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.12);
   background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.72); font-size: 16px; cursor: pointer;

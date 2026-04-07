@@ -464,16 +464,6 @@ function syncKeyPageLangSelect() {
 var MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
 var TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
 
-/** 本地是否已有任一链地址（勿仅用 ethAddress，否则仅有 TRX/BTC 时首页底栏被隐藏、界面似空白） */
-function wwHasLoadedWallet() {
-  try {
-    var w = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-    return !!(w && (w.ethAddress || w.trxAddress || w.btcAddress));
-  } catch (e) {
-    return false;
-  }
-}
-
 var WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
 var WW_PAGE_SEO = {
   'page-welcome': { title: '欢迎 — WorldToken 多语言钱包', description: '创建或导入钱包：万语地址与多链资产管理。' },
@@ -794,7 +784,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = wwHasLoadedWallet() ? 'flex' : 'none';
+      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -3124,7 +3114,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress || _d.btcAddress));
+      hasWallet = !!(_d && _d.ethAddress);
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');
@@ -3204,7 +3194,11 @@ function syncImportGrid(text) {
   var targetCount = [12,15,18,21,24].includes(words.length) ? words.length : currentCount;
   if (currentCount !== targetCount && [12,15,18,21,24].includes(targetCount)) renderImportGrid(targetCount);
   var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
-  inputs.forEach(function(el, idx){ el.value = words[idx] || ''; });
+  inputs.forEach(function(el, idx){
+    var val = String(el.value || '').trim();
+    if (val.length > 4) val = val.substring(0, 4);
+    el.value = words[idx] || val;
+  });
   var badge = document.getElementById('importWordCountBadge');
   if (badge) badge.textContent = words.length + '/' + inputs.length;
 }
