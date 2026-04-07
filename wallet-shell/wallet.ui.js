@@ -648,48 +648,16 @@ function renderPinSetupUI() {
 }
 
 async function finalizeImportedWalletAfterPin(pin) {
-  var pinStr = String(pin || '');
-  if (!/^\d{6}$/.test(pinStr)) {
-    showToast('PIN 无效', 'error');
-    return;
-  }
   var raw = localStorage.getItem('ww_import_pending');
   if (!raw) return;
-  var parsed;
+  var flat;
   try {
-    parsed = JSON.parse(raw);
+    flat = JSON.parse(raw);
   } catch (e) {
-    console.error('[finalizeImportedWalletAfterPin] JSON.parse failed:', e);
-    showToast('导入数据损坏，请重试', 'error');
+    console.error('JSON fail');
     return;
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    showToast('导入数据无效', 'error');
-    try { localStorage.removeItem('ww_import_pending'); } catch (_r) {}
-    return;
-  }
-  var wordsArr = parsed.words;
-  var wordsSafe = Array.isArray(wordsArr)
-    ? wordsArr.filter(function (w) { return typeof w === 'string'; })
-    : undefined;
-  var flat = {
-    mnemonic: typeof parsed.mnemonic === 'string' ? parsed.mnemonic : '',
-    enMnemonic: typeof parsed.enMnemonic === 'string' ? parsed.enMnemonic : (typeof parsed.mnemonic === 'string' ? parsed.mnemonic : ''),
-    ethAddress: typeof parsed.ethAddress === 'string' ? parsed.ethAddress : '',
-    trxAddress: typeof parsed.trxAddress === 'string' ? parsed.trxAddress : '',
-    btcAddress: typeof parsed.btcAddress === 'string' ? parsed.btcAddress : '',
-    privateKey: typeof parsed.privateKey === 'string' ? parsed.privateKey : '',
-    trxPrivateKey: typeof parsed.trxPrivateKey === 'string' ? parsed.trxPrivateKey : '',
-    createdAt: parsed.createdAt,
-    backedUp: !!parsed.backedUp
-  };
-  if (wordsSafe && wordsSafe.length) flat.words = wordsSafe;
-  if (!flat.mnemonic.trim() || !flat.ethAddress.trim() || !flat.trxAddress.trim()) {
-    showToast('导入数据不完整', 'error');
-    try { localStorage.removeItem('ww_import_pending'); } catch (_r2) {}
-    return;
-  }
-  // 不存储 PIN 到 localStorage，仅存储在会话中
+  var pinStr = String(pin || '');
   wwSetSessionPin(pinStr);
   await saveWalletSecure(flat, pinStr);
   localStorage.removeItem('ww_import_pending');
@@ -2574,11 +2542,10 @@ function renderTxHistoryFromCache() {
     el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-muted);font-size:12px;line-height:1.6">无匹配记录<br/><span style="font-size:11px;opacity:0.9">试试缩短关键词或清空搜索框</span></div>';
     return;
   }
-  filtered.forEach(function(tx) {
-    var html = txHistoryRowHtml(tx);
-    var wrap = document.createElement('div');
-    wrap.innerHTML = html;
-    if (wrap.firstChild) el.appendChild(wrap.firstChild);
+  filtered.forEach(function (tx) {
+    const div = document.createElement('div');
+    div.innerHTML = txHistoryRowHtml(tx);
+    if (div.firstChild) el.appendChild(div.firstChild);
   });
   if (!el._wwTxHistoryDelegated && typeof wwTxHistoryRowOnClick === 'function') {
     el._wwTxHistoryDelegated = true;

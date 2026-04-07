@@ -91,41 +91,12 @@ function randDigits(n) {
 /** 万语地址持久化：刷新/切页后必须与首次生成一致 */
 function persistWanYuAddrToStorage() {
   try {
-    if (typeof ADDR_WORDS === 'undefined' || !ADDR_WORDS.length) return;
-    var preEl = document.getElementById('addrPrefix');
-    var sufEl = document.getElementById('addrSuffix');
-    var prefix = (preEl && preEl.textContent || '').replace(/\D/g, '').substring(0, 8).padStart(8, '0');
-    var suffix = (sufEl && sufEl.textContent || '').replace(/\D/g, '').substring(0, 8).padStart(8, '0');
-    if (!preEl || prefix.replace(/0/g, '') === '') {
-      try {
-        var lp = localStorage.getItem('wallet_prefix');
-        if (lp) prefix = String(lp).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
-      } catch (_p) {}
-    }
-    if (!sufEl || suffix.replace(/0/g, '') === '') {
-      try {
-        var ls = localStorage.getItem('wallet_suffix');
-        if (ls) suffix = String(ls).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
-      } catch (_s) {}
-    }
-    try {
-      var slots = ADDR_WORDS.map(function (w) {
-        return { word: w.word, lang: w.lang || 'zh', custom: !!w.custom };
-      });
-      var wordsJoin = ADDR_WORDS.map(function (w) { return w.word; }).join('');
-      var native = prefix + '-' + wordsJoin + '-' + suffix;
-      localStorage.setItem('wallet_native_addr', native);
-      localStorage.setItem('wallet_prefix', prefix);
-      localStorage.setItem('wallet_suffix', suffix);
-      localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
-      if (localStorage.getItem('wallet_native_addr') !== native) {
-        console.error('[WanYuAddr] localStorage verification failed');
-      }
-    } catch (e) {
-      console.error('[WanYuAddr] localStorage write failed:', e);
-    }
+    var slots = ADDR_WORDS.map(function (w) {
+      return { word: w.word, lang: w.lang || 'zh', custom: !!w.custom };
+    });
+    localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
   } catch (e) {
-    console.error('[WanYuAddr] persistWanYuAddrToStorage 失败:', e);
+    console.error('[WanYuAddr]', e);
   }
 }
 
@@ -404,12 +375,10 @@ function renderAddrWords() {
   if(pre) pre.textContent = (pre.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
   if(suf) suf.textContent = (suf.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
   container.innerHTML = '';
-  ADDR_WORDS.forEach(w => {
+  ADDR_WORDS.forEach(function (w) {
     const span = document.createElement('span');
     span.textContent = w.word;
-    span.style.cssText = w.custom 
-      ? 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#f0d070;font-size:17px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)'
-      : 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px';
+    span.style.cssText = w.custom ? 'color:#f0d070' : 'color:#8888bb';
     container.appendChild(span);
   });
   const m = document.getElementById('addrMain');
@@ -478,11 +447,11 @@ function openWordEditor(idx) {
     return;
   }
   if (trimmed.length > 4) {
-    alert('词长度必须在 1-4 个字符之间');
+    alert('最多4字');
     return;
   }
-  if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff]+$/.test(trimmed)) {
-    alert('仅允许输入字符');
+  if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff]+$/.test(trimmed)) {
+    alert('仅字符');
     return;
   }
   ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
@@ -547,8 +516,8 @@ function getNativeAddr() {
     if (snap && String(snap).split('-').length === 3 && ADDR_WORDS.length === 10) {
       var mid = String(snap).split('-')[1] || '';
       var valid = true;
-      for (var j = 0; j < 10; j++) {
-        if (!ADDR_WORDS[j] || String(ADDR_WORDS[j].word) !== mid.charAt(j)) {
+      for (let j = 0; j < 10; j++) {
+        if (!ADDR_WORDS[j] || ADDR_WORDS[j].word !== mid[j]) {
           valid = false;
           break;
         }
