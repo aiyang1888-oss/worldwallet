@@ -407,19 +407,46 @@ body {
   display: flex;
   flex-direction: column;
 }
+/* 密钥页助记词：固定 3 列，行数随词数变化（12→4 行 … 24→8 行） */
 .key-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(44px, auto);
   gap: 8px;
   margin-bottom: 16px;
   flex: 0 0 auto;
+  width: 100%;
+  align-content: start;
 }
 .key-word {
-  background: var(--bg); border: 1px solid var(--border);
-  border-radius: 12px; padding: 10px 6px; text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 8px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
-.word-num { font-size: 9px; color: var(--text-muted); margin-bottom: 4px; }
-.word-val { font-size: 13px; color: var(--text); font-weight: 500; }
+/* 单行：序号. 词汇（与验证页「第 n 词」一致，均为 1-based） */
+.key-word-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.28em;
+  max-width: 100%;
+  line-height: 1.38;
+  word-break: break-word;
+}
+.word-idx {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.word-val { font-size: 13px; color: var(--text); font-weight: 500; min-width: 0; }
 .key-warning {
   background: rgba(255,180,0,0.08); border: 1px solid rgba(255,180,0,0.2);
   border-radius: 12px; padding: 12px 14px;
