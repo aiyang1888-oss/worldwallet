@@ -4388,59 +4388,6 @@ function fillKeyword(kw) {
   onClaimInput();
 }
 
-function submitClaim() {
-  const kw = document.getElementById('claimInput').value.trim();
-  if(!kw) { document.getElementById('claimInputBox').style.borderColor='var(--red)'; return; }
-
-  // 查找礼物
-  const allHb = JSON.parse(localStorage.getItem('ww_hongbaos')||'{}');
-  const hb = allHb[kw];
-
-  if(!hb) {
-    showToast('❌ 未找到此口令，请检查是否输入正确', 'error');
-    return;
-  }
-  if(Date.now() > hb.expireAt) {
-    showToast('⏰ 此礼物已过期', 'warning');
-    return;
-  }
-  if(hb.claimed.length >= hb.count) {
-    showToast('😢 礼物已被领完啦', 'warning');
-    return;
-  }
-  if(!REAL_WALLET) {
-    showToast('⚠️ 请先创建或导入钱包', 'warning');
-    return;
-  }
-  const myAddr = REAL_WALLET.trxAddress;
-  if(hb.claimed.find(x=>x.addr===myAddr)) {
-    showToast('ℹ️ 你已经领取过这个礼物了', 'info');
-    return;
-  }
-
-  // 计算金额（随机或固定）
-  let amt;
-  if(hb.type === 'lucky') {
-    const remaining = hb.totalAmount - hb.claimed.reduce((s,x)=>s+parseFloat(x.amount),0);
-    const leftCount = hb.count - hb.claimed.length;
-    amt = leftCount === 1 ? remaining.toFixed(2) : (Math.random() * remaining * 2 / leftCount).toFixed(2);
-  } else {
-    amt = hb.perPerson;
-  }
-
-  // 记录领取
-  hb.claimed.push({ addr: myAddr, amount: amt, time: Date.now() });
-  allHb[kw] = hb;
-  localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
-
-  const rank = hb.claimed.length;
-  var _claimAmt = document.getElementById('claimedAmount');
-  if (_claimAmt) _claimAmt.textContent = String(amt) + ' USDT';
-  var _claimMsg = document.getElementById('claimedMessage');
-  if (_claimMsg) _claimMsg.textContent = '口令：' + kw + ' · 第 ' + rank + ' 个领取 · 共 ' + hb.count + ' 份礼物';
-  goTo('page-claimed');
-}
-
 let hbCount = 5;
 function selectHbType(type) {
   hbType = type;
