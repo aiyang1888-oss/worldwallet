@@ -314,45 +314,7 @@ function renderAddrWords() {
   }
 }
 
-function openCustomizeAddr() {
-  openWordEditor(0);
-}
-
-function openWordEditor(idx) {
-  const w = ADDR_WORDS[idx];
-  const info = LANG_INFO[w.lang] || {flag:'🌍', name:'?'};
-
-  // 弹出简单的 prompt 式选择
-  const langList = Object.keys(SAMPLE_KEYS).filter(l=>l!=='en').map(l=>{
-    const i = LANG_INFO[l]||{flag:'🌍',name:l};
-    return `${i.flag} ${i.name} (${l})`;
-  }).join('\n');
-
-  const input = window.prompt(
-    `第 ${idx+1} 个字（当前：${info.flag} "${w.word}"）\n\n输入新词（直接输入），或留空随机\n\n可用语言：${Object.entries(LANG_INFO).filter(([l])=>l!=='en').map(([l,i])=>i.flag+l).join(' ')}`,
-    w.custom ? w.word : ''
-  );
-
-  if(input === null) return; // 取消
-
-  const trimmed = input.trim();
-  if(trimmed === '') {
-    // 随机
-    const lang = randLang();
-    ADDR_WORDS[idx] = {word: randWord(lang), lang, custom: false};
-  } else {
-    if (trimmed.length > 4) {
-      alert('词长度必须在 1-4 个字符之间');
-      return;
-    }
-    if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff\u0600-\u06ff]+$/.test(trimmed)) {
-      alert('仅允许输入字符');
-      return;
-    }
-    ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
-  }
-  renderAddrWords();
-}
+// openCustomizeAddr / openWordEditor 由 wallet.addr.js 定义（含 persistWanYuAddrToStorage、updateAddr）；勿在此重复声明，否则会覆盖并导致定制万语地址无法保存
 
 // getNativeAddr 已统一到下方定义
 
