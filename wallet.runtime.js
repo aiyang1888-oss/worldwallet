@@ -6196,6 +6196,8 @@ function wwHideHbSuccessOverlay() {
 // data-ww-fn：显式挂到 window，供 wallet.html 捕获阶段委托脚本读取 window[fnName]
 (function wwExposeDataWwFnHandlers() {
   try {
+    if (typeof goTo === 'function') window.goTo = goTo;
+    if (typeof goTab === 'function') window.goTab = goTab;
     if (typeof checkVerify === 'function') window.checkVerify = checkVerify;
     if (typeof goToPinConfirm === 'function') window.goToPinConfirm = goToPinConfirm;
     if (typeof confirmPin === 'function') window.confirmPin = confirmPin;
