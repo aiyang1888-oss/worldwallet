@@ -281,6 +281,7 @@ function deriveAddrWordsFromChain(chainAddress) {
   }
   return out;
 }
+window.deriveAddrWordsFromChain = deriveAddrWordsFromChain;
 
 function randWanYuZhChar() {
   const pool = (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.zh && SINGLE_CHARS.zh.length)
