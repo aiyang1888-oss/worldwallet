@@ -1,26 +1,22 @@
 # Round 1 修复报告 - 2026-04-08
 
 ## 发现的问题
-
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数（后者覆盖前者），长期维护时需避免双份逻辑漂移；当前加载顺序下行为以 `wallet.runtime.js` 为准。
-- [P3] 部分 `JSON.parse(localStorage…)` 路径未统一包在 try-catch 中，若本地存储损坏可能抛错（非本轮阻断）。
+- [P1] `confirmTransfer` 在 `broadcastRealTransfer` 失败或异常时仍调度「嗖」动画与 `page-transfer-success` 跳转，用户可能看到成功页与动画，与广播结果不一致。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载的 `wallet.runtime.js` 覆盖前者；属架构冗余但当前可运行。
+- [P3] `wallet.css` 花括号已平衡（开/闭均为 330）。
 
 ## 修复内容
-
-- 文件：无（本轮静态与绑定测试已全部通过，未引入功能性代码变更）
-- 函数：—
-- 修改：—
+- 文件：`wallet.runtime.js`
+- 函数：`confirmTransfer`
+- 修改：将「嗖」动画与跳转 `page-transfer-success` 移入广播成功分支，仅在 `ok === true` 时执行。
 
 ## 修改文件
-
-- `reports/round_1.md`（本报告）
+- `wallet.runtime.js`
 
 ## 剩余问题
-
-- 无（与本轮 TEST-A/B/C 相关的阻断项）；可选后续：收敛重复函数、加固 JSON 解析。
+- 无（本轮针对 P1 已修复；P3 架构重复未改，避免大范围重构）
 
 ## 测试结果
-
-- TEST-A: PASS — `wallet.html` 中 41 个唯一 `data-ww-fn` 均在 `wallet.ui.js` / `wallet.runtime.js` / `wallet.addr.js` / `wallet.tx.js` 等中存在对应 `function` 或经 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` / `wwExposeCoreAliases` 挂到 `window`。
-- TEST-B: PASS — 所有 `data-ww-go` 目标（`page-create`、`page-password-restore`、`page-import` 等）均存在对应 `id="page-*"`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift` 均有实质函数体；`sendTransfer`/`claimGift`/`openSend`/`openReceive` 由运行时别名映射至 `confirmTransfer`、`submitClaim`、`goHomeTransfer`、`goTab('tab-addr')`。
+- TEST-A: PASS — `data-ww-fn` 所列名称均在合并后的全局函数或 `window` 暴露逻辑中有对应实现。
+- TEST-B: PASS — 所有 `data-ww-go` 目标在 `wallet.html` 中均有对应 `id="page-*"`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText` 在 `wallet.runtime.js` 中有实质函数体；`sendTransfer`/`claimGift`/`openSend`/`openReceive` 由 `wwExposeCoreAliases` 映射；`createGift` 由先加载的 `wallet.ui.js` 提供并保持全局可用。
