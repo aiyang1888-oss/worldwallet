@@ -648,11 +648,50 @@ function renderPinSetupUI() {
 }
 
 async function finalizeImportedWalletAfterPin(pin) {
+  var pinStr = String(pin || '');
+  if (!/^\d{6}$/.test(pinStr)) {
+    showToast('PIN 无效', 'error');
+    return;
+  }
   var raw = localStorage.getItem('ww_import_pending');
   if (!raw) return;
-  var flat = JSON.parse(raw);
-  localStorage.setItem('ww_pin', pin);
-  await saveWalletSecure(flat, pin);
+  var parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    console.error('[finalizeImportedWalletAfterPin] JSON.parse failed:', e);
+    showToast('导入数据损坏，请重试', 'error');
+    return;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    showToast('导入数据无效', 'error');
+    try { localStorage.removeItem('ww_import_pending'); } catch (_r) {}
+    return;
+  }
+  var wordsArr = parsed.words;
+  var wordsSafe = Array.isArray(wordsArr)
+    ? wordsArr.filter(function (w) { return typeof w === 'string'; })
+    : undefined;
+  var flat = {
+    mnemonic: typeof parsed.mnemonic === 'string' ? parsed.mnemonic : '',
+    enMnemonic: typeof parsed.enMnemonic === 'string' ? parsed.enMnemonic : (typeof parsed.mnemonic === 'string' ? parsed.mnemonic : ''),
+    ethAddress: typeof parsed.ethAddress === 'string' ? parsed.ethAddress : '',
+    trxAddress: typeof parsed.trxAddress === 'string' ? parsed.trxAddress : '',
+    btcAddress: typeof parsed.btcAddress === 'string' ? parsed.btcAddress : '',
+    privateKey: typeof parsed.privateKey === 'string' ? parsed.privateKey : '',
+    trxPrivateKey: typeof parsed.trxPrivateKey === 'string' ? parsed.trxPrivateKey : '',
+    createdAt: parsed.createdAt,
+    backedUp: !!parsed.backedUp
+  };
+  if (wordsSafe && wordsSafe.length) flat.words = wordsSafe;
+  if (!flat.mnemonic.trim() || !flat.ethAddress.trim() || !flat.trxAddress.trim()) {
+    showToast('导入数据不完整', 'error');
+    try { localStorage.removeItem('ww_import_pending'); } catch (_r2) {}
+    return;
+  }
+  // 不存储 PIN 到 localStorage，仅存储在会话中
+  wwSetSessionPin(pinStr);
+  await saveWalletSecure(flat, pinStr);
   localStorage.removeItem('ww_import_pending');
   window.REAL_WALLET = {
     mnemonic: flat.mnemonic,

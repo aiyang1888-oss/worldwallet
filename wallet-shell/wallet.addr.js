@@ -412,8 +412,8 @@ function renderAddrWords() {
       : 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px';
     container.appendChild(span);
   });
-  const m = (_safeEl('addrMain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}});
-  if(m) m.textContent = ADDR_WORDS.map(w=>w.word).join('');
+  const m = document.getElementById('addrMain');
+  if (m) m.textContent = ADDR_WORDS.map(w => w.word).join('');
   const qp1 = document.getElementById('qrPart1');
   if(qp1 && ADDR_WORDS.length) {
     const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);

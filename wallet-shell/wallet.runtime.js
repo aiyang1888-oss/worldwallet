@@ -1,5 +1,7 @@
 /*! WorldToken wallet.runtime.js — split from wallet.html; refactor incrementally. */
 
+var _wwCurrentPin = null;
+
 // 强制清除旧 Service Worker 和缓存
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
@@ -486,16 +488,21 @@ var _wwSessionPin = '';
 function wwGetSessionPin() { return _wwSessionPin || ''; }
 function wwSetSessionPin(p) {
   _wwSessionPin = p ? String(p) : '';
+  _wwCurrentPin = p ? String(p) : null;
   clearTimeout(window._wwSessionPinTimeout);
   window._wwSessionPinTimeout = setTimeout(function() {
     _wwSessionPin = '';
+    _wwCurrentPin = null;
     console.log('[SessionPin] 会话 PIN 已自动清除');
   }, 15 * 60 * 1000);
 }
 function wwClearSessionPin() {
   clearTimeout(window._wwSessionPinTimeout);
   window._wwSessionPinTimeout = null;
+  clearTimeout(window._wwCurrentPinClearTimer);
+  window._wwCurrentPinClearTimer = null;
   _wwSessionPin = '';
+  _wwCurrentPin = null;
 }
 
 function wwCleanupMemory() {
@@ -508,6 +515,8 @@ function wwCleanupMemory() {
   }
   window._wwSessionPin = '';
   window._wwCurrentPin = null;
+  clearTimeout(window._wwCurrentPinClearTimer);
+  window._wwCurrentPinClearTimer = null;
   window._wwTotpPendingSecret = null;
   window._wwLastActivityTs = null;
   window._wwLastPortfolioParts = null;
@@ -745,8 +754,8 @@ async function decryptSensitive(pin) {
 
 // ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
 function saveWallet(w) {
-  // 如果有 PIN，使用加密存储；否则只存公开信息
-  var pin = wwGetSessionPin();
+  // 如果有 PIN，使用加密存储；否则只存公开信息（内存 _wwCurrentPin，与 wwSetSessionPin 同步）
+  var pin = _wwCurrentPin || '';
   if (pin) {
     saveWalletSecure(w, pin).catch(function(e) {
       console.error('[saveWallet] 加密存储失败，降级明文:', e);
@@ -1527,6 +1536,11 @@ async function submitTotpUnlock() {
     }
     return;
   }
+  window._wwCurrentPin = pin;
+  clearTimeout(window._wwCurrentPinClearTimer);
+  window._wwCurrentPinClearTimer = setTimeout(function() {
+    window._wwCurrentPin = null;
+  }, 30 * 60 * 1000);
   const ov = document.getElementById('totpUnlockOverlay');
   if (ov) ov.classList.remove('show');
   if (err) err.style.display = 'none';
