@@ -946,5 +946,17 @@ document.addEventListener('click', function(e) {
 }, true); // 使用 capture 阶段确保更早触发
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (typeof initAddrWords === 'function' && typeof ADDR_WORDS !== 'undefined') {
+      if (ADDR_WORDS.length === 0) {
+        initAddrWords();
+      }
+    }
+  }, 500);
+});
+</script>
+
 </body>
 </html>
