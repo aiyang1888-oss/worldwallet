@@ -1,36 +1,24 @@
-# Round 1 修复报告 - 2026-04-07 23:26
+# Round 1 修复报告 - 2026-04-07 23:54
 
 ## 发现的问题
-- [P0] 无 — TEST-A（`data-ww-fn` → 全局函数）与 TEST-B（`data-ww-go` → `id="page-*"`）均通过。
-- [P1] 本轮静态抽查未发现「必现崩溃」类问题（`goTo` 已对 `page-home` / `page-password-restore` 做 `REAL_WALLET` / `ww_wallet` 与 `loadWallet` 兜底）。
-- [P2] 无 — TEST-C 所列核心函数均具非空实现（含 `sendTransfer`/`claimGift`/`openSend`/`openReceive` 在 `wallet.runtime.js` 末尾别名映射）。
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名顶层函数；加载顺序为 ui → addr → tx → **runtime**，最终以 **runtime** 为准，后续修改需避免两处漂移。`wallet.css` 花括号 **330 / 330**，已平衡。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数；后加载的 `wallet.runtime.js` 覆盖前者，属预期加载顺序，但增加维护成本。
+- [P3] `wallet.html` 底部捕获阶段 `data-ww-fn` 委托与 `wallet.dom-bind.js` 冒泡委托并存；当前依赖捕获阶段 `stopPropagation`，底栏等特殊分支以实际运行路径为准。
 
 ## 修复内容
-- 本轮无需功能性代码修改（自动化绑定与页面路由检查均通过）。
+- 本轮 **无新增代码 patch**：静态测试 TEST-A/B/C 均通过；历史提交 `7a717e5` 已移除 `wallet.runtime.js` 内重复的 `loadBalances` / `getPrices`，保留 `wallet.tx.js` 实现。
 
 ## 修改文件
-- `reports/round_1.md`（本审计报告）
+- `reports/round_1.md`（本报告）
 
 ## 剩余问题
-- 无（功能与绑定层面）。可选：在父级仓库配置 Telegram 环境变量后使用通知脚本（若适用）。
+- 无阻塞性 P0–P2；长期可考虑合并 UI/Runtime 重复逻辑或命名空间化（非本轮范围）。
 
 ## 测试结果
-- TEST-A: PASS — `wallet.html` 中 41 个 `data-ww-fn` 均在合并后的 `wallet.core.js` / `wallet.ui.js` / `wallet.addr.js` / `wallet.tx.js` / `wallet.runtime.js` 中存在对应全局 `function` / `async function`（或由 runtime 挂到 `window`）。
-- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在对应 `id="page-*"`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`（→ `confirmTransfer`）、`createGift`、`claimGift`（→ `submitClaim`）、`openSend`（→ `goHomeTransfer`）、`openReceive`（→ `goTab('tab-addr')`）均具非空实现。
+- TEST-A: PASS — `data-ww-fn` 共 41 项，均在项目 `*.js` 中存在对应 `function name` / `window.name` 定义；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将关键处理器挂到 `window`。
+- TEST-B: PASS — `data-ww-go` 所列 `page-*` 均在 `wallet.html` 中存在 `id="page-…"`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift`、`submitClaim` 及别名 `sendTransfer`→`confirmTransfer`、`claimGift`→`submitClaim`、`openSend`→`goHomeTransfer`、`openReceive`→`goTab('tab-addr')` 均含实质逻辑。
 
-## STEP 1 摘录（扫描快照）
-
-### `data-ww-fn`（41）
-`createNewWallet`, `startVerify`, `checkVerify`, `goToPinConfirm`, `confirmPin`, `pinVerifyEnterWallet`, `promptWalletNotifications`, `copyHomeAddr`, `goHomeTransfer`, `loadTxHistory`, `copyNative`, `openCustomizeAddr`, `hideQR`, `doTransfer`, `closeTransferConfirm`, `confirmTransfer`, `shareSuccess`, `openPinSettingsDialog`, `wwOpenBackupFromSettings`, `deleteWalletRow`, `wwSwapRecordsToast`, `setSwapMax`, `doSwap`, `doImportWallet`, `createGift`, `copyHbCreatedKeyword`, `shareHbCreatedKeyword`, `copyKw`, `shareKw`, `showHbQR`, `copyShareText`, `submitClaim`, `pinUnlockBackspace`, `pinUnlockClear`, `closePinUnlock`, `submitTotpUnlock`, `closeTotpUnlock`, `confirmTotpSetup`, `closeTotpSetup`, `closePinSetupOverlay`, `wwHideHbSuccessOverlay`
-
-### `id="page-*"`（21）
-`page-welcome`, `page-password-restore`, `page-create`, `page-key`, `page-key-verify`, `page-pin-setup`, `page-pin-confirm`, `page-pin-verify`, `page-home`, `page-addr`, `page-transfer`, `page-swoosh`, `page-transfer-success`, `page-settings`, `page-swap`, `page-import`, `page-hongbao`, `page-hb-keyword`, `page-claim`, `page-claimed`, `page-hb-records`, `page-faq`
-
-### `data-ww-go` 目标
-`page-create`, `page-password-restore`, `page-import`, `page-welcome`, `page-faq`, `page-key-verify`, `page-pin-setup`, `page-settings`, `page-home`, `page-claim`, `page-hb-records`, `page-hongbao`, `page-claimed`
-
-### JS 全局导出
-- `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` / `wwExposeCoreAliases` 将 HTML 所需处理器显式挂到 `window`（供捕获阶段内联委托使用）。
-- `wallet.ui.js` / `wallet.runtime.js` 均含大量 `function X()`；同名时以后加载的 **runtime** 为准。
+## STEP 1 摘录
+- `wallet.css` 花括号：`{` 与 `}` 均为 330，平衡。
+- 脚本顺序：`safeLog` → CDN → `api-config` → `storage` → `wallet.derive.paths` → `security` → `core/wallet` → `wordlists` → `wallet.core` → `wallet.ui` → `wallet.addr` → `wallet.tx` → `wallet.runtime` → `wallet.dom-bind`，与依赖一致。
+- `page-home` 进入路径：`wallet.runtime.js` 中 `goTo('page-home')` 在 `wwWalletHasAnyChainAddress` / `loadWallet()` 失败时回退 `page-welcome`，并控制底栏显示。
