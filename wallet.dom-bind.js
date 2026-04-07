@@ -175,7 +175,7 @@
         return;
       }
       if (typeof window[fn] === 'function') {
-        window[fn]();
+        window[fn](el);
         ev.preventDefault();
       }
     }
