@@ -1,21 +1,20 @@
-# Round 1 修复报告 - 2026-04-08 00:54
+# Round 1 修复报告 - 2026-04-08
 
 ## 发现的问题
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在同名全局函数（如 `goTo`、`doTransfer`）；加载顺序以后者为准，属已知架构，非本轮阻断项。
-- [P3] `wallet.html` 中除 `wallet.dom-bind.js` 外另有捕获阶段 `data-ww-fn` 委托脚本；与底栏委托互补，静态检查未见冲突。
+- [P1] `shareSuccess` 回退逻辑依赖浏览器非标准的全局 `event`，在严格模式或部分环境下可能无法解析点击目标，导致「已复制」视觉反馈不更新。
 
 ## 修复内容
-- 文件：无（本轮静态与绑定测试均通过，无需改业务代码）
-- 函数：—
-- 修改：—
+- 文件：`wallet.runtime.js`
+- 函数：`shareSuccess`
+- 修改：在 `fromEl` 无效时用 `document.activeElement` 与 `closest('[data-ww-fn="shareSuccess"]')` 定位按钮，移除对全局 `event` 的依赖。
 
 ## 修改文件
-- `reports/round_1.md`（本报告）
+- `wallet.runtime.js`
 
 ## 剩余问题
-- 无
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载的 `wallet.runtime.js` 为准；属既有架构，非本轮阻断项。
 
 ## 测试结果
-- TEST-A: PASS — 全部 41 个 `data-ww-fn` 在 `wallet.runtime.js` / `wallet.ui.js` / `wallet.addr.js` / `wallet.tx.js` / `wallet.core.js` 中存在对应函数定义。
-- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在 `id="page-*"` 页面节点。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift`、`submitClaim` 均有非空实现；`sendTransfer`、`claimGift`、`openSend`、`openReceive` 在 `wallet.runtime.js` 末尾通过别名暴露。
+- TEST-A: PASS — 全部 `data-ww-fn` 在核心 JS 中存在对应函数定义，且 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将常用处理器挂到 `window`。
+- TEST-B: PASS — 全部 `data-ww-go="page-*"` 在 `wallet.html` 中存在对应 `id`；`data-ww-go-tab` 目标为底栏 `tab-*` id。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift`（`wallet.ui.js`）、`submitClaim`（`wallet.ui.js`）均有非空实现；`sendTransfer`、`claimGift`、`openSend`、`openReceive` 在 `wallet.runtime.js` 中通过别名映射到 `confirmTransfer`、`submitClaim`、`goHomeTransfer`、`goTab('tab-addr')`。
