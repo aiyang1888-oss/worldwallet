@@ -6563,13 +6563,18 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 
 // ── 刷新恢复当前页 ────────────────────────────────────────────────
 (function() {
-  // 只有主要 Tab 页面才恢复（必须有钱包数据才有意义的页面不恢复）
+  // 只有主要 Tab 页面才恢复；且必须已有本地钱包地址。
+  // 否则 goTo 会盖住默认的欢迎页、底栏隐藏，体感像「按钮全点不动」（sessionStorage 在 ?v= 测缓存时仍存在）。
   var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings'];
   try {
     var last = sessionStorage.getItem('ww_last_page');
-    if (last && ALLOW_RESTORE.includes(last) && document.getElementById(last)) {
-      setTimeout(function() { goTo(last); }, 50);
+    if (!last || !ALLOW_RESTORE.includes(last) || !document.getElementById(last)) return;
+    var hasWallet = typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET);
+    if (!hasWallet) {
+      try { sessionStorage.removeItem('ww_last_page'); } catch (_r) {}
+      return;
     }
+    setTimeout(function() { goTo(last); }, 50);
   } catch(_) {}
 })();
 
