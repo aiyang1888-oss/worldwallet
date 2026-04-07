@@ -1024,19 +1024,9 @@
 <script>
 // 事件委托：监听所有 data-ww-fn 属性
 document.addEventListener('click', function(e) {
-  // 先检查点击元素本身
-  let el = e.target;
-  let fnEl = null;
-  
-  // 向上遍历最多 5 层找到有 data-ww-fn 的元素
-  for (let i = 0; i < 5 && el && el.nodeType === 1; i++) {
-    if (el.hasAttribute && el.hasAttribute('data-ww-fn')) {
-      fnEl = el;
-      break;
-    }
-    el = el.parentElement;
-  }
-  
+  var t = e.target;
+  if (t && t.nodeType !== 1) t = t.parentElement;
+  var fnEl = t && typeof t.closest === 'function' ? t.closest('[data-ww-fn]') : null;
   if (!fnEl) return;
   
   const fnName = fnEl.getAttribute('data-ww-fn');
