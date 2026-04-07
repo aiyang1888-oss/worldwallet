@@ -1865,54 +1865,7 @@ function setTransferQuickAmount(amt) {
   if (typeof calcTransferFee === 'function') calcTransferFee();
 }
 
-function updateAddr() {
-  const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
-  const isEn = currentLang==='en';
-  // 初始化万语地址（如果还没初始化）
-  if(ADDR_WORDS.length === 0) initAddrWords();
-  else renderAddrWords();
-  // 获取完整万语地址
-  const nativeAddr = getNativeAddr();
-  const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
-  // 首页芯片
-  const chip = document.getElementById('homeAddrChip');
-  if(chip) chip.textContent = isEn ? CHAIN_ADDR : nativeAddr;
-  // QR 二维码区大字显示
-  const qp1 = document.getElementById('qrPart1');
-  const qp2 = document.getElementById('qrPart2');
-  if(qp1 && !isEn) { qp1.textContent = nativeAddr.substring(0,10); qp1.style.fontSize='14px'; qp1.style.letterSpacing='1px'; }
-  if(qp2 && !isEn) { qp2.textContent = nativeAddr.substring(10); qp2.style.fontSize='12px'; }
-  // swoosh 转账动画
-  const sfp1 = _safeEl('swooshFromPart1');
-  const sfp2 = _safeEl('swooshFromPart2');
-  if(sfp1 && !isEn) { sfp1.textContent = nativeAddr.substring(0,8); sfp1.style.fontSize='12px'; sfp1.style.letterSpacing='1px'; }
-  if(sfp2 && !isEn) sfp2.textContent = nativeAddr.substring(8,18)+'...';
-  // 转账成功页
-  const suc1 = _safeEl('successFromPart1');
-  const suc2 = _safeEl('successFromPart2');
-  if(suc1 && !isEn) { suc1.textContent = nativeAddr.substring(0,8); suc1.style.fontSize='12px'; }
-  if(suc2 && !isEn) suc2.textContent = nativeAddr.substring(8,18)+'...';
-  // 地址页
-  const m=_safeEl('addrMain');
-  const n=(_safeEl('addrNum') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrNum fallback */;
-  if(m) m.textContent = isEn ? CHAIN_ADDR : a.main;
-  if(n) n.style.display = isEn?'none':'block';
-  if(n&&!isEn) n.textContent = a.num;
-  // QR弹窗同步
-  const qm=document.getElementById('qrAddrMain');
-  if(qm) qm.textContent = isEn ? CHAIN_ADDR : nativeAddr;
-  // 二维码区语言标签（与系统语言 currentLang 一致）
-  const langTag = document.getElementById('qrLangTag');
-  const info = LANG_INFO[currentLang]||{flag:'🌍',name:'Mother'};
-  if(langTag) langTag.textContent = (info.flag || '🌍') + ' ' + (currentLang === 'en' ? 'BIP39' : '万语地址');
-  // 更新二维码显示内容
-  updateQRDisplay();
-  // 同步礼金UI
-  if(typeof updateGiftUI==='function') updateGiftUI();
-  updateHomeChainStrip();
-}
-
-/* getNativeAddr / copyHomeAddr / copyNative / copyBoth：由 wallet.addr.js 提供（含 wallet_native_addr 快照与 DOM 一致校验），勿在此重复定义以免覆盖 */
+/* getNativeAddr / copyHomeAddr / copyNative / copyBoth / updateAddr：由 wallet.addr.js 提供（含 wallet_native_addr 快照与 DOM 一致校验），勿在此重复定义以免覆盖 */
 
 function copySingle(text, el) {
   navigator.clipboard?.writeText(text).catch(()=>{});
