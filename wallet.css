@@ -226,6 +226,8 @@ body {
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
   padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  position: relative;
+  z-index: 100;
 }
 
 .tab-item {
@@ -839,23 +841,45 @@ body {
   display: flex; align-items: center;
   justify-content: space-around;
   padding-bottom: 12px; flex-shrink: 0;
-  width: 100%; position: relative; z-index: 10;
+  width: 100%; position: relative; z-index: 100;
+  box-sizing: border-box;
 }
-/* 默认隐藏底栏；主 Tab 页由 goTo() 设置 style.display='flex'（内联覆盖）。勿在 #tabBar 上复用 .u5，否则 .u5 会覆盖 .tab-bar 的 flex 导致底部导航异常 */
+/* 默认隐藏底栏；主 Tab 页除 goTo() 内联外，用 :has() 在对应 .page.active 时强制 flex，避免竞态导致底栏一直为 none。勿在 #tabBar 上复用 .u5 */
 #tabBar {
   display: none;
 }
+.phone:has(#page-home.active) #tabBar,
+.phone:has(#page-addr.active) #tabBar,
+.phone:has(#page-swap.active) #tabBar,
+.phone:has(#page-settings.active) #tabBar,
+.phone:has(#page-hongbao.active) #tabBar {
+  display: flex !important;
+  visibility: visible;
+}
 .tab-item {
   display: flex; flex-direction: column;
-  align-items: center; gap: 3px;
+  align-items: center; justify-content: center;
+  gap: 3px;
   font-size: 10px; color: var(--text-muted);
-  cursor: pointer; padding: 4px 10px;
+  cursor: pointer; padding: 4px 6px;
+  flex: 1 1 0;
+  min-width: 0;
   border-radius: 10px; transition: all 0.2s;
 }
 .tab-item.active { color: var(--gold); }
-.tab-icon { font-size: 22px; }
-.tab-icon svg { width: 22px; height: 22px; display: block; }
+.tab-icon {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.tab-icon svg { width: 22px; height: 22px; display: block; flex-shrink: 0; }
 .tab-item .tab-icon svg { color: inherit; }
+.tab-item > span:last-child {
+  line-height: 1.15;
+  text-align: center;
+}
 #page-faq .faq-body { padding: 0 16px 32px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
 #page-faq .faq-block { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
 #page-faq .faq-block h3 { font-size: 15px; font-weight: 700; color: var(--gold); margin: 0 0 8px; }
