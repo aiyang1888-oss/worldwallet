@@ -6035,6 +6035,18 @@ function wwHideHbSuccessOverlay() {
     if (typeof deleteWalletRow === 'function') window.deleteWalletRow = deleteWalletRow;
     if (typeof wwSwapRecordsToast === 'function') window.wwSwapRecordsToast = wwSwapRecordsToast;
     if (typeof wwHideHbSuccessOverlay === 'function') window.wwHideHbSuccessOverlay = wwHideHbSuccessOverlay;
+    // wallet.dom-bind.js：wwCall 使用 window[name]，此处显式绑定（与隐式全局一致，避免压缩/严格环境遗漏）
+    if (typeof changeMnemonicLength === 'function') window.changeMnemonicLength = changeMnemonicLength;
+    if (typeof switchLang === 'function') window.switchLang = switchLang;
+    if (typeof updateQRCode === 'function') window.updateQRCode = updateQRCode;
+    if (typeof applyTxHistoryFilter === 'function') window.applyTxHistoryFilter = applyTxHistoryFilter;
+    if (typeof detectAddrType === 'function') window.detectAddrType = detectAddrType;
+    if (typeof calcTransferFee === 'function') window.calcTransferFee = calcTransferFee;
+    if (typeof calcSwap === 'function') window.calcSwap = calcSwap;
+    if (typeof syncImportGrid === 'function') window.syncImportGrid = syncImportGrid;
+    if (typeof syncImportPasteFromGrid === 'function') window.syncImportPasteFromGrid = syncImportPasteFromGrid;
+    if (typeof onClaimInput === 'function') window.onClaimInput = onClaimInput;
+    if (typeof onHideZeroTokensChange === 'function') window.onHideZeroTokensChange = onHideZeroTokensChange;
   } catch (_ww) {}
 })();
 
