@@ -1,43 +1,22 @@
 # Round 1 修复报告 - 2026-04-08
 
 ## 发现的问题
-
-- 本轮静态与绑定测试未发现新的 **P0**（`data-ww-fn` / 页面 id 缺失）或 **P1**（需立即修复的崩溃级逻辑）项。
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载的 `wallet.runtime.js` 为准；长期可合并或构建去重以降低维护成本。
-
-### STEP 1 扫描摘要
-
-- **data-ww-fn（41 个唯一）**：`checkVerify`, `closePinSetupOverlay`, `closePinUnlock`, `closeTotpSetup`, `closeTotpUnlock`, `closeTransferConfirm`, `confirmPin`, `confirmTotpSetup`, `confirmTransfer`, `copyHbCreatedKeyword`, `copyHomeAddr`, `copyKw`, `copyNative`, `copyShareText`, `createGift`, `createNewWallet`, `deleteWalletRow`, `doImportWallet`, `doSwap`, `doTransfer`, `goHomeTransfer`, `goToPinConfirm`, `hideQR`, `loadTxHistory`, `openCustomizeAddr`, `openPinSettingsDialog`, `pinUnlockBackspace`, `pinUnlockClear`, `pinVerifyEnterWallet`, `promptWalletNotifications`, `setSwapMax`, `shareHbCreatedKeyword`, `shareKw`, `shareSuccess`, `showHbQR`, `startVerify`, `submitClaim`, `submitTotpUnlock`, `wwHideHbSuccessOverlay`, `wwOpenBackupFromSettings`, `wwSwapRecordsToast`
-- **id="page-*"（22 个）**：`page-welcome`, `page-password-restore`, `page-create`, `page-key`, `page-key-verify`, `page-pin-setup`, `page-pin-confirm`, `page-pin-verify`, `page-home`, `page-addr`, `page-transfer`, `page-swoosh`, `page-transfer-success`, `page-settings`, `page-swap`, `page-import`, `page-hongbao`, `page-hb-keyword`, `page-claim`, `page-claimed`, `page-hb-records`, `page-faq`
-- **data-ww-go（12 个唯一目标）**：均存在对应 `id="page-…"` 页面节点。
-- **wallet.css**：花括号开/闭均为 330，平衡。
-- **window / function**：`wallet.runtime.js` 中 `wwExposeDataWwFnHandlers`、`wwExposeCoreAliases` 将 `data-ww-fn` 与核心别名挂到 `window`；部分函数定义于先加载的 `wallet.ui.js`、`wallet.addr.js`、`wallet.tx.js`。
-
-### STEP 2 架构备注
-
-- **脚本顺序**：`safeLog` → CDN（ethers/scrypt）→ `js/storage.js` → `core/*` → `wallet.core.js` → `wallet.ui.js` → `wallet.addr.js` → `wallet.tx.js` → `wallet.runtime.js` → `wallet.dom-bind.js`，与依赖关系一致。
-- **全局覆盖**：`goTo`、`doTransfer`、`confirmTransfer`、`broadcastRealTransfer` 等以 **`wallet.runtime.js`（最后加载）** 中的实现为准。
-
-### STEP 3 逻辑扫描摘要
-
-- `goTo('page-home')` / `goTo('page-password-restore')` 已结合 `wwWalletHasAnyChainAddress`、`loadWallet()` 与本地 `ww_wallet` 校验，避免无钱包时误入首页或 PIN 页。
-- `pageRestorePinForm` / `pinUnlockForm` 由 `wallet.dom-bind.js` 绑定至 `submitPageRestorePin` / `submitPinUnlock`。
-- 常见 `JSON.parse(localStorage…)` 路径多已配合 `try/catch`。
+- [P1] `checkVerify` 中若 `verifyAnswers[pos]` 为 `undefined`/`null`，调用 `.toLowerCase()` 会抛错，导致整段验证逻辑中断。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名函数，依赖脚本加载顺序由后者覆盖；`wallet.tx.js` 与 `wallet.runtime.js` 均定义 `confirmTransfer`，运行时为最终版本。
+- [P3] CSS：`wallet.css` 花括号开闭数量一致（330/330）。
 
 ## 修复内容
-
-- **本轮**：无产品代码变更；仅更新本扫描报告。
+- 文件：`wallet.runtime.js`
+- 函数：`checkVerify`
+- 修改：将 `verifyAnswers[pos]` 先规范为字符串再转小写，空值视为与输入不匹配而非抛异常。
 
 ## 修改文件
-
-- `reports/round_1.md`
+- `wallet.runtime.js`
 
 ## 剩余问题
-
-- [P3] 双文件（`wallet.ui.js` / `wallet.runtime.js`）重复定义同名全局函数，后续可考虑收敛模块边界。
+- 无（本轮未将 P3 架构重复定义列为必须修复项）。
 
 ## 测试结果
-
-- **TEST-A**: PASS — 全部 `data-ww-fn` 名称在合并后的核心 JS 中均有 `function` / `async function` 定义，并由 `wallet.runtime.js` 末尾挂到 `window`（或由先加载脚本形成全局函数后再暴露）。
-- **TEST-B**: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在对应 `id="page-…"`。
-- **TEST-C**: PASS — `goToPinConfirm`, `confirmPin`, `pinVerifyEnterWallet`, `shareSuccess`, `copyKw`, `shareKw`, `showHbQR`, `copyShareText`, `sendTransfer`, `createGift`, `claimGift`, `openSend`, `openReceive` 均为非空实现（含 `sendTransfer`/`claimGift`/`openSend`/`openReceive` 对 `confirmTransfer`/`submitClaim`/`goHomeTransfer`/`goTab` 的别名包装）。
+- TEST-A: PASS — `wallet.html` 中全部 `data-ww-fn` 均在工程 JS 中有对应 `function` 定义，且 `wallet.runtime.js` 末尾对常用名显式挂到 `window`；脚本顺序下全局可调用。
+- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在 `id="page-*"` 页面（含 `page-password-restore` 等）。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均具非空实现（含别名包装函数体）。
