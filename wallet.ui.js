@@ -3397,8 +3397,12 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
       hasWallet = !!(_d && _d.ethAddress);
     } catch (_e) {}
+    /* 无钱包时仅当 session 仍记着「需有钱包的主 Tab」时才纠正到欢迎页；勿覆盖深链 boot 已进入的导入/创建等页 */
     if (!hasWallet) {
-      setTimeout(function () { goTo('page-welcome'); }, 50);
+      var lastNoWallet = sessionStorage.getItem('ww_last_page');
+      if (lastNoWallet && MAIN_PAGES.includes(lastNoWallet)) {
+        setTimeout(function () { goTo('page-welcome'); }, 50);
+      }
       return;
     }
     /* 有 URL hash 且对应页面存在时由 wwApplyHashRoute 导航，勿在 50ms 再用 ww_last_page 覆盖深链 */
