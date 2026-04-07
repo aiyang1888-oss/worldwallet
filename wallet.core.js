@@ -92,20 +92,24 @@ async function saveWalletSecure(w, pin) {
 function loadWalletPublic() {
   try {
     var d = localStorage.getItem('ww_wallet');
-    if (d) {
-      var parsed = JSON.parse(d);
-      // 只加载公开信息，不加载敏感数据
-      window.REAL_WALLET = {
-        ethAddress: parsed.ethAddress,
-        trxAddress: parsed.trxAddress,
-        btcAddress: parsed.btcAddress || '',
-        createdAt: parsed.createdAt,
-        backedUp: parsed.backedUp || false,
-        hasEncrypted: !!parsed.encrypted
-      };
+    if (!d) {
+      /* 无本地数据时必须清空内存，否则清除 storage 后仍残留旧 REAL_WALLET，导航/PIN 页会误判 */
+      window.REAL_WALLET = null;
+      return;
     }
+    var parsed = JSON.parse(d);
+    // 只加载公开信息，不加载敏感数据
+    window.REAL_WALLET = {
+      ethAddress: parsed.ethAddress,
+      trxAddress: parsed.trxAddress,
+      btcAddress: parsed.btcAddress || '',
+      createdAt: parsed.createdAt,
+      backedUp: parsed.backedUp || false,
+      hasEncrypted: !!parsed.encrypted
+    };
   } catch (e) {
     console.error('[loadWalletPublic] error:', e);
+    window.REAL_WALLET = null;
   }
 }
 

@@ -1038,6 +1038,9 @@ body {
   font-size: 15px;
   color: var(--text-dim);
 }
+#page-password-restore #pinRestoreKeypad .pin-key {
+  touch-action: manipulation;
+}
 
 .offline-banner {
   display: none;
