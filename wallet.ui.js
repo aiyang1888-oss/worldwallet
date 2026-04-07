@@ -28,7 +28,20 @@ function updateImportWordCount() {
   const badge = document.getElementById('importWordCountBadge');
   if(!badge) return;
   const n = countMnemonicWords(input ? input.value : '');
-  badge.textContent = n + '/12';
+  var max = 12;
+  try {
+    var grid = document.getElementById('importGrid');
+    if (grid) {
+      var nIw = grid.querySelectorAll('input[id^="iw_"]').length;
+      var nAw = grid.querySelectorAll('.import-word').length;
+      if (nIw > 0) max = nIw;
+      else if (nAw > 0) max = nAw;
+      else if (typeof importGridWordCount === 'number' && importGridWordCount > 0) max = importGridWordCount;
+    } else if (typeof importGridWordCount === 'number' && importGridWordCount > 0) {
+      max = importGridWordCount;
+    }
+  } catch (_e) {}
+  badge.textContent = n + '/' + max;
 }
 
 function showWalletLoading() {
