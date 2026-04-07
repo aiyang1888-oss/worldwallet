@@ -220,6 +220,7 @@
     }
 
     bindKeydownEnter('claimInput', 'submitClaim');
+    bindInput('claimInput', 'onClaimInput', false);
     bindKeydownEnter('totpUnlockInput', 'submitTotpUnlock');
     bindKeydownEnter('totpSetupVerifyInput', 'confirmTotpSetup');
 
