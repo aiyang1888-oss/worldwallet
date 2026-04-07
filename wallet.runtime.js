@@ -2,14 +2,16 @@
 
 var _pin = null;
 
-// 强制清除旧 Service Worker 和缓存
+// 强制清除旧 Service Worker 和缓存（wallet.ui.js 不再重复执行）
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
   });
+}
+if (typeof caches !== 'undefined' && caches.keys) {
   caches.keys().then(keys => {
     keys.forEach(k => caches.delete(k));
-  });
+  }).catch(function () {});
 }
 
 function tapHaptic(ms) {

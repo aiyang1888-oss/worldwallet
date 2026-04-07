@@ -1,20 +1,8 @@
 // wallet.ui.js — UI：导航/Toast/页面/设置/PIN/红包
 // 包含全局变量和初始化代码
 
-/*! WorldToken wallet.runtime.js — split from wallet.html; refactor incrementally. */
-
-// 强制清除旧 Service Worker 和缓存
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-}
-if (typeof caches !== 'undefined' && caches.keys) {
-  caches.keys().then(keys => {
-    keys.forEach(k => caches.delete(k));
-  }).catch(function () {});
-}
-
+/*! WorldToken wallet.ui.js — split from wallet.html; refactor incrementally. */
+/* Service Worker / Cache 清理见 wallet.runtime.js 开头，避免重复执行 */
 
 document.addEventListener('click', function(ev) {
   var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeTransferBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
