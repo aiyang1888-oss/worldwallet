@@ -2320,7 +2320,11 @@ function submitClaim() {
     } catch (e2) {}
     showToast('✅ 领取成功 · ' + String(hb.amount) + ' USDT', 'success');
     if (inp) inp.value = '';
-    goTo('page-home');
+    var _ca = document.getElementById('claimedAmount');
+    var _cm = document.getElementById('claimedMessage');
+    if (_ca) _ca.textContent = String(hb.amount) + ' USDT';
+    if (_cm) _cm.textContent = hb.message ? String(hb.message) : '口令礼物已领取（本地演示）';
+    goTo('page-claimed');
     return;
   }
 
@@ -2362,15 +2366,25 @@ function submitClaim() {
 
   showToast('✅ 领取成功 · ' + amt + ' USDT', 'success');
   if (inp) inp.value = '';
-  goTo('page-home');
+  var _ca2 = document.getElementById('claimedAmount');
+  var _cm2 = document.getElementById('claimedMessage');
+  if (_ca2) _ca2.textContent = amt + ' USDT';
+  if (_cm2) {
+    _cm2.textContent = (hb.count != null)
+      ? ('第 ' + hb.claimed.length + ' 份 · 共 ' + hb.count + ' 份礼物')
+      : (hb.message ? String(hb.message) : '礼物已领取（本地演示）');
+  }
+  goTo('page-claimed');
 }
 
 var hbCount = 5;
 
 function changeCount(delta) {
   hbCount = Math.max(1, Math.min(100, hbCount+delta));
-  document.getElementById('hbCountVal').textContent = hbCount;
-  (_safeEl('hbCountDisplay')||document.getElementById('hbCountVal')).textContent = hbCount+' 个';
+  var _hv = document.getElementById('hbCountVal');
+  if (_hv) _hv.textContent = hbCount;
+  var _hd = _safeEl('hbCountDisplay') || document.getElementById('hbCountVal');
+  if (_hd) _hd.textContent = hbCount + ' 个';
   updateHbPreview();
 }
 
