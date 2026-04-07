@@ -1049,20 +1049,10 @@ function wwUpdateScrollTopBtn() {
   btn.classList.toggle('ww-show', !!(p && p.scrollTop > 220));
 }
 function initBalancePrivacyToggle() {
-  var btn = document.getElementById('balanceHideToggle');
-  if (!btn) return;
-  function apply() {
-    var on = localStorage.getItem('ww_balance_privacy') === '1';
-    document.documentElement.classList.toggle('ww-balance-hidden', on);
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    btn.textContent = on ? '\uD83D\uDE48' : '\uD83D\uDC41';
-    btn.setAttribute('title', on ? '显示余额' : '隐藏余额');
-  }
-  apply();
-  btn.addEventListener('click', function () {
-    localStorage.setItem('ww_balance_privacy', localStorage.getItem('ww_balance_privacy') === '1' ? '0' : '1');
-    apply();
-  });
+  try {
+    localStorage.removeItem('ww_balance_privacy');
+  } catch (_e) {}
+  document.documentElement.classList.remove('ww-balance-hidden');
 }
 function initScrollTopBtn() {
   var btn = document.getElementById('wwScrollTopBtn');
