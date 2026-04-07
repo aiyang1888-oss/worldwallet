@@ -6299,7 +6299,7 @@ function wwOnPinConfirmLen() {
 function goToPinConfirm() {
   var pinEl = document.getElementById('pinInput');
   var pin = pinEl ? String(pinEl.value || '').replace(/\D/g, '').slice(0, 6) : '';
-  if (pin.length !== 6 || !/^\d+$/.test(pin)) {
+  if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
     if (typeof showToast === 'function') showToast('请输入 6 位数字', 'error');
     return;
   }
@@ -6318,15 +6318,23 @@ function goToPinConfirm() {
 
 async function confirmPin() {
   var a = '';
-  try { a = String(window._wwPinSetupDraft || ''); } catch (_a) { a = ''; }
+  try { a = String(window._wwPinSetupDraft || '').replace(/\D/g, '').slice(0, 6); } catch (_a) { a = ''; }
+  if (a.length !== 6 || !/^\d{6}$/.test(a)) {
+    var pinElFb = document.getElementById('pinInput');
+    var afb = pinElFb ? String(pinElFb.value || '').replace(/\D/g, '').slice(0, 6) : '';
+    if (afb.length === 6 && /^\d{6}$/.test(afb)) {
+      a = afb;
+      try { window._wwPinSetupDraft = a; } catch (_afb) {}
+    }
+  }
   var bEl = document.getElementById('pinConfirmInput');
-  var b = bEl ? String(bEl.value || '').replace(/\D/g, '').slice(0, 6) : '';
+  var confirmPinValue = bEl ? String(bEl.value || '').replace(/\D/g, '').slice(0, 6) : '';
   var err = document.getElementById('pinError');
-  if (b.length !== 6) {
+  if (confirmPinValue.length !== 6 || !/^\d{6}$/.test(confirmPinValue)) {
     if (typeof showToast === 'function') showToast('请输入 6 位数字', 'error');
     return;
   }
-  if (a !== b) {
+  if (a.length !== 6 || a !== confirmPinValue) {
     if (err) err.style.display = 'block';
     if (bEl) bEl.value = '';
     var cl = document.getElementById('pinConfirmLength');
@@ -6342,17 +6350,17 @@ async function confirmPin() {
   }
   if (err) err.style.display = 'none';
   try {
-    if (typeof savePinSecure === 'function') await savePinSecure(b);
+    if (typeof savePinSecure === 'function') await savePinSecure(confirmPinValue);
   } catch (e) {
     console.error(e);
     if (typeof showToast === 'function') showToast('PIN 保存失败', 'error');
     return;
   }
-  wwSetSessionPin(b);
+  wwSetSessionPin(confirmPinValue);
   try { localStorage.setItem('ww_pin_set', '1'); } catch (e) {}
   try {
     if (typeof saveWalletSecure === 'function' && REAL_WALLET) {
-      await saveWalletSecure(REAL_WALLET, b);
+      await saveWalletSecure(REAL_WALLET, confirmPinValue);
       REAL_WALLET.hasEncrypted = true;
     } else if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
   } catch (e2) {
