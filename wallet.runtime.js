@@ -3658,7 +3658,8 @@ function switchHbType(type) {
 }
 
 function setAmt(v) {
-  document.getElementById('hbAmount').value = v;
+  var hbAmt = document.getElementById('hbAmount');
+  if (hbAmt) hbAmt.value = v;
   updateHbPreview();
 }
 
