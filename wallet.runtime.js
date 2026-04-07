@@ -5777,6 +5777,9 @@ async function pinVerifyEnterWallet() {
 
 
 async function _resumeWalletAfterUnlock() {
+  try {
+    if (typeof loadWallet === 'function') loadWallet();
+  } catch (_lwResume) {}
   // 助记词验证后已清空 PIN：勿走「无 PIN → 直接首页」路径，必须先完成 PIN 设置
   try {
     if (window._wwRequirePinSetupAfterMnemonic && typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
