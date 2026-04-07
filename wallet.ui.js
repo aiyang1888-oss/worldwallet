@@ -2946,6 +2946,23 @@ function wwB64Bytes(u8) {
   return btoa(s);
 }
 
+/** 欢迎页「PIN 解锁钱包」：无独立 page-password-restore 时走 PIN 遮罩 / 无 PIN 则直接进入 */
+function openPinUnlockFromWelcome() {
+  var has = false;
+  try {
+    if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress) has = true;
+    else {
+      var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      has = !!(_d && _d.ethAddress);
+    }
+  } catch (_e) {}
+  if (!has) {
+    if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning');
+    return;
+  }
+  continueAfterPinCheck();
+}
+
 function continueAfterPinCheck() {
   const pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin');
   if(!pin) { _resumeWalletAfterUnlock(); return; }
