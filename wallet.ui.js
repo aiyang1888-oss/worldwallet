@@ -703,7 +703,7 @@ async function finalizeImportedWalletAfterPin(pin) {
   try {
     flat = JSON.parse(raw);
   } catch (e) {
-    console.error('[JSON]', e);
+    safeLog('[JSON]', e);
     showToast('数据损坏', 'error');
     return;
   }
@@ -819,7 +819,7 @@ function goTo(pageId, opts) {
   applySeoForPage(pageId);
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const activePage=document.getElementById(pageId);
-  if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
+  if(!activePage){safeLog('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='flex';
   var _tabBar = document.getElementById('tabBar');
@@ -1085,7 +1085,7 @@ function renderKeyGrid() {
   } catch (e) {}
   const grid = document.getElementById('keyWordGrid');
   if (!grid) {
-    console.warn('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
+    safeLog('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
     return;
   }
   grid.innerHTML = '';
@@ -1247,7 +1247,7 @@ function wwGenerateQRCode(text, canvasId) {
       return QRCode.toCanvas(canvas, text, { width: w, margin: 1 });
     })
     .catch(function (e) {
-      console.warn('[QR]', e);
+      safeLog('[QR]', e);
     });
 }
 
@@ -1367,7 +1367,7 @@ async function loadTrxResource() {
     if(enEl) enEl.textContent = '剩余 ' + wwFmtNum(eRem) + ' / 上限 ' + wwFmtNum(eLim);
     if(bwEl) bwEl.textContent = '可用约 ' + wwFmtNum(bwAvail) + '（免费 ' + wwFmtNum(freeBwRem) + ' + 质押 ' + wwFmtNum(stakeBwRem) + '）';
   } catch(e) {
-    console.log('loadTrxResource', e);
+    safeLog('loadTrxResource', e);
     if(card) card.style.display = 'none';
   }
 }
@@ -1495,7 +1495,7 @@ async function broadcastRealTransfer() {
       return true;
     }
   } catch(e) {
-    console.error('转账失败:', e);
+    safeLog('转账失败:', e);
     showToast('❌ 转账失败: ' + (e.message || e), 'error');
   }
   return false;
@@ -2496,7 +2496,7 @@ async function loadSwapPrices() {
     }
     calcSwap();
   } catch (e) {
-    console.log('价格加载失败，使用默认');
+    safeLog('价格加载失败，使用默认');
   }
 }
 

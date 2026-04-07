@@ -317,7 +317,7 @@ async function loadBalances() {
         const btcData = await btcRes.json();
         btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
       }
-    } catch(e) { console.log('BTC query skipped'); }
+    } catch(e) { safeLog('BTC query skipped'); }
 
     const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
     const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
@@ -375,7 +375,7 @@ async function loadBalances() {
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
     if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
-    console.error('Balance load error:', e);
+    safeLog('Balance load error:', e);
     if(tbd) tbd.classList.remove('home-balance--loading');
     if(tbs) tbs.textContent = '暂时无法同步 · 请检查网络后点刷新';
     if(btn) btn.textContent = '刷新';
@@ -473,7 +473,7 @@ async function loadTxHistory() {
     renderTxHistoryFromCache();
 
   } catch(e) {
-    console.error('加载交易记录失败:', e);
+    safeLog('加载交易记录失败:', e);
     const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
     el.innerHTML = txHistoryFriendlyHtml(
       '📡',

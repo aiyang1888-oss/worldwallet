@@ -318,7 +318,7 @@ function wwSetSessionPin(p) {
   window._wwSessionPinTimeout = setTimeout(function() {
     _wwSessionPin = '';
     _pin = null;
-    console.log('[SessionPin] 会话 PIN 已自动清除');
+    safeLog('[SessionPin] 会话 PIN 已自动清除');
   }, 15 * 60 * 1000);
 }
 function wwClearSessionPin() {
@@ -410,11 +410,11 @@ function wwHasPinConfigured() {
     savePinSecure(plain).then(function() {
       wwSetSessionPin(plain);
       try { localStorage.setItem('ww_pin_set', '1'); } catch (e) {}
-    }).catch(function(e) { console.warn('[PIN migrate]', e); });
+    }).catch(function(e) { safeLog('[PIN migrate]', e); });
   } catch (e) {}
 })();
 
-/* encryptWithPin/decryptWithPin/saveWalletSecure/decryptSensitive/saveWallet/TOTP 加解密以 core/security.js + wallet.core.js 为准；勿在此重复定义以免覆盖 Argon2id/scrypt 实现 */
+/* encryptWithPin/decryptWithPin/saveWalletSecure/decryptSensitive/saveWallet/TOTP 加解密以 core/security.js + wallet.core.js 为准；勿在此重复定义以免覆盖 scrypt 实现 */
 
 function getRefInvitesMap() {
   try { return JSON.parse(localStorage.getItem(WW_REF_INVITES_KEY) || '{}'); } catch (e) { return {}; }
@@ -860,7 +860,7 @@ async function confirmTotpSetup() {
   try {
     localStorage.setItem('ww_totp_secret', await encryptTotpSecret(sec, pin));
   } catch (e) {
-    console.error('[TOTP encrypt]', e);
+    safeLog('[TOTP encrypt]', e);
     showToast('保存失败', 'error');
     return;
   }
@@ -990,7 +990,7 @@ function goTo(pageId, opts) {
   applySeoForPage(pageId);
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   const activePage=document.getElementById(pageId);
-  if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
+  if(!activePage){safeLog('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='';
   var _tbGo = document.getElementById('tabBar');
@@ -1680,7 +1680,7 @@ async function loadTrxResource() {
     if(enEl) enEl.textContent = '剩余 ' + wwFmtNum(eRem) + ' / 上限 ' + wwFmtNum(eLim);
     if(bwEl) bwEl.textContent = '可用约 ' + wwFmtNum(bwAvail) + '（免费 ' + wwFmtNum(freeBwRem) + ' + 质押 ' + wwFmtNum(stakeBwRem) + '）';
   } catch(e) {
-    console.log('loadTrxResource', e);
+    safeLog('loadTrxResource', e);
     if(card) card.style.display = 'none';
   }
 }
@@ -1845,7 +1845,7 @@ async function broadcastRealTransfer() {
       return true;
     }
   } catch(e) {
-    console.error('转账失败:', e);
+    safeLog('转账失败:', e);
     showToast('❌ 转账失败: ' + (e.message || e), 'error');
   } finally {
     try { delete window._wwPendingTxs[txkey]; } catch (_pt) {}
@@ -4008,8 +4008,8 @@ async function loadSwapPrices() {
     COINS.forEach(coin => { if(priceMap[coin.id]) coin.price = priceMap[coin.id]; });
     calcSwap();
     try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc2) {}
-    console.log('兑换价格已更新');
-  } catch(e) { console.log('价格加载失败，使用默认'); }
+    safeLog('兑换价格已更新');
+  } catch(e) { safeLog('价格加载失败，使用默认'); }
 }
 
 function swapCoins() {
@@ -4194,7 +4194,7 @@ function generateQRCode(text, canvasId) {
         margin: 1,
         color: { dark: '#000000', light: '#ffffff' }
       }, function(err) {
-        if(err) console.error('QR error:', err);
+        if(err) safeLog('QR error:', err);
       });
     } else {
       const img = document.createElement('img');
@@ -4207,7 +4207,7 @@ function generateQRCode(text, canvasId) {
       canvas.parentNode.replaceChild(img, canvas);
     }
   }).catch(function(e){
-    console.error('QR lib:', e);
+    safeLog('QR lib:', e);
     try {
       const img = document.createElement('img');
       img.loading = 'lazy';
@@ -4217,7 +4217,7 @@ function generateQRCode(text, canvasId) {
       img.style.width = '130px';
       img.style.height = '130px';
       canvas.parentNode.replaceChild(img, canvas);
-    } catch(e2) { console.error(e2); }
+    } catch(e2) { safeLog(e2); }
   });
 }
 
@@ -5070,7 +5070,7 @@ async function loadTxHistory() {
     renderTxHistoryFromCache();
 
   } catch(e) {
-    console.error('加载交易记录失败:', e);
+    safeLog('加载交易记录失败:', e);
     const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
     el.innerHTML = txHistoryFriendlyHtml(
       '📡',
@@ -5168,7 +5168,7 @@ async function loadBalances() {
           const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
           if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
         }
-      } catch(e) { console.log('TRX query failed:', e); }
+      } catch(e) { safeLog('TRX query failed:', e); }
     }
 
     // ETH 余额（公共 RPC）
@@ -5181,7 +5181,7 @@ async function loadBalances() {
         });
         const ethData = await ethRes.json();
         if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
-      } catch(e) { console.log('ETH query failed:', e); }
+      } catch(e) { safeLog('ETH query failed:', e); }
     }
 
     // 更新UI
@@ -5200,7 +5200,7 @@ async function loadBalances() {
         const btcData = await btcRes.json();
         btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
       }
-    } catch(e) { console.log('BTC query skipped'); }
+    } catch(e) { safeLog('BTC query skipped'); }
 
     const usdtUsd = usdtBal * prices.usdt;
     const trxUsd = trxBal * prices.trx;
@@ -5246,7 +5246,7 @@ async function loadBalances() {
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
     if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
-    console.error('Balance load error:', e);
+    safeLog('Balance load error:', e);
     if(tbd) tbd.classList.remove('home-balance--loading');
     if(tbs) tbs.textContent = '暂时无法同步 · 请检查网络后点刷新';
     if(btn) btn.textContent = '刷新';
@@ -5292,7 +5292,7 @@ async function loadNews() {
     newsCacheTime = Date.now();
     renderNews(newsCache);
   } catch(e) {
-    console.log('News load failed:', e);
+    safeLog('News load failed:', e);
     list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted)"><div class="u10">😕</div><div style="font-size:13px;margin-bottom:16px">加载失败，请点下方链接阅读</div></div>';
   }
   newsLoading = false;
@@ -5629,7 +5629,7 @@ async function confirmPin() {
   try {
     if (typeof savePinSecure === 'function') await savePinSecure(confirmPinValue);
   } catch (e) {
-    console.error(e);
+    safeLog(e);
     if (typeof showToast === 'function') showToast('PIN 保存失败', 'error');
     return;
   }
@@ -5641,7 +5641,7 @@ async function confirmPin() {
       REAL_WALLET.hasEncrypted = true;
     } else if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
   } catch (e2) {
-    console.error(e2);
+    safeLog(e2);
     if (typeof showToast === 'function') showToast('钱包加密保存失败', 'error');
     return;
   }
@@ -6026,7 +6026,7 @@ async function openPinSettingsDialog() {
   try {
     if (typeof savePinSecure === 'function') await savePinSecure(t);
   } catch (e) {
-    console.error(e);
+    safeLog(e);
     showToast('PIN 保存失败', 'error');
     return;
   }
@@ -6124,31 +6124,6 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       if (name !== 'worldtoken-v202604060428') caches.delete(name);
     });
   });
-})();
-
-// 防止在控制台输出敏感数据
-(function wwSanitizeConsoleOutput() {
-  const originalLog = console.log;
-  const originalError = console.error;
-  const originalWarn = console.warn;
-  const sanitize = function(obj) {
-    if (obj === REAL_WALLET || (obj && typeof obj === 'object' && obj.privateKey)) {
-      return '[SENSITIVE_DATA_FILTERED]';
-    }
-    if (typeof obj === 'string' && (obj.includes('privateKey') || obj.includes('mnemonic'))) {
-      return '[SENSITIVE_DATA_FILTERED]';
-    }
-    return obj;
-  };
-  console.log = function() {
-    return originalLog.apply(console, Array.from(arguments).map(sanitize));
-  };
-  console.error = function() {
-    return originalError.apply(console, Array.from(arguments).map(sanitize));
-  };
-  console.warn = function() {
-    return originalWarn.apply(console, Array.from(arguments).map(sanitize));
-  };
 })();
 
 function wwOpenBackupFromSettings() {

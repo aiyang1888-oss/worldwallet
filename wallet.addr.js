@@ -101,7 +101,7 @@ function persistWanYuAddrToStorage() {
       localStorage.setItem('wallet_native_addr', getNativeAddr());
     }
   } catch (e) {
-    console.error('[WanYuAddr]', e);
+    safeLog('[WanYuAddr]', e);
   }
 }
 
@@ -127,7 +127,7 @@ function tryLoadWanYuAddrFromStorage() {
       try {
         parsed = JSON.parse(wj);
       } catch (parseErr) {
-        console.warn('[WanYuAddr] wallet_addr_words JSON.parse 失败:', parseErr);
+        safeLog('[WanYuAddr] wallet_addr_words JSON.parse 失败:', parseErr);
       }
     }
     if (!parsed || !Array.isArray(parsed) || parsed.length !== 10) {
@@ -183,7 +183,7 @@ function tryLoadWanYuAddrFromStorage() {
     }
     return true;
   } catch (e) {
-    console.warn('[WanYuAddr] tryLoadWanYuAddrFromStorage 异常:', e);
+    safeLog('[WanYuAddr] tryLoadWanYuAddrFromStorage 异常:', e);
     return false;
   }
 }
@@ -486,7 +486,7 @@ function openCustomizeAddr() {
 function openWordEditor(idx) {
   var slot = typeof idx === 'number' ? idx : parseInt(String(idx), 10);
   if (slot !== slot || slot < 0 || slot > 9 || !ADDR_WORDS || ADDR_WORDS.length !== 10 || !ADDR_WORDS[slot]) {
-    console.warn('[WanYuAddr] openWordEditor: invalid index', idx);
+    safeLog('[WanYuAddr] openWordEditor: invalid index', idx);
     if (typeof showToast === 'function') showToast('地址词库未就绪，请稍后再试', 'warning');
     return;
   }

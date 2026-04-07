@@ -81,7 +81,7 @@ function importWallet(mnemonic) {
       }
     };
   } catch (e) {
-    console.error('[importWallet]', e.message);
+    safeLog('[importWallet]', e.message);
     return null;
   }
 }
@@ -174,7 +174,7 @@ async function getBalance(addresses) {
       result.btc * (prices.btc || 60000);
 
   } catch (e) {
-    console.error('[getBalance]', e.message);
+    safeLog('[getBalance]', e.message);
   }
   return result;
 }

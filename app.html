@@ -11,6 +11,7 @@
 <meta property="og:title" content="WorldToken - 全球多语言钱包">
 <meta property="og:description" content="支持120+种语言的万语地址加密钱包">
 <link rel="manifest" href="manifest.json">
+<script src="js/safeLog.js"></script>
 <!-- QR Code Generator -->
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <!-- ethers.js for real BIP39 wallet generation -->
@@ -1953,34 +1954,11 @@ function openWordEditor(idx) {
 
 
 
-// ── 真实钱包存储 ──────────────────────────────────────────────
+// ── 真实钱包存储（app 入口已下线，请使用 wallet.html）──────────
 let REAL_WALLET = null;
-
-// ⚠️ 注意：私钥存储于 localStorage，仅供演示，生产环境应加密
-function saveWallet(w) {
-  try {
-    // 存储时不包含私钥（安全起见只存公开信息）
-    // 助记词需要用户自行备份
-    const safe = {
-      mnemonic: w.mnemonic,  // 用户需要备份
-      words: w.words,
-      ethAddress: w.ethAddress,
-      trxAddress: w.trxAddress,
-      btcAddress: w.btcAddress || '',
-      privateKey: w.privateKey,      // 仍需存储用于签名
-      trxPrivateKey: w.trxPrivateKey,
-      createdAt: w.createdAt,
-      backedUp: w.backedUp || false
-    };
-    localStorage.setItem('ww_wallet', JSON.stringify(safe));
-  } catch(e) {}
-}
-
+function saveWallet(_w) {}
 function loadWallet() {
-  try {
-    const d = localStorage.getItem('ww_wallet');
-    if(d) REAL_WALLET = JSON.parse(d);
-  } catch(e) {}
+  REAL_WALLET = null;
 }
 
 // 内置 BIP39 词表（前128个，生成演示助记词）
@@ -1996,92 +1974,15 @@ function generateLocalMnemonic() {
 }
 
 async function createRealWallet() {
-  try {
-    // ✅ 使用 ethers.js 真实 BIP39 派生（安全）
-    if(typeof ethers === 'undefined') {
-      showToast('⏳ 正在加载钱包库，请稍后再试', 'warning');
-      return null;
-    }
-    // 生成真实 BIP39 助记词（使用完整 2048 词表）
-    const mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic);
-    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-    const btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
-
-    // TRX Base58Check 地址
-    let trxAddr = '';
-    try {
-      await loadTronWeb();
-      if(typeof TronWeb !== 'undefined') {
-        trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-      } else {
-        trxAddr = 'T' + trxWallet.address.slice(2, 35);
-      }
-    } catch(e) { trxAddr = 'T' + trxWallet.address.slice(2, 35); }
-
-    const w = {
-      mnemonic: mnemonic,
-      words: mnemonic.split(' '),
-      ethAddress: wallet.address,        // 标准 42 字符 ETH 地址
-      trxAddress: trxAddr,               // 标准 34 字符 TRX 地址
-      btcAddress: btcWallet.address,     // BTC 地址
-      privateKey: wallet.privateKey,
-      trxPrivateKey: trxWallet.privateKey,
-      createdAt: Date.now()
-    };
-    REAL_WALLET = w;
-    saveWallet(w);
-    return w;
-  } catch(e) {
-    console.error('[WorldToken] 钱包创建失败:', e);
-    showToast('❌ 钱包创建失败：' + e.message, 'error');
-    return null;
-  }
+  if (typeof showToast === 'function') showToast('请进入钱包页', 'info');
+  window.location.href = 'wallet.html';
+  return null;
 }
 
-async function restoreWallet(mnemonic) {
-  if(typeof ethers === 'undefined') return null;
-  try {
-    const words = mnemonic.trim().split(/\s+/);
-    if(![12,15,18,21,24].includes(words.length)) {
-      showToast(`❌ 助记词必须是12/15/18/21/24个词，当前${words.length}个`, 'error');
-      return null;
-    }
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic.trim());
-    const trxWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/195'/0'/0/0");
-    // 将 ETH 地址转换为正确的 TRX 地址（Base58Check）
-    let trxAddr = '';
-    try {
-      if(typeof TronWeb !== 'undefined') {
-        trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-      } else {
-        trxAddr = 'T' + trxWallet.address.slice(2, 36); // fallback
-      }
-    } catch(e) { trxAddr = 'T' + trxWallet.address.slice(2, 36); }
-    // BTC 地址（m/44'/0'/0'/0/0）
-    let btcAddr2 = '';
-    try {
-      const btcWallet = ethers.Wallet.fromMnemonic(mnemonic.trim(), "m/44'/0'/0'/0/0");
-      // 简化：用 ETH 地址格式存储 BTC 未压缩公钥（实际BTC地址需更多处理）
-      btcAddr2 = btcWallet.address; // 暂用ETH格式，后续可升级
-    } catch(e) {}
-    const w = {
-      mnemonic: mnemonic.trim(),
-      words: words,
-      ethAddress: wallet.address,
-      trxAddress: trxAddr,
-      privateKey: wallet.privateKey,       // ETH private key
-      trxPrivateKey: trxWallet.privateKey,  // TRX private key
-      btcAddress: btcAddr2,                 // BTC address (simplified)
-      createdAt: Date.now()
-    };
-    REAL_WALLET = w;
-    saveWallet(w);
-    return w;
-  } catch(e) {
-    showToast('❌ 助记词无效，请检查后重试', 'error');
-    return null;
-  }
+async function restoreWallet(_mnemonic) {
+  if (typeof showToast === 'function') showToast('请进入钱包页', 'info');
+  window.location.href = 'wallet.html';
+  return null;
 }
 
 // 页面加载时恢复钱包（只恢复数据，不跳转）
@@ -2192,7 +2093,7 @@ const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-
 function goTo(pageId) {
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   const activePage=document.getElementById(pageId);
-  if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
+  if(!activePage){safeLog('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='';
   document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
@@ -2268,9 +2169,6 @@ function renderKeyGrid() {
     } else {
       // 用 BIP39 词表重新生成12个英文词
       words = generateLocalMnemonic().split(' ');
-      if(REAL_WALLET) {
-        REAL_WALLET.enWords = words; // 单独存英文词
-      }
     }
   } else {
     // 非英文：每次根据当前语言重新随机选词
@@ -2282,13 +2180,6 @@ function renderKeyGrid() {
       if(!indices.includes(idx)) indices.push(idx);
     }
     words = indices.map(i => pool[i]);
-    // 保存到 REAL_WALLET
-    if(!REAL_WALLET) {
-      REAL_WALLET = {ethAddress:'', trxAddress:'', worldPrefix:'12345678', worldSuffix:'87654321', worldChars:[]};
-    }
-    if(!REAL_WALLET.backedUp) REAL_WALLET.words = words; // 已备份则不覆盖
-    REAL_WALLET.mnemonic = words.join(' ');
-    saveWallet(REAL_WALLET);
   }
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
@@ -2554,7 +2445,7 @@ async function broadcastRealTransfer() {
       return true;
     }
   } catch(e) {
-    console.error('转账失败:', e);
+    safeLog('转账失败:', e);
     showToast('❌ 转账失败: ' + (e.message || e), 'error');
   }
   return false;
@@ -3135,25 +3026,13 @@ function toggleNetwork() {
 }
 
 function deleteWallet() {
-  if(!window.confirm('⚠️ 确认删除钱包？请确保已备份助记词！')) return;
-  if(!window.confirm('再次确认：删除后资产将永久丢失！')) return;
-  // 清除所有钱包数据
-  localStorage.removeItem('ww_wallet');
-  localStorage.removeItem('ww_hongbaos');
-  REAL_WALLET = null;
-  // 跳回欢迎页
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-welcome').classList.add('active');
-  document.getElementById('btnContinue').style.display='none';
-  showToast('✅ 钱包已删除', 'success');
+  if (typeof showToast === 'function') showToast('请进入钱包页', 'info');
+  window.location.href = 'wallet.html';
 }
 
 function markBackupDone() {
-  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
-  w.backedUp = true;
-  localStorage.setItem('ww_wallet', JSON.stringify(w));
-  const el = document.getElementById('backupStatus');
-  if(el) { el.textContent='已备份'; el.style.color='var(--green,#26a17b)'; }
+  if (typeof showToast === 'function') showToast('请进入钱包页', 'info');
+  window.location.href = 'wallet.html';
 }
 
 function updateSettingsPage() {
@@ -3229,8 +3108,8 @@ async function loadSwapPrices() {
     // 更新 COINS 价格
     COINS.forEach(coin => { if(priceMap[coin.id]) coin.price = priceMap[coin.id]; });
     calcSwap();
-    console.log('兑换价格已更新');
-  } catch(e) { console.log('价格加载失败，使用默认'); }
+    safeLog('兑换价格已更新');
+  } catch(e) { safeLog('价格加载失败，使用默认'); }
 }
 
 function swapCoins() {
@@ -3480,7 +3359,7 @@ function generateQRCode(text, canvasId) {
       margin: 1,
       color: { dark: '#000000', light: '#ffffff' }
     }, function(err) {
-      if(err) console.error('QR error:', err);
+      if(err) safeLog('QR error:', err);
     });
   } else {
     // fallback：用 Google Charts API
@@ -3583,7 +3462,7 @@ async function loadTxHistory() {
     `).join('');
 
   } catch(e) {
-    console.error('加载交易记录失败:', e);
+    safeLog('加载交易记录失败:', e);
     el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">加载失败，请稍后重试</div>';
   }
 }
@@ -3748,7 +3627,7 @@ async function loadBalances() {
         const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
         if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
       }
-    } catch(e) { console.log('TRX query failed:', e); }
+    } catch(e) { safeLog('TRX query failed:', e); }
 
     // ETH 余额（公共 RPC）
     try {
@@ -3759,7 +3638,7 @@ async function loadBalances() {
       });
       const ethData = await ethRes.json();
       if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
-    } catch(e) { console.log('ETH query failed:', e); }
+    } catch(e) { safeLog('ETH query failed:', e); }
 
     // 更新UI
     const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
@@ -3777,7 +3656,7 @@ async function loadBalances() {
         const btcData = await btcRes.json();
         btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
       }
-    } catch(e) { console.log('BTC query skipped'); }
+    } catch(e) { safeLog('BTC query skipped'); }
 
     const usdtUsd = usdtBal * prices.usdt;
     const trxUsd = trxBal * prices.trx;
@@ -3831,7 +3710,7 @@ async function loadBalances() {
     
     if(btn) btn.textContent = '刷新';
   } catch(e) {
-    console.error('Balance load error:', e);
+    safeLog('Balance load error:', e);
     if(btn) btn.textContent = '刷新';
   }
 }
@@ -3876,7 +3755,7 @@ async function loadNews() {
     newsCacheTime = Date.now();
     renderNews(newsCache);
   } catch(e) {
-    console.log('News load failed:', e);
+    safeLog('News load failed:', e);
     list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--text-muted)"><div style="font-size:28px;margin-bottom:10px">😕</div><div style="font-size:13px;margin-bottom:16px">加载失败，请点下方链接阅读</div></div>';
   }
   newsLoading = false;
@@ -3916,11 +3795,7 @@ function renderNews(items) {
 
 // 切换助记词长度
 function changeMnemonicLength(len) {
-  if(REAL_WALLET) {
-    REAL_WALLET.words = null; // 清除旧词，触发重新生成
-    saveWallet(REAL_WALLET);
-  }
-  renderKeyGrid(); // 重新生成对应长度的词
+  renderKeyGrid();
 }
 
 
@@ -3941,10 +3816,6 @@ function startVerify() {
       if(!indices.includes(idx)) indices.push(idx);
     }
     words = indices.map(i => pool[i]);
-    if(!REAL_WALLET) REAL_WALLET = {};
-    REAL_WALLET.words = words;
-    REAL_WALLET.mnemonic = words.join(' ');
-    saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   

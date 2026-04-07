@@ -13,7 +13,7 @@ var Store = {
   /** 写入（自动 JSON 序列化） */
   set: function(key, val) {
     try { localStorage.setItem(key, typeof val === 'string' ? val : JSON.stringify(val)); }
-    catch(e) { console.warn('[Store.set]', key, e); }
+    catch(e) { safeLog('[Store.set]', key, e); }
   },
 
   /** 删除 */

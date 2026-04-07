@@ -1,5 +1,5 @@
 // wallet.core.js — 钱包核心：创建/加密/存储/派生
-// SECURITY: 加密与 KDF 见 core/security.js（Argon2id/scrypt + AES-GCM）；本文件不再重复实现 deriveKeyFromPin。
+// SECURITY: 加密与 KDF 见 core/security.js（scrypt + AES-GCM）；本文件不再重复实现 deriveKeyFromPin。
 
 /** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明 */
 var REAL_WALLET = null;
@@ -26,7 +26,7 @@ function loadQRCodeLib(){
   return _qrLoadPromise;
 }
 
-/** encryptWithPin / decryptWithPin 由 core/security.js 提供（Argon2id/scrypt + AES-GCM；旧包 PBKDF2 解密） */
+/** encryptWithPin / decryptWithPin 由 core/security.js 提供（scrypt + AES-GCM；旧包 PBKDF2 解密） */
 
 async function saveWalletSecure(w, pin) {
   try {
@@ -55,7 +55,7 @@ async function saveWalletSecure(w, pin) {
     }
     localStorage.setItem('ww_wallet', JSON.stringify(safe));
   } catch (e) {
-    console.error('[saveWalletSecure] error');
+    safeLog('[saveWalletSecure] error');
   }
 }
 
@@ -87,7 +87,7 @@ function loadWalletPublic() {
       CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
     }
   } catch (e) {
-    console.error('[loadWalletPublic] error:', e);
+    safeLog('[loadWalletPublic] error:', e);
   }
 }
 
@@ -187,7 +187,7 @@ async function createRealWallet(forcedWordCount) {
     var ethPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.eth) ? DERIVE_PATHS.eth : "m/44'/60'/0'/0/0";
     wallet = ethers.Wallet.fromMnemonic(mnemonic, ethPath);
   } catch (e) {
-    console.error('[WorldToken] 钱包创建失败:', e);
+    safeLog('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
   }
   if (typeof setWalletCreateStep === 'function') 
@@ -198,7 +198,7 @@ async function createRealWallet(forcedWordCount) {
     trxWallet = ethers.Wallet.fromMnemonic(mnemonic, trxPath);
     btcWallet = ethers.Wallet.fromMnemonic(mnemonic, btcPath);
   } catch (e) {
-    console.error('[WorldToken] 钱包创建失败:', e);
+    safeLog('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
   }
   trxAddr = '';
@@ -653,7 +653,7 @@ async function confirmTotpSetup() {
       localStorage.setItem('ww_totp_secret', sec);
     }
   } catch (e) {
-    console.error('[TOTP]', e);
+    safeLog('[TOTP]', e);
     showToast('保存失败', 'error');
     return;
   }

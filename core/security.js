@@ -1,6 +1,6 @@
 /**
  * WorldWallet Security Layer
- * - 钱包加密：Argon2id → AES-256-GCM（优先）；不可用时 scrypt；旧数据 PBKDF2 仅用于解密
+ * - 钱包加密：scrypt-js → AES-256-GCM（新数据）；旧数据 PBKDF2 仅用于解密
  * - 敏感会话：仅内存保存助记词会话，不长期挂 REAL_WALLET
  */
 
@@ -36,27 +36,6 @@ async function wwDeriveKeyPbkdf2Legacy(pin, salt) {
   );
 }
 
-async function wwRawKeyArgon2id(pin, salt, params) {
-  var t = params && params.t != null ? params.t : 3;
-  var m = params && params.m != null ? params.m : 65536;
-  var p = params && params.p != null ? params.p : 1;
-  if (typeof argon2 === 'undefined' || !argon2.hash) throw new Error('argon2 unavailable');
-  var enc = new TextEncoder();
-  var pass = enc.encode(pin);
-  var res = await argon2.hash({
-    pass: pass,
-    salt: salt,
-    time: t,
-    mem: m,
-    hashLen: 32,
-    parallelism: p,
-    type: argon2.ArgonType.Argon2id
-  });
-  var h = res.hash || res;
-  if (!(h instanceof Uint8Array) || h.length !== 32) throw new Error('argon2 key length');
-  return h;
-}
-
 async function wwRawKeyScrypt(pin, salt, params) {
   var N = params && params.N != null ? params.N : 32768;
   var r = params && params.r != null ? params.r : 8;
@@ -85,18 +64,9 @@ async function wwImportAesGcmKeyFromRaw(raw32) {
 async function encryptWithPin(plaintext, pin) {
   var salt = crypto.getRandomValues(new Uint8Array(16));
   var iv = crypto.getRandomValues(new Uint8Array(12));
-  var rawKey;
-  var kdfName;
-  var kdfParams;
-  try {
-    rawKey = await wwRawKeyArgon2id(pin, salt, { t: 3, m: 65536, p: 1 });
-    kdfName = 'argon2id';
-    kdfParams = { t: 3, m: 65536, p: 1 };
-  } catch (_a) {
-    rawKey = await wwRawKeyScrypt(pin, salt, { N: 32768, r: 8, p: 1 });
-    kdfName = 'scrypt';
-    kdfParams = { N: 32768, r: 8, p: 1 };
-  }
+  var kdfName = 'scrypt';
+  var kdfParams = { N: 32768, r: 8, p: 1 };
+  var rawKey = await wwRawKeyScrypt(pin, salt, kdfParams);
   var key = await wwImportAesGcmKeyFromRaw(rawKey);
   rawKey.fill(0);
   var enc = new TextEncoder();
@@ -136,9 +106,7 @@ async function decryptWithPin(bundle, pin) {
   var iv = wwB64ToBytes(bundle.iv);
   var ct = wwB64ToBytes(bundle.ct);
   var rawKey;
-  if (bundle.kdf === 'argon2id') {
-    rawKey = await wwRawKeyArgon2id(pin, salt, bundle.kdfParams || {});
-  } else if (bundle.kdf === 'scrypt') {
+  if (bundle.kdf === 'scrypt') {
     rawKey = await wwRawKeyScrypt(pin, salt, bundle.kdfParams || {});
   } else {
     throw new Error('unknown kdf');
@@ -231,29 +199,7 @@ function wwSafeAddr(s) {
 }
 
 function wwSafeLog() {
-  try {
-    var parts = [];
-    for (var i = 0; i < arguments.length; i++) {
-      var a = arguments[i];
-      if (a && typeof a === 'object') {
-        try {
-          var o = JSON.parse(JSON.stringify(a));
-          ['mnemonic', 'privateKey', 'trxPrivateKey', 'seed', 'enMnemonic', 'words', 'ethKey', 'trxKey', 'btcKey', 'xprv'].forEach(function (k) {
-            if (k in o) o[k] = '[redacted]';
-          });
-          ['ethAddress', 'trxAddress', 'btcAddress', 'address'].forEach(function (k) {
-            if (typeof o[k] === 'string') o[k] = wwSafeAddr(o[k]);
-          });
-          parts.push(JSON.stringify(o));
-        } catch (_j) {
-          parts.push('[object]');
-        }
-      } else {
-        parts.push(String(a));
-      }
-    }
-    console.log.apply(console, parts);
-  } catch (_e) {}
+  if (typeof safeLog === 'function') return safeLog.apply(null, arguments);
 }
 
 async function hashPin(pin) {
