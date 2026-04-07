@@ -3100,7 +3100,7 @@ function checkVerify() {
     updateAddr();
     var hasPin = false;
     try {
-      hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+      hasPin = typeof wwHasPinConfigured === 'function' ? wwHasPinConfigured() : !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
     } catch (_p0) {}
     if (hasPin) { try { window._wwInFirstRun = false; } catch (_frV) {} }
     showToast('✅ 验证通过！钱包已安全创建', 'success'); goTo('page-home');
