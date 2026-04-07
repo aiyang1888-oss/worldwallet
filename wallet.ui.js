@@ -2360,9 +2360,11 @@ function submitClaim() {
 var hbCount = 5;
 
 function changeCount(delta) {
-  hbCount = Math.max(1, Math.min(100, hbCount+delta));
-  document.getElementById('hbCountVal').textContent = hbCount;
-  (_safeEl('hbCountDisplay')||document.getElementById('hbCountVal')).textContent = hbCount+' 个';
+  hbCount = Math.max(1, Math.min(100, hbCount + delta));
+  var hc = document.getElementById('hbCountVal');
+  if (hc) hc.textContent = hbCount;
+  var disp = document.getElementById('hbCountDisplay');
+  if (disp) disp.textContent = hbCount + ' 个';
   updateHbPreview();
 }
 

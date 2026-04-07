@@ -1,21 +1,28 @@
-# Round 1 修复报告 - 2026-04-08 12:00
+# Round 1 修复报告 - 2026-04-08 05:03
 
 ## 发现的问题
-- [P3] `wallet.dom-bind.js` 通过 `wwCall` 仅访问 `window[name]`；部分由 `bindSelect` / `bindInput` 绑定的处理器未在 `wwExposeDataWwFnHandlers` 中显式挂到 `window`，与 `data-ww-fn` 的显式导出策略不一致，不利于维护与在严格/压缩环境下的可靠性。
+- [P2] `wallet.ui.js` 中 `changeCount` 对 `hbCountVal` 无空值判断：在精简版 `wallet.html` 无对应节点时可能抛错；且与同名的 `wallet.runtime.js` 实现不一致（runtime 已使用安全写法）。
 
 ## 修复内容
-- 文件：wallet.runtime.js
-- 函数：`wwExposeDataWwFnHandlers`（立即执行函数内）
-- 修改：为 `changeMnemonicLength`、`switchLang`、`updateQRCode`、`applyTxHistoryFilter`、`detectAddrType`、`calcTransferFee`、`calcSwap`、`syncImportGrid`、`syncImportPasteFromGrid`、`onClaimInput`、`onHideZeroTokensChange` 增加与 `window` 的显式绑定。
+- 文件：wallet.ui.js
+- 函数：changeCount
+- 修改：与 runtime 对齐——先 `getElementById` 再写入 `textContent`，并分别更新 `hbCountVal` / `hbCountDisplay`。
 
 ## 修改文件
-- wallet.runtime.js
+- wallet.ui.js
 
 ## 剩余问题
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 仍存在大量同名全局函数，由后加载的 runtime 覆盖；属架构层面，本轮未改动。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 仍存在大量同名全局函数，由后加载的 runtime 覆盖；属架构层面，本轮仅对齐一处易错分支。
 - [P3] 未对 `wallet.html` 中全部 `class` 与 `wallet.css` 做穷尽对照。
 
+## 扫描摘要（STEP 1）
+- `data-ww-fn`：41 个唯一处理器名（示例：createNewWallet、goToPinConfirm、submitClaim、pinUnlockBackspace 等）。
+- `id="page-*"`：page-welcome、page-password-restore、page-create、page-key、page-key-verify、page-pin-setup、page-pin-confirm、page-pin-verify、page-home、page-addr、page-transfer、page-swoosh、page-transfer-success、page-settings、page-swap、page-import、page-hongbao、page-hb-keyword、page-claim、page-claimed、page-hb-records、page-faq。
+- `data-ww-go`：12 个唯一目标（page-create、page-password-restore、page-import、page-faq、page-key-verify、page-pin-setup、page-settings、page-home、page-claim、page-hb-records、page-hongbao）。
+- `wallet.css`：花括号开/闭均为 330，平衡。
+- `wallet.runtime.js` + `wallet.ui.js`：大量 `function X()` / `window.X =`（runtime 末尾 `wwExposeDataWwFnHandlers` 显式挂出 data-ww-fn 与 dom-bind 所需名）。
+
 ## 测试结果
-- TEST-A: PASS — `data-ww-fn` 所列名称均在已加载脚本中有对应 `function` / `window.*` 绑定。
-- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在对应 `id="page-*"` 页面节点。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均具有非空实现（含 runtime 中的别名包装函数）。
+- TEST-A: PASS — 全部 `data-ww-fn` 在已加载脚本中有对应全局函数定义。
+- TEST-B: PASS — 全部 `data-ww-go` 在 `wallet.html` 中存在对应 `id="page-*"`。
+- TEST-C: PASS — 所列核心函数均具非空实现（含 runtime 中别名函数）。
