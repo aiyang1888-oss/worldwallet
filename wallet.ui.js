@@ -1437,7 +1437,8 @@ function wwTickIdleLock() {
   if(!wwGetStoredPin()) return;
   if(!REAL_WALLET) return;
   var _apIdle = document.querySelector('.page.active');
-  if (_apIdle && _apIdle.id === 'page-password-restore') return;
+  /* 仅在用户正在输入内联 PIN 时跳过：整页 return 会导致 PIN 解锁页永不触发闲置锁 */
+  if (_apIdle && _apIdle.id === 'page-password-restore' && _pinRestoreBuffer && _pinRestoreBuffer.length > 0) return;
   var _pinSetupOv = document.getElementById('pinSetupOverlay');
   if (_pinSetupOv && _pinSetupOv.classList.contains('show')) return;
   var pov = document.getElementById('pinUnlockOverlay');
