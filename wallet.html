@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0">
 <!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
 <meta name="wt-tron-api-key" content="">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldToken</title>
 <meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/USDT/BTC多链">
@@ -40,18 +40,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="WorldToken">
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  document.querySelectorAll('[onclick]').forEach(el => {
-    const onclick = el.getAttribute('onclick');
-    el.removeAttribute('onclick');
-    el.addEventListener('click', function(e) {
-      e.preventDefault();
-      try { eval(onclick); } catch(err) { console.error(err); }
-    });
-  });
-});
-</script>
+<!-- 交互绑定见 wallet.dom-bind.js（CSP：无内联脚本） -->
 </head>
 <body>
 <div class="phone">
@@ -83,9 +72,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- 按钮区 -->
       <div style="width:100%;flex-shrink:0;margin-top:28px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
-          <button type="button" class="btn-primary" data-action="create" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
-          <button type="button" class="btn-secondary" data-action="unlock" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
-          <button type="button" class="btn-secondary" data-action="import" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">👤 导入已有钱包</button>
+          <button type="button" class="btn-primary" data-ww-go="page-create" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
+          <button type="button" class="btn-secondary" data-ww-go="page-password-restore" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
+          <button type="button" class="btn-secondary" data-ww-go="page-import" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">👤 导入已有钱包</button>
         </div>
       </div>
     </div>
@@ -93,13 +82,13 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- ══ PIN 解锁（欢迎页「PIN 解锁钱包」） ══ -->
     <div class="page" id="page-password-restore">
       <div class="nav-bar">
-        <div class="nav-back" data-action="back" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go="page-welcome" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">PIN 解锁</div>
         <div class="nav-right"></div>
       </div>
       <div class="key-content" style="padding:24px 20px;display:flex;flex-direction:column;align-items:center;max-width:400px;margin:0 auto;box-sizing:border-box">
         <p style="font-size:13px;color:var(--text-muted);text-align:center;line-height:1.6;margin-bottom:20px;width:100%">输入本机已设置的 6 位数字 PIN，验证通过后进入钱包。</p>
-        <form id="pageRestorePinForm" novalidate onsubmit="event.preventDefault(); void submitPageRestorePin();" style="width:100%;max-width:320px;margin:0">
+        <form id="pageRestorePinForm" novalidate style="width:100%;max-width:320px;margin:0">
           <div id="pageRestorePinPanel" style="width:100%">
             <input id="pinRestorePageInput" type="password" name="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="6 位数字 PIN" style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px;box-sizing:border-box" />
             <div id="pageRestorePinError" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;text-align:center"></div>
@@ -112,16 +101,16 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- 创建页 -->
     <div class="page" id="page-create">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
+        <div class="nav-back" data-ww-go="page-welcome">‹</div>
         <div class="nav-title">设置钱包</div>
       </div>
       <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="createNewWallet()">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" data-ww-fn="createNewWallet">
           <div style="font-size:36px;margin-bottom:12px">✨</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
         </div>
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="goTo('page-import')">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" data-ww-go="page-import">
           <div style="font-size:36px;margin-bottom:12px">📥</div>
           <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">导入已有钱包</div>
           <div style="font-size:13px;color:var(--text-muted);line-height:1.6">输入助记词恢复钱包</div>
@@ -132,11 +121,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- 密钥页 -->
     <div class="page" id="page-key">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo(window._keyBackPage||'page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go-keyback="page-create" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">我的密钥</div>
         <div class="nav-right u11" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
-          <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
-          <select id="keyPageLang" name="ww-key-lang" autocomplete="off" data-form-type="other" data-lpignore="true" onchange="switchLang(this.value)"
+          <button type="button" class="nav-help-btn" data-ww-go="page-faq" title="常见问题">帮助</button>
+          <select id="keyPageLang" name="ww-key-lang" autocomplete="off" data-form-type="other" data-lpignore="true"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 4px;cursor:pointer;outline:none;max-width:130px"
             title="助记词网格显示语言（英文为 BIP39 原文）">
             <option value="zh">中文</option>
@@ -150,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <option value="pt">Português</option>
             <option value="hi">हिन्दी</option>
           </select>
-          <select id="mnemonicLength" name="ww-mnemonic-length" autocomplete="off" data-form-type="other" data-lpignore="true" onchange="changeMnemonicLength(this.value)"
+          <select id="mnemonicLength" name="ww-mnemonic-length" autocomplete="off" data-form-type="other" data-lpignore="true"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none"
             title="词数与下方网格一致；每次进入本页默认 12 词；切换词数将生成全新随机助记词；所选词数不跨会话保存">
             <option value="12" selected>12词</option>
@@ -171,8 +160,8 @@ document.addEventListener('DOMContentLoaded', function() {
           <span style="font-size:16px;flex-shrink:0">⚠️</span>
           <span>请抄写并妥善保管这<b id="warnWordCount">12</b>个词；以上为当前钱包的<b>真实助记词</b>。12/15/18/21/24词对应不同熵与<b>不同地址</b>，在上方切换词数将重新生成钱包。任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
         </div>
-        <button class="btn-primary" onclick="startVerify()">✅ 我已抄写，开始验证</button>
-        <div onclick="goTo(window._keyBackPage||'page-settings')" style="margin-top:8px;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer">⏭️ 暂时忽略验证</div>
+        <button class="btn-primary" data-ww-fn="startVerify">✅ 我已抄写，开始验证</button>
+        <div data-ww-go-keyback="page-settings" style="margin-top:8px;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer">⏭️ 暂时忽略验证</div>
       </div>
 
     </div>
@@ -180,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- 助记词验证（抄写确认） -->
     <div class="page" id="page-key-verify">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-key',{preserveKeyPage:true})" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go-with-opts="page-key" data-ww-go-opts='{"preserveKeyPage":true}' style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">验证助记词</div>
         <div class="nav-right"></div>
       </div>
@@ -189,7 +178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div id="verifyShakeRoot">
           <div id="verifyQuestions" style="display:flex;flex-direction:column;gap:10px"></div>
           <div id="verifyError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:var(--red)">词序或拼写不正确，请重试</div>
-          <button class="btn-primary" style="margin-top:18px;padding:14px 0;width:100%" onclick="checkVerify()">验证</button>
+          <button class="btn-primary" style="margin-top:18px;padding:14px 0;width:100%" data-ww-fn="checkVerify">验证</button>
         </div>
       </div>
     </div>
@@ -198,10 +187,10 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="page" id="page-home">
       
       <div class="home-header" style="position:relative">
-        <div id="homeBackupBanner" class="home-backup-banner" role="alert" onclick="goTo('page-settings')">⚠️ 钱包尚未备份助记词，丢失设备将无法恢复资产。点此处前往设置确认备份</div>
+        <div id="homeBackupBanner" class="home-backup-banner" role="alert" data-ww-go="page-settings">⚠️ 钱包尚未备份助记词，丢失设备将无法恢复资产。点此处前往设置确认备份</div>
         <div style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px">
-          <div onclick="promptWalletNotifications()" title="通知" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer;font-size:18px;line-height:1">🔔</div>
-          <div onclick="goTab('tab-addr')" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer">
+          <div data-ww-fn="promptWalletNotifications" title="通知" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer;font-size:18px;line-height:1">🔔</div>
+          <div data-ww-go-tab="tab-addr" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
               <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
@@ -222,8 +211,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%">
           <span id="homeAddrChip" class="home-addr-chip" style="font-size:11px;letter-spacing:0.5px;color:#C8A84B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(100%,260px);text-align:center"></span>
           <div class="home-addr-actions" style="display:flex;gap:8px;justify-content:center;width:100%;flex-wrap:wrap">
-            <button type="button" id="homeCopyAddrBtn" onclick="copyHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">复制地址</button>
-            <button type="button" id="homeEditAddrBtn" onclick="editHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">修改地址</button>
+            <button type="button" id="homeCopyAddrBtn" data-ww-fn="copyHomeAddr" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">复制地址</button>
+            <button type="button" id="homeEditAddrBtn" data-ww-fn="editHomeAddr" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">修改地址</button>
           </div>
         </div>
         </div>
@@ -232,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="trxResourceCard" style="display:none;margin:0 16px 10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="font-size:10px;color:var(--text-muted);letter-spacing:1.5px">TRON 资源</span>
-          <span id="trxResourceRefresh" onclick="if(typeof loadTrxResource==='function')loadTrxResource()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+          <span id="trxResourceRefresh" data-ww-load-trx style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
         </div>
         <div style="display:flex;gap:14px;font-size:12px;line-height:1.45">
           <div style="flex:1;min-width:0"><span style="color:var(--text-muted);font-size:11px">能量</span><br /><strong id="trxEnergyText" style="color:var(--text);word-break:break-all">--</strong></div>
@@ -248,10 +237,10 @@ document.addEventListener('DOMContentLoaded', function() {
           <span>我的资产</span>
           <div class="home-section-head-actions">
             <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;margin:0">
-              <input type="checkbox" id="hideZeroTokens" onchange="onHideZeroTokensChange()" style="accent-color:var(--gold);width:14px;height:14px" />
+              <input type="checkbox" id="hideZeroTokens" style="accent-color:var(--gold);width:14px;height:14px" />
               隐藏零余额
             </label>
-            <span id="balRefreshBtn" class="home-refresh-link" onclick="loadBalances()">刷新</span>
+            <span id="balRefreshBtn" class="home-refresh-link" data-ww-fn="loadBalances">刷新</span>
           </div>
         </div>
         <div class="asset-item" id="assetRowUsdt">
@@ -270,9 +259,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="home-tx-section">
         <div class="home-section-head">
           <span class="home-tx-title">最近交易</span>
-          <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
+          <span class="home-refresh-link" data-ww-fn="loadTxHistory">刷新</span>
         </div>
-        <input type="search" id="txHistoryFilter" class="home-tx-filter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" />
+        <input type="search" id="txHistoryFilter" class="home-tx-filter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" />
         <div id="txHistoryList">
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
@@ -312,10 +301,10 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
 
           <div class="addr-actions">
-            <div class="addr-action-btn" id="copyNativeBtn" onclick="copyNative()">📋 复制地址</div>
+            <div class="addr-action-btn" id="copyNativeBtn" data-ww-fn="copyNative">📋 复制地址</div>
           </div>
           <div class="addr-actions" style="margin-top:8px">
-            <div class="addr-action-btn" onclick="openCustomizeAddr()" style="width:100%;text-align:center">✏️ 修改地址</div>
+            <div class="addr-action-btn" data-ww-fn="openCustomizeAddr" style="width:100%;text-align:center">✏️ 修改地址</div>
           </div>
         </div>
 
@@ -326,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <span style="font-size:11px;color:var(--text-muted);letter-spacing:1px">扫码收款</span>
             <div style="flex:1;height:1px;background:var(--border)"></div>
             <span id="qrLangTag" style="font-size:10px;color:var(--text-muted)">🌍</span>
-            <select id="qrChainSelect" onchange="updateQRCode()"
+            <select id="qrChainSelect"
               style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:10px;padding:2px 6px;cursor:pointer;outline:none">
               <option value="trx">TRX</option>
               <option value="eth">ETH</option>
@@ -335,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           <div style="margin-bottom:14px;text-align:left">
             <label for="qrReceiveAmount" style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;display:block;margin-bottom:6px">收款金额（可选）</label>
-            <input id="qrReceiveAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="留空则仅编码地址" oninput="updateQRCode()" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--text);outline:none" />
+            <input id="qrReceiveAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="留空则仅编码地址" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--text);outline:none" />
             <div style="font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.55">填写后二维码使用链上付款 URI（TRX/ETH 本位），扫码钱包可预填金额。</div>
           </div>
 
@@ -372,17 +361,17 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="chain-row">
             <span class="chain-badge trx">TRX</span>
             <span class="chain-hash" id="addrTrxChain">--</span>
-            <span class="chain-copy-btn" onclick="copySingle(document.getElementById('addrTrxChain').textContent, this)">📋</span>
+            <span class="chain-copy-btn" data-ww-copy-from="addrTrxChain">📋</span>
           </div>
           <div class="chain-row">
             <span class="chain-badge eth">ETH</span>
             <span class="chain-hash" id="addrEthChain">--</span>
-            <span class="chain-copy-btn" onclick="copySingle(document.getElementById('addrEthChain').textContent, this)">📋</span>
+            <span class="chain-copy-btn" data-ww-copy-from="addrEthChain">📋</span>
           </div>
           <div class="chain-row">
             <span class="chain-badge btc">BTC</span>
             <span class="chain-hash" id="addrBtcChain">--</span>
-            <span class="chain-copy-btn" onclick="copySingle(document.getElementById('addrBtcChain').textContent, this)">📋</span>
+            <span class="chain-copy-btn" data-ww-copy-from="addrBtcChain">📋</span>
           </div>
         </div>
 
@@ -392,20 +381,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
       <!-- QR 弹窗 -->
-      <div class="qr-overlay" id="qrOverlay" onclick="hideQR()">
-        <div class="qr-card" onclick="event.stopPropagation()">
+      <div class="qr-overlay" id="qrOverlay">
+        <div class="qr-card" data-ww-stop>
           <div class="qr-placeholder">📱</div>
           <div class="qr-addr-main" id="qrAddrMain" style="font-size:11px;word-break:break-all;letter-spacing:1px">38294651龙桜서م春月БRกA92847361</div>
           <div class="qr-addr-num" id="qrAddrNum" class="u5"></div>
           <div class="qr-chain" id="qrChainAddr">--</div>
-          <button class="qr-close" onclick="hideQR()">关闭</button>
+          <button type="button" class="qr-close" data-ww-fn="hideQR">关闭</button>
         </div>
       </div>
 
     <!-- 转账页 -->
     <div class="page" id="page-transfer">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-back" data-ww-go="page-home" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
         <div class="nav-title">转账</div>
         <div class="nav-right"></div>
       </div>
@@ -413,12 +402,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s;position:relative" id="transferAddrBox">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">收款地址</div>
-          <textarea id="transferAddr" rows="2" placeholder="TRC20 地址（以 T 开头）" oninput="detectAddrType()" autocomplete="off" style="width:100%;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
+          <textarea id="transferAddr" rows="2" placeholder="TRC20 地址（以 T 开头）" autocomplete="off" style="width:100%;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
         </div>
 
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">金额（USDT · TRC-20）</div>
-          <input id="transferAmount" type="number" placeholder="0.00" oninput="calcTransferFee()" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
+          <input id="transferAmount" type="number" placeholder="0.00" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
           <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
             当前余额: <span id="transferBal">0</span> USDT
           </div>
@@ -429,15 +418,15 @@ document.addEventListener('DOMContentLoaded', function() {
           <div style="font-size:12px;color:var(--text);line-height:1.5" id="transferFeeHint">—</div>
         </div>
 
-        <button class="btn-primary" id="transferBtn" onclick="doTransfer()" style="opacity:0.4;cursor:not-allowed" disabled>
+        <button class="btn-primary" id="transferBtn" data-ww-fn="doTransfer" style="opacity:0.4;cursor:not-allowed" disabled>
           确认转账
         </button>
 
       </div>
 
       <!-- 确认弹窗 -->
-      <div class="qr-overlay" id="transferConfirmOverlay" onclick="closeTransferConfirm()">
-        <div style="background:var(--bg2);border-radius:24px;padding:28px 22px;width:300px;text-align:center" onclick="event.stopPropagation()">
+      <div class="qr-overlay" id="transferConfirmOverlay">
+        <div style="background:var(--bg2);border-radius:24px;padding:28px 22px;width:300px;text-align:center" data-ww-stop>
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">转账确认</div>
           <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 USDT</div>
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">→ <span id="confirmRecipient"></span></div>
@@ -447,8 +436,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="u9"><span>网络</span><span id="confirmChain">TRC-20</span></div>
           </div>
           <div style="display:flex;gap:10px">
-            <button style="flex:1;background:var(--bg3);color:var(--text-muted);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;cursor:pointer" onclick="closeTransferConfirm()">取消</button>
-            <button style="flex:1;background:linear-gradient(135deg,#b8982a,#e8c850);color:#0a0a05;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer" id="confirmSendBtn" onclick="confirmTransfer()">确认发送</button>
+            <button type="button" style="flex:1;background:var(--bg3);color:var(--text-muted);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;cursor:pointer" data-ww-fn="closeTransferConfirm">取消</button>
+            <button type="button" style="flex:1;background:linear-gradient(135deg,#b8982a,#e8c850);color:#0a0a05;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer" id="confirmSendBtn" data-ww-fn="confirmTransfer">确认发送</button>
           </div>
         </div>
       </div>
@@ -466,7 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go="page-home" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">设置</div>
         <div class="nav-right"></div>
       </div>
@@ -477,21 +466,21 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
 
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
-          <div class="settings-row" id="settingsPinRow" onclick="openPinSettingsDialog()">
+          <div class="settings-row" id="settingsPinRow" data-ww-fn="openPinSettingsDialog">
             <span class="settings-icon">🔐</span>
             <span class="settings-label">PIN码</span>
             <span class="settings-value" id="settingsPinValue">未设置</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="window._keyBackPage='page-settings';goTo('page-key')">
+          <div class="settings-row" data-ww-fn="wwOpenBackupFromSettings">
             <span class="settings-icon">📋</span>
             <span class="settings-label">备份助记词</span>
             <span class="settings-value" id="backupStatus" style="color:var(--red)">未备份</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="if(confirm('确定删除本机钱包？此操作会清空本地数据。')){ localStorage.removeItem('ww_wallet'); localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_hongbaos'); REAL_WALLET=null; goTo('page-welcome'); showToast('钱包已删除', 'success'); }">
+          <div class="settings-row" data-ww-fn="deleteWalletRow">
             <span class="settings-icon">🗑️</span>
             <span class="settings-label" style="color:var(--red)">删除钱包</span>
             <span class="settings-value" style="color:var(--red)">清空本机</span>
@@ -503,9 +492,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     <div class="page" id="page-swap">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go="page-home" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">兑换</div>
-        <div class="nav-right" onclick="if(typeof showToast==='function')showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+        <div class="nav-right" data-ww-fn="wwSwapRecordsToast" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
       </div>
       <div class="swap-content" style="padding:16px 18px 24px">
 
@@ -519,9 +508,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div style="font-size:11px;color:var(--text-muted)">TRC-20</div>
               </div>
             </div>
-            <span style="font-size:11px;color:var(--text-muted)">余额 <span id="swapFromBal" style="color:var(--text)">0</span> · <span style="color:var(--gold);cursor:pointer" onclick="setSwapMax()">全部</span></span>
+            <span style="font-size:11px;color:var(--text-muted)">余额 <span id="swapFromBal" style="color:var(--text)">0</span> · <span style="color:var(--gold);cursor:pointer" data-ww-fn="setSwapMax">全部</span></span>
           </div>
-          <input id="swapAmountIn" class="swap-input" value="" type="number" inputmode="decimal" min="0" step="any" placeholder="0" oninput="calcSwap()" style="width:100%;box-sizing:border-box;text-align:right;font-size:26px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" />
+          <input id="swapAmountIn" class="swap-input" value="" type="number" inputmode="decimal" min="0" step="any" placeholder="0" style="width:100%;box-sizing:border-box;text-align:right;font-size:26px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" />
         </div>
 
         <div class="swap-card" style="margin-bottom:18px">
@@ -541,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
 
-        <button type="button" class="btn-primary" style="width:100%;padding:14px 0" onclick="doSwap()">⚡ 前往 SunSwap 兑换</button>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0" data-ww-fn="doSwap">⚡ 前往 SunSwap 兑换</button>
       </div>
     </div>
 
@@ -551,7 +540,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- ══ 导入钱包页 ══ -->
     <div class="page" id="page-import">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo(window._importBackTarget||'page-welcome')" role="button" tabindex="0" aria-label="返回" style="display:flex;align-items:center;gap:2px;font-size:15px;font-weight:600;color:var(--gold);cursor:pointer;width:auto;min-width:64px;line-height:1;padding:8px 6px 8px 0;margin-left:-4px;box-sizing:border-box"><span style="font-size:30px;font-weight:900;line-height:1">‹</span><span style="letter-spacing:0.04em">返回</span></div>
+        <div class="nav-back" data-ww-go-import-back="page-welcome" role="button" tabindex="0" aria-label="返回" style="display:flex;align-items:center;gap:2px;font-size:15px;font-weight:600;color:var(--gold);cursor:pointer;width:auto;min-width:64px;line-height:1;padding:8px 6px 8px 0;margin-left:-4px;box-sizing:border-box"><span style="font-size:30px;font-weight:900;line-height:1">‹</span><span style="letter-spacing:0.04em">返回</span></div>
         <div class="nav-title">导入钱包</div>
         <div class="nav-right"></div>
       </div>
@@ -568,8 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="text-align:center;margin-bottom:12px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">— 或者直接粘贴 — <span id="importWordCountBadge" style="font-size:11px;color:var(--gold)">0/12</span></div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px">
           <textarea id="importPaste" rows="3" placeholder="在此粘贴全部助记词（12/15/18/21/24个词，空格分隔）..." 
-            style="width:100%;background:none;border:none;outline:none;font-size:13px;color:var(--text);resize:none;line-height:1.6;font-family:inherit"
-            oninput="syncImportGrid(this.value)"></textarea>
+            style="width:100%;background:none;border:none;outline:none;font-size:13px;color:var(--text);resize:none;line-height:1.6;font-family:inherit"></textarea>
         </div>
 
         <!-- 警告 -->
@@ -577,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function() {
           ⚠️ 请确保你在安全的环境下输入助记词，切勿在公共场所操作
         </div>
 
-        <button class="btn-primary" style="padding:14px 0;font-size:15px" onclick="doImportWallet()">✅ 导入钱包</button>
+        <button class="btn-primary" style="padding:14px 0;font-size:15px" data-ww-fn="doImportWallet">✅ 导入钱包</button>
         <div id="importError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:#ff6060"></div>
       </div>
     </div>
@@ -585,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- ═══ 礼物主页 ═══ -->
     <div class="page" id="page-hongbao">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTab('tab-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go-tab="tab-home" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title" id="giftTitle">礼物</div>
         <div class="nav-right"><span id="giftCountBadge" style="font-size:11px;color:var(--gold)"></span></div>
       </div>
@@ -597,16 +585,16 @@ document.addEventListener('DOMContentLoaded', function() {
         <input id="hbMessage" type="text" placeholder="留言（可选）"
           style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:14px;outline:none;box-sizing:border-box" />
         <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="goTo('page-claim')">领取礼物</button>
-          <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="goTo('page-hb-records')">礼物记录</button>
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px" data-ww-go="page-claim">领取礼物</button>
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px" data-ww-go="page-hb-records">礼物记录</button>
         </div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px 0" onclick="createGift()">创建礼物</button>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0" data-ww-fn="createGift">创建礼物</button>
         <div id="hbKeywordResult" style="display:none;margin-top:16px;padding:14px;border-radius:14px;background:var(--bg2);border:1px solid rgba(200,168,75,0.35)">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">口令（请发给好友）</div>
           <div id="hbCreatedKeyword" style="font-size:22px;font-weight:800;color:var(--gold);letter-spacing:4px;margin-bottom:12px">—</div>
           <div style="display:flex;gap:8px;justify-content:center">
-            <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="copyHbCreatedKeyword()">复制口令</button>
-            <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="shareHbCreatedKeyword()">分享</button>
+            <button type="button" class="btn-secondary" style="flex:1;padding:10px" data-ww-fn="copyHbCreatedKeyword">复制口令</button>
+            <button type="button" class="btn-secondary" style="flex:1;padding:10px" data-ww-fn="shareHbCreatedKeyword">分享</button>
           </div>
         </div>
         <div style="font-size:12px;font-weight:600;color:var(--text);margin:18px 0 8px">已发送</div>
@@ -617,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- ═══ 领取礼物页 ═══ -->
     <div class="page" id="page-claim">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go="page-hongbao" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">领取礼物</div>
         <div class="nav-right"></div>
       </div>
@@ -625,16 +613,16 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入 6 位礼物口令</div>
         <div id="claimInputBox">
           <input id="claimInput" type="text" maxlength="32" placeholder="口令" autocomplete="off"
-            style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitClaim()" />
+            style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box" />
         </div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-top:16px" onclick="submitClaim()">领取</button>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-top:16px" data-ww-fn="submitClaim">领取</button>
       </div>
     </div>
 
     <!-- ═══ 领取成功页 ═══ -->
     <div class="page" id="page-claimed">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go="page-home" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">领取成功</div>
         <div class="nav-right"></div>
       </div>
@@ -643,15 +631,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="font-size:22px;font-weight:800;color:var(--gold);margin-bottom:10px">礼物领取成功</div>
         <div id="claimedAmount" style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px">0 USDT</div>
         <div id="claimedMessage" style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:22px"></div>
-        <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px" onclick="goTo('page-home')">返回首页</button>
-        <button type="button" class="btn-secondary" style="width:100%;padding:12px 0" onclick="goTo('page-hongbao')">继续看礼物</button>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px" data-ww-go="page-home">返回首页</button>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px 0" data-ww-go="page-hongbao">继续看礼物</button>
       </div>
     </div>
 
     <!-- ═══ 礼物记录页 ═══ -->
     <div class="page" id="page-hb-records">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go="page-hongbao" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">礼物记录</div>
         <div class="nav-right"></div>
       </div>
@@ -663,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- 常见问题 FAQ -->
     <div class="page" id="page-faq">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-key',{preserveKeyPage:true})" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" data-ww-go-with-opts="page-key" data-ww-go-opts='{"preserveKeyPage":true}' style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">常见问题</div>
         <div class="nav-right"></div>
       </div>
@@ -698,69 +686,69 @@ document.addEventListener('DOMContentLoaded', function() {
     
 
   <!-- PIN 解锁（继续使用钱包） -->
-  <div class="overlay" id="pinUnlockOverlay" onclick="if(event.target===this)closePinUnlock()">
-    <div id="pinUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
+  <div class="overlay" id="pinUnlockOverlay">
+    <div id="pinUnlockPanel" class="overlay-sheet" data-ww-stop style="max-width:300px;text-align:center">
       <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">输入 PIN</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">已设置 6 位数字 PIN，用于保护钱包访问</div>
       <div id="wwAntiPhishBadge" style="display:none;font-size:13px;font-weight:700;color:var(--gold);margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.38);line-height:1.4"></div>
-      <form id="pinUnlockForm" novalidate onsubmit="event.preventDefault(); void submitPinUnlock();" style="margin:0">
+      <form id="pinUnlockForm" novalidate style="margin:0">
         <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" aria-label="6 位数字 PIN" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" />
         <div style="display:flex;gap:8px;margin-bottom:12px">
-          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockBackspace()">⌫ 退格</button>
-          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" data-ww-fn="pinUnlockBackspace">⌫ 退格</button>
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" data-ww-fn="pinUnlockClear">清空</button>
         </div>
         <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
         <button type="submit" class="btn-primary u13">解锁</button>
-        <button type="button" class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:8px" data-ww-fn="closePinUnlock">取消</button>
       </form>
     </div>
   </div>
 
   <!-- TOTP 二次验证（解锁钱包） -->
-  <div class="overlay" id="totpUnlockOverlay" onclick="if(event.target===this)closeTotpUnlock()">
-    <div id="totpUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
+  <div class="overlay" id="totpUnlockOverlay">
+    <div id="totpUnlockPanel" class="overlay-sheet" data-ww-stop style="max-width:300px;text-align:center">
       <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Authenticator</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
-      <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
+      <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button type="button" class="btn-primary u13" onclick="submitTotpUnlock()">验证并进入</button>
-      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
+      <button type="button" class="btn-primary u13" data-ww-fn="submitTotpUnlock">验证并进入</button>
+      <button type="button" class="btn-secondary" style="width:100%;margin-top:8px" data-ww-fn="closeTotpUnlock">返回 PIN</button>
     </div>
   </div>
 
   <!-- TOTP 绑定（Google Authenticator） -->
-  <div class="overlay" id="totpSetupOverlay" onclick="if(event.target===this)closeTotpSetup()">
-    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:320px;text-align:center;padding-bottom:8px">
+  <div class="overlay" id="totpSetupOverlay">
+    <div class="overlay-sheet" data-ww-stop style="max-width:320px;text-align:center;padding-bottom:8px">
       <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">绑定 Google Authenticator</div>
       <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">使用验证器扫描下方二维码，或手动输入密钥</div>
       <canvas id="totpSetupQr" width="200" height="200" style="display:block;margin:0 auto 10px;border-radius:12px;background:#fff"></canvas>
       <div style="font-size:10px;color:var(--text-dim);word-break:break-all;margin-bottom:10px;padding:8px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)" id="totpSetupSecretText">—</div>
-      <input id="totpSetupVerifyInput" type="text" maxlength="6" inputmode="numeric" placeholder="输入 6 位验证码" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;text-align:center;outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')confirmTotpSetup()" />
-      <button class="btn-primary" style="width:100%;padding:12px;margin-bottom:8px" onclick="confirmTotpSetup()">确认绑定</button>
-      <button class="btn-secondary" style="width:100%" onclick="closeTotpSetup()">取消</button>
+      <input id="totpSetupVerifyInput" type="text" maxlength="6" inputmode="numeric" placeholder="输入 6 位验证码" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;text-align:center;outline:none;margin-bottom:12px" />
+      <button type="button" class="btn-primary" style="width:100%;padding:12px;margin-bottom:8px" data-ww-fn="confirmTotpSetup">确认绑定</button>
+      <button type="button" class="btn-secondary" style="width:100%" data-ww-fn="closeTotpSetup">取消</button>
     </div>
   </div>
 
 
   <!-- 底部导航（勿加 .u5：该工具类为 display:none，会压过 .tab-bar 的 flex，导致底栏不可点） -->
   <div class="tab-bar" id="tabBar">
-    <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
-    <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
-    <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
-    <div class="tab-item" id="tab-hongbao" onclick="goTab('tab-hongbao')"><span class="tab-icon"><span style="font-size:20px;line-height:1">🎁</span></span><span>礼物</span></div>
-    <div class="tab-item" id="tab-settings" onclick="goTab('tab-settings')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.06-.7-1.66-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.66.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.06.7 1.66.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.66-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span>设置</span></div>
+    <div class="tab-item active" id="tab-home"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
+    <div class="tab-item" id="tab-addr"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
+    <div class="tab-item" id="tab-swap"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
+    <div class="tab-item" id="tab-hongbao"><span class="tab-icon"><span style="font-size:20px;line-height:1">🎁</span></span><span>礼物</span></div>
+    <div class="tab-item" id="tab-settings"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.06-.7-1.66-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.66.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.06.7 1.66.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.66-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span>设置</span></div>
   </div>
 
   <button type="button" id="wwScrollTopBtn" class="ww-scroll-top-btn" aria-label="回到顶部" title="回到顶部">↑</button>
 
   <!-- PIN 设置遮罩须在 .phone 内：与 dist 一致，避免 absolute/inset:0 相对视口盖住底栏 -->
-  <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
-    <div class="pin-setup-panel" onclick="event.stopPropagation()">
+  <div class="pin-setup-overlay" id="pinSetupOverlay">
+    <div class="pin-setup-panel" data-ww-stop>
       <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
       <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
       <div class="pin-dots" id="pinDots"></div>
       <div class="pin-keypad" id="pinKeypad"></div>
-      <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+      <div class="pin-setup-cancel" data-ww-fn="closePinSetupOverlay">取消</div>
     </div>
   </div>
 
@@ -770,7 +758,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div style="font-size:40px;margin-bottom:12px">🎁</div>
       <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
       <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
-      <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
+      <button type="button" class="btn-primary" data-ww-fn="wwHideHbSuccessOverlay">关闭</button>
     </div>
   </div>
 
@@ -885,6 +873,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script src="wallet.addr.js"></script>
 <script src="wallet.tx.js"></script>
 <script src="wallet.runtime.js"></script>
+<script src="wallet.csp-handlers.js"></script>
+<script src="wallet.dom-bind.js"></script>
 
 
 
