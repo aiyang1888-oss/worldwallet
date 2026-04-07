@@ -1395,7 +1395,6 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
-    if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
     if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
     if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
     if (typeof updateQRCode === 'function' && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
@@ -5527,39 +5526,6 @@ function showToast(msg, type='info', duration=2500) {
 
 // ── 余额查询 ──────────────────────────────────────────────────
 
-function drawHomeBalanceChart(totalUsd) {
-  const wrap = document.getElementById('homeBalanceChartWrap');
-  const svg = document.getElementById('homeBalanceChartSvg');
-  const foot = document.getElementById('homeBalanceChartFoot');
-  if(!wrap || !svg) return;
-  const t = Number(totalUsd);
-  if(!t || t <= 0 || !isFinite(t)) { wrap.style.display = 'none'; return; }
-  /* 勿设 display:block，否则会撑开已折叠的 chart wrap，在标题与万语地址之间留下大块空白 */
-  wrap.style.removeProperty('display');
-  const days = ['6天前','5天前','4天前','3天前','2天前','昨天','今天'];
-  const seed = Math.abs(Math.sin((t % 1000) * 13.37));
-  const pts = [];
-  for(let i = 0; i < 7; i++) {
-    const wobble = (i - 3) * 0.014 + (seed - 0.5) * 0.045;
-    pts.push(Math.max(0, t * (1 + wobble)));
-  }
-  pts[6] = t;
-  const min = Math.min.apply(null, pts) * 0.997;
-  const max = Math.max.apply(null, pts) * 1.003;
-  const W = 320, H = 72, padY = 8;
-  const range = max - min || 1;
-  const coords = pts.map(function(p, i) {
-    const x = (i / (pts.length - 1)) * (W - 8) + 4;
-    const y = padY + (1 - (p - min) / range) * (H - padY * 2);
-    return [x, y];
-  });
-  let d = 'M ' + coords[0][0] + ',' + coords[0][1];
-  for(let i = 1; i < coords.length; i++) d += ' L ' + coords[i][0] + ',' + coords[i][1];
-  const area = 'M' + coords[0][0] + ',' + H + ' ' + coords.map(function(c) { return c[0] + ',' + c[1]; }).join(' ') + ' L' + coords[coords.length - 1][0] + ',' + H + ' Z';
-  svg.innerHTML = '<defs><linearGradient id="hmChartGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(200,168,75,0.38)"/><stop offset="100%" stop-color="rgba(200,168,75,0)"/></linearGradient></defs><path d="' + area + '" fill="url(#hmChartGrad)"/><path d="' + d + '" fill="none" stroke="rgba(232,200,80,0.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-  if(foot) foot.innerHTML = '<span>' + days[0] + '</span><span>' + days[6] + '</span>';
-}
-
 async function getPrices() {
   if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
   try {
@@ -5672,7 +5638,6 @@ async function loadBalances() {
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
-    drawHomeBalanceChart(total);
     if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
     if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
     // 动态汇率（从价格接口获取，fallback 7.2）

@@ -499,34 +499,6 @@ body {
 
 /* ── 首页 ── */
 .home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-left, 0px)) 22px max(18px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--border); }
-/* 「近7日总资产」标题与万语地址同一组；保留少量呼吸间距（勿再贴死） */
-.home-chart-addr-tight {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  width: 100%;
-  gap: 0;
-  margin: 0;
-  padding: 0;
-}
-#page-home .home-chart-addr-tight .home-balance-chart-head {
-  margin: 0 0 6px !important;
-  padding: 0 2px !important;
-  width: 100%;
-  box-sizing: border-box;
-  justify-content: center !important;
-}
-#page-home .home-chart-addr-tight .home-balance-chart-title {
-  line-height: 1.2;
-  display: block;
-}
-#page-home .home-chart-addr-tight .home-addr-stack {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-}
-#page-home .home-chart-addr-tight #homeAddrChip.home-addr-chip {
-  margin-top: 0 !important;
-}
 .home-backup-banner {
   display: none;
   background: rgba(231, 76, 60, 0.16);
@@ -621,11 +593,6 @@ body {
 .home-balance.home-balance--loading { animation: homeBalPulse 0.85s ease-in-out infinite; }
 @keyframes homeBalPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
 .home-balance-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
-.home-balance-chart-wrap { margin: 14px 0 6px; padding: 0 2px; }
-.home-balance-chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.home-balance-chart-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
-.home-balance-chart-svg { width: 100%; height: 88px; display: block; }
-.home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
 /* —— balance hide / scroll-top / tab swipe (patch) —— */
 .ww-balance-privacy-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-right: 2px; box-sizing: border-box; }
 .ww-balance-hide-btn {
@@ -637,8 +604,6 @@ body {
 .ww-balance-hide-btn[aria-pressed="true"] { border-color: rgba(200,168,75,0.5); color: var(--gold-light); background: rgba(200,168,75,0.1); }
 .ww-balance-hidden #totalBalanceDisplay,
 .ww-balance-hidden #totalBalanceSub,
-.ww-balance-hidden #homeBalanceChartWrap,
-.ww-balance-hidden #page-home .home-chart-addr-tight > .home-balance-chart-head,
 .ww-balance-hidden #portfolioPieCanvas,
 .ww-balance-hidden #portfolioPieLegend,
 .ww-balance-hidden #page-home .asset-amount,
@@ -1238,30 +1203,6 @@ body {
   -webkit-backdrop-filter: none !important;
 }
 
-/* 首页图表：标题在 wrap 外；wrap 仅含 SVG/foot，高度锁 0 不占位 */
-#page-home #homeBalanceChartWrap {
-  height: 0 !important;
-  max-height: 0 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  line-height: 0 !important;
-  width: 100%;
-  box-sizing: border-box;
-}
-#page-home .home-balance-chart-head {
-  margin-bottom: 0 !important;
-}
-#page-home .home-balance-chart-svg {
-  height: 0 !important;
-  display: none !important;
-}
-#page-home .home-balance-chart-foot {
-  display: none !important;
-  height: 0 !important;
-}
 #page-home .home-addr-stack {
   margin: 0 !important;
   padding: 0 !important;
@@ -1271,32 +1212,6 @@ body {
 }
 #page-home [class*="home"] > .home-addr-stack {
   margin-top: 0 !important;
-}
-
-/* 彻底隐藏图表区占位（标题已移出 wrap） */
-#homeBalanceChartWrap {
-  height: 0 !important;
-  max-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  line-height: 0 !important;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-#homeBalanceChartWrap .home-balance-chart-svg {
-  height: 0 !important;
-  display: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-#homeBalanceChartWrap .home-balance-chart-foot {
-  height: 0 !important;
-  display: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
 }
 
 .home-addr-stack {

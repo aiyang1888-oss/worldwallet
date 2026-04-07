@@ -286,7 +286,6 @@ async function loadBalances() {
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
-    if (typeof drawHomeBalanceChart === 'function') drawHomeBalanceChart(total);
     if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
     if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
     // 动态汇率（从价格接口获取，fallback 7.2）
