@@ -156,8 +156,7 @@ function updateRealAddr() {
   if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
 }
 
-// ── 万语地址系统 ──────────────────────────────────────────
-const ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
+// ── 万语地址：ADDR_WORDS 由 wallet.addr.js 声明，勿重复声明 ──────────────────────────
 
 function randDigits(n) {
   let s = '';
