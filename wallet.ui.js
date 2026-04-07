@@ -1111,7 +1111,7 @@ function renderKeyGrid() {
     // 不反向覆盖 currentMnemonicLength 或下拉框
   } catch (e) {}
   const grid = document.getElementById('keyWordGrid');
-  grid.innerHTML = '';
+  if (!grid) return;
 
   /* 必须用真实 DOM 判断：_safeEl 在缺元素时返回存根对象，恒为 truthy，会导致英文提示永远不插入 */
   const hint = document.getElementById('keyEnHint');
