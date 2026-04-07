@@ -1011,6 +1011,10 @@ function wwUpdateScrollTopBtn() {
   var btn = document.getElementById('wwScrollTopBtn');
   if (!btn) return;
   var p = document.querySelector('.page.active');
+  if (p && (p.id === 'page-welcome' || p.id === 'page-password-restore')) {
+    btn.classList.remove('ww-show');
+    return;
+  }
   btn.classList.toggle('ww-show', !!(p && p.scrollTop > 220));
 }
 function initBalancePrivacyToggle() {
