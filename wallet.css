@@ -762,7 +762,6 @@ body {
   z-index: 100;
 }
 .qr-overlay.show { display: flex; }
-.overlay.show { display: flex !important; }
 .overlay-sheet {
   background: var(--bg2); border-radius: 24px;
   padding: 24px; width: 320px; max-height: 80vh;

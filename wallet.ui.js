@@ -1094,7 +1094,8 @@ function renderKeyGrid() {
   const grid = document.getElementById('keyWordGrid');
   grid.innerHTML = '';
 
-  const hint = _safeEl('keyEnHint');
+  /* 必须用真实 DOM 判断：_safeEl 在缺元素时返回存根对象，恒为 truthy，会导致英文提示永远不插入 */
+  const hint = document.getElementById('keyEnHint');
   if(isEn) {
     if(!hint) {
       const h = document.createElement('div');
