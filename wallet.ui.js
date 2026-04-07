@@ -1235,6 +1235,15 @@ function updateQRCode() {
   wwGenerateQRCode(payload, 'qrCanvas');
 }
 
+function showQR() {
+  var el = document.getElementById('qrOverlay');
+  if (el) el.classList.add('show');
+}
+function hideQR() {
+  var el = document.getElementById('qrOverlay');
+  if (el) el.classList.remove('show');
+}
+
 // KEYWORDS_ZH 已迁移到 KW_ZH
 // KEYWORDS_EN 已迁移到 KW_EN
 // Must not reference KW_ZH here — const KW_ZH is declared later (TDZ).
