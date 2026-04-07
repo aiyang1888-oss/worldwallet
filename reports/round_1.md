@@ -1,32 +1,23 @@
-# Round 1 修复报告 - 2026-04-08 03:17
+# Round 1 修复报告 - 2026-04-08 03:26
 
 ## 发现的问题
-- [P3] `wallet.runtime.js` 启动时对已不存在的 DOM 元素 `#welcomeLangGrid` 执行 `scrollTop=0`，为历史欢迎页残留逻辑，无功能影响但增加噪音。
-
-## 架构与扫描摘要（STEP 1–4）
-- **data-ww-fn**：共 43 处绑定；均在 `wallet.ui.js` / `wallet.addr.js` / `wallet.tx.js` / `wallet.runtime.js` 等脚本中通过全局 `function` 定义，并由 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 挂到 `window`（`deleteWalletRow` 等在 `wallet.dom-bind.js` 中有特判）。
-- **id="page-*"**：共 20 个页面块（含 `page-welcome`、`page-password-restore`、`page-home` 等）。
-- **data-ww-go**：全部目标均有对应 `id="page-…"`。
-- **wallet.css**：花括号计数 330/330，平衡。
-- **TEST-A**：通过（每个 `data-ww-fn` 均有对应全局实现）。
-- **TEST-B**：通过（每个 `data-ww-go` 目标页存在）。
-- **TEST-C**：所列核心函数均非空；`createGift` 实现在 `wallet.ui.js`（runtime 仅做 `typeof createGift === 'function'` 暴露）。
+- [P1] `wallet.core.js` 中 `createRealWallet`：`if (typeof setWalletCreateStep === 'function')` 后未调用 `setWalletCreateStep(n)`，仅执行 `await walletCreateYield()`，导致创建钱包时加载遮罩上的步骤文案（1/3、2/3、3/3）从不更新。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载的 `wallet.runtime.js` 覆盖前者；依赖显式 `wwExposeDataWwFnHandlers` 将 `data-ww-fn` 处理器挂到 `window`，维护成本高。
+- [P3] `wallet.css` 花括号已平衡（330 对）；`data-ww-go` 目标页均在 `wallet.html` 中存在对应 `id="page-*"`。
 
 ## 修复内容
-- 提交：`316c7b3`
-- 文件：`wallet.runtime.js`
-- 函数：启动初始化（全局顶层，原 `welcomeLangGrid` 一行）
-- 修改：删除对已移除欢迎语网格元素的 `scrollTop` 初始化。
+- 文件：`wallet.core.js`
+- 函数：`createRealWallet`
+- 修改：在三处异步阶段分别调用 `setWalletCreateStep(1|2|3)`，再 `await walletCreateYield()`，与 `setWalletCreateStep` 内标签「1/3 生成密钥」「2/3 派生地址」「3/3 完成」一致。
 
 ## 修改文件
-- `wallet.runtime.js`
-- `reports/round_1.md`
+- `wallet.core.js`
 
 ## 剩余问题
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，由后加载的 runtime 覆盖；属既有架构，未在本轮改动。
-- 无 P0/P1 阻塞项（本轮扫描范围内）。
+- [P3] 双文件重复定义同一全局函数，长期建议合并或模块化以减少覆盖风险。
+- [P3] 部分 `JSON.parse(localStorage...)` 未统一包在 try-catch（多数已在调用方处理）；非本轮阻断项。
 
 ## 测试结果
-- TEST-A: PASS — 全部 `data-ww-fn` 均有全局函数实现并可由 runtime 暴露到 `window`。
-- TEST-B: PASS — 全部 `data-ww-go` 指向的 `page-*` 存在于 `wallet.html`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均有非空实现（`createGift` 在 `wallet.ui.js`）。
+- TEST-A: PASS — `data-ww-fn` 所列名称在运行时由 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 挂到 `window`，或由先加载脚本中的全局函数提供；内联委托与 `wallet.dom-bind.js` 使用 `window[fn]`。
+- TEST-B: PASS — 所有 `data-ww-go` 目标（如 `page-welcome`、`page-password-restore`、`page-home`、`page-hongbao` 等）在 `wallet.html` 中均有对应 `id="page-*"` 的 `.page` 容器。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`confirmTransfer`（转账确认）、`createGift`、`submitClaim`（与 `claimGift` 别名一致）、`goHomeTransfer`（与 `openSend` 别名一致）、`goTab('tab-addr')`（`openReceive`）均含非空可执行逻辑。
