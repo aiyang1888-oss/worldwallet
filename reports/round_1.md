@@ -1,22 +1,27 @@
-# Round 1 修复报告 - 2026-04-07 21:10
+# Round 1 修复报告 - 2026-04-07 21:03
 
 ## 发现的问题
-- [P2] 首次路由 `wwEnsureInitialHashRoute` 仅用 localStorage 解析结果判断 `hasWallet`，未在 `loadWallet()` 后用 `REAL_WALLET` 与 `wwWalletHasAnyChainAddress` 对齐；若持久化与内存hydration不一致，可能误进入 `page-home`（底栏隐藏或内容未就绪，表现为「空白」）。
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载文件为准；属架构冗余，本轮未改。
-- [P3] `wallet.css` 花括号已平衡（`{` 329 / `}` 329）。
+
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数；`wallet.runtime.js` 后加载并覆盖前者，增加维护成本与行为不一致风险（已知架构取舍）。
+- [P3] `wallet.runtime.js` 与 `wallet.tx.js` 均定义 `loadTxHistory`，运行时为最终生效版本。
+- [P1/P2] 静态抽查：`wallet.runtime.js` 中部分 `JSON.parse(localStorage…)` 未统一包在 try-catch（依赖合法 JSON 或仅 demo 路径）；未在本次自动化测试中触发失败。
 
 ## 修复内容
-- 文件：wallet.ui.js
-- 函数：wwEnsureInitialHashRoute（IIFE 内）
-- 修改：在调用 `loadWallet()` 之后，用 `REAL_WALLET` 重新计算 `hasWallet`，再决定 `page-home` 或 `page-welcome`。
+
+- 文件：无（本轮未发现需改代码的 P0/P1 阻塞项）
+- 函数：—
+- 修改：—
 
 ## 修改文件
-- wallet.ui.js
+
+- `reports/round_1.md`（本报告）
 
 ## 剩余问题
-- 无（本轮自动化 TEST-A/B/C 均通过；架构重复列为后续可选清理）
+
+- 可考虑长期收敛 `wallet.ui.js` / `wallet.runtime.js` 重复实现，或明确「仅 runtime 为权威」并删减死代码（非本轮必须）。
 
 ## 测试结果
-- TEST-A: PASS — 所有 `data-ww-fn` 均在 JS 中有对应全局 `function` / `async function` 定义。
-- TEST-B: PASS — 所有 `data-ww-go` 目标均在 `wallet.html` 中存在 `id="page-*"`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift`、`submitClaim`、`sendTransfer`（别名）、`claimGift`（别名）、`openSend`（`goHomeTransfer`）、`openReceive` 均非空实现。
+
+- TEST-A: PASS — `data-ww-fn` 共 41 个唯一名，均在 `wallet.ui.js` / `wallet.addr.js` / `wallet.tx.js` / `wallet.runtime.js` 等核心脚本中以 `function X` 或经 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 挂到 `window`。
+- TEST-B: PASS — 全部 `data-ww-go` 目标均存在对应 `id="page-…"` 页面节点。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`confirmTransfer`（`sendTransfer` 别名）、`createGift`、`submitClaim`（`claimGift` 别名）、`goHomeTransfer`（`openSend` 别名）、`openReceive`（runtime 内联）均存在且函数体非空。
