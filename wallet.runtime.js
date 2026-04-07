@@ -443,8 +443,8 @@ const _safeEl = (id) => document.getElementById(id) || {
   href: '', disabled: false,
   addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
 };
+/** REAL_WALLET 在 wallet.core.js 声明；此处不重复 let/var */
 
-let REAL_WALLET = null;
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
 let currentMnemonicLength = 12;
 /** 导入页格子词数（与 #importGrid 一致；勿与密钥页 currentMnemonicLength 混用） */
@@ -1057,8 +1057,8 @@ const ADDR_SAMPLES = {
   ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
 };
 
-const CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--'
-// 如果有真实钱包，使用真实 TRX 地址
+CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
+// 如果有真实钱包，使用真实 TRX 地址（与 wallet.core.js 共用 var，勿用 const 重复声明）
 function getChainAddr() {
   return (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : CHAIN_ADDR;
 };
@@ -1369,7 +1369,14 @@ function goTo(pageId, opts) {
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='';
-  document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
+  var _tabBarGo = document.getElementById('tabBar');
+  if (_tabBarGo) {
+    if (pageId === 'page-home') {
+      _tabBarGo.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
+    } else {
+      _tabBarGo.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
+    }
+  }
   if(pageId==='page-key') {
     // 永远默认 12 词，生成全新钱包
     currentMnemonicLength = 12;
@@ -1448,10 +1455,6 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
   if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
-    // 有钱包时显示导航栏
-    if(REAL_WALLET && REAL_WALLET.ethAddress) {
-      document.getElementById('tabBar').style.display = 'flex';
-    }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
