@@ -1,22 +1,48 @@
-# Round 1 修复报告 - 2026-04-07 19:01
+# Round 1 修复报告 - 2026-04-07 19:06
 
 ## 发现的问题
-- [P1] `selectHbType` / `changeCount`（`wallet.runtime.js`）在缺少 `#hbTypeNormal`、`#hbTypeLucky`、`#hbCountVal` 等节点时仍访问 `.style` / `.textContent`，可能抛错（当前 `wallet.html` 未包含这些 id，属潜在崩溃路径）。
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 均定义 `goTo`、`changeCount` 等同名全局函数，以**后加载**的 `wallet.runtime.js` 为准；属架构重复但当前运行一致。
-- [P2/P3] 其余：`script` 加载顺序合理；`data-ww-fn` 均在 runtime 末尾 `wwExposeDataWwFnHandlers` 挂到 `window`；`wallet.css` 花括号平衡（329/329）。
+
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 中存在大量同名全局函数（如 `goTo`、`goTab`、`showToast` 等），依赖脚本加载顺序由后者覆盖前者；当前顺序正确，但长期维护易产生「改错文件」风险。
+- [P3] 礼金/礼物存在两套实现：`createHongbao`/`currentKeyword`（runtime）与 `createGift`/`lastHbCreatedKeyword`（ui），`page-hb-keyword` 与 `copyKw` 等依赖 runtime 流程；需避免混用导致状态不一致。
 
 ## 修复内容
-- 文件：`wallet.runtime.js`
-- 函数：`selectHbType`、`changeCount`
-- 修改：对礼物类型与数量相关节点使用存在性判断后再写样式与文案，避免 `getElementById` 为 `null` 时抛异常。
+
+- 文件：无（本轮静态分析与绑定测试全部通过，无需修改核心代码）
+- 函数：—
+- 修改：仅新增本报告文件
 
 ## 修改文件
-- `wallet.runtime.js`
+
+- `reports/round_1.md`
 
 ## 剩余问题
-- 无（自动化 TEST-A/B/C 均通过；若未来恢复带 `hbTypeNormal` 等控件的 HTML，现有逻辑仍兼容）。
+
+- 无阻塞性问题；P3 项可作为后续重构参考。
 
 ## 测试结果
-- TEST-A: PASS — 所有 `data-ww-fn` 均在合并后的 JS 中有对应 `function` 定义（或 runtime 显式 `window.*` 赋值）。
-- TEST-B: PASS — 所有 `data-ww-go` 目标均存在 `id="page-*"` 页面容器。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift`、`submitClaim`、`goHomeTransfer` 等核心函数体非空；`sendTransfer`/`claimGift`/`openSend`/`openReceive` 由 runtime 别名映射至既有实现。
+
+- **TEST-A**: PASS — `wallet.html` 中 41 个 `data-ww-fn` 均在 `wallet.runtime.js` 的 `wwExposeDataWwFnHandlers`（及同文件内别名块）中有对应 `window.<name> =` 暴露。
+- **TEST-B**: PASS — 全部 `data-ww-go` 目标（`page-create`、`page-password-restore`、`page-import`、`page-welcome`、`page-faq`、`page-key-verify`、`page-pin-setup`、`page-settings`、`page-home`、`page-claim`、`page-hb-records`、`page-hongbao`）均存在 `id="page-…"` 页面节点。
+- **TEST-C**: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift`、`submitClaim`（`claimGift` 别名）、`confirmTransfer`（`sendTransfer` 别名）、`goHomeTransfer`（`openSend` 别名）、`openReceive`（`goTab('tab-addr')`）均有非空实现。
+
+## STEP 1 扫描摘要
+
+### `data-ww-fn`（41 个）
+
+`createNewWallet`, `startVerify`, `checkVerify`, `goToPinConfirm`, `confirmPin`, `pinVerifyEnterWallet`, `promptWalletNotifications`, `copyHomeAddr`, `goHomeTransfer`, `loadTxHistory`, `copyNative`, `openCustomizeAddr`, `hideQR`, `doTransfer`, `closeTransferConfirm`, `confirmTransfer`, `shareSuccess`, `openPinSettingsDialog`, `wwOpenBackupFromSettings`, `deleteWalletRow`, `wwSwapRecordsToast`, `setSwapMax`, `doSwap`, `doImportWallet`, `createGift`, `copyHbCreatedKeyword`, `shareHbCreatedKeyword`, `copyKw`, `shareKw`, `showHbQR`, `copyShareText`, `submitClaim`, `pinUnlockBackspace`, `pinUnlockClear`, `closePinUnlock`, `submitTotpUnlock`, `closeTotpUnlock`, `confirmTotpSetup`, `closeTotpSetup`, `closePinSetupOverlay`, `wwHideHbSuccessOverlay`
+
+### `id="page-*"` 页面
+
+`page-welcome`, `page-password-restore`, `page-create`, `page-key`, `page-key-verify`, `page-pin-setup`, `page-pin-confirm`, `page-pin-verify`, `page-home`, `page-addr`, `page-transfer`, `page-swoosh`, `page-transfer-success`, `page-settings`, `page-swap`, `page-import`, `page-hongbao`, `page-hb-keyword`, `page-claim`, `page-claimed`, `page-hb-records`, `page-faq`
+
+### `data-ww-go` 导航目标
+
+`page-create`, `page-password-restore`, `page-import`, `page-welcome`, `page-faq`, `page-key-verify`, `page-pin-setup`, `page-settings`, `page-home`, `page-claim`, `page-hb-records`, `page-hongbao`
+
+### `wallet.css` 花括号
+
+开 `{` 329、闭 `}` 329，平衡。
+
+### 脚本加载顺序（`wallet.html`）
+
+`safeLog` → `ethers`/`scrypt`（CDN）→ `api-config` → `storage` → `wallet.derive.paths` → `core/security` → `core/wallet` → `wordlists` → `wallet.core` → `wallet.ui` → `wallet.addr` → `wallet.tx` → `wallet.runtime` → `wallet.dom-bind`；与依赖关系一致。
