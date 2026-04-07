@@ -1390,10 +1390,6 @@ function wwGenerateTotpSecretB32() {
   crypto.getRandomValues(u);
   return wwBase32Encode(u);
 }
-function closePinSetupOverlay() {
-  const el = document.getElementById('pinSetupOverlay');
-  if (el) el.classList.remove('show');
-}
 
 function offerTotpAfterPinSave() {
   if (wwTotpEnabled()) return;
