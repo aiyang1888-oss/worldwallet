@@ -2498,6 +2498,22 @@ function requestPushPermissionOnFirstLaunch() {
   }
 }
 
+/** 首页「通知」铃铛：请求浏览器通知权限并提示结果（与 wallet.html onclick 对应） */
+function promptWalletNotifications() {
+  try {
+    if (typeof Notification === 'undefined') {
+      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info', 2500);
+      else alert('当前环境不支持通知');
+      return;
+    }
+    Notification.requestPermission().then(function (p) {
+      try { localStorage.setItem('ww_push_asked', '1'); } catch (_e) {}
+      var msg = p === 'granted' ? '已开启通知' : ('通知权限：' + p);
+      if (typeof showToast === 'function') showToast(msg, 'info', 2500);
+    });
+  } catch (e) {}
+}
+
 // ══ 兑换：仅 USDT(TRC-20) → TRX，跳转 SunSwap ══
 var COINS = [
   {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', bg:'rgba(38,161,123,0.15)', bal:0, price:1},
