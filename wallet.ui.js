@@ -3395,10 +3395,19 @@ function createGift() {
   }
 
   lastHbCreatedKeyword = keyword;
+  try { currentKeyword = keyword; } catch (_ck) {}
   var kwEl = document.getElementById('hbCreatedKeyword');
   var box = document.getElementById('hbKeywordResult');
   if (kwEl) kwEl.textContent = keyword;
   if (box) box.style.display = 'block';
+  var kwPageWord = document.getElementById('kwKeyword');
+  var kwPageShare = document.getElementById('kwShareKeyword');
+  if (kwPageWord) kwPageWord.textContent = keyword;
+  if (kwPageShare) kwPageShare.textContent = keyword;
+  var kwBless = document.getElementById('kwBlessingText');
+  if (kwBless && message) kwBless.textContent = message;
+  var kwAmt = document.getElementById('kwAmtText');
+  if (kwAmt) kwAmt.textContent = amount + ' USDT';
 
   if (amtEl) amtEl.value = '';
   if (msgEl) msgEl.value = '';
