@@ -542,6 +542,17 @@ body {
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 .ww-balance-hide-btn[aria-pressed="true"] { border-color: rgba(200,168,75,0.5); color: var(--gold-light); background: rgba(200,168,75,0.1); }
+/* 浅色首页 header 为浅底，沿用深色半透明白边/白字会导致按钮几乎不可见 */
+[data-theme="light"] .ww-balance-hide-btn {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-dim);
+}
+[data-theme="light"] .ww-balance-hide-btn[aria-pressed="true"] {
+  border-color: rgba(184, 146, 42, 0.45);
+  color: var(--gold);
+  background: rgba(184, 146, 42, 0.12);
+}
 .ww-balance-hidden #totalBalanceDisplay,
 .ww-balance-hidden #totalBalanceSub,
 .ww-balance-hidden #homeBalanceChartWrap,
