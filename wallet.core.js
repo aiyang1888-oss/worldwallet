@@ -158,6 +158,7 @@ function loadWallet() {
   }
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
   try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
+  try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
 }
 
 async function createRealWallet(forcedWordCount) {
@@ -214,6 +215,7 @@ async function createRealWallet(forcedWordCount) {
   window.REAL_WALLET = w;
   saveWallet(w);
   applyReferralCredit();
+  try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
   return w;
 }
 

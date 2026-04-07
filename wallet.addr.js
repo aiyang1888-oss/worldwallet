@@ -1,5 +1,27 @@
 // wallet.addr.js — 地址系统：多语言/渲染/复制
 
+/** 万语地址初始化调试：initAddrWords 调用次数（仅日志） */
+var __wanYuInitAddrWordsCallCount = 0;
+/** 防止重复生成：已成功载入或生成 10 字 + 前后缀后设为 true */
+var __wanYuAddrInitialized = false;
+
+/** 优先 localStorage（避免页面占位符 38294651/92847361 覆盖已持久化的 8 位前后缀） */
+function _wanYuP8FromDomOrStorage(el, key, fallback8) {
+  try {
+    var ls = localStorage.getItem(key);
+    if (ls) {
+      var d = String(ls).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+      if (d.length === 8) return d;
+    }
+  } catch (e) {}
+  var t = '';
+  try {
+    if (el && el.textContent) t = String(el.textContent).replace(/\D/g, '');
+  } catch (e2) {}
+  if (t.length >= 8) return t.substring(0, 8);
+  return fallback8;
+}
+
 function updateRealAddr() {
   // 英语模式下更新地址显示为公链地址
   if(REAL_WALLET && REAL_WALLET.ethAddress) {
@@ -13,9 +35,11 @@ function updateRealAddr() {
 function updateAddr() {
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
   const isEn = currentLang==='en';
-  // 初始化万语地址（如果还没初始化）
-  if(ADDR_WORDS.length === 0) initAddrWords();
-  else renderAddrWords();
+  // 只经 ensureNativeAddrInitialized 统一初始化，不在此处重新 initAddrWords()
+  try {
+    if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
+  } catch (_e) {}
+  if (ADDR_WORDS.length > 0) renderAddrWords();
   // 获取完整万语地址
   const nativeAddr = getNativeAddr();
   const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
@@ -60,6 +84,168 @@ function randDigits(n) {
   let s = '';
   for(let i=0;i<n;i++) s += Math.floor(Math.random()*10);
   return s;
+}
+
+/** 万语地址持久化：刷新/切页后必须与首次生成一致 */
+function persistWanYuAddrToStorage() {
+  try {
+    if (typeof ADDR_WORDS === 'undefined' || !ADDR_WORDS.length) return;
+    var preEl = document.getElementById('addrPrefix');
+    var sufEl = document.getElementById('addrSuffix');
+    var prefix = (preEl && preEl.textContent || '').replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+    var suffix = (sufEl && sufEl.textContent || '').replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+    if (!preEl || prefix.replace(/0/g, '') === '') {
+      try {
+        var lp = localStorage.getItem('wallet_prefix');
+        if (lp) prefix = String(lp).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+      } catch (_p) {}
+    }
+    if (!sufEl || suffix.replace(/0/g, '') === '') {
+      try {
+        var ls = localStorage.getItem('wallet_suffix');
+        if (ls) suffix = String(ls).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+      } catch (_s) {}
+    }
+    var slots = ADDR_WORDS.map(function (w) {
+      return { word: w.word, lang: w.lang || 'zh', custom: !!w.custom };
+    });
+    var wordsJoin = ADDR_WORDS.map(function (w) { return w.word; }).join('');
+    var native = prefix + '-' + wordsJoin + '-' + suffix;
+    localStorage.setItem('wallet_native_addr', native);
+    localStorage.setItem('wallet_prefix', prefix);
+    localStorage.setItem('wallet_suffix', suffix);
+    localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
+    var roundTrip = localStorage.getItem('wallet_native_addr') === native;
+    console.log('[WanYuAddr] 保存地址到 localStorage:', {
+      wallet_native_addr: native,
+      wallet_prefix: prefix,
+      wallet_suffix: suffix,
+      wallet_addr_words: slots,
+      roundTripOk: roundTrip
+    });
+    if (!roundTrip) console.warn('[WanYuAddr] localStorage 回读与写入不一致');
+  } catch (e) {
+    console.error('[WanYuAddr] persistWanYuAddrToStorage 失败:', e);
+  }
+}
+
+function tryLoadWanYuAddrFromStorage() {
+  try {
+    if (typeof ADDR_WORDS === 'undefined') return false;
+    var prefix = localStorage.getItem('wallet_prefix');
+    var suffix = localStorage.getItem('wallet_suffix');
+    var wj = localStorage.getItem('wallet_addr_words');
+    var rawFull = localStorage.getItem('wallet_native_addr');
+    console.log('[WanYuAddr] 从 localStorage 读取地址:', {
+      prefix: prefix,
+      suffix: suffix,
+      words: wj,
+      wallet_native_addr: rawFull
+    });
+    if ((!prefix || !suffix) && rawFull && String(rawFull).indexOf('-') >= 0) {
+      var parts = String(rawFull).split('-');
+      if (parts.length === 3) {
+        prefix = prefix || String(parts[0]).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+        suffix = suffix || String(parts[2]).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+      }
+    }
+    if (!prefix || !suffix) return false;
+    prefix = String(prefix).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+    suffix = String(suffix).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
+    var parsed = null;
+    if (wj) {
+      try {
+        parsed = JSON.parse(wj);
+      } catch (parseErr) {
+        console.warn('[WanYuAddr] wallet_addr_words JSON.parse 失败:', parseErr);
+      }
+    }
+    if (!parsed || !Array.isArray(parsed) || parsed.length !== 10) {
+      if (rawFull && String(rawFull).indexOf('-') >= 0) {
+        var segs = String(rawFull).split('-');
+        if (segs.length === 3) {
+          var mid = segs[1] || '';
+          var chars = Array.from(mid);
+          if (chars.length === 10) {
+            ADDR_WORDS.length = 0;
+            for (var c = 0; c < 10; c++) {
+              ADDR_WORDS.push({ word: chars[c], lang: 'zh', custom: false });
+            }
+            var preEl2 = document.getElementById('addrPrefix');
+            var sufEl2 = document.getElementById('addrSuffix');
+            if (preEl2) preEl2.textContent = prefix;
+            if (sufEl2) sufEl2.textContent = suffix;
+            console.log('[WanYuAddr] 已从 wallet_native_addr 中段恢复 10 字');
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    ADDR_WORDS.length = 0;
+    for (var i = 0; i < 10; i++) {
+      var item = parsed[i];
+      if (typeof item === 'string') {
+        ADDR_WORDS.push({ word: item, lang: 'zh', custom: false });
+      } else if (item && typeof item.word === 'string') {
+        ADDR_WORDS.push({ word: item.word, lang: item.lang || 'zh', custom: !!item.custom });
+      } else {
+        ADDR_WORDS.length = 0;
+        return false;
+      }
+    }
+    var preEl = document.getElementById('addrPrefix');
+    var sufEl = document.getElementById('addrSuffix');
+    if (preEl) preEl.textContent = prefix;
+    if (sufEl) sufEl.textContent = suffix;
+    return true;
+  } catch (e) {
+    console.warn('[WanYuAddr] tryLoadWanYuAddrFromStorage 异常:', e);
+    return false;
+  }
+}
+
+function syncNativeAddrDisplaysToAllViews() {
+  setTimeout(function () {
+    const addr = getNativeAddr();
+    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
+    const qp1 = document.getElementById('qrPart1');
+    const qp2 = document.getElementById('qrPart2');
+    if (qp1) {
+      const prefix = document.getElementById('addrPrefix')?.textContent || '';
+      const suffix = document.getElementById('addrSuffix')?.textContent || '';
+      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span><span style="color:var(--text-muted);font-size:11px">-</span>`;
+      ADDR_WORDS.forEach(function (w) {
+        if (w.custom) {
+          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
+        } else {
+          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
+        }
+      });
+      html += `<span style="color:var(--text-muted);font-size:11px">-</span><span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
+      qp1.innerHTML = html;
+    }
+    if (qp2) qp2.style.display = 'none';
+    const qm = document.getElementById('qrAddrMain');
+    if (qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
+    const sa = document.getElementById('settingsAddr');
+    if (sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    const sfp1 = _safeEl('swooshFromPart1');
+    const sfp2 = _safeEl('swooshFromPart2');
+    if (sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    if (sfp2) sfp2.style.display = 'none';
+    const suc1 = _safeEl('successFromPart1');
+    const suc2 = _safeEl('successFromPart2');
+    if (suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    if (suc2) suc2.style.display = 'none';
+  }, 50);
+}
+
+/** 钱包就绪后调用：内存为空则从 localStorage 恢复或生成并落盘（只生成一次） */
+function ensureNativeAddrInitialized() {
+  if (typeof ADDR_WORDS === 'undefined') return;
+  if (ADDR_WORDS.length > 0) return;
+  initAddrWords();
 }
 
 // 万语地址中段：10 个随机汉字（每字独立抽取）；不使用 WW_WORDS_EXTRA 等地名词库
@@ -166,64 +352,42 @@ function renderHomeAddrChip() {
     chip.style.cssText = 'font-size:11px;letter-spacing:0.5px;color:#C8A84B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(100%,260px);text-align:center;display:block';
     return;
   }
-  var prefix = (document.getElementById('addrPrefix') && document.getElementById('addrPrefix').textContent || '38294651').replace(/\D/g, '').substring(0, 8);
-  var suffix = (document.getElementById('addrSuffix') && document.getElementById('addrSuffix').textContent || '92847361').replace(/\D/g, '').substring(0, 8);
+  var prefix = _wanYuP8FromDomOrStorage(document.getElementById('addrPrefix'), 'wallet_prefix', '38294651');
+  var suffix = _wanYuP8FromDomOrStorage(document.getElementById('addrSuffix'), 'wallet_suffix', '92847361');
   var midGold = ADDR_WORDS.length ? ADDR_WORDS.map(function(w) { return w.word; }).join('') : '';
   chip.innerHTML = '<span style="' + dimStyle + '">' + _wwEsc(prefix) + '</span><span style="' + dimStyle + '">-</span><span style="' + goldStyle + '">' + _wwEsc(midGold) + '</span><span style="' + dimStyle + '">-</span><span style="' + dimStyle + '">' + _wwEsc(suffix) + '</span>';
   chip.style.cssText = 'font-size:11px;letter-spacing:0.5px;color:#C8A84B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(100%,260px);text-align:center;display:block';
 }
 
 function initAddrWords() {
-  ADDR_WORDS.length = 0;
-  for(let i=0;i<10;i++) {
-    ADDR_WORDS.push({word: randWanYuZhChar(), lang: 'zh', custom: false});
+  __wanYuInitAddrWordsCallCount++;
+  console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
+    addrWordsLen: typeof ADDR_WORDS !== 'undefined' ? ADDR_WORDS.length : -1,
+    alreadyInit: __wanYuAddrInitialized
+  });
+  if (__wanYuAddrInitialized && ADDR_WORDS.length === 10) {
+    renderAddrWords();
+    return;
   }
-  // 随机前后缀
-  document.getElementById('addrPrefix').textContent = randDigits(8);
-  document.getElementById('addrSuffix').textContent = randDigits(8);
+  if (tryLoadWanYuAddrFromStorage()) {
+    __wanYuAddrInitialized = true;
+    renderAddrWords();
+    persistWanYuAddrToStorage();
+    syncNativeAddrDisplaysToAllViews();
+    return;
+  }
+  ADDR_WORDS.length = 0;
+  for (let i = 0; i < 10; i++) {
+    ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
+  }
+  var preEl = document.getElementById('addrPrefix');
+  var sufEl = document.getElementById('addrSuffix');
+  if (preEl) preEl.textContent = randDigits(8);
+  if (sufEl) sufEl.textContent = randDigits(8);
   renderAddrWords();
-  // 同步所有地方的地址显示（统一单行）
-  setTimeout(() => {
-    const addr = getNativeAddr();
-    // 统一样式：单行 + 居中
-    const ADDR_STYLE = 'font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;display:block';
-    // 首页芯片（中间段为 navigator 语言相关的 10 字/词，金色）
-    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
-    // QR大字（居中 + 高亮）
-    const qp1 = document.getElementById('qrPart1');
-    const qp2 = document.getElementById('qrPart2');
-    if(qp1) {
-      const prefix = document.getElementById('addrPrefix')?.textContent || '';
-      const suffix = document.getElementById('addrSuffix')?.textContent || '';
-      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span><span style="color:var(--text-muted);font-size:11px">-</span>`;
-      ADDR_WORDS.forEach(w => {
-        if(w.custom) {
-          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
-        } else {
-          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
-        }
-      });
-      html += `<span style="color:var(--text-muted);font-size:11px">-</span><span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
-      qp1.innerHTML = html;
-    }
-    if(qp2) qp2.style.display = 'none';
-    // QR弹窗
-    const qm = document.getElementById('qrAddrMain');
-    if(qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
-    // 设置页
-    const sa = document.getElementById('settingsAddr');
-    if(sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    // swoosh（单行居中）
-    const sfp1 = _safeEl('swooshFromPart1');
-    const sfp2 = _safeEl('swooshFromPart2');
-    if(sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(sfp2) sfp2.style.display = 'none';
-    // 成功页（单行居中）
-    const suc1 = _safeEl('successFromPart1');
-    const suc2 = _safeEl('successFromPart2');
-    if(suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(suc2) suc2.style.display = 'none';
-  }, 50);
+  persistWanYuAddrToStorage();
+  syncNativeAddrDisplaysToAllViews();
+  __wanYuAddrInitialized = true;
 }
 
 function renderAddrWords() {
@@ -291,6 +455,7 @@ function openWordEditor(idx) {
     ADDR_WORDS[idx] = {word: input.trim(), lang: w.lang, custom: true};
   }
   renderAddrWords();
+  persistWanYuAddrToStorage();
 }
 
 function copyHomeAddr() {
@@ -345,8 +510,16 @@ function editHomeAddr() {
 
 function getNativeAddr() {
   if(currentLang === 'en') return CHAIN_ADDR;
-  const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
-  const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
+  try {
+    var snap = localStorage.getItem('wallet_native_addr');
+    if (snap && String(snap).split('-').length === 3 && ADDR_WORDS.length === 10) {
+      var mid = String(snap).split('-')[1] || '';
+      var wj = ADDR_WORDS.map(function (w) { return w.word; }).join('');
+      if (mid === wj) return snap;
+    }
+  } catch (_e) {}
+  const prefix = _wanYuP8FromDomOrStorage(document.getElementById('addrPrefix'), 'wallet_prefix', '38294651');
+  const suffix = _wanYuP8FromDomOrStorage(document.getElementById('addrSuffix'), 'wallet_suffix', '92847361');
   const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
   return prefix + '-' + words + '-' + suffix;
 }

@@ -773,9 +773,6 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  if (pageId === 'page-home' && (!REAL_WALLET || !REAL_WALLET.ethAddress)) {
-    pageId = 'page-welcome';
-  }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
@@ -824,7 +821,16 @@ function goTo(pageId, opts) {
     }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} renderImportGrid(importGridWordCount || 12); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
+  if (pageId === 'page-password-restore') {
+    try {
+      var _pri = document.getElementById('pinRestorePageInput');
+      var _pre = document.getElementById('pageRestorePinError');
+      if (_pri) _pri.value = '';
+      if (_pre) { _pre.style.display = 'none'; _pre.textContent = 'PIN错误'; }
+      setTimeout(function () { try { if (_pri) _pri.focus(); } catch (_pf) {} }, 150);
+    } catch (_pr0) {}
+  }
+if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
@@ -3189,7 +3195,6 @@ function renderImportGrid(wordCount) {
   var badge = document.getElementById('importWordCountBadge');
   if (!grid) return;
   var n = [12,15,18,21,24].includes(Number(wordCount)) ? Number(wordCount) : 12;
-  importGridWordCount = n;
   var html = '';
   for (var i = 0; i < n; i++) {
     html += '<input class="import-word" data-index="'+i+'" type="text" autocomplete="off" spellcheck="false" placeholder="'+(i+1)+'" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box;text-align:center" oninput="syncImportPasteFromGrid()" />';
