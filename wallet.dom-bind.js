@@ -178,6 +178,15 @@
     bindInput('swapAmountIn', 'calcSwap', false);
     bindInput('importPaste', 'syncImportGrid', true);
 
+    var importGrid = document.getElementById('importGrid');
+    if (importGrid) {
+      importGrid.addEventListener('input', function (e) {
+        var t = e.target;
+        if (!t || !t.classList || !t.classList.contains('import-word')) return;
+        if (typeof window.syncImportPasteFromGrid === 'function') window.syncImportPasteFromGrid();
+      });
+    }
+
     bindKeydownEnter('claimInput', 'submitClaim');
     bindKeydownEnter('totpUnlockInput', 'submitTotpUnlock');
     bindKeydownEnter('totpSetupVerifyInput', 'confirmTotpSetup');

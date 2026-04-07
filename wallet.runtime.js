@@ -578,7 +578,7 @@ function wwHasPinConfigured() {
     var p = '';
     if (typeof Store !== 'undefined' && Store.getPin) p = Store.getPin();
     else {
-      p = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
+      p = (_pin || '') || localStorage.getItem('ww_unlock_pin') || '';
     }
     return !!(p && /^\d{6}$/.test(String(p)));
   } catch (e) { return false; }
@@ -587,7 +587,7 @@ function wwHasPinConfigured() {
   if (typeof savePinSecure !== 'function') return;
   try {
     if (localStorage.getItem('ww_pin_hash')) return;
-    var plain = localStorage.getItem('ww_unlock_pin') || localStorage.getItem('ww_pin');
+    var plain = localStorage.getItem('ww_unlock_pin') || (_pin || '');
     if (!plain || !/^\d{6}$/.test(String(plain))) return;
     savePinSecure(plain).then(function() {
       wwSetSessionPin(plain);
@@ -2550,6 +2550,7 @@ async function sendTRX(toAddr, amount) {
     throw new Error('TRON地址格式错误');
   }
   const amtSun = Math.floor(amount * 1e6);
+  if(!toAddr.match(/^T[a-zA-Z0-9]{33}$/)) { throw new Error('TRON地址格式错误'); }
   const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
   const signed = await tw.trx.sign(tx);
   const result = await tw.trx.sendRawTransaction(signed);
