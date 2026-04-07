@@ -6238,6 +6238,7 @@ function wwHideHbSuccessOverlay() {
     if (typeof promptWalletNotifications === 'function') window.promptWalletNotifications = promptWalletNotifications;
     if (typeof selectTransferCoin === 'function') window.selectTransferCoin = selectTransferCoin;
     if (typeof setSwapMax === 'function') window.setSwapMax = setSwapMax;
+    if (typeof setTransferMax === 'function') window.setTransferMax = setTransferMax;
     if (typeof showHbQR === 'function') window.showHbQR = showHbQR;
     if (typeof shareSuccess === 'function') window.shareSuccess = shareSuccess;
     if (typeof shareKw === 'function') window.shareKw = shareKw;
