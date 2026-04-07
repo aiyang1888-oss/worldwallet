@@ -978,11 +978,11 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) {}
   applySeoForPage(pageId);
-  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const activePage=document.getElementById(pageId);
   if(!activePage){safeLog('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
-  activePage.style.display='';
+  activePage.style.display='flex';
   var _tbGo = document.getElementById('tabBar');
   if (_tbGo) {
     if (pageId === 'page-home') {
