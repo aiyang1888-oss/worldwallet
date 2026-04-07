@@ -115,7 +115,8 @@ body {
   #page-import input[type="text"],
   #verifyQuestions input[type="text"],
   #page-transfer textarea,
-  #page-hongbao input#hbBlessing {
+  #page-hongbao input#hbBlessing,
+  #page-hongbao input#hbMessage {
     font-size: 16px !important;
   }
 }
