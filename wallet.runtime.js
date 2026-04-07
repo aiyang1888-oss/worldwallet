@@ -1637,7 +1637,19 @@ function renderKeyGrid() {
     d.className='key-word fade-up';
     d.style.animationDelay=i*0.04+'s';
     const isSmall = currentLang==='en';
-    d.innerHTML=`<div class="word-num">${String(i+1).padStart(2,'0')}</div><div class="word-val" style="font-size:${isSmall?'11px':'13px'}">${w}</div>`;
+    const line=document.createElement('div');
+    line.className='key-word-line';
+    const idx=document.createElement('span');
+    idx.className='word-idx';
+    idx.textContent=String(i+1).padStart(2,'0')+'.';
+    const val=document.createElement('span');
+    val.className='word-val';
+    val.textContent=w;
+    val.style.fontSize=isSmall?'11px':'13px';
+    line.appendChild(idx);
+    line.appendChild(document.createTextNode(' '));
+    line.appendChild(val);
+    d.appendChild(line);
     grid.appendChild(d);
   });
   if (REAL_WALLET) {
