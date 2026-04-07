@@ -69,7 +69,7 @@
       <div style="width:100%;flex-shrink:0;margin-top:28px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
           <button type="button" class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
-          <button type="button" class="btn-secondary" onclick="unlockWalletFromWelcome()" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
+          <button type="button" class="btn-secondary" onclick="goTo('page-password-restore')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
           <button type="button" class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">👤 导入已有钱包</button>
         </div>
       </div>
@@ -176,10 +176,10 @@
             </svg>
           </div>
         </div>
-        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span><button type="button" id="balanceHideToggle" class="ww-balance-hide-btn" aria-pressed="false" aria-label="隐藏余额" title="隐藏余额">👁</button></div>
+        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
-        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap">
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
           </div>
@@ -231,24 +231,6 @@
             <div class="asset-change up" id="chgUsdt">+0.01%</div>
           </div>
         </div>
-        <div class="asset-item" id="assetRowEth">
-          <div class="asset-icon" style="background:rgba(100,100,255,0.12)">🔷</div>
-          <div class="asset-info"><div class="asset-name">ETH</div><div class="asset-chain">Ethereum</div></div>
-          <div class="asset-right">
-            <div class="asset-amount" id="balEth">--</div>
-            <div class="asset-value" id="valEth">$--</div>
-            <div class="asset-change up" id="chgEth">+2.4%</div>
-          </div>
-        </div>
-        <div class="asset-item" id="btcAssetRow" class="u5">
-          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
-          <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
-          <div class="asset-right">
-            <div class="asset-amount" id="balBtc">--</div>
-            <div class="asset-value" id="valBtc">$--</div>
-            <div class="asset-change up" id="chgBtc">+1.2%</div>
-          </div>
-        </div>
 
       </div>
 
@@ -289,7 +271,9 @@
           <div style="width:100%;text-align:center;margin-bottom:6px;padding:10px 0">
             <div id="addrOneLine" style="display:inline-flex;align-items:center;justify-content:center;gap:3px">
               <span id="addrPrefix" style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0">38294651</span>
+              <span style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0" aria-hidden="true">-</span>
               <span id="addrWords" style="display:inline-flex;align-items:center"></span>
+              <span style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0" aria-hidden="true">-</span>
               <span id="addrSuffix" style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0">92847361</span>
             </div>
             
@@ -450,7 +434,7 @@
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTab('tab-home')" role="button" tabindex="0" aria-label="返回资产" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back"></div>
         <div class="nav-title">设置</div>
       </div>
       <div class="u14">

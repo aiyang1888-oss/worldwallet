@@ -542,22 +542,38 @@ function applyOfflineState() {
   } catch (e2) {}
 }
 
-/** 首页铃铛：请求浏览器通知权限（wallet.html 未加载 wallet.runtime.js 时需在此提供） */
-function promptWalletNotifications() {
+/**
+ * 欢迎页「PIN 解锁钱包」：本机已有钱包且已设 6 位 PIN 时弹出解锁层，验证通过后进入首页。
+ */
+function unlockWalletFromWelcome() {
+  var hasWallet = false;
   try {
-    if (typeof Notification === 'undefined') {
-      if (typeof showToast === 'function') showToast('当前环境不支持通知', 'info', 2500);
-      else alert('当前环境不支持通知');
-      return;
-    }
-    Notification.requestPermission().then(function (p) {
-      try {
-        localStorage.setItem('ww_push_asked', '1');
-      } catch (e) {}
-      var msg = p === 'granted' ? '已开启通知' : '通知权限：' + p;
-      if (typeof showToast === 'function') showToast(msg, 'info', 2500);
-    });
-  } catch (e) {}
+    var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+    hasWallet = !!(_d && _d.ethAddress);
+  } catch (_e) {
+    hasWallet = false;
+  }
+  if (!hasWallet) {
+    if (typeof showToast === 'function') showToast('未找到本机钱包，请先创建或导入', 'warning');
+    return;
+  }
+  var pin = '';
+  try {
+    pin = localStorage.getItem('ww_pin') || '';
+  } catch (_e2) {
+    pin = '';
+  }
+  if (!pin || !/^\d{6}$/.test(pin)) {
+    if (typeof showToast === 'function') showToast('尚未设置 PIN，请先创建或导入钱包并完成 PIN 设置', 'info');
+    return;
+  }
+  try {
+    if (typeof loadWallet === 'function') loadWallet();
+  } catch (_lw) {}
+  try {
+    window._wwForceIdleLock = false;
+  } catch (_fl) {}
+  if (typeof continueAfterPinCheck === 'function') continueAfterPinCheck();
 }
 
 function wwBase32Encode(buf) {

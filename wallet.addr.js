@@ -21,21 +21,21 @@ function updateAddr() {
   const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
   // 首页芯片（中间段金色随机展示，见 renderHomeAddrChip）
   if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
-  // QR 二维码区大字显示
+  // QR 二维码区大字显示（万语规范：8数字-10汉字-8数字，单行展示）
   const qp1 = document.getElementById('qrPart1');
   const qp2 = document.getElementById('qrPart2');
-  if(qp1 && !isEn) { qp1.textContent = nativeAddr.substring(0,10); qp1.style.fontSize='14px'; qp1.style.letterSpacing='1px'; }
-  if(qp2 && !isEn) { qp2.textContent = nativeAddr.substring(10); qp2.style.fontSize='12px'; }
+  if(qp1 && !isEn) { qp1.textContent = nativeAddr; qp1.style.fontSize='12px'; qp1.style.letterSpacing='0'; }
+  if(qp2 && !isEn) qp2.style.display = 'none';
   // swoosh 转账动画
   const sfp1 = _safeEl('swooshFromPart1');
   const sfp2 = _safeEl('swooshFromPart2');
-  if(sfp1 && !isEn) { sfp1.textContent = nativeAddr.substring(0,8); sfp1.style.fontSize='12px'; sfp1.style.letterSpacing='1px'; }
-  if(sfp2 && !isEn) sfp2.textContent = nativeAddr.substring(8,18)+'...';
+  if(sfp1 && !isEn) { sfp1.textContent = nativeAddr; sfp1.style.fontSize='12px'; sfp1.style.letterSpacing='0'; }
+  if(sfp2 && !isEn) sfp2.style.display = 'none';
   // 转账成功页
   const suc1 = _safeEl('successFromPart1');
   const suc2 = _safeEl('successFromPart2');
-  if(suc1 && !isEn) { suc1.textContent = nativeAddr.substring(0,8); suc1.style.fontSize='12px'; }
-  if(suc2 && !isEn) suc2.textContent = nativeAddr.substring(8,18)+'...';
+  if(suc1 && !isEn) { suc1.textContent = nativeAddr; suc1.style.fontSize='12px'; }
+  if(suc2 && !isEn) suc2.style.display = 'none';
   // 地址页
   const m=_safeEl('addrMain');
   const n=(_safeEl('addrNum') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrNum fallback */;
@@ -60,6 +60,19 @@ function randDigits(n) {
   let s = '';
   for(let i=0;i<n;i++) s += Math.floor(Math.random()*10);
   return s;
+}
+
+// 万语地址中段：10 个随机汉字（每字独立抽取）；不使用 WW_WORDS_EXTRA 等地名词库
+// SINGLE_CHARS.zh 在 wallet.ui.js 中定义，此处仅作脚本解析顺序兜底
+var WW_ZH_ADDR_CHAR_FALLBACK =
+  '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪天地人和日月星斗甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥东南西北' +
+  '等的个多咕咚得到来更中一二三四五六七八九十百千万千大小国人心正开平安乐吉祥如意';
+
+function randWanYuZhChar() {
+  const pool = (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.zh && SINGLE_CHARS.zh.length)
+    ? SINGLE_CHARS.zh
+    : WW_ZH_ADDR_CHAR_FALLBACK;
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 function randWord(lang) {
@@ -137,11 +150,11 @@ function renderHomeAddrChip() {
   var chip = document.getElementById('homeAddrChip');
   if (!chip) return;
   var isEn = currentLang === 'en';
-  var seed = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') + '|' + ((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : ''));
-  var midGold = _wwGoldMiddleTenFromNavigator(seed);
   var goldStyle = 'color:#C8A84B;font-weight:700;letter-spacing:0.5px;';
   var dimStyle = 'color:rgba(255,255,255,0.45);font-size:10px;';
   if (isEn) {
+    var seed = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') + '|' + ((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : ''));
+    var midGold = _wwGoldMiddleTenFromNavigator(seed);
     var ca = String((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '--'));
     if (ca.length > 14 && ca !== '--') {
       var pre = ca.slice(0, 5);
@@ -155,15 +168,15 @@ function renderHomeAddrChip() {
   }
   var prefix = (document.getElementById('addrPrefix') && document.getElementById('addrPrefix').textContent || '38294651').replace(/\D/g, '').substring(0, 8);
   var suffix = (document.getElementById('addrSuffix') && document.getElementById('addrSuffix').textContent || '92847361').replace(/\D/g, '').substring(0, 8);
-  chip.innerHTML = '<span style="' + dimStyle + '">' + _wwEsc(prefix) + '</span><span style="' + goldStyle + '">' + _wwEsc(midGold) + '</span><span style="' + dimStyle + '">' + _wwEsc(suffix) + '</span>';
+  var midGold = ADDR_WORDS.length ? ADDR_WORDS.map(function(w) { return w.word; }).join('') : '';
+  chip.innerHTML = '<span style="' + dimStyle + '">' + _wwEsc(prefix) + '</span><span style="' + dimStyle + '">-</span><span style="' + goldStyle + '">' + _wwEsc(midGold) + '</span><span style="' + dimStyle + '">-</span><span style="' + dimStyle + '">' + _wwEsc(suffix) + '</span>';
   chip.style.cssText = 'font-size:11px;letter-spacing:0.5px;color:#C8A84B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(100%,260px);text-align:center;display:block';
 }
 
 function initAddrWords() {
   ADDR_WORDS.length = 0;
   for(let i=0;i<10;i++) {
-    const lang = randLang();
-    ADDR_WORDS.push({word: randWord(lang), lang, custom: false});
+    ADDR_WORDS.push({word: randWanYuZhChar(), lang: 'zh', custom: false});
   }
   // 随机前后缀
   document.getElementById('addrPrefix').textContent = randDigits(8);
@@ -182,7 +195,7 @@ function initAddrWords() {
     if(qp1) {
       const prefix = document.getElementById('addrPrefix')?.textContent || '';
       const suffix = document.getElementById('addrSuffix')?.textContent || '';
-      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
+      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span><span style="color:var(--text-muted);font-size:11px">-</span>`;
       ADDR_WORDS.forEach(w => {
         if(w.custom) {
           html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
@@ -190,7 +203,7 @@ function initAddrWords() {
           html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
         }
       });
-      html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
+      html += `<span style="color:var(--text-muted);font-size:11px">-</span><span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
       qp1.innerHTML = html;
     }
     if(qp2) qp2.style.display = 'none';
@@ -239,13 +252,13 @@ function renderAddrWords() {
   if(qp1 && ADDR_WORDS.length) {
     const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
     const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
+    let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span><span style="color:var(--text-muted);font-size:11px">-</span>`;
     ADDR_WORDS.forEach(w => {
       html += w.custom
         ? `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`
         : `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
     });
-    html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
+    html += `<span style="color:var(--text-muted);font-size:11px">-</span><span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
     qp1.innerHTML = html;
   }
 }
@@ -272,9 +285,8 @@ function openWordEditor(idx) {
   if(input === null) return; // 取消
 
   if(input.trim() === '') {
-    // 随机
-    const lang = randLang();
-    ADDR_WORDS[idx] = {word: randWord(lang), lang, custom: false};
+    // 随机一字（万语中段均为汉字单字池）
+    ADDR_WORDS[idx] = {word: randWanYuZhChar(), lang: 'zh', custom: false};
   } else {
     ADDR_WORDS[idx] = {word: input.trim(), lang: w.lang, custom: true};
   }
@@ -336,7 +348,7 @@ function getNativeAddr() {
   const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
   const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
   const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
-  return prefix + words + suffix;
+  return prefix + '-' + words + '-' + suffix;
 }
 
 function copyNative() {

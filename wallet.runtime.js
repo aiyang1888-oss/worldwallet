@@ -5636,7 +5636,7 @@ async function loadBalances() {
   if(btn) btn.textContent = '查询中...';
   
   // 更新标签为加载中
-  ['balUsdt','balEth','balBtc'].forEach(id => {
+  ['balUsdt'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.textContent = '...';
   });
@@ -5698,20 +5698,17 @@ async function loadBalances() {
     const trxUsd = trxBal * prices.trx;
     const ethUsd = ethBal * prices.eth;
     const btcUsd = btcBal * (prices.btc || 60000);
-    const total = usdtUsd + trxUsd + ethUsd + btcUsd;
+    const total = usdtUsd;
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
     set('valUsdt', fmtUsd(usdtUsd));
-    set('balEth', fmt(ethBal));
-    set('valEth', fmtUsd(ethUsd));
     // 更新涨跌幅（从 CoinGecko 获取）
     try {
-      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum&vs_currencies=usd&include_24hr_change=true');
+      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true');
       const d2 = await r2.json();
       const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
       if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
-      if(d2.ethereum?.usd_24h_change!==undefined) set('chgEth', fmtChg(d2.ethereum.usd_24h_change));
     } catch(e) {}
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
@@ -5729,20 +5726,12 @@ async function loadBalances() {
       .catch(()=>{});
   }
 
-    // BTC 显示
-    if(btcBal > 0) {
-      const btcRow = document.getElementById('btcAssetRow');
-      if(btcRow) btcRow.style.display = 'flex';
-      set('balBtc', btcBal.toFixed(6));
-      set('valBtc', fmtUsd(btcUsd));
-      COINS.forEach(c => { if(c.id==='btc') { c.bal = btcBal; c.price = prices.btc || 60000; } });
-    }
-
     // ── 同步 COINS 余额（兑换页使用）──
     COINS.forEach(coin => {
       if(coin.id === 'usdt') { coin.bal = usdtBal; coin.price = prices.usdt || 1; }
       else if(coin.id === 'trx') { coin.bal = trxBal; coin.price = prices.trx || 0.12; }
       else if(coin.id === 'eth') { coin.bal = ethBal; coin.price = prices.eth || 2500; }
+      else if(coin.id === 'btc') { coin.bal = btcBal; coin.price = prices.btc || 60000; }
     });
     renderSwapUI(); calcSwap();
     
@@ -5879,7 +5868,10 @@ function startVerify() {
         if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
       }
     }
-    const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    var _wlK = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(currentLang) : (currentLang === 'en' ? 'en' : 'zh');
+    const pool = (typeof WT_WORDLISTS !== 'undefined' && WT_WORDLISTS[_wlK] && WT_WORDLISTS[_wlK].length)
+      ? WT_WORDLISTS[_wlK]
+      : (SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh);
     const indices = [];
     while(indices.length < nPick) {
       const idx = Math.floor(Math.random() * pool.length);

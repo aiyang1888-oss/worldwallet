@@ -400,10 +400,19 @@ body {
 .nav-right { font-size: 13px; color: var(--gold); cursor: pointer; }
 
 /* ── 密钥页 ── */
-.key-content { padding: var(--page-pad-y, 16px) max(18px, var(--page-pad-x, 18px)); flex: 1; }
+.key-content {
+  padding: var(--page-pad-y, 16px) max(18px, var(--page-pad-x, 18px));
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .key-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 16px;
+  flex: 0 0 auto;
 }
 .key-word {
   background: var(--bg); border: 1px solid var(--border);
