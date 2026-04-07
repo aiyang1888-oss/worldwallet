@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0">
 <!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
 <meta name="wt-tron-api-key" content="">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldToken</title>
 <meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/USDT/BTC多链">
@@ -911,7 +911,26 @@
 </style>
 
     <!-- 代币授权管理页 -->
-    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 事件委托：监听所有 data-ww-fn 属性
+  document.addEventListener('click', function(e) {
+    const el = e.target.closest('[data-ww-fn]');
+    if (!el) return;
+
+    const fnName = el.getAttribute('data-ww-fn');
+    if (typeof window[fnName] === 'function') {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        window[fnName]();
+      } catch (err) {
+        console.error('[data-ww-fn]', fnName, err);
+      }
+    }
+  });
+});
+</script>
 
 </body>
 </html>
