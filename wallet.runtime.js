@@ -6356,7 +6356,7 @@ async function submitPageRestorePin() {
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
   if (!wwHasPinConfigured()) {
-    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
+    if (err) { err.textContent = '本机未保存 PIN，无法通过此方式解锁。请先创建或导入钱包，并在设置中设置 6 位 PIN。'; err.style.display = 'block'; }
     if (inp) inp.value = '';
     if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
     return;
