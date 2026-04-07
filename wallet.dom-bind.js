@@ -174,8 +174,10 @@
         ev.preventDefault();
         return;
       }
-      if (typeof window[fn] === 'function') window[fn]();
-      ev.preventDefault();
+      if (typeof window[fn] === 'function') {
+        window[fn]();
+        ev.preventDefault();
+      }
     }
   }
 
