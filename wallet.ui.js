@@ -767,13 +767,6 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  if (pageId === 'page-home') {
-    var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-    if (!rw || (!rw.ethAddress && !rw.trxAddress)) {
-      goTo('page-welcome');
-      return;
-    }
-  }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
@@ -791,8 +784,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      var _hasAddr = REAL_WALLET && (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress);
-      _tabBar.style.display = _hasAddr ? 'flex' : 'none';
+      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -2543,6 +2535,10 @@ function renderTxHistoryFromCache() {
     return;
   }
   el.innerHTML = filtered.map(function(tx) { return txHistoryRowHtml(tx); }).join('');
+  if (!el._wwTxHistoryDelegated && typeof wwTxHistoryRowOnClick === 'function') {
+    el._wwTxHistoryDelegated = true;
+    el.addEventListener('click', wwTxHistoryRowOnClick);
+  }
   try { if(typeof updateReputationSettingsRow==='function') updateReputationSettingsRow(); } catch(_rep2) {}
 }
 
@@ -3122,7 +3118,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress));
+      hasWallet = !!(_d && _d.ethAddress);
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');

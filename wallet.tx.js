@@ -541,6 +541,32 @@ function getTransferFeeSpeed() {
   return 'normal';
 }
 
+/** 防止交易列表 innerHTML 注入 */
+function wwEscapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function wwTxSanitizeColor(c) {
+  var s = String(c || '').trim();
+  if (/^#[0-9A-Fa-f]{3,8}$/.test(s)) return s;
+  return 'inherit';
+}
+function wwTxHistoryRowOnClick(ev) {
+  var t = ev.target;
+  var row = t && t.closest ? t.closest('.ww-tx-history-row') : null;
+  if (!row) return;
+  var coin = String(row.getAttribute('data-coin') || '').toLowerCase();
+  var hash = String(row.getAttribute('data-hash') || '');
+  if (!hash) return;
+  var base = coin === 'eth' ? 'https://etherscan.io/tx/' : 'https://tronscan.org/#/transaction/';
+  try {
+    window.open(base + encodeURIComponent(hash), '_blank', 'noopener,noreferrer');
+  } catch (e) {}
+}
+
 function txHistoryEmptyHtml() {
   const L = (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'zh';
   const M = {
@@ -562,21 +588,26 @@ function txHistoryEmptyHtml() {
 }
 
 function txHistoryRowHtml(tx) {
-  return `
-      <div onclick="window.open((tx.coin==='eth'?'https://etherscan.io/tx/':'https://tronscan.org/#/transaction/')+tx.hash,'_blank')"
-        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
-        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
-          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
-        </div>
-      </div>
-    `;
+  var addr = String(tx.addr || '');
+  var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
+  var coin = String(tx.coin || '');
+  var hash = String(tx.hash || '');
+  var col = wwTxSanitizeColor(tx.color);
+  return (
+    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + wwEscapeHtml(coin) + '" data-hash="' + wwEscapeHtml(hash) + '"' +
+    ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"' +
+    ' onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">' +
+    '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + wwEscapeHtml(tx.icon) + '</div>' +
+    '<div style="flex:1;min-width:0">' +
+    '<div style="font-size:13px;font-weight:600;color:var(--text)">' + wwEscapeHtml(tx.type) + ' ' + wwEscapeHtml(tx.coin) + '</div>' +
+    '<div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + wwEscapeHtml(addrLine) + '</div>' +
+    '</div>' +
+    '<div style="text-align:right;flex-shrink:0">' +
+    '<div style="font-size:14px;font-weight:700;color:' + col + '">' + wwEscapeHtml(tx.amount) + '</div>' +
+    '<div style="font-size:10px;color:var(--text-muted)">' + wwEscapeHtml(tx.time) + '</div>' +
+    '</div>' +
+    '</div>'
+  );
 }
 
 function txHistoryFriendlyHtml(icon, title, hint) {
