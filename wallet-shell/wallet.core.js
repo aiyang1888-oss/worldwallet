@@ -594,7 +594,22 @@ async function confirmTotpSetup() {
   if (!sec) { showToast('会话已过期，请重试', 'error'); return; }
   const ok = await wwVerifyTotpCode(sec, input);
   if (!ok) { showToast('验证码不正确', 'error'); return; }
-  localStorage.setItem('ww_totp_secret', sec);
+  try {
+    if (typeof encryptTotpSecret === 'function' && typeof wwGetSessionPin === 'function') {
+      const pin = wwGetSessionPin();
+      if (pin) {
+        localStorage.setItem('ww_totp_secret', await encryptTotpSecret(sec, pin));
+      } else {
+        localStorage.setItem('ww_totp_secret', sec);
+      }
+    } else {
+      localStorage.setItem('ww_totp_secret', sec);
+    }
+  } catch (e) {
+    console.error('[TOTP]', e);
+    showToast('保存失败', 'error');
+    return;
+  }
   localStorage.setItem('ww_totp_enabled', '1');
   window._wwTotpPendingSecret = null;
   closeTotpSetup();

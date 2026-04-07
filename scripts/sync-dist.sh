@@ -8,6 +8,9 @@ DIST_DIR="$ROOT_DIR/dist"
 echo "🔄 同步 wallet-shell → dist/"
 
 # 复制核心文件
+mkdir -p "$DIST_DIR/js" "$DIST_DIR/core"
+cp "$SHELL_DIR/js/api-config.js" "$DIST_DIR/js/" 2>/dev/null || true
+cp "$SHELL_DIR/core/"*.js "$DIST_DIR/core/" 2>/dev/null || true
 cp "$SHELL_DIR/index.html" "$DIST_DIR/wallet.html"
 cp "$SHELL_DIR/wallet.css" "$DIST_DIR/"
 cp "$SHELL_DIR/wallet.core.js" "$DIST_DIR/"

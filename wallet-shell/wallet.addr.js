@@ -376,7 +376,7 @@ function initAddrWords() {
       __wanYuAddrInitialized = true;
       renderAddrWords();
       persistWanYuAddrToStorage();
-      syncNativeAddrDisplaysToAllViews();
+      try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u) {}
       return;
     }
     ADDR_WORDS.length = 0;
@@ -389,7 +389,7 @@ function initAddrWords() {
     if (sufEl) sufEl.textContent = randDigits(8);
     renderAddrWords();
     persistWanYuAddrToStorage();
-    syncNativeAddrDisplaysToAllViews();
+    try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u2) {}
     __wanYuAddrInitialized = true;
   } finally {
     __wanYuInitLock = false;
@@ -399,31 +399,26 @@ function initAddrWords() {
 function renderAddrWords() {
   const container = document.getElementById('addrWords');
   if(!container) return;
-  // 确保 suffix/prefix 只含8位数字
   const pre = document.getElementById('addrPrefix');
   const suf = document.getElementById('addrSuffix');
   if(pre) pre.textContent = (pre.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
   if(suf) suf.textContent = (suf.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
-  // 每个字符等宽盒子，定制字金色高亮，随机字淡紫（DOM + textContent，避免 innerHTML XSS）
   container.innerHTML = '';
   ADDR_WORDS.forEach(w => {
     const span = document.createElement('span');
     span.textContent = w.word;
-    span.style.cssText = w.custom
+    span.style.cssText = w.custom 
       ? 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#f0d070;font-size:17px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)'
       : 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px';
     container.appendChild(span);
   });
-  // 同步 addrMain
-  const m = (_safeEl('addrMain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrMain fallback */;
+  const m = (_safeEl('addrMain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}});
   if(m) m.textContent = ADDR_WORDS.map(w=>w.word).join('');
-  // 同步 QR 高亮
   const qp1 = document.getElementById('qrPart1');
   if(qp1 && ADDR_WORDS.length) {
-    qp1.innerHTML = '';
     const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
     const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-
+    qp1.innerHTML = '';
     const preSpan = document.createElement('span');
     preSpan.textContent = prefix;
     preSpan.style.cssText = 'color:var(--text-muted);font-family:monospace;font-size:11px';
@@ -460,37 +455,30 @@ function openCustomizeAddr() {
 }
 
 function openWordEditor(idx) {
+  var slot = typeof idx === 'number' ? idx : parseInt(String(idx), 10);
+  if (slot !== slot || slot < 0 || slot > 9 || !ADDR_WORDS || ADDR_WORDS.length !== 10 || !ADDR_WORDS[slot]) {
+    console.warn('[WanYuAddr] openWordEditor: invalid index', idx);
+    return;
+  }
+  idx = slot;
   const w = ADDR_WORDS[idx];
   const info = LANG_INFO[w.lang] || {flag:'🌍', name:'?'};
-
-  // 弹出简单的 prompt 式选择
-  const langList = Object.keys(SAMPLE_KEYS).filter(l=>l!=='en').map(l=>{
-    const i = LANG_INFO[l]||{flag:'🌍',name:l};
-    return `${i.flag} ${i.name} (${l})`;
-  }).join('\n');
 
   const input = window.prompt(
     `第 ${idx+1} 个字（当前：${info.flag} "${w.word}"）\n\n输入新词（直接输入），或留空随机\n\n可用语言：${Object.entries(LANG_INFO).filter(([l])=>l!=='en').map(([l,i])=>i.flag+l).join(' ')}`,
     w.custom ? w.word : ''
   );
-
-  if(input === null) return; // 取消
-
+  if(input === null) return;
   const trimmed = input.trim();
-  if(trimmed === '') {
-    // 随机一字（万语中段均为汉字单字池）
-    ADDR_WORDS[idx] = {word: randWanYuZhChar(), lang: 'zh', custom: false};
-  } else {
-    if (trimmed.length > 4) {
-      alert('词长度必须在 1-4 个字符之间');
-      return;
-    }
-    if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff\u0600-\u06ff]+$/.test(trimmed)) {
-      alert('仅允许输入字符');
-      return;
-    }
-    ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
+  if (trimmed.length === 0 || trimmed.length > 4) {
+    alert('词长度必须在 1-4 个字符之间');
+    return;
   }
+  if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff]+$/.test(trimmed)) {
+    alert('仅允许输入字符');
+    return;
+  }
+  ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
   renderAddrWords();
   persistWanYuAddrToStorage();
 }

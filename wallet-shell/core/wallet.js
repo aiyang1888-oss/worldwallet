@@ -10,9 +10,9 @@
  *   sendTx(chain, to, amount, privateKey) → 发送交易
  */
 
-// ── 配置 ──
-var TRON_GRID = 'https://api.trongrid.io';
-var ETH_RPC = 'https://rpc.ankr.com/eth';
+// ── 配置（TRON_GRID / ETH_RPC 由 js/api-config.js 注入，缺省时兜底）──
+if (typeof TRON_GRID === 'undefined') var TRON_GRID = 'https://api.trongrid.io';
+if (typeof ETH_RPC === 'undefined') var ETH_RPC = 'https://rpc.ankr.com/eth';
 var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 var ENTROPY_MAP = { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 };
 var DERIVE_PATHS = {
@@ -104,11 +104,15 @@ async function getBalance(addresses) {
 
   try {
     // 并发查询价格和余额
+    var trxUrl = TRON_GRID + '/v1/accounts/' + encodeURIComponent(addresses.trx || '');
+    var trxFetch = typeof wwFetchRetry === 'function'
+      ? wwFetchRetry(trxUrl, { method: 'GET' })
+      : fetch(trxUrl);
     var [priceData, trxData] = await Promise.all([
       fetch('https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD')
         .then(function(r) { return r.json(); }).catch(function() { return {}; }),
-      fetch(TRON_GRID + '/v1/accounts/' + addresses.trx)
-        .then(function(r) { return r.json(); }).catch(function() { return {}; })
+      trxFetch
+        .then(function(r) { if (!r || !r.ok) return {}; return r.json(); }).catch(function() { return {}; })
     ]);
 
     // 价格
@@ -129,7 +133,8 @@ async function getBalance(addresses) {
 
     // ETH 余额
     try {
-      var provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
+      var provider = typeof wwGetEthProvider === 'function' ? wwGetEthProvider() : new ethers.providers.JsonRpcProvider(ETH_RPC);
+      if (!provider) throw new Error('no eth provider');
       var ethBal = await provider.getBalance(addresses.eth);
       result.eth = parseFloat(ethers.utils.formatEther(ethBal));
     } catch (e) {}
@@ -175,7 +180,7 @@ async function sendTx(chain, to, amount, privateKey) {
 async function _sendTRX(to, amount, privateKey) {
   await _loadTronWeb();
   var pk = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
-  var tw = new TronWeb({ fullHost: TRON_GRID });
+  var tw = new TronWeb(typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID });
   tw.setPrivateKey(pk);
   var sun = Math.floor(amount * 1e6);
   var from = tw.address.fromPrivateKey(pk);
@@ -187,7 +192,7 @@ async function _sendTRX(to, amount, privateKey) {
 }
 
 async function _sendETH(to, amount, privateKey) {
-  var provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
+  var provider = typeof wwGetEthProvider === 'function' ? wwGetEthProvider() : new ethers.providers.JsonRpcProvider(ETH_RPC);
   var wallet = new ethers.Wallet(privateKey, provider);
   var tx = await wallet.sendTransaction({
     to: to,
@@ -200,7 +205,7 @@ async function _sendETH(to, amount, privateKey) {
 async function _sendUSDT(to, amount, privateKey) {
   await _loadTronWeb();
   var pk = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
-  var tw = new TronWeb({ fullHost: TRON_GRID });
+  var tw = new TronWeb(typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID });
   tw.setPrivateKey(pk);
   var sun = Math.floor(amount * 1e6);
   var from = tw.address.fromPrivateKey(pk);

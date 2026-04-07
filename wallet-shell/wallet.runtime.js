@@ -484,8 +484,19 @@ let importGridWordCount = 12;
 /** 会话 PIN（仅存内存，不读 localStorage 明文） */
 var _wwSessionPin = '';
 function wwGetSessionPin() { return _wwSessionPin || ''; }
-function wwSetSessionPin(p) { _wwSessionPin = p ? String(p) : ''; }
-function wwClearSessionPin() { _wwSessionPin = ''; }
+function wwSetSessionPin(p) {
+  _wwSessionPin = p ? String(p) : '';
+  clearTimeout(window._wwSessionPinTimeout);
+  window._wwSessionPinTimeout = setTimeout(function() {
+    _wwSessionPin = '';
+    console.log('[SessionPin] 会话 PIN 已自动清除');
+  }, 15 * 60 * 1000);
+}
+function wwClearSessionPin() {
+  clearTimeout(window._wwSessionPinTimeout);
+  window._wwSessionPinTimeout = null;
+  _wwSessionPin = '';
+}
 /** 是否已配置 PIN（hash 标志，非 PIN 明文） */
 function wwHasPinConfigured() {
   try {
@@ -566,6 +577,44 @@ async function decryptWithPin(bundle, pin) {
     { name: 'AES-GCM', iv }, key, data
   );
   return new TextDecoder().decode(decrypted);
+}
+
+async function encryptTotpSecret(sec, pin) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await deriveKeyFromPin(pin, salt);
+  const enc = new TextEncoder();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(sec)
+  );
+  const data = {
+    v: 1,
+    s: btoa(String.fromCharCode(...salt)),
+    iv: btoa(String.fromCharCode(...iv)),
+    c: btoa(String.fromCharCode(...new Uint8Array(ciphertext)))
+  };
+  return JSON.stringify(data);
+}
+
+async function decryptTotpSecret(encrypted, pin) {
+  try {
+    const data = JSON.parse(encrypted);
+    const salt = new Uint8Array(atob(data.s).split('').map(function(c) { return c.charCodeAt(0); }));
+    const iv = new Uint8Array(atob(data.iv).split('').map(function(c) { return c.charCodeAt(0); }));
+    const ct = new Uint8Array(atob(data.c).split('').map(function(c) { return c.charCodeAt(0); }));
+    const key = await deriveKeyFromPin(pin, salt);
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      ct
+    );
+    return new TextDecoder().decode(plaintext);
+  } catch (e) {
+    console.error('[TOTP decrypt failed]', e);
+    return null;
+  }
 }
 
 /**
@@ -1354,7 +1403,15 @@ async function confirmTotpSetup() {
   if (!sec) { showToast('会话已过期，请重试', 'error'); return; }
   const ok = await wwVerifyTotpCode(sec, input);
   if (!ok) { showToast('验证码不正确', 'error'); return; }
-  localStorage.setItem('ww_totp_secret', sec);
+  const pin = wwGetSessionPin();
+  if (!pin) { showToast('请先通过 PIN 解锁钱包', 'error'); return; }
+  try {
+    localStorage.setItem('ww_totp_secret', await encryptTotpSecret(sec, pin));
+  } catch (e) {
+    console.error('[TOTP encrypt]', e);
+    showToast('保存失败', 'error');
+    return;
+  }
   localStorage.setItem('ww_totp_enabled', '1');
   window._wwTotpPendingSecret = null;
   closeTotpSetup();
@@ -1373,17 +1430,50 @@ async function submitTotpUnlock() {
   const inp = document.getElementById('totpUnlockInput');
   const err = document.getElementById('totpUnlockError');
   const got = inp ? inp.value.trim() : '';
-  const sec = localStorage.getItem('ww_totp_secret');
-  if (!sec || !/^\d{6}$/.test(got)) {
+  if (!/^\d{6}$/.test(got)) {
+    if (err) err.textContent = '请输入 6 位数字';
     if (err) err.style.display = 'block';
     return;
   }
+  const encryptedSec = localStorage.getItem('ww_totp_secret');
+  if (!encryptedSec) {
+    if (err) err.textContent = 'TOTP 配置已丢失';
+    if (err) err.style.display = 'block';
+    return;
+  }
+  const pin = (typeof window._wwCurrentPin !== 'undefined' && window._wwCurrentPin) ? window._wwCurrentPin : wwGetSessionPin();
+  if (!pin) {
+    if (err) err.textContent = '请先通过 PIN 解锁钱包';
+    if (err) err.style.display = 'block';
+    return;
+  }
+  var sec = null;
+  try {
+    var parsed = JSON.parse(encryptedSec);
+    if (parsed && parsed.v === 1 && parsed.s && parsed.iv && parsed.c) {
+      sec = await decryptTotpSecret(encryptedSec, pin);
+      if (!sec) {
+        if (err) err.textContent = 'TOTP 解密失败';
+        if (err) err.style.display = 'block';
+        return;
+      }
+    } else {
+      sec = encryptedSec;
+    }
+  } catch (_e) {
+    sec = encryptedSec;
+  }
   const ok = await wwVerifyTotpCode(sec, got);
   if (!ok) {
+    if (err) err.textContent = '验证码不正确';
     if (err) err.style.display = 'block';
     if (inp) inp.value = '';
     const pan = document.getElementById('totpUnlockPanel');
-    if (pan) { pan.classList.remove('wt-shake-wrong'); void pan.offsetWidth; pan.classList.add('wt-shake-wrong'); }
+    if (pan) {
+      pan.classList.remove('wt-shake-wrong');
+      void pan.offsetWidth;
+      pan.classList.add('wt-shake-wrong');
+    }
     return;
   }
   const ov = document.getElementById('totpUnlockOverlay');
@@ -4805,23 +4895,35 @@ function filterTxHistoryList(txs, q) {
 }
 
 function txHistoryRowHtml(tx) {
+  const escapeHtml = function(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str || '');
+    return div.innerHTML;
+  };
   var addr = String(tx.addr || '');
   var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
   var coin = String(tx.coin || '');
   var hash = String(tx.hash || '');
+  const addrEscaped = escapeHtml(addrLine);
+  const amountEscaped = escapeHtml(tx.amount);
+  const typeEscaped = escapeHtml(tx.type);
+  const coinEscaped = escapeHtml(coin);
+  const iconEscaped = escapeHtml(tx.icon);
+  const timeEscaped = escapeHtml(tx.time);
+  const hashAttr = escapeHtml(hash);
+  const coinAttr = escapeHtml(coin);
   var col = (typeof wwTxSanitizeColor === 'function' ? wwTxSanitizeColor(tx.color) : 'inherit');
   return (
-    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + wwEscapeHtml(coin) + '" data-hash="' + wwEscapeHtml(hash) + '"' +
-    ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"' +
-    ' onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">' +
-    '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + wwEscapeHtml(tx.icon) + '</div>' +
+    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + coinAttr + '" data-hash="' + hashAttr + '"' +
+    ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s">' +
+    '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + iconEscaped + '</div>' +
     '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:13px;font-weight:600;color:var(--text)">' + wwEscapeHtml(tx.type) + ' ' + wwEscapeHtml(tx.coin) + '</div>' +
-    '<div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + wwEscapeHtml(addrLine) + '</div>' +
+    '<div style="font-size:13px;font-weight:600;color:var(--text)">' + typeEscaped + ' ' + coinEscaped + '</div>' +
+    '<div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + addrEscaped + '</div>' +
     '</div>' +
     '<div style="text-align:right;flex-shrink:0">' +
-    '<div style="font-size:14px;font-weight:700;color:' + col + '">' + wwEscapeHtml(tx.amount) + '</div>' +
-    '<div style="font-size:10px;color:var(--text-muted)">' + wwEscapeHtml(tx.time) + '</div>' +
+    '<div style="font-size:14px;font-weight:700;color:' + col + '">' + amountEscaped + '</div>' +
+    '<div style="font-size:10px;color:var(--text-muted)">' + timeEscaped + '</div>' +
     '</div>' +
     '</div>'
   );
@@ -4834,6 +4936,7 @@ function renderTxHistoryFromCache() {
   var inp = document.getElementById('txHistoryFilter');
   var q = inp ? inp.value : '';
   var filtered = filterTxHistoryList(txs, q);
+  el.innerHTML = '';
   if (txs.length === 0) {
     el.innerHTML = txHistoryEmptyHtml();
     return;
@@ -4842,7 +4945,12 @@ function renderTxHistoryFromCache() {
     el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-muted);font-size:12px;line-height:1.6">无匹配记录<br/><span style="font-size:11px;opacity:0.9">试试缩短关键词或清空搜索框</span></div>';
     return;
   }
-  el.innerHTML = filtered.map(function(tx) { return txHistoryRowHtml(tx); }).join('');
+  filtered.forEach(function(tx) {
+    var html = txHistoryRowHtml(tx);
+    var wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    if (wrap.firstChild) el.appendChild(wrap.firstChild);
+  });
   if (!el._wwTxHistoryDelegated && typeof wwTxHistoryRowOnClick === 'function') {
     el._wwTxHistoryDelegated = true;
     el.addEventListener('click', wwTxHistoryRowOnClick);
@@ -6358,4 +6466,17 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       setTimeout(function() { goTo(last); }, 50);
     }
   } catch(_) {}
+})();
+
+(function wwClearStaleServiceWorkerCaches() {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(r) { r.update(); });
+  });
+  if (typeof caches === 'undefined' || !caches.keys) return;
+  caches.keys().then(function(names) {
+    names.forEach(function(name) {
+      if (name !== 'worldtoken-v202604060428') caches.delete(name);
+    });
+  });
 })();

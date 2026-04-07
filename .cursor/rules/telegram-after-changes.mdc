@@ -1,0 +1,13 @@
+---
+description: Send Telegram notification after substantive code edits (when user has bot configured)
+alwaysApply: true
+---
+
+# Telegram 修改通知
+
+当在本仓库完成**实质性代码或配置修改**（非纯注释/排版）后：
+
+1. 在仓库根目录执行（将引号内改为本次改动的一句话说明）：
+   `bash scripts/telegram-notify-working.sh "改动说明"`
+2. 若用户尚未配置机器人，该命令会失败；此时不要反复重试，在回复中说明需在 `.env` 中配置 `TELEGRAM_BOT_TOKEN` 与 `TELEGRAM_CHAT_ID`（见 `.env.example`）。
+3. 用户已安装 `scripts/install-telegram-git-hook.sh` 时，**提交**后会自动再发一条提交摘要；工作区通知与提交通知互补，不冲突。

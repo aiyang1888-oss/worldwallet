@@ -5,6 +5,12 @@ html {
   text-size-adjust: 100%;
 }
 
+/* 万语地址就绪前隐藏占位符，避免 38294651/92847361 与持久化数据切换闪烁 */
+html.ww-addr-pending #homeAddrChip,
+html.ww-addr-pending #addrOneLine {
+  visibility: hidden;
+}
+
 :root {
   /* —— Brand —— */
   --gold: #e4c56c;
@@ -1153,3 +1159,6 @@ body {
   padding: 16px 16px 6px;
   font-weight: 600;
 }
+
+.ww-tx-history-row { transition: opacity 0.2s; }
+.ww-tx-history-row:hover { opacity: 0.8; }

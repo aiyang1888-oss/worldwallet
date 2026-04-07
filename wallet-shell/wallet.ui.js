@@ -2526,6 +2526,7 @@ function renderTxHistoryFromCache() {
   var inp = document.getElementById('txHistoryFilter');
   var q = inp ? inp.value : '';
   var filtered = filterTxHistoryList(txs, q);
+  el.innerHTML = '';
   if (txs.length === 0) {
     el.innerHTML = txHistoryEmptyHtml();
     return;
@@ -2534,7 +2535,12 @@ function renderTxHistoryFromCache() {
     el.innerHTML = '<div style="text-align:center;padding:18px;color:var(--text-muted);font-size:12px;line-height:1.6">无匹配记录<br/><span style="font-size:11px;opacity:0.9">试试缩短关键词或清空搜索框</span></div>';
     return;
   }
-  el.innerHTML = filtered.map(function(tx) { return txHistoryRowHtml(tx); }).join('');
+  filtered.forEach(function(tx) {
+    var html = txHistoryRowHtml(tx);
+    var wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    if (wrap.firstChild) el.appendChild(wrap.firstChild);
+  });
   if (!el._wwTxHistoryDelegated && typeof wwTxHistoryRowOnClick === 'function') {
     el._wwTxHistoryDelegated = true;
     el.addEventListener('click', wwTxHistoryRowOnClick);
