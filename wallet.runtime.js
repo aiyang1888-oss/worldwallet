@@ -722,28 +722,7 @@ async function saveWalletSecure(w, pin) {
   }
 }
 
-/**
- * 加载钱包（只加载公开信息到 REAL_WALLET）
- */
-function loadWalletPublic() {
-  try {
-    var d = localStorage.getItem('ww_wallet');
-    if (d) {
-      var parsed = JSON.parse(d);
-      // 只加载公开信息，不加载敏感数据
-      window.REAL_WALLET = {
-        ethAddress: parsed.ethAddress,
-        trxAddress: parsed.trxAddress,
-        btcAddress: parsed.btcAddress || '',
-        createdAt: parsed.createdAt,
-        backedUp: parsed.backedUp || false,
-        hasEncrypted: !!parsed.encrypted
-      };
-    }
-  } catch (e) {
-    console.error('[loadWalletPublic] error:', e);
-  }
-}
+/* loadWalletPublic 定义在 wallet.core.js（同步 REAL_WALLET / CHAIN_ADDR）；勿在此重复声明 */
 
 /**
  * 解密敏感数据（需要时调用，用完清除）
