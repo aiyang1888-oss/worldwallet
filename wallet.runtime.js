@@ -2485,7 +2485,13 @@ async function broadcastRealTransfer() {
       // USDT TRC-20 转账
       txHash = await sendUSDT_TRC20(addr, amt);
     } else if(coin === 'trx') {
-      // TRX 转账
+      // TRX 转账：加载 TronWeb 后用 isAddress 校验（优于纯正则）
+      await loadTronWeb();
+      if(typeof TronWeb !== 'undefined' && typeof TronWeb.isAddress === 'function') {
+        if(!TronWeb.isAddress(addr)) { showToast('TRON地址格式错误','error'); return false; }
+      } else if(!addr.match(/^T[a-zA-Z0-9]{33}$/)) {
+        showToast('TRON地址格式错误','error'); return false;
+      }
       txHash = await sendTRX(addr, amt);
     } else if(coin === 'eth') {
       // ETH 转账
@@ -2515,13 +2521,9 @@ async function sendUSDT_TRC20(toAddr, amount) {
   await loadTronWeb();
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  if(!Number.isFinite(amount) || amount<=0 || amount>1e8){throw new Error('金额范围错误');}
-  var _usdt6 = Number(amount).toFixed(6);
-  var _dot = _usdt6.indexOf('.');
-  var _ip = _dot < 0 ? _usdt6 : _usdt6.slice(0, _dot);
-  var _fp = _dot < 0 ? '000000' : (_usdt6.slice(_dot + 1) + '000000').slice(0, 6);
-  const amtSun = parseInt(_ip, 10) * 1000000 + parseInt(_fp, 10);
-  if(amtSun<=0 || amtSun>1e14 || !Number.isFinite(amtSun)){throw new Error('精度错误');}
+  if(!Number.isFinite(amount) || amount <= 0 || amount > 1e8) { throw new Error('金额范围错误'); }
+  const amtSun = Math.floor(amount * 1e6);
+  if(amtSun <= 0 || amtSun > 1e14) { throw new Error('精度错误'); }
   const tx = await tw.transactionBuilder.triggerSmartContract(
     USDT_TRC20,
     'transfer(address,uint256)',
@@ -2542,8 +2544,12 @@ async function sendTRX(toAddr, amount) {
   await loadTronWeb();
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
+  if(typeof TronWeb !== 'undefined' && typeof TronWeb.isAddress === 'function') {
+    if(!TronWeb.isAddress(toAddr)) { throw new Error('TRON地址格式错误'); }
+  } else if(!toAddr.match(/^T[a-zA-Z0-9]{33}$/)) {
+    throw new Error('TRON地址格式错误');
+  }
   const amtSun = Math.floor(amount * 1e6);
-  if(!toAddr.match(/^T[a-zA-Z0-9]{33}$/)){throw new Error('TRON地址格式错误');}
   const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
   const signed = await tw.trx.sign(tx);
   const result = await tw.trx.sendRawTransaction(signed);
