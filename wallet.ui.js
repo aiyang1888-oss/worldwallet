@@ -784,8 +784,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      var _rwOk = REAL_WALLET && (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress);
-      _tabBar.style.display = _rwOk ? 'flex' : 'none';
+      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -3119,7 +3118,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress || _d.encrypted));
+      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress));
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');

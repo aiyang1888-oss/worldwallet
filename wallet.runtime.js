@@ -486,13 +486,10 @@ var _wwSessionPin = '';
 function wwGetSessionPin() { return _wwSessionPin || ''; }
 function wwSetSessionPin(p) { _wwSessionPin = p ? String(p) : ''; }
 function wwClearSessionPin() { _wwSessionPin = ''; }
-/** 是否已配置 PIN（hash 标志、已迁移标志，或旧版明文 6 位 PIN） */
+/** 是否已配置 PIN（hash 标志，非 PIN 明文） */
 function wwHasPinConfigured() {
   try {
-    if (localStorage.getItem('ww_pin_hash')) return true;
-    if (localStorage.getItem('ww_pin_set') === '1') return true;
-    var plain = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
-    return !!(plain && /^\d{6}$/.test(String(plain)));
+    return !!(localStorage.getItem('ww_pin_hash') || localStorage.getItem('ww_pin_set') === '1');
   } catch (e) { return false; }
 }
 (function wwMigratePlainPinToHashOnce() {
@@ -6194,11 +6191,9 @@ async function submitPageRestorePin() {
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
   if (!wwHasPinConfigured()) {
-    if (err) {
-      err.textContent = '尚未设置 6 位 PIN。请先创建或导入钱包，并在「设置」中设置 PIN。';
-      err.style.display = 'block';
-    }
+    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
     if (inp) inp.value = '';
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
     return;
   }
   const got = inp ? String(inp.value).trim() : '';
