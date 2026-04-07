@@ -1,20 +1,20 @@
-# Round 1 修复报告 - 2026-04-07 22:04
+# Round 1 修复报告 - 2026-04-07
 
 ## 发现的问题
-- [P2] `createGift`（礼物页创建口令）未更新全局 `currentKeyword` 与 `#page-hb-keyword` 展示节点；`copyKw`/`shareKw`/`showHbQR` 由 `wallet.runtime.js` 实现且依赖 `currentKeyword`，导致在口令页复制/分享仍为默认演示口令而非新创建口令。
+- [P1] `broadcastRealTransfer` 中在 `transferAddr` / `transferAmount` 未挂载到 DOM 时直接访问 `.value`，可能抛错并中断转账流程（STEP 3：`getElementById` 后无 null 检查）。
 
 ## 修复内容
 - 文件：wallet.ui.js
-- 函数：createGift
-- 修改：创建成功后同步 `currentKeyword` 与 `kwKeyword`/`kwShareKeyword`/`kwBlessingText`/`kwAmtText`，与 runtime 礼物流程一致。
+- 函数：broadcastRealTransfer
+- 修改：在读取输入前先取得元素并做空值判断，失败时提示「转账表单未就绪」并返回 false。
 
 ## 修改文件
 - wallet.ui.js
 
 ## 剩余问题
-- 无
+- 无（本轮自动化 TEST-A/B/C 均通过；其他低优先级项未纳入本轮单点修复）
 
 ## 测试结果
-- TEST-A: PASS 全部 `data-ww-fn` 均在核心 JS 链中有对应 `function`/`window.*` 定义。
-- TEST-B: PASS 全部 `data-ww-go` 目标在 `wallet.html` 中存在 `id="page-*"`。
-- TEST-C: PASS 所列核心函数均有非空实现（`sendTransfer`/`claimGift`/`openSend` 为 runtime 中指向 `confirmTransfer`/`submitClaim`/`goHomeTransfer` 的别名；`openReceive` 为 `goTab('tab-addr')` 包装）。
+- TEST-A: PASS — `wallet.html` 中全部 `data-ww-fn` 均在核心 JS 中有对应 `function` / `window` 赋值定义。
+- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在同名 `id="page-*"`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均有非空实现或别名挂载。
