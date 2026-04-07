@@ -1,20 +1,20 @@
 # Round 1 修复报告 - 2026-04-07
 
 ## 发现的问题
-- [P1] 解锁流程 `_resumeWalletAfterUnlock` 进入首页前未强制与 `localStorage` 同步钱包公开状态，极端情况下 `REAL_WALLET` 与存储不一致会导致 `page-home` 误判或展示异常
+- [P1] `submitPageRestorePin` / `submitPinUnlock` 未将 PIN 规范为 6 位数字（与 `pinVerifyEnterWallet` 不一致），粘贴含空格或非数字字符时可能误判为 PIN 错误。
 
 ## 修复内容
 - 文件：wallet.runtime.js
-- 函数：_resumeWalletAfterUnlock
-- 修改：在函数开头调用 `loadWallet()`，与 `goTo('page-home')` 内既有补救逻辑一致，确保任一条链上地址可被正确识别
+- 函数：submitPageRestorePin, submitPinUnlock
+- 修改：使用与验证页相同的 `replace(/\D/g,'').slice(0,6)` 规范化输入；不足 6 位时提示「请输入 6 位数字 PIN」并触发抖动反馈。
 
 ## 修改文件
 - wallet.runtime.js
 
 ## 剩余问题
-- 无
+- 无（TEST-A/B/C 在本次扫描下均通过）
 
 ## 测试结果
-- TEST-A: PASS 全部 `data-ww-fn` 均在核心脚本中有 `async function` / `function` / `window.` 定义
-- TEST-B: PASS 全部 `data-ww-go` 均在 wallet.html 中存在对应 `id="page-*"`
-- TEST-C: PASS 所列核心函数（含别名 sendTransfer/claimGift/openSend/openReceive）均有非空实现
+- TEST-A: PASS — 所有 `data-ww-fn` 均在 `wwExposeDataWwFnHandlers` 中挂到 `window` 或由全局函数提供
+- TEST-B: PASS — 所有 `data-ww-go` 目标在 `wallet.html` 中均有对应 `id="page-*"`
+- TEST-C: PASS — goToPinConfirm、confirmPin、pinVerifyEnterWallet、shareSuccess、copyKw、shareKw、showHbQR、copyShareText、sendTransfer/claimGift/openSend/openReceive（别名）均有非空实现

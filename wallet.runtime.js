@@ -5983,7 +5983,12 @@ async function submitPageRestorePin() {
       return;
     }
   }
-  const got = inp ? String(inp.value).trim() : '';
+  const got = inp ? String(inp.value || '').replace(/\D/g, '').slice(0, 6) : '';
+  if (got.length !== 6) {
+    if (err) { err.textContent = '请输入 6 位数字 PIN'; err.style.display = 'block'; }
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+    return;
+  }
   var ok = typeof verifyPin === 'function' ? await verifyPin(got) : false;
   if (ok) {
     wwSetSessionPin(got);
@@ -6003,10 +6008,16 @@ async function submitPageRestorePin() {
 }
 async function submitPinUnlock() {
   const inp = document.getElementById('pinUnlockInput');
-  const got = inp ? inp.value.trim() : '';
+  const got = inp ? String(inp.value || '').replace(/\D/g, '').slice(0, 6) : '';
   const ov = document.getElementById('pinUnlockOverlay');
   const err = document.getElementById('pinUnlockError');
   const panel = document.getElementById('pinUnlockPanel');
+  if (got.length !== 6) {
+    if (err) { err.textContent = '请输入 6 位数字 PIN'; err.style.display = 'block'; }
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+    if (inp) inp.value = '';
+    return;
+  }
   var ok = typeof verifyPin === 'function' ? await verifyPin(got) : false;
   if (ok) {
     wwSetSessionPin(got);
