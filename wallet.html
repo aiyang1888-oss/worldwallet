@@ -1043,10 +1043,18 @@ document.addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
     try {
+      var ret;
       if (fnName === 'selectTransferCoin' && fnEl.hasAttribute('data-coin')) {
-        window[fnName](fnEl.getAttribute('data-coin'));
+        ret = window[fnName](fnEl.getAttribute('data-coin'));
       } else {
-        window[fnName](fnEl);
+        ret = window[fnName](fnEl);
+      }
+      if (ret != null && typeof ret.then === 'function' && typeof ret.catch === 'function') {
+        ret.catch(function (err) {
+          try {
+            safeLog('[data-ww-fn async] ' + fnName, err);
+          } catch (_e) {}
+        });
       }
     } catch (err) {
       safeLog('[data-ww-fn] ' + fnName, err);
