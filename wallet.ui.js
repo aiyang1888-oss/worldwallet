@@ -917,7 +917,9 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
     if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
-    if (REAL_WALLET && REAL_WALLET.ethAddress && typeof updateQRCode === 'function') setTimeout(updateQRCode, 250);
+    if (typeof updateQRCode === 'function' && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
+      setTimeout(updateQRCode, 250);
+    }
   }
   if(pageId==='page-transfer') {
     calcTransferFee();
