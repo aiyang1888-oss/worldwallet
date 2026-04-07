@@ -3793,8 +3793,10 @@ function openTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.add
 function closeTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.remove('show'); }
 
 async function doTransfer() {
-  const addr = document.getElementById('transferAddr').value.trim();
-  const amt = document.getElementById('transferAmount').value;
+  const ta = document.getElementById('transferAddr');
+  const amtInp = document.getElementById('transferAmount');
+  const addr = ta ? String(ta.value || '').trim() : '';
+  const amt = amtInp ? String(amtInp.value || '') : '';
   if(!addr) { showToast('❌ 请输入接收地址', 'error'); return; }
   if(!amt || parseFloat(amt) <= 0) { showToast('❌ 请输入有效金额', 'error'); return; }
   const amtNum = parseFloat(amt) || 0;
@@ -3811,11 +3813,16 @@ async function doTransfer() {
   }
   const fee = (amtNum*0.003).toFixed(2);
   const actual = (amtNum - amtNum*0.003).toFixed(2);
-  document.getElementById('confirmAmount').textContent = amt+' '+transferCoin.name;
-  document.getElementById('confirmRecipient').textContent = addr.length>20 ? addr.slice(0,20)+'...' : addr;
-  document.getElementById('confirmFee').textContent = fee+' '+transferCoin.name;
-  document.getElementById('confirmActual').textContent = actual+' '+transferCoin.name;
-  document.getElementById('confirmChain').textContent = transferCoin.chain;
+  var ca = document.getElementById('confirmAmount');
+  var cr = document.getElementById('confirmRecipient');
+  var cf = document.getElementById('confirmFee');
+  var cact = document.getElementById('confirmActual');
+  var cch = document.getElementById('confirmChain');
+  if (ca) ca.textContent = amt+' '+transferCoin.name;
+  if (cr) cr.textContent = addr.length>20 ? addr.slice(0,20)+'...' : addr;
+  if (cf) cf.textContent = fee+' '+transferCoin.name;
+  if (cact) cact.textContent = actual+' '+transferCoin.name;
+  if (cch) cch.textContent = transferCoin.chain;
   _safeEl('transferConfirmOverlay').classList.add('show');
 }
 
