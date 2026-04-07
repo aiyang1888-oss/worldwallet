@@ -847,6 +847,9 @@ body {
 /* 默认隐藏底栏；主 Tab 页除 goTo() 内联外，用 :has() 在对应 .page.active 时强制 flex，避免竞态导致底栏一直为 none。勿在 #tabBar 上复用 .u5 */
 #tabBar {
   display: none;
+  /* 高于 .overlay(100) / pin-setup(120)，避免全屏层叠上下文下误挡点击 */
+  z-index: 160;
+  pointer-events: auto;
 }
 .phone:has(#page-home.active) #tabBar,
 .phone:has(#page-addr.active) #tabBar,
@@ -865,6 +868,10 @@ body {
   flex: 1 1 0;
   min-width: 0;
   border-radius: 10px; transition: all 0.2s;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .tab-item.active { color: var(--gold); }
 .tab-icon {

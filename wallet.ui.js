@@ -1028,24 +1028,51 @@ function goTab(tabId) {
   if (tabEl) tabEl.classList.add('active');
   goTo(pageId);
 }
+try { window.goTab = goTab; } catch (_gt) {}
 
 /** 底栏：委托点击，避免 SVG/子节点上 inline onclick 在部分 WebView 中不触发 */
 function initTabBar() {
   var bar = document.getElementById('tabBar');
   if (!bar || bar.dataset.wwNavBound === '1') return;
   bar.dataset.wwNavBound = '1';
+  var _lastNav = 0;
+  var _lastNavId = '';
+  function resolveTabItem(ev) {
+    var raw = ev.target;
+    if (!raw) return null;
+    if (raw.nodeType !== 1) raw = raw.parentElement;
+    if (!raw || typeof raw.closest !== 'function') return null;
+    var item = raw.closest('.tab-item');
+    if (!item || !item.id || item.id.indexOf('tab-') !== 0) return null;
+    return item;
+  }
+  function handleNav(ev) {
+    var item = resolveTabItem(ev);
+    if (!item) return;
+    var now = Date.now();
+    if (item.id === _lastNavId && now - _lastNav < 380) return;
+    _lastNav = now;
+    _lastNavId = item.id;
+    ev.preventDefault();
+    ev.stopPropagation();
+    goTab(item.id);
+  }
+  bar.addEventListener('click', handleNav, true);
   bar.addEventListener(
-    'click',
+    'touchend',
     function (ev) {
-      var raw = ev.target;
-      if (!raw || !raw.closest) return;
-      var item = raw.closest('.tab-item');
-      if (!item || !item.id || item.id.indexOf('tab-') !== 0) return;
+      if (!ev.changedTouches || ev.changedTouches.length !== 1) return;
+      var item = resolveTabItem(ev);
+      if (!item) return;
+      var now = Date.now();
+      if (item.id === _lastNavId && now - _lastNav < 380) return;
+      _lastNav = now;
+      _lastNavId = item.id;
       ev.preventDefault();
       ev.stopPropagation();
       goTab(item.id);
     },
-    true,
+    { passive: false },
   );
 }
 function wwUpdateScrollTopBtn() {
