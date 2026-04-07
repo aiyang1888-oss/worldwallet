@@ -1,5 +1,7 @@
 // wallet.addr.js — 地址系统：多语言/渲染/复制
 
+var ADDR_WORDS = [];
+
 var __wanYuInitLock = false;
 
 /** 万语地址初始化调试：initAddrWords 调用次数（仅日志） */
