@@ -246,15 +246,38 @@ body {
   font-weight: 600;
 }
 
-#page-welcome {
+/* 欢迎页：抵消 .page 的 top:50px（模拟状态栏），背景顶满；真机仅用 safe-area，勿重复 50px */
+.page#page-welcome {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  margin-top: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  text-align: center !important;
   background:
     radial-gradient(ellipse 95% 75% at 50% -28%, rgba(228, 197, 108, 0.22) 0%, transparent 58%),
     radial-gradient(ellipse 55% 50% at 95% 85%, rgba(100, 80, 200, 0.09) 0%, transparent 52%),
     var(--bg) !important;
-  justify-content: flex-start !important;
-  margin-top: 0 !important;
-  /* 与状态栏下沿衔接；刘海屏仅用 safe-area，不用额外大块 padding */
-  padding-top: env(safe-area-inset-top, 0px) !important;
+}
+@media (min-width: 769px) {
+  .page#page-welcome {
+    top: 0 !important;
+    padding-top: calc(50px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 80px !important;
+    padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(20px, env(safe-area-inset-right, 0px)) !important;
+  }
+}
+@media (max-width: 768px) {
+  .page#page-welcome {
+    top: 0 !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-bottom: max(80px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(20px, env(safe-area-inset-right, 0px)) !important;
+  }
 }
 
 .home-header {
@@ -291,14 +314,7 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, rgba(248, 248, 252, 0.95) 100%) !important;
 }
 
-/* ── 欢迎页 ── */
-#page-welcome {
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,168,75,0.15) 0%, transparent 60%), var(--bg);
-  align-items: center;
-  padding: 16px 24px 14px;
-  text-align: center;
-  overflow: hidden;
-}
+/* ── 欢迎页（主样式见上方 .page#page-welcome） ── */
 #welcomeLangGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
