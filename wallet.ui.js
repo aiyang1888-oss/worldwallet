@@ -2288,9 +2288,13 @@ function submitClaim() {
     try {
       localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
     } catch (e2) {}
+    var _ca = document.getElementById('claimedAmount');
+    var _cm = document.getElementById('claimedMessage');
+    if (_ca) _ca.textContent = String(hb.amount) + ' USDT';
+    if (_cm) _cm.textContent = hb.message ? String(hb.message) : '礼物已入账，可在资产页查看余额。';
     showToast('✅ 领取成功 · ' + String(hb.amount) + ' USDT', 'success');
     if (inp) inp.value = '';
-    goTo('page-home');
+    goTo('page-claimed');
     return;
   }
 
@@ -2330,9 +2334,13 @@ function submitClaim() {
   allHb[kw] = hb;
   localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
 
+  var _ca2 = document.getElementById('claimedAmount');
+  var _cm2 = document.getElementById('claimedMessage');
+  if (_ca2) _ca2.textContent = String(amt) + ' USDT';
+  if (_cm2) _cm2.textContent = hb.message ? String(hb.message) : '礼物已入账，可在资产页查看余额。';
   showToast('✅ 领取成功 · ' + amt + ' USDT', 'success');
   if (inp) inp.value = '';
-  goTo('page-home');
+  goTo('page-claimed');
 }
 
 var hbCount = 5;
