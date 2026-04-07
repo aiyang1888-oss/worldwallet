@@ -1,53 +1,38 @@
-# Round 1 修复报告 - 2026-04-08
-
-## STEP 1 扫描摘要
-
-### data-ww-fn（41 个，去重后）
-createNewWallet, startVerify, checkVerify, goToPinConfirm, confirmPin, pinVerifyEnterWallet, promptWalletNotifications, copyHomeAddr, goHomeTransfer, loadTxHistory, copyNative, openCustomizeAddr, hideQR, doTransfer, closeTransferConfirm, confirmTransfer, shareSuccess, openPinSettingsDialog, wwOpenBackupFromSettings, deleteWalletRow, wwSwapRecordsToast, setSwapMax, doSwap, doImportWallet, createGift, copyHbCreatedKeyword, shareHbCreatedKeyword, copyKw, shareKw, showHbQR, copyShareText, submitClaim, pinUnlockBackspace, pinUnlockClear, closePinUnlock, submitTotpUnlock, closeTotpUnlock, confirmTotpSetup, closeTotpSetup, closePinSetupOverlay, wwHideHbSuccessOverlay
-
-### id="page-*"（21 个）
-page-welcome, page-password-restore, page-create, page-key, page-key-verify, page-pin-setup, page-pin-confirm, page-pin-verify, page-home, page-addr, page-transfer, page-swoosh, page-transfer-success, page-settings, page-swap, page-import, page-hongbao, page-hb-keyword, page-claim, page-claimed, page-hb-records, page-faq
-
-### data-ww-go 目标（12 个）
-page-create, page-password-restore, page-import, page-welcome, page-faq, page-key-verify, page-pin-setup, page-settings, page-home, page-claim, page-hb-records, page-hongbao — 均在 HTML 中存在对应 `id="page-…"`。
-
-### wallet.runtime.js / wallet.ui.js
-- 大量 `function X()` 与文件末尾 `window.X =` 显式绑定（runtime 内 `wwWireWindowHandlers` 等）。
-- **注意**：`goTo` / `goTab` / `_resumeWalletAfterUnlock` 等在两个文件中均有完整实现；因脚本顺序为 `wallet.ui.js` 先于 `wallet.runtime.js`，**运行时的全局 `goTo` 以 runtime 为准**（后者覆盖前者）。属 P3 维护风险，非当前功能错误。
-
-### wallet.css
-- 花括号计数：`{` 330、`}` 330，**平衡**。
-
----
+# Round 1 修复报告 - 2026-04-08 05:45
 
 ## 发现的问题
 
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大段重复的 `goTo` 等逻辑，长期可能造成双份修复遗漏；当前行为由后加载的 runtime 决定，自动化绑定测试未失败。
-
----
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 均含完整 `goTo`/`goTab` 等实现；加载顺序为 ui → addr → tx → runtime，**运行期以后加载的 runtime 为准**，存在长期双份维护漂移风险，但当前 TEST-A/B 未失败。
 
 ## 修复内容
 
-- 文件：无（本轮无需代码 patch）
+- 文件：无（STEP 5 未识别需改代码的 P0/P1/P2 阻塞项）
 - 函数：—
-- 修改：经 STEP 1–4 审查与 Node 脚本 TEST-A/B/C，未发现 P0–P2 阻塞项；仅新增本报告。
-
----
+- 修改：本轮仅刷新审计报告与测试结果；代码库无需 patch。
 
 ## 修改文件
 
 - `reports/round_1.md`
 
----
-
 ## 剩余问题
 
-- P3：`goTo` 双份实现可考虑未来合并为单文件来源，降低漂移风险。
-
----
+- P3：可考虑将导航相关逻辑收敛为单一来源，避免 ui/runtime 双份 `goTo` 长期不一致。
 
 ## 测试结果
 
-- TEST-A: PASS — 全部 `data-ww-fn` 在合并后的 `wallet.ui.js`+`wallet.runtime.js` 中可解析为 `window.*` 或 `function` 声明。
-- TEST-B: PASS — 全部 `data-ww-go` 目标均存在对应 `id="page-*"`。
-- TEST-C: PASS — `goToPinConfirm`, `confirmPin`, `pinVerifyEnterWallet`, `shareSuccess`, `copyKw`, `shareKw`, `showHbQR`, `copyShareText`, `sendTransfer`, `createGift`, `claimGift`, `openSend`, `openReceive` 函数体非空（含别名包装 `sendTransfer`/`claimGift`/`openSend`/`openReceive`）。
+- TEST-A: PASS — `wallet.html` 中 41 个去重后的 `data-ww-fn` 均在 `wallet.ui.js` / `wallet.addr.js` / `wallet.tx.js` / `wallet.runtime.js` 中解析为全局 `function` 声明；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 等对关键 handler 显式 `window.X =`。
+- TEST-B: PASS — 12 个 `data-ww-go` 目标均存在对应 `id="page-*"`（含 `page-password-restore`）。
+- TEST-C: PASS — `goToPinConfirm`, `confirmPin`, `pinVerifyEnterWallet`, `shareSuccess`, `copyKw`, `shareKw`, `showHbQR`, `copyShareText`, `sendTransfer`, `createGift`, `claimGift`, `openSend`, `openReceive` 均具非空函数体（含 runtime 中 `sendTransfer`/`claimGift`/`openSend`/`openReceive` 别名包装）。
+
+### STEP 1 摘要（扫描）
+
+| 类别 | 结果 |
+|------|------|
+| `data-ww-fn`（去重） | 41 个 |
+| `id="page-*"` | 21 个 |
+| `data-ww-go` 目标 | 12 个，均有对应页面 |
+| `wallet.css` `{` / `}` | 330 / 330，平衡 |
+
+---
+
+**结论**：全部自动化检查项通过 → 见下方输出标记。
