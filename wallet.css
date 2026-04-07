@@ -129,7 +129,8 @@ body {
   #page-password-restore input[type="password"],
   #pinUnlockInput,
   #totpUnlockInput,
-  #totpSetupVerifyInput {
+  #totpSetupVerifyInput,
+  #page-home #txHistoryFilter.home-tx-filter {
     font-size: 16px !important;
   }
 }
