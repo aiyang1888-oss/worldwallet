@@ -4,6 +4,8 @@
 var __wanYuInitAddrWordsCallCount = 0;
 /** 防止重复生成：已成功载入或生成 10 字 + 前后缀后设为 true */
 var __wanYuAddrInitialized = false;
+/** 防止 initAddrWords 重入（嵌套调用竞态） */
+var __wanYuInitLock = false;
 
 /** 优先 localStorage（避免页面占位符 38294651/92847361 覆盖已持久化的 8 位前后缀） */
 function _wanYuP8FromDomOrStorage(el, key, fallback8) {
@@ -40,19 +42,15 @@ function updateAddr() {
     if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
   } catch (_e) {}
   if (ADDR_WORDS.length > 0) renderAddrWords();
-  // 获取完整万语地址（所有展示位均派生自此 + ADDR_WORDS）
+  // 获取完整万语地址
   const nativeAddr = getNativeAddr();
   const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
   // 首页芯片（中间段金色随机展示，见 renderHomeAddrChip）
   if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
-  // QR 二维码区：10 字已由 renderAddrWords 写入 qp1 innerHTML，勿再用 textContent 覆盖
+  // QR 二维码区大字显示（万语规范：8数字-10汉字-8数字，单行展示）
   const qp1 = document.getElementById('qrPart1');
   const qp2 = document.getElementById('qrPart2');
-  if (qp1 && !isEn && ADDR_WORDS.length < 10) {
-    qp1.textContent = nativeAddr;
-    qp1.style.fontSize = '12px';
-    qp1.style.letterSpacing = '0';
-  }
+  if(qp1 && !isEn) { qp1.textContent = nativeAddr; qp1.style.fontSize='12px'; qp1.style.letterSpacing='0'; }
   if(qp2 && !isEn) qp2.style.display = 'none';
   // swoosh 转账动画
   const sfp1 = _safeEl('swooshFromPart1');
@@ -64,18 +62,12 @@ function updateAddr() {
   const suc2 = _safeEl('successFromPart2');
   if(suc1 && !isEn) { suc1.textContent = nativeAddr; suc1.style.fontSize='12px'; }
   if(suc2 && !isEn) suc2.style.display = 'none';
-  // 地址页（勿用示例 ADDR_SAMPLES 覆盖已初始化的万语中段）
+  // 地址页
   const m=_safeEl('addrMain');
   const n=(_safeEl('addrNum') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrNum fallback */;
-  if (m) {
-    if (!isEn && ADDR_WORDS.length === 10) {
-      m.textContent = ADDR_WORDS.map(function (w) { return w.word; }).join('');
-    } else {
-      m.textContent = isEn ? CHAIN_ADDR : a.main;
-    }
-  }
+  if(m) m.textContent = isEn ? CHAIN_ADDR : a.main;
   if(n) n.style.display = isEn?'none':'block';
-  if (n && !isEn) n.textContent = ADDR_WORDS.length === 10 ? '' : a.num;
+  if(n&&!isEn) n.textContent = a.num;
   // QR弹窗同步
   const qm=document.getElementById('qrAddrMain');
   if(qm) qm.textContent = isEn ? CHAIN_ADDR : nativeAddr;
@@ -215,6 +207,42 @@ function tryLoadWanYuAddrFromStorage() {
   }
 }
 
+function syncNativeAddrDisplaysToAllViews() {
+  setTimeout(function () {
+    const addr = getNativeAddr();
+    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
+    const qp1 = document.getElementById('qrPart1');
+    const qp2 = document.getElementById('qrPart2');
+    if (qp1) {
+      const prefix = document.getElementById('addrPrefix')?.textContent || '';
+      const suffix = document.getElementById('addrSuffix')?.textContent || '';
+      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span><span style="color:var(--text-muted);font-size:11px">-</span>`;
+      ADDR_WORDS.forEach(function (w) {
+        if (w.custom) {
+          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
+        } else {
+          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
+        }
+      });
+      html += `<span style="color:var(--text-muted);font-size:11px">-</span><span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
+      qp1.innerHTML = html;
+    }
+    if (qp2) qp2.style.display = 'none';
+    const qm = document.getElementById('qrAddrMain');
+    if (qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
+    const sa = document.getElementById('settingsAddr');
+    if (sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    const sfp1 = _safeEl('swooshFromPart1');
+    const sfp2 = _safeEl('swooshFromPart2');
+    if (sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    if (sfp2) sfp2.style.display = 'none';
+    const suc1 = _safeEl('successFromPart1');
+    const suc2 = _safeEl('successFromPart2');
+    if (suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
+    if (suc2) suc2.style.display = 'none';
+  }, 50);
+}
+
 /** 钱包就绪后调用：内存为空则从 localStorage 恢复或生成并落盘（只生成一次） */
 function ensureNativeAddrInitialized() {
   if (typeof ADDR_WORDS === 'undefined') return;
@@ -334,34 +362,40 @@ function renderHomeAddrChip() {
 }
 
 function initAddrWords() {
-  __wanYuInitAddrWordsCallCount++;
-  console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
-    addrWordsLen: typeof ADDR_WORDS !== 'undefined' ? ADDR_WORDS.length : -1,
-    alreadyInit: __wanYuAddrInitialized
-  });
-  if (__wanYuAddrInitialized && ADDR_WORDS.length === 10) {
-    renderAddrWords();
-    return;
-  }
-  if (tryLoadWanYuAddrFromStorage()) {
-    __wanYuAddrInitialized = true;
+  if (__wanYuInitLock) return;
+  __wanYuInitLock = true;
+  try {
+    __wanYuInitAddrWordsCallCount++;
+    console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
+      addrWordsLen: typeof ADDR_WORDS !== 'undefined' ? ADDR_WORDS.length : -1,
+      alreadyInit: __wanYuAddrInitialized
+    });
+    if (__wanYuAddrInitialized && ADDR_WORDS.length === 10) {
+      renderAddrWords();
+      return;
+    }
+    if (tryLoadWanYuAddrFromStorage()) {
+      __wanYuAddrInitialized = true;
+      renderAddrWords();
+      persistWanYuAddrToStorage();
+      syncNativeAddrDisplaysToAllViews();
+      return;
+    }
+    ADDR_WORDS.length = 0;
+    for (let i = 0; i < 10; i++) {
+      ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
+    }
+    var preEl = document.getElementById('addrPrefix');
+    var sufEl = document.getElementById('addrSuffix');
+    if (preEl) preEl.textContent = randDigits(8);
+    if (sufEl) sufEl.textContent = randDigits(8);
     renderAddrWords();
     persistWanYuAddrToStorage();
-    try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u) {}
-    return;
+    syncNativeAddrDisplaysToAllViews();
+    __wanYuAddrInitialized = true;
+  } finally {
+    __wanYuInitLock = false;
   }
-  ADDR_WORDS.length = 0;
-  for (let i = 0; i < 10; i++) {
-    ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
-  }
-  var preEl = document.getElementById('addrPrefix');
-  var sufEl = document.getElementById('addrSuffix');
-  if (preEl) preEl.textContent = randDigits(8);
-  if (sufEl) sufEl.textContent = randDigits(8);
-  renderAddrWords();
-  persistWanYuAddrToStorage();
-  try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u2) {}
-  __wanYuAddrInitialized = true;
 }
 
 function renderAddrWords() {
@@ -430,7 +464,6 @@ function openWordEditor(idx) {
   }
   renderAddrWords();
   persistWanYuAddrToStorage();
-  try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u3) {}
 }
 
 function copyHomeAddr() {
@@ -489,8 +522,14 @@ function getNativeAddr() {
     var snap = localStorage.getItem('wallet_native_addr');
     if (snap && String(snap).split('-').length === 3 && ADDR_WORDS.length === 10) {
       var mid = String(snap).split('-')[1] || '';
-      var wj = ADDR_WORDS.map(function (w) { return w.word; }).join('');
-      if (mid === wj) return snap;
+      var valid = true;
+      for (var j = 0; j < 10; j++) {
+        if (!ADDR_WORDS[j] || String(ADDR_WORDS[j].word) !== mid.charAt(j)) {
+          valid = false;
+          break;
+        }
+      }
+      if (valid) return snap;
     }
   } catch (_e) {}
   const prefix = _wanYuP8FromDomOrStorage(document.getElementById('addrPrefix'), 'wallet_prefix', '38294651');
