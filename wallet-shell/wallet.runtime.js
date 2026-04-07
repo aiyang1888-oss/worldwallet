@@ -309,32 +309,54 @@ function renderAddrWords() {
   const suf = document.getElementById('addrSuffix');
   if(pre) pre.textContent = (pre.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
   if(suf) suf.textContent = (suf.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
-  // 每个字符等宽盒子，定制字金色高亮，随机字淡紫
-  let html = '';
+  // 每个字符等宽盒子，定制字金色高亮，随机字淡紫（DOM + textContent，避免 innerHTML XSS）
+  container.innerHTML = '';
   ADDR_WORDS.forEach(w => {
-    if(w.custom) {
-      html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;color:#f0d070;font-size:17px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
-    } else {
-      html += `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px">${w.word}</span>`;
-    }
+    const span = document.createElement('span');
+    span.textContent = w.word;
+    span.style.cssText = w.custom
+      ? 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#f0d070;font-size:17px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)'
+      : 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px';
+    container.appendChild(span);
   });
-  container.innerHTML = html;
   // 同步 addrMain
   const m = (_safeEl('addrMain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrMain fallback */;
   if(m) m.textContent = ADDR_WORDS.map(w=>w.word).join('');
   // 同步 QR 高亮
   const qp1 = document.getElementById('qrPart1');
   if(qp1 && ADDR_WORDS.length) {
+    qp1.innerHTML = '';
     const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
     const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
+
+    const preSpan = document.createElement('span');
+    preSpan.textContent = prefix;
+    preSpan.style.cssText = 'color:var(--text-muted);font-family:monospace;font-size:11px';
+    qp1.appendChild(preSpan);
+
+    const dashSpan = document.createElement('span');
+    dashSpan.textContent = '-';
+    dashSpan.style.cssText = 'color:var(--text-muted);font-size:11px';
+    qp1.appendChild(dashSpan);
+
     ADDR_WORDS.forEach(w => {
-      html += w.custom
-        ? `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`
-        : `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
+      const span = document.createElement('span');
+      span.textContent = w.word;
+      span.style.cssText = w.custom
+        ? 'color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)'
+        : 'color:#8888bb;font-size:13px';
+      qp1.appendChild(span);
     });
-    html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
-    qp1.innerHTML = html;
+
+    const dashSpan2 = document.createElement('span');
+    dashSpan2.textContent = '-';
+    dashSpan2.style.cssText = 'color:var(--text-muted);font-size:11px';
+    qp1.appendChild(dashSpan2);
+
+    const sufSpan = document.createElement('span');
+    sufSpan.textContent = suffix;
+    sufSpan.style.cssText = 'color:var(--text-muted);font-family:monospace;font-size:11px';
+    qp1.appendChild(sufSpan);
   }
 }
 
@@ -359,12 +381,21 @@ function openWordEditor(idx) {
 
   if(input === null) return; // 取消
 
-  if(input.trim() === '') {
+  const trimmed = input.trim();
+  if(trimmed === '') {
     // 随机
     const lang = randLang();
     ADDR_WORDS[idx] = {word: randWord(lang), lang, custom: false};
   } else {
-    ADDR_WORDS[idx] = {word: input.trim(), lang: w.lang, custom: true};
+    if (trimmed.length > 4) {
+      alert('词长度必须在 1-4 个字符之间');
+      return;
+    }
+    if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff\u0600-\u06ff]+$/.test(trimmed)) {
+      alert('仅允许输入字符');
+      return;
+    }
+    ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
   }
   renderAddrWords();
 }
@@ -4541,7 +4572,11 @@ function syncImportGrid(text) {
   initImportGrid(targetLen);
   for(let i = 0; i < targetLen; i++) {
     const inp = document.getElementById('iw_' + i);
-    if(inp) inp.value = words[i] || '';
+    if(inp) {
+      let val = String(inp.value || '').trim();
+      if (val.length > 4) val = val.substring(0, 4);
+      inp.value = words[i] || val;
+    }
   }
   updateImportWordCount();
 }

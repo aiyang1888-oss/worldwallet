@@ -3194,7 +3194,11 @@ function syncImportGrid(text) {
   var targetCount = [12,15,18,21,24].includes(words.length) ? words.length : currentCount;
   if (currentCount !== targetCount && [12,15,18,21,24].includes(targetCount)) renderImportGrid(targetCount);
   var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
-  inputs.forEach(function(el, idx){ el.value = words[idx] || ''; });
+  inputs.forEach(function(el, idx){
+    var val = String(el.value || '').trim();
+    if (val.length > 4) val = val.substring(0, 4);
+    el.value = words[idx] || val;
+  });
   var badge = document.getElementById('importWordCountBadge');
   if (badge) badge.textContent = words.length + '/' + inputs.length;
 }
