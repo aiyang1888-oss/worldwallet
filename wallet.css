@@ -499,7 +499,7 @@ body {
 
 /* ── 首页 ── */
 .home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-left, 0px)) 22px max(18px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--border); }
-/* 「近7日总资产」标题行与万语地址条同一纵向组，消除中间空白 */
+/* 「近7日总资产」标题与万语地址同一组；保留少量呼吸间距（勿再贴死） */
 .home-chart-addr-tight {
   display: flex;
   flex-direction: column;
@@ -510,7 +510,7 @@ body {
   padding: 0;
 }
 #page-home .home-chart-addr-tight .home-balance-chart-head {
-  margin: 0 !important;
+  margin: 0 0 6px !important;
   padding: 0 2px !important;
   width: 100%;
   box-sizing: border-box;
