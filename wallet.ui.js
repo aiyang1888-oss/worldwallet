@@ -795,6 +795,9 @@ function goTo(pageId, opts) {
       _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
     }
     if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
+    else if (typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
+      pageId = 'page-pin-setup';
+    }
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _pwStore = null;
