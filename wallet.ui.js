@@ -427,9 +427,7 @@ var ADDR_SAMPLES = {
   ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
 };
 
-var CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--'
-// 如果有真实钱包，使用真实 TRX 地址
-;
+// TRX 公链地址：使用 wallet.addr.js 的 getTrxAddr()（勿使用页面加载时固化的常量）
 // ETH/BTC 地址动态读取（不用 const 硬编码）
 function getEthAddr() { return (REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : '--'; }
 function getBtcAddr() { return (REAL_WALLET && REAL_WALLET.btcAddress) ? REAL_WALLET.btcAddress : '--'; }
@@ -1132,7 +1130,7 @@ function updateQRDisplay() {
   const p2 = document.getElementById('qrPart2');
   if(!p1) return;
   if(isEn) {
-    p1.innerHTML = '<span style="color:var(--text-muted);font-size:11px">'+CHAIN_ADDR+'</span>';
+    p1.innerHTML = '<span style="color:var(--text-muted);font-size:11px">'+(typeof getTrxAddr==='function'?getTrxAddr():'--')+'</span>';
     if(p2) p2.style.display = 'none';
   } else {
     // 用万语地址，带高亮

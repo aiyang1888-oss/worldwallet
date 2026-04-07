@@ -1,5 +1,10 @@
 // wallet.addr.js — 地址系统：多语言/渲染/复制
 
+/** TRX 公链地址（随 REAL_WALLET 变化；勿使用页面加载时固化的常量） */
+function getTrxAddr() {
+  return (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
+}
+
 function updateRealAddr() {
   // 英语模式下更新地址显示为公链地址
   if(REAL_WALLET && REAL_WALLET.ethAddress) {
@@ -39,12 +44,12 @@ function updateAddr() {
   // 地址页
   const m=_safeEl('addrMain');
   const n=(_safeEl('addrNum') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrNum fallback */;
-  if(m) m.textContent = isEn ? CHAIN_ADDR : a.main;
+  if(m) m.textContent = isEn ? getTrxAddr() : a.main;
   if(n) n.style.display = isEn?'none':'block';
   if(n&&!isEn) n.textContent = a.num;
   // QR弹窗同步
   const qm=document.getElementById('qrAddrMain');
-  if(qm) qm.textContent = isEn ? CHAIN_ADDR : nativeAddr;
+  if(qm) qm.textContent = isEn ? getTrxAddr() : nativeAddr;
   // 二维码区语言标签（与系统语言 currentLang 一致）
   const langTag = document.getElementById('qrLangTag');
   const info = LANG_INFO[currentLang]||{flag:'🌍',name:'Mother'};
@@ -137,12 +142,12 @@ function renderHomeAddrChip() {
   var chip = document.getElementById('homeAddrChip');
   if (!chip) return;
   var isEn = currentLang === 'en';
-  var seed = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') + '|' + ((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : ''));
+  var seed = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') + '|' + ((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : getTrxAddr());
   var midGold = _wwGoldMiddleTenFromNavigator(seed);
   var goldStyle = 'color:#C8A84B;font-weight:700;letter-spacing:0.5px;';
   var dimStyle = 'color:rgba(255,255,255,0.45);font-size:10px;';
   if (isEn) {
-    var ca = String((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '--'));
+    var ca = String(getTrxAddr());
     if (ca.length > 14 && ca !== '--') {
       var pre = ca.slice(0, 5);
       var suf = ca.slice(-5);
@@ -332,7 +337,7 @@ function editHomeAddr() {
 }
 
 function getNativeAddr() {
-  if(currentLang === 'en') return CHAIN_ADDR;
+  if(currentLang === 'en') return getTrxAddr();
   const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
   const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
   const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
@@ -351,9 +356,9 @@ function copyBoth() {
   const isEn = currentLang === 'en';
   let text;
   if(isEn) {
-    text = `⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
+    text = `⛓️ 公链地址\nTRX: ${getTrxAddr()}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
   } else {
-    text = `🌍 万语地址\n${native}\n\n⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
+    text = `🌍 万语地址\n${native}\n\n⛓️ 公链地址\nTRX: ${getTrxAddr()}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
   }
   navigator.clipboard?.writeText(text).catch(()=>{});
   const btn=_safeEl('copyBothBtn');
@@ -468,8 +473,8 @@ function copyMnemonicAsCardImage(btn) {
 function copyQRAddr() {
   const native = getNativeAddr();
   const text = currentLang==='en'
-    ? '⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr()
-    : '🌍 万语地址\n'+native+'\n\n⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr();
+    ? '⛓️ 公链地址\nTRX: '+getTrxAddr()+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr()
+    : '🌍 万语地址\n'+native+'\n\n⛓️ 公链地址\nTRX: '+getTrxAddr()+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr();
   navigator.clipboard?.writeText(text).catch(()=>{});
   const btn = _safeEl('qrCopyBtn');
   if(btn) { btn.innerHTML='✅ 已复制'; setTimeout(()=>btn.innerHTML='📋 复制地址',1500); }
