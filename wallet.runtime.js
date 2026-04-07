@@ -6223,12 +6223,31 @@ async function changeMnemonicLength(n) {
 var verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  // 直接用 REAL_WALLET.words（由 renderKeyGrid 设置的当前显示词）
-  let words;
-  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
+  // 与 wallet.ui.js 一致：创建流程中词在 TEMP_WALLET；runtime 曾仅从 REAL_WALLET.words 读取，会导致随机演示词与密钥页不一致
+  let words = null;
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    if (window.TEMP_WALLET.words && window.TEMP_WALLET.words.length >= 12) {
+      words = window.TEMP_WALLET.words.slice();
+    } else {
+      words = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+    }
+  }
+  if ((!words || words.length < 12) && REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
     words = REAL_WALLET.words.slice();
-  } else {
-    // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
+  }
+  if ((!words || words.length < 12) && REAL_WALLET && REAL_WALLET.mnemonic) {
+    words = REAL_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+  }
+  if (!words || words.length < 12) {
+    var persistedHasAddr = false;
+    try {
+      var _stVer = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      persistedHasAddr = typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(_stVer);
+    } catch (_pv) {}
+    if (persistedHasAddr) {
+      if (typeof showToast === 'function') showToast('无法加载助记词，请返回密钥页重新生成后再验证', 'error');
+      return;
+    }
     var nPick = 12;
     if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
       nPick = currentMnemonicLength;
@@ -6239,20 +6258,43 @@ function startVerify() {
         if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
       }
     }
-    var _wlK = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(currentLang) : (currentLang === 'en' ? 'en' : 'zh');
+    var _wlK = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(keyMnemonicLang) : (keyMnemonicLang === 'en' ? 'en' : 'zh');
     const pool = (typeof WT_WORDLISTS !== 'undefined' && WT_WORDLISTS[_wlK] && WT_WORDLISTS[_wlK].length)
       ? WT_WORDLISTS[_wlK]
-      : (SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh);
+      : (SAMPLE_KEYS[keyMnemonicLang] || SAMPLE_KEYS.zh);
     const indices = [];
-    while(indices.length < nPick) {
+    while (indices.length < nPick) {
       const idx = Math.floor(Math.random() * pool.length);
-      if(!indices.includes(idx)) indices.push(idx);
+      if (!indices.includes(idx)) indices.push(idx);
     }
-    words = indices.map(i => pool[i]);
-    if(!REAL_WALLET) window.REAL_WALLET = {};
-    REAL_WALLET.words = words;
+    words = indices.map(function (i) { return pool[i]; });
+    if (!REAL_WALLET) REAL_WALLET = {};
     REAL_WALLET.mnemonic = words.join(' ');
+    REAL_WALLET.wordCount = words.length;
     saveWallet(REAL_WALLET);
+  }
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic && (window.TEMP_WALLET.eth || window.TEMP_WALLET.ethAddress)) {
+    var tw = window.TEMP_WALLET;
+    var nested = tw.eth && tw.eth.address;
+    REAL_WALLET = {
+      ethAddress: nested ? tw.eth.address : tw.ethAddress,
+      trxAddress: nested ? tw.trx.address : tw.trxAddress,
+      btcAddress: nested ? tw.btc.address : (tw.btcAddress || ''),
+      createdAt: tw.createdAt != null ? tw.createdAt : Date.now(),
+      mnemonic: tw.mnemonic,
+      wordCount: tw.wordCount || words.length,
+      privateKey: nested ? tw.eth.privateKey : tw.privateKey,
+      trxPrivateKey: nested ? tw.trx.privateKey : tw.trxPrivateKey,
+      enMnemonic: tw.mnemonic,
+      words: words.slice(),
+      addrMap: tw.addrMap || {
+        trx: nested ? tw.trx.address : tw.trxAddress,
+        eth: nested ? tw.eth.address : tw.ethAddress,
+        btc: nested ? tw.btc.address : (tw.btcAddress || '')
+      }
+    };
+    window.REAL_WALLET = REAL_WALLET;
+    if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   
