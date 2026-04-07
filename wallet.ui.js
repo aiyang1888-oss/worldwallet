@@ -3765,16 +3765,38 @@ function shareHbCreatedKeyword() {
   }
   var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(keyword);
   var text = 'WorldToken 礼物口令：' + keyword + ' 打开链接领取 ' + shareUrl;
+  var payload = { title: '礼物', text: text, url: shareUrl };
+  function copyShareText() {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        showToast('已复制分享内容', 'success');
+      }).catch(function () {
+        showToast('复制失败', 'error');
+      });
+    } else {
+      showToast('复制失败', 'error');
+    }
+  }
   if (navigator.share) {
-    navigator.share({ title: '礼物', text: text }).catch(function () {});
+    var mayShare = true;
+    try {
+      if (typeof navigator.canShare === 'function') {
+        mayShare = navigator.canShare(payload);
+      }
+    } catch (_e) {
+      mayShare = true;
+    }
+    if (!mayShare) {
+      copyShareText();
+      return;
+    }
+    navigator.share(payload).catch(function (err) {
+      if (err && err.name === 'AbortError') return;
+      copyShareText();
+    });
     return;
   }
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text);
-      showToast('已复制分享内容', 'success');
-    }
-  } catch (e) {}
+  copyShareText();
 }
 
 
