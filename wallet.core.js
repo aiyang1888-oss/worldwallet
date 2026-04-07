@@ -236,17 +236,19 @@ async function createRealWallet(forcedWordCount) {
   CHAIN_ADDR = w.trxAddress || '--';
   saveWallet(w);
   try {
-    window.TEMP_WALLET = {
-      mnemonic: w.mnemonic,
-      enMnemonic: w.enMnemonic,
-      words: w.words,
-      wordCount: w.words ? w.words.length : 12,
-      ethAddress: w.ethAddress,
-      trxAddress: w.trxAddress,
-      btcAddress: w.btcAddress,
-      addrMap: w.addrMap,
-      createdAt: w.createdAt
-    };
+    if (typeof wwSetTempWallet === 'function') {
+      wwSetTempWallet({
+        mnemonic: w.mnemonic,
+        enMnemonic: w.enMnemonic,
+        words: w.words,
+        wordCount: w.words ? w.words.length : 12,
+        ethAddress: w.ethAddress,
+        trxAddress: w.trxAddress,
+        btcAddress: w.btcAddress,
+        addrMap: w.addrMap,
+        createdAt: w.createdAt
+      });
+    }
   } catch (_tw) {}
   try {
     var pubCr = {

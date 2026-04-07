@@ -11,7 +11,7 @@
     if (obj == null || typeof obj !== 'object') return obj;
     try {
       if (typeof REAL_WALLET !== 'undefined' && obj === REAL_WALLET) return '[REAL_WALLET]';
-      if (typeof window !== 'undefined' && typeof TEMP_WALLET !== 'undefined' && obj === window.TEMP_WALLET) return '[TEMP_WALLET]';
+      if (typeof wwGetTempWallet === 'function' && obj === wwGetTempWallet()) return '[TEMP_WALLET]';
     } catch (e) {}
     try {
       var o = JSON.parse(JSON.stringify(obj));

@@ -6,6 +6,42 @@
 
 var WW_ENCRYPT_PAYLOAD_VERSION = 2;
 
+/** 创建流程中的临时钱包（不挂 window，避免控制台直接读取） */
+var __ww_temp_wallet = null;
+function wwGetTempWallet() {
+  return __ww_temp_wallet;
+}
+function wwSetTempWallet(w) {
+  __ww_temp_wallet = w;
+}
+
+/** 导入流程在设置 PIN 前的待持久化数据（仅内存；禁止写入 ww_import_pending 明文） */
+var __ww_import_pending = null;
+function wwPeekImportPending() {
+  return __ww_import_pending;
+}
+function wwSetImportPending(flat) {
+  __ww_import_pending = flat;
+}
+function wwTakeImportPending() {
+  var x = __ww_import_pending;
+  __ww_import_pending = null;
+  return x;
+}
+(function wwMigrateImportPendingFromStorageOnce() {
+  try {
+    var raw = localStorage.getItem('ww_import_pending');
+    if (!raw) return;
+    if (!__ww_import_pending) {
+      var o = JSON.parse(raw);
+      if (o && typeof o === 'object' && o.mnemonic) __ww_import_pending = o;
+    }
+    localStorage.removeItem('ww_import_pending');
+  } catch (e) {
+    try { localStorage.removeItem('ww_import_pending'); } catch (e2) {}
+  }
+})();
+
 function wwBytesToB64(u8) {
   var s = '';
   var chunk = 8192;
@@ -172,10 +208,6 @@ function getSessionKeys() {
   return { mnemonic: m };
 }
 
-function clearSessionKeys() {
-  wwClearSessionMnemonic();
-}
-
 function isSessionUnlocked() {
   return !!wwGetSessionMnemonic();
 }
@@ -192,10 +224,13 @@ function wwClearSensitiveSession() {
     }
   } catch (_rw) {}
   try {
-    if (window.TEMP_WALLET) {
-      try { delete window.TEMP_WALLET.mnemonic; } catch (_tm) {}
-      try { delete window.TEMP_WALLET.privateKey; } catch (_tp) {}
-      try { delete window.TEMP_WALLET.trxPrivateKey; } catch (_tt) {}
+    var _tw = wwGetTempWallet();
+    if (_tw) {
+      try { delete _tw.mnemonic; } catch (_tm) {}
+      try { delete _tw.enMnemonic; } catch (_te) {}
+      try { delete _tw.privateKey; } catch (_tp) {}
+      try { delete _tw.trxPrivateKey; } catch (_tt) {}
+      try { delete _tw.words; } catch (_tw2) {}
     }
   } catch (_tw) {}
 }
@@ -210,7 +245,8 @@ function wwSafeLog() {
   if (typeof safeLog === 'function') return safeLog.apply(null, arguments);
 }
 
-async function hashPin(pin) {
+/** 旧版全局盐 SHA-256，仅用于验证已存哈希与迁移 */
+async function hashPinLegacyGlobalSalt(pin) {
   var enc = new TextEncoder();
   var data = enc.encode(pin + 'ww_salt_v1_2026');
   var hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -218,9 +254,39 @@ async function hashPin(pin) {
   return hashArray.map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
 }
 
+async function hashPinPbkdf2PerUser(pin, saltBytes) {
+  var enc = new TextEncoder();
+  var material = await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits']);
+  var bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: saltBytes, iterations: 100000, hash: 'SHA-256' },
+    material,
+    256
+  );
+  return Array.from(new Uint8Array(bits)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+function wwParseStoredPinHash(stored) {
+  if (stored == null || stored === '') return { kind: 'empty' };
+  if (typeof stored === 'object' && stored && stored.v === 2 && stored.s && stored.h) {
+    return { kind: 'v2', s: stored.s, h: String(stored.h).toLowerCase() };
+  }
+  if (typeof stored === 'string') {
+    var t = stored.trim();
+    if (/^\{/.test(t)) {
+      try {
+        var o = JSON.parse(t);
+        if (o && o.v === 2 && o.s && o.h) return { kind: 'v2', s: o.s, h: String(o.h).toLowerCase() };
+      } catch (e) {}
+    }
+    if (/^[0-9a-f]{64}$/i.test(t)) return { kind: 'legacy_hex', h: t.toLowerCase() };
+  }
+  return { kind: 'unknown' };
+}
+
 async function verifyPin(pin) {
   var stored = Store.get('ww_pin_hash');
-  if (!stored) {
+  var parsed = wwParseStoredPinHash(stored);
+  if (parsed.kind === 'empty' || parsed.kind === 'unknown') {
     var oldPin = Store.getPin();
     if (oldPin) {
       await savePinSecure(oldPin);
@@ -228,13 +294,22 @@ async function verifyPin(pin) {
     }
     return false;
   }
-  var computed = await hashPin(pin);
-  return computed === stored;
+  if (parsed.kind === 'legacy_hex') {
+    var computedLegacy = await hashPinLegacyGlobalSalt(pin);
+    return computedLegacy === parsed.h;
+  }
+  if (parsed.kind === 'v2') {
+    var saltU8 = wwB64ToBytes(parsed.s);
+    var h = await hashPinPbkdf2PerUser(pin, saltU8);
+    return h === parsed.h;
+  }
+  return false;
 }
 
 async function savePinSecure(pin) {
-  var hash = await hashPin(pin);
-  Store.set('ww_pin_hash', hash);
+  var salt = crypto.getRandomValues(new Uint8Array(16));
+  var h = await hashPinPbkdf2PerUser(pin, salt);
+  Store.set('ww_pin_hash', { v: 2, s: wwBytesToB64(salt), h: h });
   Store.remove('ww_pin');
   Store.remove('ww_unlock_pin');
 }
@@ -271,13 +346,22 @@ async function decryptTotpSecret(encrypted, pin) {
 async function decryptWalletSensitive(pin) {
   try {
     var d = localStorage.getItem('ww_wallet');
-    if (!d) return null;
+    if (!d) return { ok: false, reason: 'no_wallet' };
     var parsed = JSON.parse(d);
-    if (!parsed.encrypted) return null;
-    var text = await decryptWithPin(parsed.encrypted, pin);
+    if (!parsed.encrypted) return { ok: false, reason: 'not_encrypted' };
+    var text;
+    try {
+      text = await decryptWithPin(parsed.encrypted, pin);
+    } catch (e) {
+      var msg = String((e && e.message) || e || '');
+      if (/WW_LEGACY_ARGON2ID_UNSUPPORTED|argon2id/i.test(msg)) return { ok: false, reason: 'unsupported_legacy' };
+      return { ok: false, reason: 'wrong_pin_or_corrupt' };
+    }
     var obj = JSON.parse(text);
-    return wwNormalizeDecryptedSensitive(obj);
+    var norm = wwNormalizeDecryptedSensitive(obj);
+    if (!norm) return { ok: false, reason: 'corrupt' };
+    return { ok: true, data: norm };
   } catch (e) {
-    return null;
+    return { ok: false, reason: 'unknown' };
   }
 }

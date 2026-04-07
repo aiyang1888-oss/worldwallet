@@ -3,7 +3,7 @@
 
 // ── 钱包状态 ──
 var REAL_WALLET = null;       // 当前钱包（公开信息 + 解锁后含私钥）
-var TEMP_WALLET = null;       // 创建中的临时钱包（仅内存）
+// 临时创建中钱包：见 core/security.js 的 wwGetTempWallet / wwSetTempWallet（勿挂 window）
 var currentMnemonicLength = 12;
 var currentLang = 'zh';       // 当前语言，由 detectDeviceLang() 设置
 var currentQRChain = 'native';

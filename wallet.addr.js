@@ -636,7 +636,8 @@ function copyBoth() {
 }
 
 function wwGetMnemonicForDisplayCopy() {
-  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) return String(window.TEMP_WALLET.mnemonic);
+  var _twx = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
+  if (_twx && _twx.mnemonic) return String(_twx.mnemonic);
   if (typeof wwGetSessionMnemonic === 'function') {
     var sm = wwGetSessionMnemonic();
     if (sm) return String(sm);

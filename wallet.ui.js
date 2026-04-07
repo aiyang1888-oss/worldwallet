@@ -280,7 +280,7 @@ var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb',
 /** @param {number} [forcedWordCount] 若传入则按该词数生成（避免与 DOM 不同步） */
 
 
-/** 仅内存 window.TEMP_WALLET：密钥页展示用，不调用 saveWallet / localStorage */
+/** 仅内存 wwGetTempWallet()：密钥页展示用，不调用 saveWallet / localStorage */
 
 /**
  * 生成密钥页用临时钱包（不写 localStorage、不赋值 REAL_WALLET；验证通过后由流程持久化）
@@ -322,7 +322,7 @@ async function createNewWallet() {
   showWalletLoading();
   try {
     var w = await wwCreateWalletUI(12);
-    window.TEMP_WALLET = w;
+    if (typeof wwSetTempWallet === 'function') wwSetTempWallet(w);
     goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
     if (typeof showToast === 'function')
@@ -686,16 +686,21 @@ function renderPinSetupUI() {
 }
 
 async function finalizeImportedWalletAfterPin(pin) {
-  var raw = localStorage.getItem('ww_import_pending');
-  if (!raw) return;
-  var flat;
-  try {
-    flat = JSON.parse(raw);
-  } catch (e) {
-    safeLog('[JSON]', e);
-    showToast('数据损坏', 'error');
-    return;
+  var flat = typeof wwTakeImportPending === 'function' ? wwTakeImportPending() : null;
+  if (!flat) {
+    var raw = localStorage.getItem('ww_import_pending');
+    if (raw) {
+      try {
+        flat = JSON.parse(raw);
+        try { localStorage.removeItem('ww_import_pending'); } catch (_r) {}
+      } catch (e) {
+        safeLog('[JSON]', e);
+        showToast('数据损坏', 'error');
+        return;
+      }
+    }
   }
+  if (!flat) return;
   var pinStr = String(pin || '');
   wwSetSessionPin(pinStr);
   await saveWalletSecure(flat, pinStr);
@@ -840,7 +845,7 @@ function goTo(pageId, opts) {
       showWalletLoading();
       Promise.resolve(wwCreateWalletUI(12))
         .then(function (w) {
-          window.TEMP_WALLET = w;
+          if (typeof wwSetTempWallet === 'function') wwSetTempWallet(w);
           hideWalletLoading();
           syncKeyPageLangSelect();
           if (typeof renderKeyGrid === 'function') renderKeyGrid();
@@ -1042,7 +1047,7 @@ function renderKeyGrid() {
   let words;
   var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(keyMnemonicLang) : (keyMnemonicLang === 'en' ? 'en' : 'zh');
   const isEn = wlKey === 'en';
-  const tw = window.TEMP_WALLET;
+  const tw = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
   var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
   // TEMP_WALLET（创建中）优先；否则用已解密的真实钱包助记词（备份页 / skipKeyRegen）
   const enMnemonic =
@@ -1087,6 +1092,23 @@ function renderKeyGrid() {
     safeLog('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
     return;
   }
+  var revealBar = document.getElementById('wwMnemonicRevealBar');
+  if (!revealBar) {
+    revealBar = document.createElement('div');
+    revealBar.id = 'wwMnemonicRevealBar';
+    revealBar.style.cssText = 'width:100%;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
+    revealBar.innerHTML = '<span style="font-size:12px;color:var(--text-muted);line-height:1.5">默认隐藏词面；确认环境安全后再显示全文</span><button type="button" class="btn-secondary" id="wwMnemonicRevealBtn" style="padding:8px 14px;font-size:13px">显示助记词</button>';
+    if (grid.parentNode) grid.parentNode.insertBefore(revealBar, grid);
+  }
+  var revealBtn = document.getElementById('wwMnemonicRevealBtn');
+  var revealed = !!window._wwKeyGridMnemonicRevealed;
+  if (revealBtn) {
+    revealBtn.textContent = revealed ? '隐藏助记词' : '显示助记词';
+    revealBtn.onclick = function () {
+      window._wwKeyGridMnemonicRevealed = !window._wwKeyGridMnemonicRevealed;
+      if (typeof renderKeyGrid === 'function') renderKeyGrid();
+    };
+  }
   grid.innerHTML = '';
 
   const hint = _safeEl('keyEnHint');
@@ -1114,7 +1136,7 @@ function renderKeyGrid() {
     idx.textContent=String(i+1).padStart(2,'0')+'.';
     const val=document.createElement('span');
     val.className='word-val';
-    val.textContent=w;
+    val.textContent = revealed ? w : '••••••';
     val.style.fontSize=isSmall?'11px':'13px';
     line.appendChild(idx);
     line.appendChild(document.createTextNode(' '));
@@ -1137,9 +1159,10 @@ function updateHomeChainStrip() {
 
 function getMnemonicStrengthDisplay() {
   var n = 12;
-  // 密钥页以 TEMP_WALLET 词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
-  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
-    var wct = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean).length;
+  // 密钥页以临时钱包词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
+  var _twg = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
+  if (_twg && _twg.mnemonic) {
+    var wct = _twg.mnemonic.trim().split(/\s+/).filter(Boolean).length;
     if ([12, 15, 18, 21, 24].includes(wct)) n = wct;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
@@ -2887,7 +2910,7 @@ async function changeMnemonicLength(n) {
   showWalletLoading();
   try {
     var w = await wwCreateWalletUI(wordCount);
-    window.TEMP_WALLET = w;
+    if (typeof wwSetTempWallet === 'function') wwSetTempWallet(w);
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
   } catch(e) {
     if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
@@ -2903,11 +2926,12 @@ var verifyAnswers = {}; // {position: correctWord}
 function startVerify() {
   // 与密钥页展示一致：renderKeyGrid 写入的 .words（英文为 BIP39；非英文为中文地名）；否则回退英文助记词
   let words = null;
-  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
-    if (window.TEMP_WALLET.words && window.TEMP_WALLET.words.length >= 12) {
-      words = window.TEMP_WALLET.words.slice();
+  var _twSv = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
+  if (_twSv && _twSv.mnemonic) {
+    if (_twSv.words && _twSv.words.length >= 12) {
+      words = _twSv.words.slice();
     } else {
-      words = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+      words = _twSv.mnemonic.trim().split(/\s+/).filter(Boolean);
     }
   }
   if ((!words || words.length < 12) && typeof wwGetSessionMnemonic === 'function' && wwGetSessionMnemonic()) {
@@ -2945,15 +2969,17 @@ function startVerify() {
     }
     words = indices.map(i => pool[i]);
     try {
-      window.TEMP_WALLET = window.TEMP_WALLET || {};
-      window.TEMP_WALLET.mnemonic = words.join(' ');
-      window.TEMP_WALLET.words = words.slice();
+      var _twr = (typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null) || {};
+      if (typeof wwSetTempWallet === 'function') wwSetTempWallet(_twr);
+      _twr.mnemonic = words.join(' ');
+      _twr.words = words.slice();
     } catch (_tw) {}
     if (!REAL_WALLET) REAL_WALLET = {};
     if (typeof saveWallet === 'function') saveWallet({ ethAddress: REAL_WALLET.ethAddress, trxAddress: REAL_WALLET.trxAddress, btcAddress: REAL_WALLET.btcAddress || '', createdAt: REAL_WALLET.createdAt || Date.now(), backedUp: false, addrMap: REAL_WALLET.addrMap });
   }
-  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic && (window.TEMP_WALLET.eth || window.TEMP_WALLET.ethAddress)) {
-    var tw = window.TEMP_WALLET;
+  var _twSv2 = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
+  if (_twSv2 && _twSv2.mnemonic && (_twSv2.eth || _twSv2.ethAddress)) {
+    var tw = _twSv2;
     var nested = tw.eth && tw.eth.address;
     var ethA = nested ? tw.eth.address : tw.ethAddress;
     var trxA = nested ? tw.trx.address : tw.trxAddress;
@@ -3242,7 +3268,9 @@ async function doImportWallet() {
       }
     };
 
-    try { localStorage.setItem('ww_import_pending', JSON.stringify(flatForStore)); } catch (e) {}
+    try {
+      if (typeof wwSetImportPending === 'function') wwSetImportPending(flatForStore);
+    } catch (e) {}
     try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
     try { if (typeof updateAddr === 'function') updateAddr(); } catch (e4) {}
     var tb = document.getElementById('tabBar');
