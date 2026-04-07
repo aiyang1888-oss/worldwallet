@@ -29,13 +29,26 @@ function _wanYuP8FromDomOrStorage(el, key, fallback8) {
 }
 
 function updateRealAddr() {
-  // 英语模式下更新地址显示为公链地址
-  if(REAL_WALLET && REAL_WALLET.ethAddress) {
+  var hasAny =
+    REAL_WALLET &&
+    (typeof wwWalletHasAnyChainAddress === 'function'
+      ? wwWalletHasAnyChainAddress(REAL_WALLET)
+      : !!(REAL_WALLET.ethAddress || REAL_WALLET.trxAddress || REAL_WALLET.btcAddress));
+  if (hasAny) {
     if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
     const sa = document.getElementById('settingsAddr');
-    if(sa) sa.textContent = REAL_WALLET.ethAddress;
+    if (sa) {
+      if (typeof currentLang !== 'undefined' && currentLang === 'en') {
+        sa.textContent =
+          (REAL_WALLET.trxAddress || REAL_WALLET.ethAddress || REAL_WALLET.btcAddress || '--');
+      } else if (typeof getNativeAddr === 'function') {
+        sa.textContent = getNativeAddr();
+      } else {
+        sa.textContent = REAL_WALLET.ethAddress || REAL_WALLET.trxAddress || REAL_WALLET.btcAddress || '--';
+      }
+    }
   }
-  if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
+  if (typeof updateHomeChainStrip === 'function') updateHomeChainStrip();
 }
 
 function updateAddr() {

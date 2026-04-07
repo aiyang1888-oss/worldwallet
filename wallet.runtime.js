@@ -144,18 +144,6 @@ function detectDeviceLang() {
   return 'zh';
 }
 
-// ── 补充缺失函数定义 ──────────────────────────────────────────
-function updateRealAddr() {
-  // 英语模式下更新地址显示为公链地址
-  if(REAL_WALLET && REAL_WALLET.ethAddress) {
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) chip.textContent = REAL_WALLET.trxAddress || REAL_WALLET.ethAddress;
-    const sa = document.getElementById('settingsAddr');
-    if(sa) sa.textContent = REAL_WALLET.ethAddress;
-  }
-  if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
-}
-
 // ── 万语地址：ADDR_WORDS 由 wallet.addr.js 声明，勿重复声明 ──────────────────────────
 
 function randDigits(n) {
