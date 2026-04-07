@@ -69,7 +69,7 @@
       <div style="width:100%;flex-shrink:0;margin-top:28px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
           <button type="button" class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
-          <button type="button" class="btn-secondary" onclick="openPinUnlockFromWelcome()" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
+          <button type="button" class="btn-secondary" onclick="goTo('page-password-restore')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
           <button type="button" class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">👤 导入已有钱包</button>
         </div>
       </div>
@@ -212,14 +212,14 @@
       
       
       <div class="assets-section">
-        <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="assets-title home-section-head">
           <span>我的资产</span>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+          <div class="home-section-head-actions">
             <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;margin:0">
               <input type="checkbox" id="hideZeroTokens" onchange="onHideZeroTokensChange()" style="accent-color:var(--gold);width:14px;height:14px" />
               隐藏零余额
             </label>
-            <span id="balRefreshBtn" onclick="loadBalances()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+            <span id="balRefreshBtn" class="home-refresh-link" onclick="loadBalances()">刷新</span>
           </div>
         </div>
         <div class="asset-item" id="assetRowUsdt">
@@ -253,12 +253,12 @@
       </div>
 
       <!-- 交易记录区 -->
-      <div style="margin:0 0 16px 0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:13px;font-weight:600;color:var(--text)">最近交易</span>
-          <span onclick="loadTxHistory()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+      <div class="home-tx-section">
+        <div class="home-section-head">
+          <span class="home-tx-title">最近交易</span>
+          <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
         </div>
-        <input type="search" id="txHistoryFilter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" style="width:100%;box-sizing:border-box;padding:10px 12px;margin-bottom:10px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;outline:none" />
+        <input type="search" id="txHistoryFilter" class="home-tx-filter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" />
         <div id="txHistoryList">
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
@@ -450,7 +450,7 @@
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTab('tab-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1" role="button" tabindex="0" aria-label="返回资产" onkeydown="if(event.key==='Enter'||event.key===' ')goTab('tab-home')">‹</div>
+        <div class="nav-back" onclick="goTab('tab-home')" role="button" tabindex="0" aria-label="返回资产" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">设置</div>
       </div>
       <div class="u14">

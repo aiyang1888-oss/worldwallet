@@ -364,12 +364,13 @@ function copyBoth() {
 
 function copyAllMnemonic(btn) {
   const words = [];
-  const isEn = currentLang === 'en';
+  var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(currentLang) : (currentLang === 'en' ? 'en' : 'zh');
+  const isEn = wlKey === 'en';
   if(isEn) {
     const mn = REAL_WALLET && REAL_WALLET.enMnemonic;
     if(mn) mn.split(' ').forEach(w => words.push(w));
   } else {
-    const wl = WT_WORDLISTS[currentLang];
+    const wl = WT_WORDLISTS[wlKey];
     const enMn = REAL_WALLET && REAL_WALLET.enMnemonic;
     if(wl && enMn) {
       enMn.split(' ').forEach(enW => {

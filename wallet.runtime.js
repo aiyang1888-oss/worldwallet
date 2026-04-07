@@ -1998,8 +1998,6 @@ function applyHideZeroTokens() {
   if(cb) cb.checked = hide;
   const rows = [
     { id: 'assetRowUsdt', balId: 'balUsdt' },
-    { id: 'assetRowEth', balId: 'balEth' },
-    { id: 'btcAssetRow', balId: 'balBtc' },
   ];
   rows.forEach(function(row) {
     const el = document.getElementById(row.id);
@@ -2461,25 +2459,19 @@ function transferSpeedHint(coinId, sp) {
 let _wwTickerInterval = null;
 async function refreshHomePriceTicker() {
   try {
-    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tron,tether&vs_currencies=usd');
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd');
     const d = await r.json();
     const fmt = function(x) {
       if(x === undefined || x === null || !isFinite(x)) return '—';
       return x < 10 ? x.toFixed(4) : x.toLocaleString('en', { maximumFractionDigits: 2 });
     };
-    const btc = fmt(d.bitcoin && d.bitcoin.usd);
-    const eth = fmt(d.ethereum && d.ethereum.usd);
-    const trx = fmt(d.tron && d.tron.usd);
     const ust = fmt(d.tether && d.tether.usd);
     try {
       window._wwLastCgUsd = {
-        btc: d.bitcoin && d.bitcoin.usd,
-        eth: d.ethereum && d.ethereum.usd,
-        trx: d.tron && d.tron.usd,
         usdt: d.tether && d.tether.usd
       };
     } catch (_cg) {}
-    const html = 'BTC <strong>$' + btc + '</strong> · ETH <strong>$' + eth + '</strong> · TRX <strong>$' + trx + '</strong> · USDT <strong>$' + ust + '</strong>';
+    const html = 'USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
     if(a) a.innerHTML = html;
@@ -3168,16 +3160,12 @@ function wwAutoRebalanceLoad() {
 
 function wwAutoRebalancePortfolioParts() {
   var u = parseFloat((document.getElementById('valUsdt') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var e = parseFloat((document.getElementById('valEth') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var b = parseFloat((document.getElementById('valBtc') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var total = u + e + b;
-  if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }, { k: 'ETH', p: 0 }, { k: 'BTC', p: 0 }] };
+  var total = u;
+  if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }] };
   return {
     total: total,
     parts: [
-      { k: 'USDT', p: 100 * u / total },
-      { k: 'ETH', p: 100 * e / total },
-      { k: 'BTC', p: 100 * b / total }
+      { k: 'USDT', p: 100 }
     ]
   };
 }
@@ -3188,7 +3176,7 @@ function wwAutoRebalancePopulate() {
   if (!body) return;
   var th = parseInt((document.getElementById('wwAutoRebalThreshold') || {}).value || '8', 10);
   if (!isFinite(th) || th < 1) th = 8;
-  var target = { USDT: 45, ETH: 35, BTC: 20 };
+  var target = { USDT: 100 };
   var data = wwAutoRebalancePortfolioParts();
   if (!data.total) {
     body.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无估值数据，请返回首页刷新余额后再试。</div>';
@@ -3222,8 +3210,8 @@ function wwSentimentHash(s) {
 function wwSentimentPopulate() {
   var box = document.getElementById('wwSentimentList');
   if (!box) return;
-  var coins = ['USDT', 'ETH', 'BTC'];
-  var els = ['chgUsdt', 'chgEth', 'chgBtc'];
+  var coins = ['USDT'];
+  var els = ['chgUsdt'];
   var out = [];
   for (var i = 0; i < coins.length; i++) {
     var ch = (document.getElementById(els[i]) || {}).textContent || '';
@@ -3414,11 +3402,9 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
   const c = document.getElementById('portfolioPieCanvas');
   const leg = document.getElementById('portfolioPieLegend');
   if(!card || !c || !leg) return;
+  void trxUsd; void ethUsd; void btcUsd;
   const parts = [
     { v: Number(usdtUsd) || 0, c: '#26a17b', l: 'USDT' },
-    { v: Number(trxUsd) || 0, c: '#e84d4d', l: 'TRX' },
-    { v: Number(ethUsd) || 0, c: '#627eea', l: 'ETH' },
-    { v: Number(btcUsd) || 0, c: '#f7931a', l: 'BTC' }
   ];
   const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
   try { window._wwLastPortfolioParts = parts; window._wwLastPortfolioTotal = total; } catch (_wp) {}
