@@ -464,34 +464,21 @@ function openWordEditor(idx) {
   const w = ADDR_WORDS[idx];
   const info = LANG_INFO[w.lang] || {flag:'🌍', name:'?'};
 
-  // 弹出简单的 prompt 式选择
-  const langList = Object.keys(SAMPLE_KEYS).filter(l=>l!=='en').map(l=>{
-    const i = LANG_INFO[l]||{flag:'🌍',name:l};
-    return `${i.flag} ${i.name} (${l})`;
-  }).join('\n');
-
   const input = window.prompt(
     `第 ${idx+1} 个字（当前：${info.flag} "${w.word}"）\n\n输入新词（直接输入），或留空随机\n\n可用语言：${Object.entries(LANG_INFO).filter(([l])=>l!=='en').map(([l,i])=>i.flag+l).join(' ')}`,
     w.custom ? w.word : ''
   );
-
-  if(input === null) return; // 取消
-
+  if(input === null) return;
   const trimmed = input.trim();
-  if(trimmed === '') {
-    // 随机一字（万语中段均为汉字单字池）
-    ADDR_WORDS[idx] = {word: randWanYuZhChar(), lang: 'zh', custom: false};
-  } else {
-    if (trimmed.length > 4) {
-      alert('词长度必须在 1-4 个字符之间');
-      return;
-    }
-    if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff\u0600-\u06ff]+$/.test(trimmed)) {
-      alert('仅允许输入字符');
-      return;
-    }
-    ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
+  if (trimmed.length === 0 || trimmed.length > 4) {
+    alert('词长度必须在 1-4 个字符之间');
+    return;
   }
+  if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff]+$/.test(trimmed)) {
+    alert('仅允许输入字符');
+    return;
+  }
+  ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
   renderAddrWords();
   persistWanYuAddrToStorage();
 }

@@ -588,23 +588,35 @@ function txHistoryEmptyHtml() {
 }
 
 function txHistoryRowHtml(tx) {
+  const escapeHtml = function(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str || '');
+    return div.innerHTML;
+  };
   var addr = String(tx.addr || '');
   var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
   var coin = String(tx.coin || '');
   var hash = String(tx.hash || '');
+  const hashEscaped = escapeHtml(hash);
+  const addrEscaped = escapeHtml(addrLine);
+  const amountEscaped = escapeHtml(tx.amount);
+  const typeEscaped = escapeHtml(tx.type);
+  const coinEscaped = escapeHtml(coin);
+  const iconEscaped = escapeHtml(tx.icon);
+  const timeEscaped = escapeHtml(tx.time);
   var col = wwTxSanitizeColor(tx.color);
   return (
-    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + wwEscapeHtml(coin) + '" data-hash="' + wwEscapeHtml(hash) + '"' +
+    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + coinEscaped + '" data-hash="' + hashEscaped + '"' +
     ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"' +
     ' onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">' +
-    '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + wwEscapeHtml(tx.icon) + '</div>' +
+    '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + iconEscaped + '</div>' +
     '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:13px;font-weight:600;color:var(--text)">' + wwEscapeHtml(tx.type) + ' ' + wwEscapeHtml(tx.coin) + '</div>' +
-    '<div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + wwEscapeHtml(addrLine) + '</div>' +
+    '<div style="font-size:13px;font-weight:600;color:var(--text)">' + typeEscaped + ' ' + coinEscaped + '</div>' +
+    '<div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + addrEscaped + '</div>' +
     '</div>' +
     '<div style="text-align:right;flex-shrink:0">' +
-    '<div style="font-size:14px;font-weight:700;color:' + col + '">' + wwEscapeHtml(tx.amount) + '</div>' +
-    '<div style="font-size:10px;color:var(--text-muted)">' + wwEscapeHtml(tx.time) + '</div>' +
+    '<div style="font-size:14px;font-weight:700;color:' + col + '">' + amountEscaped + '</div>' +
+    '<div style="font-size:10px;color:var(--text-muted)">' + timeEscaped + '</div>' +
     '</div>' +
     '</div>'
   );
