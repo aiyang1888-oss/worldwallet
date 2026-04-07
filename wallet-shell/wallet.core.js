@@ -2,6 +2,8 @@
 
 /** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明 */
 var REAL_WALLET = null;
+/** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
+var CHAIN_ADDR = '--';
 
 function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
@@ -106,6 +108,8 @@ function loadWalletPublic() {
         backedUp: parsed.backedUp || false,
         hasEncrypted: !!parsed.encrypted
       };
+      REAL_WALLET = window.REAL_WALLET;
+      CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
     }
   } catch (e) {
     console.error('[loadWalletPublic] error:', e);
@@ -234,6 +238,8 @@ async function createRealWallet(forcedWordCount) {
     createdAt: Date.now()
   };
   window.REAL_WALLET = w;
+  REAL_WALLET = w;
+  CHAIN_ADDR = w.trxAddress || '--';
   saveWallet(w);
   applyReferralCredit();
   try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
@@ -270,6 +276,7 @@ async function restoreWallet(mnemonic) {
   };
   REAL_WALLET = pub;
   window.REAL_WALLET = pub;
+  CHAIN_ADDR = (pub && pub.trxAddress) ? pub.trxAddress : '--';
   if (pin) {
     var flatForStore = {
       mnemonic: result.mnemonic,

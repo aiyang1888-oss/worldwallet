@@ -1115,12 +1115,7 @@ function updateHomeChainStrip() {
   strip.classList.remove('home-chain-strip--dim');
 }
 
-function updateHomeBackupBanner() {
-  var b = document.getElementById('homeBackupBanner');
-  if (!b) return;
-  var show = REAL_WALLET && REAL_WALLET.ethAddress && !REAL_WALLET.backedUp;
-  b.style.display = show ? 'block' : 'none';
-}
+/* updateHomeBackupBanner：wallet.runtime.js（避免与 runtime 重复定义） */
 
 function getMnemonicStrengthDisplay() {
   var n = 12;
@@ -2562,26 +2557,7 @@ function getWalletSecurityBreakdown() {
   return { score: pinPts + backupPts, pinOk: pinOk, backed: backed, pinPts: pinPts, backupPts: backupPts };
 }
 
-function updateWalletSecurityScoreUI() {
-  var el = document.getElementById('wwSecurityScoreValue');
-  var bar = document.getElementById('wwSecurityScoreBar');
-  var hint = document.getElementById('wwSecurityScoreHint');
-  var badge = document.getElementById('wwSecurityScoreBadge');
-  if (!el || !bar || !hint) return;
-  var b = getWalletSecurityBreakdown();
-  el.textContent = String(b.score);
-  bar.style.width = b.score + '%';
-  var tips = [];
-  if (!b.pinOk) tips.push('未设置 PIN：他人拿到设备时可能直接打开钱包。');
-  if (!b.backed) tips.push('未确认备份助记词：设备丢失将无法恢复资产。');
-  if (b.pinOk && b.backed) tips.push('PIN 与备份均已就绪；请离线保管助记词，勿截图或泄露。');
-  hint.textContent = tips.length ? tips.join(' ') : '加载中…';
-  if (badge) {
-    if (b.score >= 100) { badge.textContent = '优秀'; badge.style.color = 'var(--green,#26a17b)'; }
-    else if (b.score >= 50) { badge.textContent = '一般'; badge.style.color = 'var(--gold)'; }
-    else { badge.textContent = '待加强'; badge.style.color = 'var(--red,#e74c3c)'; }
-  }
-}
+/* updateWalletSecurityScoreUI：wallet.runtime.js（避免与 runtime 重复定义） */
 
 function updateRebalanceSuggestion(parts, total) {
   var card = document.getElementById('wwRebalanceCard');

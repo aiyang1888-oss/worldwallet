@@ -108,24 +108,22 @@ function persistWanYuAddrToStorage() {
         if (ls) suffix = String(ls).replace(/\D/g, '').substring(0, 8).padStart(8, '0');
       } catch (_s) {}
     }
-    var slots = ADDR_WORDS.map(function (w) {
-      return { word: w.word, lang: w.lang || 'zh', custom: !!w.custom };
-    });
-    var wordsJoin = ADDR_WORDS.map(function (w) { return w.word; }).join('');
-    var native = prefix + '-' + wordsJoin + '-' + suffix;
-    localStorage.setItem('wallet_native_addr', native);
-    localStorage.setItem('wallet_prefix', prefix);
-    localStorage.setItem('wallet_suffix', suffix);
-    localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
-    var roundTrip = localStorage.getItem('wallet_native_addr') === native;
-    console.log('[WanYuAddr] 保存地址到 localStorage:', {
-      wallet_native_addr: native,
-      wallet_prefix: prefix,
-      wallet_suffix: suffix,
-      wallet_addr_words: slots,
-      roundTripOk: roundTrip
-    });
-    if (!roundTrip) console.warn('[WanYuAddr] localStorage 回读与写入不一致');
+    try {
+      var slots = ADDR_WORDS.map(function (w) {
+        return { word: w.word, lang: w.lang || 'zh', custom: !!w.custom };
+      });
+      var wordsJoin = ADDR_WORDS.map(function (w) { return w.word; }).join('');
+      var native = prefix + '-' + wordsJoin + '-' + suffix;
+      localStorage.setItem('wallet_native_addr', native);
+      localStorage.setItem('wallet_prefix', prefix);
+      localStorage.setItem('wallet_suffix', suffix);
+      localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
+      if (localStorage.getItem('wallet_native_addr') !== native) {
+        console.error('[WanYuAddr] localStorage verification failed');
+      }
+    } catch (e) {
+      console.error('[WanYuAddr] localStorage write failed:', e);
+    }
   } catch (e) {
     console.error('[WanYuAddr] persistWanYuAddrToStorage 失败:', e);
   }
