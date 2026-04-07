@@ -40,15 +40,19 @@ function updateAddr() {
     if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
   } catch (_e) {}
   if (ADDR_WORDS.length > 0) renderAddrWords();
-  // 获取完整万语地址
+  // 获取完整万语地址（所有展示位均派生自此 + ADDR_WORDS）
   const nativeAddr = getNativeAddr();
   const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
   // 首页芯片（中间段金色随机展示，见 renderHomeAddrChip）
   if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
-  // QR 二维码区大字显示（万语规范：8数字-10汉字-8数字，单行展示）
+  // QR 二维码区：10 字已由 renderAddrWords 写入 qp1 innerHTML，勿再用 textContent 覆盖
   const qp1 = document.getElementById('qrPart1');
   const qp2 = document.getElementById('qrPart2');
-  if(qp1 && !isEn) { qp1.textContent = nativeAddr; qp1.style.fontSize='12px'; qp1.style.letterSpacing='0'; }
+  if (qp1 && !isEn && ADDR_WORDS.length < 10) {
+    qp1.textContent = nativeAddr;
+    qp1.style.fontSize = '12px';
+    qp1.style.letterSpacing = '0';
+  }
   if(qp2 && !isEn) qp2.style.display = 'none';
   // swoosh 转账动画
   const sfp1 = _safeEl('swooshFromPart1');
@@ -60,12 +64,18 @@ function updateAddr() {
   const suc2 = _safeEl('successFromPart2');
   if(suc1 && !isEn) { suc1.textContent = nativeAddr; suc1.style.fontSize='12px'; }
   if(suc2 && !isEn) suc2.style.display = 'none';
-  // 地址页
+  // 地址页（勿用示例 ADDR_SAMPLES 覆盖已初始化的万语中段）
   const m=_safeEl('addrMain');
   const n=(_safeEl('addrNum') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrNum fallback */;
-  if(m) m.textContent = isEn ? CHAIN_ADDR : a.main;
+  if (m) {
+    if (!isEn && ADDR_WORDS.length === 10) {
+      m.textContent = ADDR_WORDS.map(function (w) { return w.word; }).join('');
+    } else {
+      m.textContent = isEn ? CHAIN_ADDR : a.main;
+    }
+  }
   if(n) n.style.display = isEn?'none':'block';
-  if(n&&!isEn) n.textContent = a.num;
+  if (n && !isEn) n.textContent = ADDR_WORDS.length === 10 ? '' : a.num;
   // QR弹窗同步
   const qm=document.getElementById('qrAddrMain');
   if(qm) qm.textContent = isEn ? CHAIN_ADDR : nativeAddr;
@@ -205,42 +215,6 @@ function tryLoadWanYuAddrFromStorage() {
   }
 }
 
-function syncNativeAddrDisplaysToAllViews() {
-  setTimeout(function () {
-    const addr = getNativeAddr();
-    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
-    const qp1 = document.getElementById('qrPart1');
-    const qp2 = document.getElementById('qrPart2');
-    if (qp1) {
-      const prefix = document.getElementById('addrPrefix')?.textContent || '';
-      const suffix = document.getElementById('addrSuffix')?.textContent || '';
-      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span><span style="color:var(--text-muted);font-size:11px">-</span>`;
-      ADDR_WORDS.forEach(function (w) {
-        if (w.custom) {
-          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
-        } else {
-          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
-        }
-      });
-      html += `<span style="color:var(--text-muted);font-size:11px">-</span><span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
-      qp1.innerHTML = html;
-    }
-    if (qp2) qp2.style.display = 'none';
-    const qm = document.getElementById('qrAddrMain');
-    if (qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
-    const sa = document.getElementById('settingsAddr');
-    if (sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    const sfp1 = _safeEl('swooshFromPart1');
-    const sfp2 = _safeEl('swooshFromPart2');
-    if (sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if (sfp2) sfp2.style.display = 'none';
-    const suc1 = _safeEl('successFromPart1');
-    const suc2 = _safeEl('successFromPart2');
-    if (suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if (suc2) suc2.style.display = 'none';
-  }, 50);
-}
-
 /** 钱包就绪后调用：内存为空则从 localStorage 恢复或生成并落盘（只生成一次） */
 function ensureNativeAddrInitialized() {
   if (typeof ADDR_WORDS === 'undefined') return;
@@ -373,7 +347,7 @@ function initAddrWords() {
     __wanYuAddrInitialized = true;
     renderAddrWords();
     persistWanYuAddrToStorage();
-    syncNativeAddrDisplaysToAllViews();
+    try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u) {}
     return;
   }
   ADDR_WORDS.length = 0;
@@ -386,7 +360,7 @@ function initAddrWords() {
   if (sufEl) sufEl.textContent = randDigits(8);
   renderAddrWords();
   persistWanYuAddrToStorage();
-  syncNativeAddrDisplaysToAllViews();
+  try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u2) {}
   __wanYuAddrInitialized = true;
 }
 
@@ -456,6 +430,7 @@ function openWordEditor(idx) {
   }
   renderAddrWords();
   persistWanYuAddrToStorage();
+  try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u3) {}
 }
 
 function copyHomeAddr() {
