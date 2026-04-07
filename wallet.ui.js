@@ -784,12 +784,16 @@ function closeTotpSetup() {
 }
 
 function showTotpUnlockOverlay() {
+  const pinOv = document.getElementById('pinUnlockOverlay');
+  if (pinOv) pinOv.classList.remove('show');
   const ov = document.getElementById('totpUnlockOverlay');
   const inp = document.getElementById('totpUnlockInput');
   const err = document.getElementById('totpUnlockError');
-  if (inp) { inp.value = ''; try { inp.focus(); } catch (e) {} }
   if (err) err.style.display = 'none';
+  if (inp) inp.value = '';
   if (ov) ov.classList.add('show');
+  /* 须在 overlay 可见后再 focus，否则 iOS 等环境下无法弹出键盘 */
+  if (inp) setTimeout(function () { try { inp.focus(); } catch (e) {} }, 200);
 }
 
 async function submitTotpUnlock() {
@@ -3195,11 +3199,11 @@ function finishPinRestoreSuccess() {
   }
   _pinRestoreBuffer = '';
   updatePinRestoreDisplay();
+  try { window._wwForceIdleLock = false; } catch (_fl) {}
   if (typeof showToast === 'function') showToast('✅ PIN 验证成功！', 'success');
   if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
     showTotpUnlockOverlay();
   } else {
-    try { window._wwForceIdleLock = false; } catch (_fl) {}
     _resumeWalletAfterUnlock();
   }
 }

@@ -737,6 +737,8 @@ body {
   align-items: center; justify-content: center;
   z-index: 100;
 }
+/* TOTP 须在 PIN 遮罩之上，避免两 overlay 同时存在时误点到底层 */
+#totpUnlockOverlay.show { z-index: 101; }
 
 @keyframes wtShake {
   0%,100% { transform: translateX(0); }
