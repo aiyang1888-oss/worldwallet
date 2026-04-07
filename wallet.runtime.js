@@ -3510,13 +3510,13 @@ function confirmTransfer() {
   if(isEn) {
     _safeEl('successFromPart1').textContent = 'My Wallet';
     _safeEl('successFromPart2').textContent = '';
-    document.getElementById('successFromPart3').textContent = '';
+    _safeEl('successFromPart3').textContent = '';
     _safeEl('successFromLang').textContent = info.flag+' English · BIP39';
   } else {
     const parts = a.main.split(' · ');
     _safeEl('successFromPart1').textContent = parts[0]||'龙凤虎';
     _safeEl('successFromPart2').textContent = parts[1]||'举头望明月';
-    document.getElementById('successFromPart3').textContent = a.num||'3829461';
+    _safeEl('successFromPart3').textContent = a.num||'3829461';
     const fromAddr = getNativeAddr(); _safeEl('successFromLang').textContent = fromAddr.substring(0,12)+'...';
   }
 
