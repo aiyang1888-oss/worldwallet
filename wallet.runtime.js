@@ -1701,7 +1701,7 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
       } catch(e) {}
     }, 200);
   }
-  if(pageId==='page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
+  if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
     setTimeout(loadTxHistory, 500);
     setTimeout(loadBalances, 500);
   }
@@ -5999,7 +5999,8 @@ async function getPrices() {
 }
 
 async function loadBalances() {
-  if(!REAL_WALLET || !REAL_WALLET.trxAddress) return;
+  if (!REAL_WALLET) return;
+  if (!REAL_WALLET.ethAddress && !REAL_WALLET.trxAddress && !REAL_WALLET.btcAddress) return;
   const tbd = document.getElementById('totalBalanceDisplay');
   const tbs = document.getElementById('totalBalanceSub');
   if(tbd) tbd.classList.add('home-balance--loading');
@@ -6017,37 +6018,41 @@ async function loadBalances() {
   try {
     const [prices] = await Promise.all([getPrices()]);
     
-    // 查询 TRX 余额（TronGrid 免费 API）
+    // 查询 TRX 余额（TronGrid 免费 API）；无 TRX 地址则跳过
     const trxAddr = REAL_WALLET.trxAddress;
     const ethAddr = REAL_WALLET.ethAddress;
     
     let usdtBal = 0, trxBal = 0, ethBal = 0;
 
     // TRX 余额
-    try {
-      const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`, {
-        headers: { 'TRON-PRO-API-KEY': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' } // 建议在 trongrid.io 申请免费 key
-      });
-      const trxData = await trxRes.json();
-      if(trxData.data && trxData.data[0]) {
-        trxBal = (trxData.data[0].balance || 0) / 1e6;
-        // USDT TRC-20 余额
-        const trc20 = trxData.data[0].trc20 || [];
-        const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-        if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
-      }
-    } catch(e) { console.log('TRX query failed:', e); }
+    if (trxAddr) {
+      try {
+        const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`, {
+          headers: { 'TRON-PRO-API-KEY': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' } // 建议在 trongrid.io 申请免费 key
+        });
+        const trxData = await trxRes.json();
+        if(trxData.data && trxData.data[0]) {
+          trxBal = (trxData.data[0].balance || 0) / 1e6;
+          // USDT TRC-20 余额
+          const trc20 = trxData.data[0].trc20 || [];
+          const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
+          if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
+        }
+      } catch(e) { console.log('TRX query failed:', e); }
+    }
 
     // ETH 余额（公共 RPC）
-    try {
-      const ethRes = await fetch('https://eth.llamarpc.com', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[ethAddr,'latest'],id:1})
-      });
-      const ethData = await ethRes.json();
-      if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
-    } catch(e) { console.log('ETH query failed:', e); }
+    if (ethAddr) {
+      try {
+        const ethRes = await fetch('https://eth.llamarpc.com', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[ethAddr,'latest'],id:1})
+        });
+        const ethData = await ethRes.json();
+        if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
+      } catch(e) { console.log('ETH query failed:', e); }
+    }
 
     // 更新UI
     const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);

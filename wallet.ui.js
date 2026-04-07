@@ -990,7 +990,7 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     }, 200);
   }
   // loadBalances（runtime）以 TRX 账户查 TRC-20 USDT，须与 tx 历史一致用 trxAddress 触发；勿仅用 ethAddress，否则仅 TRX 钱包首页不拉余额
-  if (pageId === 'page-home' && REAL_WALLET && REAL_WALLET.trxAddress) {
+  if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
     setTimeout(loadTxHistory, 500);
     setTimeout(loadBalances, 500);
   }
