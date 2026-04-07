@@ -1239,3 +1239,29 @@ body {
 #page-home [class*="home"] > .home-addr-stack {
   margin-top: 0 !important;
 }
+
+/* 彻底隐藏图表，保留标题 */
+#homeBalanceChartWrap {
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#homeBalanceChartWrap .home-balance-chart-svg {
+  height: 0 !important;
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#homeBalanceChartWrap .home-balance-chart-foot {
+  height: 0 !important;
+  display: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.home-addr-stack {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
