@@ -28,8 +28,8 @@ function cacheDOM() {
     'keyWordGrid', 'mnemonicLength', 'homeAddrChip',
     'tabBar', 'toastMsg', 'walletLoadingOverlay',
     'totalBalanceDisplay', 'totalBalanceSub',
-    'balUsdt', 'balTrx', 'balEth', 'balBtc',
-    'valUsdt', 'valTrx', 'valEth', 'valBtc',
+    'balUsdt',
+    'valUsdt',
     'txHistoryList', 'importPaste', 'importError'
   ];
   ids.forEach(function(id) {
