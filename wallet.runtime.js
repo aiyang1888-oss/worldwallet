@@ -5395,7 +5395,25 @@ async function confirmPin() {
   try { localStorage.setItem('ww_pin_set', '1'); } catch (e) {}
   try {
     if (typeof saveWalletSecure === 'function' && REAL_WALLET) {
-      await saveWalletSecure(REAL_WALLET, confirmPinValue);
+      var _twPin = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
+      var _toEnc = {
+        ethAddress: REAL_WALLET.ethAddress,
+        trxAddress: REAL_WALLET.trxAddress,
+        btcAddress: REAL_WALLET.btcAddress || '',
+        createdAt: REAL_WALLET.createdAt,
+        backedUp: REAL_WALLET.backedUp || false,
+        addrMap: REAL_WALLET.addrMap || {}
+      };
+      if (REAL_WALLET.mnemonic) {
+        _toEnc.mnemonic = REAL_WALLET.mnemonic;
+      } else if (_twPin && _twPin.mnemonic) {
+        _toEnc.mnemonic = _twPin.mnemonic;
+      }
+      if (!_toEnc.mnemonic) {
+        if (typeof showToast === 'function') showToast('无法加密钱包：缺少助记词，请返回密钥页重试', 'error');
+        return;
+      }
+      await saveWalletSecure(_toEnc, confirmPinValue);
       REAL_WALLET.hasEncrypted = true;
     } else if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
   } catch (e2) {
