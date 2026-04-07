@@ -13,6 +13,7 @@
 - **TEST-C**：所列核心函数均非空；`createGift` 实现在 `wallet.ui.js`（runtime 仅做 `typeof createGift === 'function'` 暴露）。
 
 ## 修复内容
+- 提交：`316c7b3`
 - 文件：`wallet.runtime.js`
 - 函数：启动初始化（全局顶层，原 `welcomeLangGrid` 一行）
 - 修改：删除对已移除欢迎语网格元素的 `scrollTop` 初始化。
