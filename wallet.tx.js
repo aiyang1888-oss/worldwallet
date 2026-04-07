@@ -597,18 +597,18 @@ function txHistoryRowHtml(tx) {
   var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
   var coin = String(tx.coin || '');
   var hash = String(tx.hash || '');
-  const hashEscaped = escapeHtml(hash);
   const addrEscaped = escapeHtml(addrLine);
   const amountEscaped = escapeHtml(tx.amount);
   const typeEscaped = escapeHtml(tx.type);
   const coinEscaped = escapeHtml(coin);
   const iconEscaped = escapeHtml(tx.icon);
   const timeEscaped = escapeHtml(tx.time);
+  const hashAttr = escapeHtml(hash);
+  const coinAttr = escapeHtml(coin);
   var col = wwTxSanitizeColor(tx.color);
   return (
-    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + coinEscaped + '" data-hash="' + hashEscaped + '"' +
-    ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"' +
-    ' onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">' +
+    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + coinAttr + '" data-hash="' + hashAttr + '"' +
+    ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s">' +
     '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + iconEscaped + '</div>' +
     '<div style="flex:1;min-width:0">' +
     '<div style="font-size:13px;font-weight:600;color:var(--text)">' + typeEscaped + ' ' + coinEscaped + '</div>' +

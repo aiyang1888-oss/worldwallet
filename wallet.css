@@ -1159,3 +1159,6 @@ body {
   padding: 16px 16px 6px;
   font-weight: 600;
 }
+
+.ww-tx-history-row { transition: opacity 0.2s; }
+.ww-tx-history-row:hover { opacity: 0.8; }
