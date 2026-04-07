@@ -6546,6 +6546,7 @@ async function openPinSettingsDialog() {
   wwSetSessionPin(t);
   try { localStorage.setItem('ww_pin_set', '1'); } catch(e) {}
   showToast('PIN 已保存', 'success');
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
 }

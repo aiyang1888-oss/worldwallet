@@ -3171,6 +3171,7 @@ function openPinSettingsDialog() {
   localStorage.setItem('ww_pin', t);
   try { window._wwInFirstRun = false; } catch (_frPs) {}
   showToast('PIN 已保存', 'success');
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
 }
 
