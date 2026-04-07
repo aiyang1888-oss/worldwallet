@@ -169,6 +169,14 @@ var _safeEl = (id) => document.getElementById(id) || {
 };
 
 var REAL_WALLET = null;
+/** 是否已有任一条链的公开地址（勿仅用 ethAddress，避免仅 TRX/BTC 或旧数据缺 eth 时被误判为无钱包） */
+function wwHasWalletPublic(w) {
+  if (!w) return false;
+  function addrOk(a) {
+    return typeof a === 'string' && a.length > 2 && a !== '--';
+  }
+  return addrOk(w.ethAddress || '') || addrOk(w.trxAddress || '') || addrOk(w.btcAddress || '');
+}
 var WW_APP_VERSION = '1.0.0';
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
 var currentMnemonicLength = 12;
@@ -232,7 +240,7 @@ var WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
 function updateReferralSettingsUI() {
   var linkEl = document.getElementById('settingsRefLink');
   var countEl = document.getElementById('settingsRefCount');
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+  if (!wwHasWalletPublic(REAL_WALLET)) {
     if (linkEl) linkEl.textContent = '创建或导入钱包后生成邀请链接';
     if (countEl) countEl.textContent = '—';
     return;
@@ -356,7 +364,7 @@ try {
   var _rawWb = localStorage.getItem('ww_wallet');
   if (_rawWb) {
     var _pwB = JSON.parse(_rawWb);
-    if (_pwB && _pwB.ethAddress) _savedWalletBoot = true;
+    if (_pwB && wwHasWalletPublic(_pwB)) _savedWalletBoot = true;
   }
 } catch (_eWb) {}
 if (_savedWalletBoot && typeof goTo === 'function') {
@@ -838,7 +846,7 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) {}
   /* 无钱包时勿先渲染 page-home，否则会出现空白首页闪烁且 hash/SEO 与真实页不一致 */
-  if (pageId === 'page-home' && (!REAL_WALLET || !REAL_WALLET.ethAddress)) {
+  if (pageId === 'page-home' && !wwHasWalletPublic(REAL_WALLET)) {
     goTo('page-welcome');
     return;
   }
@@ -940,7 +948,7 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
     // 有钱包时显示导航栏
-    if(REAL_WALLET && REAL_WALLET.ethAddress) {
+    if (wwHasWalletPublic(REAL_WALLET)) {
       var _tbHome = document.getElementById('tabBar');
       if (_tbHome) _tbHome.style.display = 'flex';
     }
@@ -949,7 +957,7 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
     if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
     if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
-    if (REAL_WALLET && REAL_WALLET.ethAddress && typeof updateQRCode === 'function') setTimeout(updateQRCode, 250);
+    if (wwHasWalletPublic(REAL_WALLET) && typeof updateQRCode === 'function') setTimeout(updateQRCode, 250);
   }
   if(pageId==='page-transfer') {
     calcTransferFee();
@@ -1141,7 +1149,7 @@ function updateHomeChainStrip() {
   const btcEl = document.getElementById('homeShortBtc');
   const btcWrap = document.getElementById('homeMiniBtcWrap');
   if (!strip || !trxEl || !ethEl) return;
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+  if (!wwHasWalletPublic(REAL_WALLET)) {
     trxEl.textContent = '—';
     ethEl.textContent = '—';
     if (btcEl) btcEl.textContent = '—';
@@ -1168,7 +1176,7 @@ function updateHomeChainStrip() {
 function updateHomeBackupBanner() {
   var b = document.getElementById('homeBackupBanner');
   if (!b) return;
-  var show = REAL_WALLET && REAL_WALLET.ethAddress && !REAL_WALLET.backedUp;
+  var show = wwHasWalletPublic(REAL_WALLET) && !REAL_WALLET.backedUp;
   b.style.display = show ? 'block' : 'none';
 }
 
@@ -3092,7 +3100,7 @@ function verifyPinRestore() {
     try {
       if (typeof loadWallet === 'function') loadWallet();
       var w = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-      if (!w || !w.ethAddress) {
+      if (!w || !wwHasWalletPublic(w)) {
         hideWalletLoading();
         showPinRestoreError('未找到钱包数据，请使用助记词导入');
         _pinRestoreBuffer = '';
@@ -3395,7 +3403,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && _d.ethAddress);
+      hasWallet = !!(_d && wwHasWalletPublic(_d));
     } catch (_e) {}
     /* 无钱包时仅当 session 仍记着「需有钱包的主 Tab」时才纠正到欢迎页；勿覆盖深链 boot 已进入的导入/创建等页 */
     if (!hasWallet) {
