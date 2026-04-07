@@ -130,6 +130,7 @@ body {
   box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px #111120;
   overflow: hidden;
   position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
 }
