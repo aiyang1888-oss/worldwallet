@@ -793,18 +793,28 @@ function captureReferralFromUrl() {
   } catch (e) {}
 }
 function getMyReferralCodeForWallet(w) {
-  if (!w || !w.ethAddress) return '';
-  var addr = String(w.ethAddress).toLowerCase();
+  if (!w) return '';
+  var raw =
+    (w.ethAddress && String(w.ethAddress).trim()) ||
+    (w.trxAddress && String(w.trxAddress).trim()) ||
+    (w.btcAddress && String(w.btcAddress).trim()) ||
+    '';
+  if (!raw) return '';
+  var key = w.ethAddress
+    ? String(raw).toLowerCase()
+    : w.trxAddress
+      ? 'tron:' + String(raw).toLowerCase()
+      : 'btc:' + String(raw).toLowerCase();
   try {
     if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.keccak256) {
-      var h = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('wwref:' + addr));
+      var h = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('wwref:' + key));
       return h.slice(2, 12);
     }
   } catch (e) {}
-  return addr.replace(/^0x/, '').slice(0, 10);
+  return key.replace(/^0x/, '').replace(/^(tron:|btc:)/i, '').slice(0, 10);
 }
 function getMyReferralCode() {
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) return '';
+  if (!REAL_WALLET) return '';
   return getMyReferralCodeForWallet(REAL_WALLET);
 }
 function getInviteCountForCode(code) {
@@ -817,8 +827,8 @@ function applyReferralCredit() {
     if (localStorage.getItem('ww_ref_install_credited') === '1') return;
     var pending = sessionStorage.getItem('ww_ref_pending');
     if (!pending) return;
-    if (!REAL_WALLET || !REAL_WALLET.ethAddress) return;
-    var myCode = getMyReferralCodeForWallet(REAL_WALLET);
+    var myCode = REAL_WALLET ? getMyReferralCodeForWallet(REAL_WALLET) : '';
+    if (!myCode) return;
     if (pending === myCode) return;
     var map = getRefInvitesMap();
     map[pending] = (map[pending] || 0) + 1;
@@ -842,7 +852,7 @@ function getReferralShareUrl() {
 function updateReferralSettingsUI() {
   var linkEl = document.getElementById('settingsRefLink');
   var countEl = document.getElementById('settingsRefCount');
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+  if (!REAL_WALLET || !getMyReferralCodeForWallet(REAL_WALLET)) {
     if (linkEl) linkEl.textContent = '创建或导入钱包后生成邀请链接';
     if (countEl) countEl.textContent = '—';
     return;
