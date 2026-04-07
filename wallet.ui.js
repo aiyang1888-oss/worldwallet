@@ -773,10 +773,6 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  if (pageId === 'page-password-restore') {
-    if (typeof openWelcomePinUnlock === 'function') openWelcomePinUnlock();
-    return;
-  }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
@@ -2025,10 +2021,7 @@ function wwUpdateTxSimulation() {
   host.textContent = lines.join('\n');
 }
 
-function openTransferCoinPicker() {
-  var el = document.getElementById('transferCoinOverlay');
-  if (el) el.classList.add('show');
-}
+function openTransferCoinPicker() {}
 
 function closeTransferCoinPicker() {
   var el = document.getElementById('transferCoinOverlay');
@@ -2449,10 +2442,7 @@ async function loadSwapPrices() {
   }
 }
 
-function closeCoinPicker() {
-  var el = document.getElementById('coinPickerOverlay');
-  if (el) el.classList.remove('show');
-}
+function closeCoinPicker() {}
 
 function setSwapMax() {
   var u = swapUsdtCoin();
@@ -3002,19 +2992,6 @@ function _resumeWalletAfterUnlock() {
   window._wwForceIdleLock = false;
   goTo('page-home');
 }
-
-/** 欢迎页「PIN 解锁」：无独立页面，打开 PIN 遮罩（需本机已有钱包数据） */
-function openWelcomePinUnlock() {
-  try {
-    if (typeof loadWallet === 'function') loadWallet();
-  } catch (_lw) {}
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
-    if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning');
-    return;
-  }
-  continueAfterPinCheck();
-}
-
 function wwB64Bytes(u8) {
   var s = '';
   var chunk = 8192;

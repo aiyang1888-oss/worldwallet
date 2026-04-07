@@ -75,8 +75,22 @@
       </div>
     </div>
 
-    <!-- ══ PIN 解锁（原密码恢复入口） ══ -->
-    
+    <!-- ══ PIN 解锁独立页（hash #page-password-restore） ══ -->
+    <div class="page page-password-restore" id="page-password-restore">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
+        <div class="nav-title">PIN 解锁</div>
+      </div>
+      <div class="page-password-restore-body">
+        <div class="page-password-restore-card">
+          <div class="page-password-restore-icon" aria-hidden="true">🔐</div>
+          <p class="page-password-restore-lead">使用本机已保存的 6 位数字 PIN 解锁钱包</p>
+          <p class="page-password-restore-hint">PIN 仅用于在本设备上保护应用，无法替代助记词。若忘记 PIN，可在设置中删除本机钱包后重新导入助记词。</p>
+          <button type="button" class="btn-primary page-password-restore-btn" onclick="continueAfterPinCheck()">输入 PIN 解锁</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 创建页 -->
     <div class="page" id="page-create">
       <div class="nav-bar">
@@ -182,7 +196,7 @@
         </div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
-        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
           </div>
@@ -680,7 +694,7 @@
         <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
       </div>
       <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
-      <button class="btn-primary" class="u13" onclick="submitPinUnlock()">解锁</button>
+      <button type="button" class="btn-primary u13" onclick="submitPinUnlock()">解锁</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
     </div>
   </div>
@@ -692,7 +706,7 @@
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
       <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
+      <button type="button" class="btn-primary u13" onclick="submitTotpUnlock()">验证并进入</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
     </div>
   </div>
