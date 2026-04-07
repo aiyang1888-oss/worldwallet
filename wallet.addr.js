@@ -376,7 +376,8 @@ function copyBoth() {
 
 function copyAllMnemonic(btn) {
   const words = [];
-  var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(currentLang) : (currentLang === 'en' ? 'en' : 'zh');
+  var mnLang = (typeof keyMnemonicLang !== 'undefined' && keyMnemonicLang) ? keyMnemonicLang : 'zh';
+  var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(mnLang) : (mnLang === 'en' ? 'en' : 'zh');
   const isEn = wlKey === 'en';
   if(isEn) {
     const mn = REAL_WALLET && REAL_WALLET.enMnemonic;

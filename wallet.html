@@ -69,7 +69,7 @@
       <div style="width:100%;flex-shrink:0;margin-top:28px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
           <button type="button" class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
-          <button type="button" class="btn-secondary" onclick="goTo('page-password-restore')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
+          <button type="button" class="btn-secondary" onclick="openWelcomePinUnlock()" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
           <button type="button" class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">👤 导入已有钱包</button>
         </div>
       </div>
@@ -176,13 +176,10 @@
             </svg>
           </div>
         </div>
-        <div class="home-greeting ww-balance-privacy-row">
-          <span>总资产估值</span>
-          <button type="button" id="balanceHideToggle" class="ww-balance-hide-btn" aria-pressed="false" aria-label="隐藏余额" title="隐藏余额">👁</button>
-        </div>
+        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
-        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap">
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
           </div>
@@ -437,7 +434,7 @@
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-home')" role="button" tabindex="0" aria-label="返回" style="display:flex;align-items:center;gap:2px;font-size:15px;font-weight:600;color:var(--gold);cursor:pointer;width:auto;min-width:64px;line-height:1;padding:8px 6px 8px 0;margin-left:-4px;box-sizing:border-box"><span style="font-size:30px;font-weight:900;line-height:1">‹</span><span style="letter-spacing:0.04em">返回</span></div>
+        <div class="nav-back" onclick="goTo('page-home')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">设置</div>
         <div class="nav-right"></div>
       </div>
@@ -680,7 +677,7 @@
         <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
       </div>
       <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
-      <button type="button" class="btn-primary u13" onclick="submitPinUnlock()">解锁</button>
+      <button class="btn-primary" class="u13" onclick="submitPinUnlock()">解锁</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
     </div>
   </div>
@@ -692,7 +689,7 @@
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
       <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button type="button" class="btn-primary u13" onclick="submitTotpUnlock()">验证并进入</button>
+      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
     </div>
   </div>
