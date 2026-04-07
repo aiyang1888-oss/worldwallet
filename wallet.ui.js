@@ -167,7 +167,8 @@ var _safeEl = (id) => document.getElementById(id) || {
   textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
   classList: {add:()=>{},remove:()=>{},contains:()=>false},
   href: '', disabled: false,
-  addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
+  addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{},
+  appendChild: function (n) { return n; }, removeChild: function () { return null; }
 };
 
 var WW_APP_VERSION = '1.0.0';
