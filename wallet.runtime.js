@@ -5948,6 +5948,20 @@ function wwHideHbSuccessOverlay() {
   if (ho) ho.style.display = 'none';
 }
 
+// 核心流程别名：具名包装便于静态检查与外部集成（行为与 confirmTransfer/submitClaim/goHomeTransfer 一致）
+function sendTransfer() {
+  return confirmTransfer.apply(this, arguments);
+}
+function claimGift() {
+  return submitClaim.apply(this, arguments);
+}
+function openSend() {
+  return goHomeTransfer.apply(this, arguments);
+}
+function openReceive() {
+  if (typeof goTab === 'function') goTab('tab-addr');
+}
+
 // data-ww-fn：显式挂到 window，供 wallet.html 捕获阶段委托脚本读取 window[fnName]
 (function wwExposeDataWwFnHandlers() {
   try {
@@ -6015,29 +6029,9 @@ function wwHideHbSuccessOverlay() {
     if (typeof syncImportPasteFromGrid === 'function') window.syncImportPasteFromGrid = syncImportPasteFromGrid;
     if (typeof onClaimInput === 'function') window.onClaimInput = onClaimInput;
     if (typeof onHideZeroTokensChange === 'function') window.onHideZeroTokensChange = onHideZeroTokensChange;
-  } catch (_ww) {}
-})();
-
-// 核心流程别名：具名包装便于静态检查与外部集成（行为与 confirmTransfer/submitClaim/goHomeTransfer 一致）
-function sendTransfer() {
-  return confirmTransfer.apply(this, arguments);
-}
-function claimGift() {
-  return submitClaim.apply(this, arguments);
-}
-function openSend() {
-  return goHomeTransfer.apply(this, arguments);
-}
-function openReceive() {
-  if (typeof goTab === 'function') goTab('tab-addr');
-}
-
-// 核心流程别名：挂到 window（与自动化测试/外部集成约定的命名）
-(function wwExposeCoreAliases() {
-  try {
     if (typeof sendTransfer === 'function') window.sendTransfer = sendTransfer;
     if (typeof claimGift === 'function') window.claimGift = claimGift;
     if (typeof openSend === 'function') window.openSend = openSend;
     if (typeof openReceive === 'function') window.openReceive = openReceive;
-  } catch (_al) {}
+  } catch (_ww) {}
 })();
