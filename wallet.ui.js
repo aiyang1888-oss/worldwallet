@@ -783,63 +783,7 @@ function handlePinSetupKey(key) {
   finalizeImportedWalletAfterPin(val).then(function(){ closePinSetupOverlay(); }).catch(function(e){ showToast((e && e.message) || 'PIN 设置失败', 'error'); });
 }
 
-/** 保留接口；永不自动打开 TOTP（与首次引导解耦） */
-function offerTotpAfterPinSave() {}
-
-function startTotpSetup() {
-  if (window._wwInFirstRun) return;
-  const pin = localStorage.getItem('ww_pin');
-  if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
-  const secretB32 = wwGenerateTotpSecretB32();
-  window._wwTotpPendingSecret = secretB32;
-  const issuer = 'WorldToken';
-  let acc = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') || 'wallet';
-  acc = String(acc).slice(0, 48);
-  const label = encodeURIComponent(issuer + ':' + acc);
-  const otpauth = 'otpauth://totp/' + label + '?secret=' + secretB32 + '&issuer=' + encodeURIComponent(issuer);
-  const st = document.getElementById('totpSetupSecretText');
-  if (st) st.textContent = secretB32;
-  const inp = document.getElementById('totpSetupVerifyInput');
-  if (inp) inp.value = '';
-  const ov = document.getElementById('totpSetupOverlay');
-  if (ov) ov.classList.add('show');
-  const canvas = document.getElementById('totpSetupQr');
-  if (canvas && typeof loadQRCodeLib === 'function') {
-    loadQRCodeLib().then(function() {
-      if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-        return QRCode.toCanvas(canvas, otpauth, { width: 200, margin: 2, color: { dark: '#000000', light: '#ffffff' } });
-      }
-    }).catch(function() { showToast('二维码加载失败，可手动输入密钥', 'warning'); });
-  }
-}
-function closeTotpSetup() {
-  const ov = document.getElementById('totpSetupOverlay');
-  if (ov) ov.classList.remove('show');
-  window._wwTotpPendingSecret = null;
-}
-
-function showTotpUnlockOverlay() {
-  const ov = document.getElementById('totpUnlockOverlay');
-  const inp = document.getElementById('totpUnlockInput');
-  const err = document.getElementById('totpUnlockError');
-  if (inp) { inp.value = ''; try { inp.focus(); } catch (e) {} }
-  if (err) err.style.display = 'none';
-  if (ov) ov.classList.add('show');
-}
-
-function closeTotpUnlock() {
-  if(window._wwForceIdleLock) {
-    if(typeof showToast==='function') showToast('请输入两步验证码以解锁', 'warning', 2200);
-    return;
-  }
-  const ov = document.getElementById('totpUnlockOverlay');
-  if (ov) ov.classList.remove('show');
-  const pov = document.getElementById('pinUnlockOverlay');
-  const pinInp = document.getElementById('pinUnlockInput');
-  if (pinInp) pinInp.value = '';
-  if (pov) pov.classList.add('show');
-  try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
-}
+/* TOTP（offerTotpAfterPinSave / startTotpSetup / showTotpUnlockOverlay 等）由 wallet.runtime.js 提供，勿在此重复定义以免遮蔽 */
 
 /** 任一条链上公开地址存在即视为已有钱包（勿仅依赖 ethAddress，否则首页底栏被隐藏、像空白页） */
 function wwWalletHasAnyChainAddress(rw) {
@@ -3262,13 +3206,6 @@ function openPinSettingsDialog() {
     wwApplyHashRoute();
   }, 0);
 })();
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
-      });
-    }
-  
 
 (function(){
   function run(){
