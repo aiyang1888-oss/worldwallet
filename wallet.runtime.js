@@ -4726,7 +4726,10 @@ function closeCoinPicker() { const _ovcoinPi2 = document.getElementById('coinPic
 
 function doSwap() {
   const amt = parseFloat(_safeEl('swapAmountIn').value)||0;
-  if(!amt) return;
+  if(!amt) {
+    if (typeof showToast === 'function') showToast('请输入兑换金额', 'warning');
+    return;
+  }
   const out = (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent;
 
   // 根据交易对选择 DEX
