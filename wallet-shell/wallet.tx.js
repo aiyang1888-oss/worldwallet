@@ -53,13 +53,19 @@ function confirmTransfer() {
   }
 
   // 收件人 = 输入的对方地址（不同！）
-  const isWW = addr.includes('·');
+  // 万语：旧式「·」分隔，或规范 8数字-10汉字-8数字（连字符）
+  const isWW = addr.includes('·') || /^\d{8}-[\u4e00-\u9fff]{10}-\d{8}$/.test(addr.trim());
   if(isWW) {
-    // WorldToken母语地址，拆解显示
-    const parts2 = addr.split('·').map(s=>s.trim());
     _safeEl('successToIcon').textContent = '🌍';
-    _safeEl('successToName').textContent = parts2[0]||addr;
-    _safeEl('successToAddr').textContent = (parts2[1]||'')+' · '+(parts2[2]||'') + ' · WorldToken';
+    if (addr.includes('·')) {
+      const parts2 = addr.split('·').map(s=>s.trim());
+      _safeEl('successToName').textContent = parts2[0]||addr;
+      _safeEl('successToAddr').textContent = (parts2[1]||'')+' · '+(parts2[2]||'') + ' · WorldToken';
+    } else {
+      const p = addr.trim().split('-');
+      _safeEl('successToName').textContent = (p[0]||'') + '…' + (p[2]||'');
+      _safeEl('successToAddr').textContent = (p[1]||'') + ' · WorldToken';
+    }
   } else {
     // 公链地址
     const chainIcon = addr.startsWith('T')?'🔴':addr.startsWith('0x')?'🔷':addr.startsWith('bc')?'🟠':'⛓️';
