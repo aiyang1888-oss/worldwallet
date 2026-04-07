@@ -4364,8 +4364,11 @@ function createHongbao() {
 function copyKw() {
   navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
   const btn = document.getElementById('copyKwBtn');
-  btn.querySelector('div:last-child').textContent = '✅ 已复制';
-  setTimeout(()=>{ btn.querySelector('div:last-child').textContent = '复制口令'; }, 2000);
+  if (!btn) return;
+  const label = btn.querySelector('div:last-child');
+  if (!label) return;
+  label.textContent = '✅ 已复制';
+  setTimeout(function () { label.textContent = '复制口令'; }, 2000);
 }
 
 function shareKw() {
