@@ -976,8 +976,8 @@ function initScrollTopBtn() {
 function initTabSwipeGesture() {
   var root = document.querySelector('.pages');
   if (!root) return;
-  var order = ['tab-home', 'tab-addr', 'tab-swap', 'tab-settings'];
-  var pageToTab = { 'page-home': 'tab-home', 'page-addr': 'tab-addr', 'page-swap': 'tab-swap', 'page-settings': 'tab-settings' };
+  var order = ['tab-home', 'tab-addr', 'tab-swap', 'tab-hongbao', 'tab-settings'];
+  var pageToTab = { 'page-home': 'tab-home', 'page-addr': 'tab-addr', 'page-swap': 'tab-swap', 'page-hongbao': 'tab-hongbao', 'page-settings': 'tab-settings' };
   var sx = 0, sy = 0, startEl = null;
   root.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) return;
