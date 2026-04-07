@@ -3209,6 +3209,20 @@ function submitPinUnlock() {
     if(inp) inp.value = '';
   }
 }
+function pinUnlockBackspace() {
+  const inp = document.getElementById('pinUnlockInput');
+  if (!inp) return;
+  inp.value = (inp.value || '').slice(0, -1);
+  try { inp.focus(); } catch (e) {}
+}
+function pinUnlockClear() {
+  const inp = document.getElementById('pinUnlockInput');
+  if (!inp) return;
+  inp.value = '';
+  const err = document.getElementById('pinUnlockError');
+  if (err) err.style.display = 'none';
+  try { inp.focus(); } catch (e) {}
+}
 function closePinUnlock() {
   if(window._wwForceIdleLock) {
     if(typeof showToast==='function') showToast('闲置超时，请输入 PIN 解锁', 'warning', 2200);
