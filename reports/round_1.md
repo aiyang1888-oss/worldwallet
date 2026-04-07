@@ -1,27 +1,37 @@
-# Round 1 修复报告 - 2026-04-07 22:30
+# Round 1 修复报告 - 2026-04-07
 
 ## 发现的问题
-- [P3] `setTransferMax` 已在 `wallet.runtime.js` 中实现空值防护，但未在 `wwExposeDataWwFnHandlers` 中挂到 `window`，与 `setSwapMax` 等不一致，外部或调试台调用 `window.setTransferMax` 可能为 `undefined`。
+
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名顶层函数，运行期以后加载文件为准，属维护复杂度问题，本轮测试未导致 TEST-A/B/C 失败。
+- 本轮未发现 [P0]（绑定/页面缺失）、[P1]（明显崩溃路径）、[P2]（核心函数空实现）级问题。
 
 ## 修复内容
-- 文件：`wallet.runtime.js`
-- 函数：`wwExposeDataWwFnHandlers`（末尾自执行块）
-- 修改：在暴露列表中增加 `window.setTransferMax = setTransferMax`，与既有 `data-ww-fn` 暴露方式一致。
+
+- 文件：无
+- 函数：无
+- 修改：静态扫描与 TEST-A/B/C 均通过，未提交代码补丁
 
 ## 修改文件
-- `wallet.runtime.js`
+
+- 无
 
 ## 剩余问题
+
 - 无
 
 ## 测试结果
-- TEST-A: PASS — 全部 `data-ww-fn` 均有对应全局函数或经 `wwExposeDataWwFnHandlers` 挂到 `window`。
-- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在 `id="page-*"`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift` 均有非空函数体；`sendTransfer`/`claimGift`/`openSend` 为 `confirmTransfer`/`submitClaim`/`goHomeTransfer` 的 `window` 别名，`openReceive` 为调用 `goTab('tab-addr')` 的包装函数。
 
-## 附录：STEP 1 扫描摘要
-- **data-ww-fn**：41 处（含 `createNewWallet`、`confirmPin`、`createGift`、`submitClaim` 等）。
-- **id="page-*"`**：`page-welcome` … `page-faq` 共 22 个页面容器。
-- **data-ww-go**：均指向已存在的 `page-*`。
-- **wallet.css**：花括号 330 / 330，平衡。
-- **脚本顺序**：`js/storage.js` → `core/*` → `wallet.core.js` → `wallet.ui.js` → `wallet.addr.js` → `wallet.tx.js` → `wallet.runtime.js` → `wallet.dom-bind.js`。
+- TEST-A: PASS — `data-ww-fn` 共 41 个，均有全局 `function` 或由 `wallet.runtime.js` 挂到 `window`（含 `createGift` 等来自先加载脚本的全局函数）
+- TEST-B: PASS — `data-ww-go` 目标（page-create、page-password-restore、page-import、page-welcome、page-faq、page-key-verify、page-pin-setup、page-settings、page-home、page-claim、page-hb-records、page-hongbao）均存在对应 `id="page-*"`
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均有实质逻辑或非空调用链
+
+---
+
+### 附录 · STEP 1 数据速查
+
+| 项目 | 结果 |
+|------|------|
+| `data-ww-fn` 数量 | 41 |
+| `id="page-*"` | 见 wallet.html（含 page-password-restore、page-home 等） |
+| `data-ww-go` 去重目标 | 12 个，均存在对应页面 id |
+| `wallet.css` `{` / `}` | 330 / 330（平衡） |
