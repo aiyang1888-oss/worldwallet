@@ -468,9 +468,16 @@ function openWordEditor(idx) {
     `第 ${idx+1} 个字（当前：${info.flag} "${w.word}"）\n\n输入新词（直接输入），或留空随机\n\n可用语言：${Object.entries(LANG_INFO).filter(([l])=>l!=='en').map(([l,i])=>i.flag+l).join(' ')}`,
     w.custom ? w.word : ''
   );
-  if(input === null) return;
-  const trimmed = input.trim();
-  if (trimmed.length === 0 || trimmed.length > 4) {
+  if (input === null) return;
+  var trimmed = String(input).trim();
+  if (trimmed.length === 0) {
+    ADDR_WORDS[idx] = { word: randWanYuZhChar(), lang: w.lang, custom: false };
+    renderAddrWords();
+    persistWanYuAddrToStorage();
+    try { if (typeof updateAddr === 'function') updateAddr(); } catch (_e) {}
+    return;
+  }
+  if (trimmed.length > 4) {
     alert('词长度必须在 1-4 个字符之间');
     return;
   }
