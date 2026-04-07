@@ -588,10 +588,10 @@ function txHistoryEmptyHtml() {
 }
 
 function txHistoryRowHtml(tx) {
-  const escapeHtml = function(str) {
-    const div = document.createElement('div');
-    div.textContent = String(str || '');
-    return div.innerHTML;
+  const escapeHtml = function (s) {
+    const d = document.createElement('div');
+    d.textContent = String(s || '');
+    return d.innerHTML;
   };
   var addr = String(tx.addr || '');
   var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
@@ -603,8 +603,8 @@ function txHistoryRowHtml(tx) {
   const coinEscaped = escapeHtml(coin);
   const iconEscaped = escapeHtml(tx.icon);
   const timeEscaped = escapeHtml(tx.time);
-  const hashAttr = escapeHtml(hash);
-  const coinAttr = escapeHtml(coin);
+  const hashAttr = escapeHtml(tx.hash);
+  const coinAttr = escapeHtml(tx.coin);
   var col = wwTxSanitizeColor(tx.color);
   return (
     '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + coinAttr + '" data-hash="' + hashAttr + '"' +

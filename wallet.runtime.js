@@ -754,15 +754,12 @@ async function decryptSensitive(pin) {
 
 // ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
 function saveWallet(w) {
-  // 如果有 PIN，使用加密存储；否则只存公开信息（内存 _wwCurrentPin，与 wwSetSessionPin 同步）
   var pin = _wwCurrentPin || '';
   if (pin) {
-    saveWalletSecure(w, pin).catch(function(e) {
-      console.error('[saveWallet] 加密存储失败，降级明文:', e);
+    saveWalletSecure(w, pin).catch(function (e) {
       _saveWalletPlainPublicOnly(w);
     });
   } else {
-    // 无 PIN：只存公开信息，不存敏感数据
     _saveWalletPlainPublicOnly(w);
   }
 }
@@ -1536,10 +1533,10 @@ async function submitTotpUnlock() {
     }
     return;
   }
-  window._wwCurrentPin = pin;
+  _wwCurrentPin = pin;
   clearTimeout(window._wwCurrentPinClearTimer);
-  window._wwCurrentPinClearTimer = setTimeout(function() {
-    window._wwCurrentPin = null;
+  window._wwCurrentPinClearTimer = setTimeout(function () {
+    _wwCurrentPin = null;
   }, 30 * 60 * 1000);
   const ov = document.getElementById('totpUnlockOverlay');
   if (ov) ov.classList.remove('show');
