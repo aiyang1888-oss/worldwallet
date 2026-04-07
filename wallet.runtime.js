@@ -5060,12 +5060,16 @@ function buildReceiveQrPayload(chain, addr, amountRaw) {
 }
 function updateQRCode() {
   if(!REAL_WALLET) return;
-  const chain = document.getElementById('qrChainSelect')?.value || 'trx';
-  let addr = '';
-  if(chain === 'trx') addr = REAL_WALLET.trxAddress || '';
-  else if(chain === 'eth') addr = REAL_WALLET.ethAddress || '';
-  else if(chain === 'btc' || chain === 'native') addr = REAL_WALLET.btcAddress || REAL_WALLET.trxAddress || '';
-  if(addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
+  const selectedChain = document.getElementById('qrChainSelect')?.value || 'trx';
+  let realAddr = '';
+  if(selectedChain === 'trx') realAddr = REAL_WALLET.trxAddress || '';
+  else if(selectedChain === 'eth') realAddr = REAL_WALLET.ethAddress || '';
+  else if(selectedChain === 'btc' || selectedChain === 'native') realAddr = REAL_WALLET.btcAddress || REAL_WALLET.trxAddress || '';
+  if(!realAddr) return;
+  var amtEl = document.getElementById('qrReceiveAmount');
+  var amountValue = amtEl ? amtEl.value : '';
+  const qrText = buildReceiveQrPayload(selectedChain, realAddr, amountValue);
+  generateQRCode(qrText, 'qrCanvas');
 }
 
 
