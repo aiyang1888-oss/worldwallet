@@ -1316,6 +1316,16 @@ function updateQRCode() {
   wwGenerateQRCode(payload, 'qrCanvas');
 }
 
+/** 全屏收款二维码弹窗（wallet.html #qrOverlay；关闭按钮与遮罩 onclick 依赖此函数） */
+function showQR() {
+  var el = document.getElementById('qrOverlay');
+  if (el) el.classList.add('show');
+}
+function hideQR() {
+  var el = document.getElementById('qrOverlay');
+  if (el) el.classList.remove('show');
+}
+
 // KEYWORDS_ZH 已迁移到 KW_ZH
 // KEYWORDS_EN 已迁移到 KW_EN
 // Must not reference KW_ZH here — const KW_ZH is declared later (TDZ).
@@ -2121,7 +2131,11 @@ function wwUpdateTxSimulation() {
   host.textContent = lines.join('\n');
 }
 
-function openTransferCoinPicker() {}
+function openTransferCoinPicker() {
+  var el = document.getElementById('transferCoinOverlay');
+  if (el) el.classList.add('show');
+  else if (typeof showToast === 'function') showToast('当前页仅支持 USDT (TRC-20) 转账', 'info');
+}
 
 function closeTransferCoinPicker() {
   var el = document.getElementById('transferCoinOverlay');
@@ -2572,7 +2586,10 @@ async function loadSwapPrices() {
   }
 }
 
-function closeCoinPicker() {}
+function closeCoinPicker() {
+  var el = document.getElementById('coinPickerOverlay');
+  if (el) el.classList.remove('show');
+}
 
 function setSwapMax() {
   var u = swapUsdtCoin();
