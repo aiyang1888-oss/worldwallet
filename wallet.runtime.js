@@ -1913,7 +1913,11 @@ function updateHomeChainStrip() {
 function updateHomeBackupBanner() {
   var b = document.getElementById('homeBackupBanner');
   if (!b) return;
-  var show = REAL_WALLET && REAL_WALLET.ethAddress && !REAL_WALLET.backedUp;
+  var hasWallet =
+    typeof wwWalletHasAnyChainAddress === 'function'
+      ? wwWalletHasAnyChainAddress(REAL_WALLET)
+      : !!(REAL_WALLET && (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress || REAL_WALLET.btcAddress));
+  var show = hasWallet && REAL_WALLET && !REAL_WALLET.backedUp;
   b.style.display = show ? 'block' : 'none';
 }
 
