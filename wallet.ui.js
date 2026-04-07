@@ -2908,6 +2908,15 @@ function startVerify() {
     words = REAL_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
   }
   if (!words || words.length < 12) {
+    var persistedHasAddr = false;
+    try {
+      var _stVer = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      persistedHasAddr = typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(_stVer);
+    } catch (_pv) {}
+    if (persistedHasAddr) {
+      if (typeof showToast === 'function') showToast('无法加载助记词，请返回密钥页重新生成后再验证', 'error');
+      return;
+    }
     // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
     var nPick = 12;
     if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
