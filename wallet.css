@@ -540,6 +540,13 @@ body {
   border-radius: 8px; padding: 5px 10px;
   display: inline-block; margin-bottom: 12px;
 }
+.home-addr-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+}
 .home-chain-strip {
   display: flex;
   flex-wrap: wrap;
