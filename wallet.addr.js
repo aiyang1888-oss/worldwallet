@@ -77,7 +77,7 @@ function updateAddr() {
   const langTag = document.getElementById('qrLangTag');
   const info = LANG_INFO[currentLang]||{flag:'🌍',name:'Mother'};
   if(langTag) langTag.textContent = (info.flag || '🌍') + ' ' + (currentLang === 'en' ? 'BIP39' : '万语地址');
-  // 更新二维码显示内容
+  // 更新二维码显示内容（链上收款 URI：buildReceiveQrPayload 在 wallet.runtime.js，使用 REAL_WALLET 公链地址）
   updateQRDisplay();
   // 同步礼金UI
   if(typeof updateGiftUI==='function') updateGiftUI();

@@ -734,7 +734,12 @@ async function finalizeImportedWalletAfterPin(pin) {
     trxPrivateKey: flat.trxPrivateKey,
     createdAt: flat.createdAt,
     hasEncrypted: true,
-    backedUp: !!flat.backedUp
+    backedUp: !!flat.backedUp,
+    addrMap: flat.addrMap || {
+      trx: flat.trxAddress,
+      eth: flat.ethAddress,
+      btc: flat.btcAddress || ''
+    }
   };
   try { if (typeof updateAddr === 'function') updateAddr(); } catch(e) {}
   try { if (typeof loadBalances === 'function') setTimeout(loadBalances, 500); } catch(e) {}
@@ -3022,7 +3027,12 @@ function startVerify() {
       privateKey: nested ? tw.eth.privateKey : tw.privateKey,
       trxPrivateKey: nested ? tw.trx.privateKey : tw.trxPrivateKey,
       enMnemonic: tw.mnemonic,
-      words: words.slice()
+      words: words.slice(),
+      addrMap: tw.addrMap || {
+        trx: nested ? tw.trx.address : tw.trxAddress,
+        eth: nested ? tw.eth.address : tw.ethAddress,
+        btc: nested ? tw.btc.address : (tw.btcAddress || '')
+      }
     };
     window.REAL_WALLET = REAL_WALLET;
     if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
@@ -3386,7 +3396,12 @@ async function doImportWallet() {
       privateKey: result.eth.privateKey,
       trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
-      backedUp: false
+      backedUp: false,
+      addrMap: result.addrMap || {
+        trx: result.trx.address,
+        eth: result.eth.address,
+        btc: result.btc.address
+      }
     };
 
     window.REAL_WALLET = {
@@ -3398,7 +3413,12 @@ async function doImportWallet() {
       trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
       hasEncrypted: false,
-      backedUp: false
+      backedUp: false,
+      addrMap: result.addrMap || {
+        trx: result.trx.address,
+        eth: result.eth.address,
+        btc: result.btc.address
+      }
     };
 
     try { localStorage.setItem('ww_import_pending', JSON.stringify(flatForStore)); } catch (e) {}
