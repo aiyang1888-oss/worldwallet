@@ -6681,3 +6681,40 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     return originalWarn.apply(console, Array.from(arguments).map(sanitize));
   };
 })();
+
+// data-ww-fn：显式挂到 window，供 wallet.html 捕获阶段委托脚本读取 window[fnName]
+(function wwExposeDataWwFnHandlers() {
+  try {
+    if (typeof checkVerify === 'function') window.checkVerify = checkVerify;
+    if (typeof closePinSetupOverlay === 'function') window.closePinSetupOverlay = closePinSetupOverlay;
+    if (typeof closePinUnlock === 'function') window.closePinUnlock = closePinUnlock;
+    if (typeof closeTotpSetup === 'function') window.closeTotpSetup = closeTotpSetup;
+    if (typeof closeTotpUnlock === 'function') window.closeTotpUnlock = closeTotpUnlock;
+    if (typeof closeTransferConfirm === 'function') window.closeTransferConfirm = closeTransferConfirm;
+    if (typeof confirmTotpSetup === 'function') window.confirmTotpSetup = confirmTotpSetup;
+    if (typeof confirmTransfer === 'function') window.confirmTransfer = confirmTransfer;
+    if (typeof copyHbCreatedKeyword === 'function') window.copyHbCreatedKeyword = copyHbCreatedKeyword;
+    if (typeof copyHomeAddr === 'function') window.copyHomeAddr = copyHomeAddr;
+    if (typeof copyNative === 'function') window.copyNative = copyNative;
+    if (typeof createGift === 'function') window.createGift = createGift;
+    if (typeof createNewWallet === 'function') window.createNewWallet = createNewWallet;
+    if (typeof doImportWallet === 'function') window.doImportWallet = doImportWallet;
+    if (typeof doSwap === 'function') window.doSwap = doSwap;
+    if (typeof doTransfer === 'function') window.doTransfer = doTransfer;
+    if (typeof editHomeAddr === 'function') window.editHomeAddr = editHomeAddr;
+    if (typeof hideQR === 'function') window.hideQR = hideQR;
+    if (typeof loadBalances === 'function') window.loadBalances = loadBalances;
+    if (typeof loadTxHistory === 'function') window.loadTxHistory = loadTxHistory;
+    if (typeof openCustomizeAddr === 'function') window.openCustomizeAddr = openCustomizeAddr;
+    if (typeof openPinSettingsDialog === 'function') window.openPinSettingsDialog = openPinSettingsDialog;
+    if (typeof pinUnlockBackspace === 'function') window.pinUnlockBackspace = pinUnlockBackspace;
+    if (typeof pinUnlockClear === 'function') window.pinUnlockClear = pinUnlockClear;
+    if (typeof promptWalletNotifications === 'function') window.promptWalletNotifications = promptWalletNotifications;
+    if (typeof selectTransferCoin === 'function') window.selectTransferCoin = selectTransferCoin;
+    if (typeof setSwapMax === 'function') window.setSwapMax = setSwapMax;
+    if (typeof shareHbCreatedKeyword === 'function') window.shareHbCreatedKeyword = shareHbCreatedKeyword;
+    if (typeof startVerify === 'function') window.startVerify = startVerify;
+    if (typeof submitClaim === 'function') window.submitClaim = submitClaim;
+    if (typeof submitTotpUnlock === 'function') window.submitTotpUnlock = submitTotpUnlock;
+  } catch (_ww) {}
+})();

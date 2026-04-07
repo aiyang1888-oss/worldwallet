@@ -1595,6 +1595,8 @@ function selectTransferCoin(coinId) {
   if (typeof calcTransferFee === 'function') calcTransferFee();
 }
 
+window.selectTransferCoin = selectTransferCoin;
+
 var WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
 function getRecentTransferAddrs() {
   try {
