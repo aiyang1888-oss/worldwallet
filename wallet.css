@@ -251,6 +251,10 @@ body {
     radial-gradient(ellipse 95% 75% at 50% -28%, rgba(228, 197, 108, 0.22) 0%, transparent 58%),
     radial-gradient(ellipse 55% 50% at 95% 85%, rgba(100, 80, 200, 0.09) 0%, transparent 52%),
     var(--bg) !important;
+  justify-content: flex-start !important;
+  margin-top: 0 !important;
+  /* 与状态栏下沿衔接；刘海屏仅用 safe-area，不用额外大块 padding */
+  padding-top: env(safe-area-inset-top, 0px) !important;
 }
 
 .home-header {
