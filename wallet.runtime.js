@@ -4101,20 +4101,33 @@ function setTransferMax() {
 }
 
 function selectTransferCoin(id) {
-  // 从 COINS 读取实时余额和价格
-  const coinData = COINS.find(c=>c.id===id);
-  const map = {
+  if (id == null || String(id).trim() === '') return;
+  var sid = String(id).trim();
+  var coinData = null;
+  try {
+    if (typeof COINS !== 'undefined' && COINS && typeof COINS.find === 'function') {
+      coinData = COINS.find(function (c) { return c && c.id === sid; });
+    }
+  } catch (_c) { coinData = null; }
+  var map = {
     usdt:{id:'usdt',name:'USDT',chain:'TRC-20 · Tron',icon:'💚',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
     trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
     eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
     btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
   };
-  transferCoin = COINS.find(c=>c.id===id) || map[id] || map.usdt;
-  document.getElementById('transferCoinIcon').textContent = transferCoin.icon;
-  document.getElementById('transferCoinName').textContent = transferCoin.name;
-  document.getElementById('transferBal').textContent = transferCoin.bal.toLocaleString();
-  closeTransferCoinPicker();
-  calcTransferFee();
+  transferCoin = coinData || map[sid] || map.usdt;
+  // wallet.html 当前版可能无 transferCoinIcon / transferCoinName，须防空避免整段抛错导致 data-ww-fn 失效
+  var iconEl = document.getElementById('transferCoinIcon');
+  var nameEl = document.getElementById('transferCoinName');
+  if (iconEl) iconEl.textContent = transferCoin.icon;
+  if (nameEl) nameEl.textContent = transferCoin.name;
+  var balEl = document.getElementById('transferBal');
+  if (balEl) balEl.textContent = (Number(transferCoin.bal) || 0).toLocaleString();
+  if (typeof closeTransferCoinPicker === 'function') closeTransferCoinPicker();
+  var cur = document.querySelector('.page.active');
+  var curId = cur && cur.id;
+  if (curId !== 'page-transfer' && typeof goTo === 'function') goTo('page-transfer');
+  else if (typeof calcTransferFee === 'function') calcTransferFee();
 }
 
 function openTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.add('show'); }
