@@ -3059,10 +3059,18 @@ function startVerify() {
     div.innerHTML = `
       <div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ${pos+1} 词</div>
       <input type="text" id="verify_${pos}" placeholder="请输入第 ${pos+1} 个词" autocomplete="off" autocorrect="off" autocapitalize="off"
-        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit"
-        onkeydown="if(event.key==='Enter')checkVerify()">
+        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit" />
     `;
     container.appendChild(div);
+    var _vInp = document.getElementById('verify_' + pos);
+    if (_vInp) {
+      _vInp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (typeof checkVerify === 'function') checkVerify();
+        }
+      });
+    }
   });
   
   _safeEl('verifyError').style.display = 'none';
