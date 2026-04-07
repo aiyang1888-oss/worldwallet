@@ -230,7 +230,7 @@ async function restoreWallet(mnemonic) {
     showToast('❌ 钱包核心未加载', 'error');
     return null;
   }
-  var result = importWallet(raw);
+  var result = importWalletFlexible(raw);
   if (!result) {
     showToast('❌ 助记词无效，请检查后重试', 'error');
     return null;
@@ -305,6 +305,27 @@ function mnemonicFromLang(mnemonic, lang) {
     if (idx === undefined) return w;
     return WT_WORDLISTS.en[idx] || w;
   }).join(" ");
+}
+
+/**
+ * 界面语言 → 助记词展示用词库键：仅英文用 BIP39 英文词；中文及其他语言统一用中文地名词库（WT_WORDLISTS.zh，来自 zh-cn.json）
+ */
+function getMnemonicWordlistLang(uiLang) {
+  if (!uiLang || uiLang === 'en') return 'en';
+  return 'zh';
+}
+
+/**
+ * 导入：先按标准英文 BIP39 解析；失败则按中文地名词库转为英文再解析（与「非英文界面展示中文地名」一致）。
+ */
+function importWalletFlexible(raw) {
+  var norm = String(raw || '').trim().replace(/\s+/g, ' ');
+  if (!norm) return null;
+  var r = importWallet(norm);
+  if (r) return r;
+  if (typeof mnemonicFromLang !== 'function' || !WT_WORDLISTS || !WT_WORDLISTS.zh) return null;
+  var en = mnemonicFromLang(norm, 'zh');
+  return importWallet(en);
 }
 
 function generateLocalMnemonic() {

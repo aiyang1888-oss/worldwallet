@@ -400,10 +400,19 @@ body {
 .nav-right { font-size: 13px; color: var(--gold); cursor: pointer; }
 
 /* ── 密钥页 ── */
-.key-content { padding: var(--page-pad-y, 16px) max(18px, var(--page-pad-x, 18px)); flex: 1; }
+.key-content {
+  padding: var(--page-pad-y, 16px) max(18px, var(--page-pad-x, 18px));
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
 .key-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin-bottom: 16px;
+  flex: 0 0 auto;
 }
 .key-word {
   background: var(--bg); border: 1px solid var(--border);
@@ -426,7 +435,8 @@ body {
   border: 1px solid rgba(231, 76, 60, 0.42);
   color: #ffb4a8;
   border-radius: 12px;
-  padding: 10px 12px;
+  /* 右侧为首页头部绝对定位的通知/网格按钮预留空间（2×36px + gap），避免文案被遮挡 */
+  padding: 10px max(96px, calc(80px + env(safe-area-inset-right, 0px))) 10px 12px;
   margin: 0 0 12px 0;
   font-size: 12px;
   font-weight: 600;
