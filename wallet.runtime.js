@@ -1705,6 +1705,20 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
     setTimeout(loadTxHistory, 500);
     setTimeout(loadBalances, 500);
   }
+  if (pageId === 'page-password-restore') {
+    var _priRt = document.getElementById('pinRestorePageInput');
+    var _preRt = document.getElementById('pageRestorePinError');
+    if (_preRt) {
+      _preRt.style.display = 'none';
+      _preRt.textContent = '';
+    }
+    if (_priRt) _priRt.value = '';
+    setTimeout(function () {
+      try {
+        if (_priRt) _priRt.focus();
+      } catch (_f) {}
+    }, 100);
+  }
   try { if (typeof wwUpdateScrollTopBtn === 'function') wwUpdateScrollTopBtn(); } catch (e) {}
   try {
     var _h = '#' + pageId;
