@@ -796,7 +796,7 @@ function normalizeRefCode(s) {
 function captureReferralFromUrl() {
   try {
     var u = new URL(location.href);
-    var r = u.searchParams.get('ref');
+    var r = typeof getSafeUrlParam === 'function' ? getSafeUrlParam('ref') : (u.searchParams.get('ref') || '');
     if (r) {
       r = normalizeRefCode(r);
       if (r.length >= 6) {
@@ -2364,30 +2364,34 @@ function wwDappReload() {
 }
 function wwGetIdleLockMinutes() {
   try {
-    var v = localStorage.getItem('ww_lock_idle_min');
-    if(v === '1' || v === '5' || v === '15') return parseInt(v, 10);
-  } catch(e) {}
-  return 0;
+    var mins = parseInt(localStorage.getItem('ww_idle_lock_mins') || '5', 10);
+    // 最少 3 分钟，最多 60 分钟
+    if (isNaN(mins) || mins < 3) mins = 3;
+    if (mins > 60) mins = 60;
+    return mins;
+  } catch (e) {
+    return 5;
+  }
 }
 function wwApplyIdleLockLabel() {
   var el = document.getElementById('settingsIdleLockValue');
   if(!el) return;
   var m = wwGetIdleLockMinutes();
-  if(m === 1) el.textContent = '1 分钟';
-  else if(m === 5) el.textContent = '5 分钟';
-  else if(m === 15) el.textContent = '15 分钟';
-  else el.textContent = '关闭';
+  el.textContent = '闲置 ' + m + ' 分钟';
 }
 function wwCycleIdleLockMinutes() {
-  var cur = wwGetIdleLockMinutes();
-  var next = cur === 0 ? 1 : (cur === 1 ? 5 : (cur === 5 ? 15 : 0));
+  var cur = parseInt(localStorage.getItem('ww_idle_lock_mins') || '5', 10);
+  if (isNaN(cur) || cur < 3) cur = 3;
+  if (cur > 60) cur = 60;
+  var steps = [3, 5, 15, 30, 60];
+  var idx = steps.indexOf(cur);
+  var next = steps[(idx < 0 ? 0 : idx + 1) % steps.length];
   try {
-    if(next === 0) localStorage.removeItem('ww_lock_idle_min');
-    else localStorage.setItem('ww_lock_idle_min', String(next));
+    localStorage.setItem('ww_idle_lock_mins', String(next));
   } catch(e) {}
   wwApplyIdleLockLabel();
   wwResetActivityClock();
-  if(typeof showToast==='function') showToast(next === 0 ? '已关闭闲置锁定' : ('闲置 ' + next + ' 分钟后锁定'), 'info', 2200);
+  if(typeof showToast==='function') showToast('闲置 ' + next + ' 分钟后锁定', 'info', 2200);
 }
 function wwResetActivityClock() {
   window._wwLastActivityTs = Date.now();
@@ -4448,7 +4452,14 @@ function deleteWallet() {
 }
 
 function markBackupDone() {
-  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
+  let w = {};
+  try {
+    w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
+  } catch (e) {
+    console.error('[backupStatus] JSON.parse failed:', e);
+    showToast('钱包数据损坏', 'error');
+    return;
+  }
   w.backedUp = true;
   localStorage.setItem('ww_wallet', JSON.stringify(w));
   if(REAL_WALLET) REAL_WALLET.backedUp = true;
@@ -6559,3 +6570,21 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     originalWarn.apply(console, args.map(sanitize));
   };
 })();
+
+function wwSafeLog(level, msg, data) {
+  if (typeof data === 'object' && data) {
+    const safe = {};
+    for (const key in data) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        if (key.includes('private') || key.includes('secret') || key.includes('mnemonic')) {
+          safe[key] = '[FILTERED]';
+        } else {
+          safe[key] = data[key];
+        }
+      }
+    }
+    (console[level] || console.log)('[WW]', msg, safe);
+  } else {
+    (console[level] || console.log)('[WW]', msg, data);
+  }
+}

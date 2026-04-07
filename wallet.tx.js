@@ -278,6 +278,10 @@ async function loadBalances() {
     try {
       const cgChgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true';
       const r2 = await wwFetch429Retry(cgChgUrl, { method: 'GET' });
+      if (!r2 || typeof r2 !== 'object') {
+        console.error('[API] Invalid response:', r2);
+        throw new Error('Invalid API response');
+      }
       if (!r2.ok) throw new Error('cg ' + r2.status);
       const d2 = await r2.json();
       const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
@@ -330,6 +334,10 @@ async function getPrices() {
   try {
     const cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd';
     const res = await wwFetch429Retry(cgUrl, { method: 'GET' });
+    if (!res || typeof res !== 'object') {
+      console.error('[API] Invalid response:', res);
+      throw new Error('Invalid API response');
+    }
     if (!res.ok) throw new Error('cg ' + res.status);
     const data = await res.json();
     priceCache = {
@@ -360,6 +368,10 @@ async function loadTxHistory() {
     if(trxAddr && trxAddr.startsWith('T')) {
       const u1 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
       const r1 = await wwFetch429Retry(u1, { method: 'GET' });
+      if (!r1 || typeof r1 !== 'object') {
+        console.error('[API] Invalid response:', r1);
+        throw new Error('Invalid API response');
+      }
       const d1 = r1.ok ? await r1.json() : {};
       if(d1.data) {
         for(const tx of d1.data.slice(0,5)) {
@@ -381,6 +393,10 @@ async function loadTxHistory() {
       // TRX 原生交易
       const u2 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions?limit=5&only_confirmed=true';
       const r2 = await wwFetch429Retry(u2, { method: 'GET' });
+      if (!r2 || typeof r2 !== 'object') {
+        console.error('[API] Invalid response:', r2);
+        throw new Error('Invalid API response');
+      }
       const d2 = r2.ok ? await r2.json() : {};
       if(d2.data) {
         for(const tx of d2.data.slice(0,3)) {
