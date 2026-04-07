@@ -333,7 +333,12 @@ async function createWallet(forcedWordCount) {
     btcAddress: btcWallet.address,
     privateKey: wallet.privateKey,
     trxPrivateKey: trxWallet.privateKey,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    addrMap: {
+      trx: trxAddr,
+      eth: wallet.address,
+      btc: btcWallet.address
+    }
   };
 }
 
@@ -1290,30 +1295,36 @@ function updateQRDisplay() {
 
 /** 构建收款二维码 URI（TRX / ETH） */
 function wwBuildReceiveQrPayload(chain, addr, amountRaw) {
+  var realAddr = addr;
+  if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET) {
+    if (chain === 'trx' && REAL_WALLET.trxAddress) realAddr = REAL_WALLET.trxAddress;
+    else if (chain === 'eth' && REAL_WALLET.ethAddress) realAddr = REAL_WALLET.ethAddress;
+    else if ((chain === 'btc' || chain === 'native') && REAL_WALLET.btcAddress) realAddr = REAL_WALLET.btcAddress;
+  }
   var amt = amountRaw;
   if (amt === undefined || amt === null) {
     var inp = document.getElementById('qrReceiveAmount');
     amt = inp ? inp.value : '';
   }
   var af = parseFloat(amt);
-  if (!addr) return '';
+  if (!realAddr) return '';
   if (chain === 'trx') {
     var sun = Math.floor((isFinite(af) ? af : 0) * 1e6);
-    if (sun > 0) return 'tron:' + addr + '?amount=' + sun;
-    return addr;
+    if (sun > 0) return 'tron:' + realAddr + '?amount=' + sun;
+    return realAddr;
   }
   if (chain === 'eth') {
     if (isFinite(af) && af > 0 && typeof ethers !== 'undefined' && ethers.utils && ethers.utils.parseEther) {
       try {
-        return 'ethereum:' + addr + '?value=' + ethers.utils.parseEther(String(af)).toString();
+        return 'ethereum:' + realAddr + '?value=' + ethers.utils.parseEther(String(af)).toString();
       } catch (e) {
-        return addr;
+        return realAddr;
       }
     }
-    return addr;
+    return realAddr;
   }
-  if (chain === 'btc') return addr;
-  return addr;
+  if (chain === 'btc') return realAddr;
+  return realAddr;
 }
 
 function wwGenerateQRCode(text, canvasId) {

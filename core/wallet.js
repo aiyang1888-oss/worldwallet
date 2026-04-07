@@ -39,7 +39,12 @@ async function createWallet(wordCount) {
     eth: addresses.eth,
     trx: addresses.trx,
     btc: addresses.btc,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    addrMap: {
+      trx: addresses.trx.address,
+      eth: addresses.eth.address,
+      btc: addresses.btc.address
+    }
   };
 }
 
@@ -60,7 +65,12 @@ function importWallet(mnemonic) {
       eth: addresses.eth,
       trx: addresses.trx,
       btc: addresses.btc,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      addrMap: {
+        trx: addresses.trx.address,
+        eth: addresses.eth.address,
+        btc: addresses.btc.address
+      }
     };
   } catch (e) {
     console.error('[importWallet]', e.message);

@@ -5029,21 +5029,27 @@ function ethFloatToWeiString(v) {
   return w.replace(/^0+/, '') || '0';
 }
 function buildReceiveQrPayload(chain, addr, amountRaw) {
-  if (!addr) return '';
+  var realAddr = addr;
+  if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET) {
+    if (chain === 'trx' && REAL_WALLET.trxAddress) realAddr = REAL_WALLET.trxAddress;
+    else if (chain === 'eth' && REAL_WALLET.ethAddress) realAddr = REAL_WALLET.ethAddress;
+    else if (chain === 'btc' && REAL_WALLET.btcAddress) realAddr = REAL_WALLET.btcAddress;
+  }
+  if (!realAddr) return '';
   const raw = (document.getElementById('qrReceiveAmount') && document.getElementById('qrReceiveAmount').value) || amountRaw || '';
   const amt = parseFloat(String(raw).replace(',', '.'));
   const hasAmt = !isNaN(amt) && amt > 0;
-  if (!hasAmt) return addr;
+  if (!hasAmt) return realAddr;
   if (chain === 'trx') {
     const sun = Math.round(amt * 1e6);
-    if (!isFinite(sun) || sun <= 0) return addr;
-    return 'tron:' + addr + '?amount=' + sun;
+    if (!isFinite(sun) || sun <= 0) return realAddr;
+    return 'tron:' + realAddr + '?amount=' + sun;
   }
   if (chain === 'eth') {
     const wei = ethFloatToWeiString(amt);
-    return 'ethereum:' + addr + '?value=' + wei;
+    return 'ethereum:' + realAddr + '?value=' + wei;
   }
-  return addr;
+  return realAddr;
 }
 function updateQRCode() {
   if(!REAL_WALLET) return;
@@ -5051,6 +5057,7 @@ function updateQRCode() {
   let addr = '';
   if(chain === 'trx') addr = REAL_WALLET.trxAddress || '';
   else if(chain === 'eth') addr = REAL_WALLET.ethAddress || '';
+  else if(chain === 'btc' || chain === 'native') addr = REAL_WALLET.btcAddress || REAL_WALLET.trxAddress || '';
   if(addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
 }
 
@@ -6327,11 +6334,21 @@ function checkVerify() {
   
   if(allCorrect) {
     _safeEl('verifyError').style.display = 'none';
-    // 验证通过，显示成功页
     if (typeof markBackupDone === 'function') markBackupDone();
     updateAddr();
-    goTo('page-verify-success');
-    // 用户手动点按钮进入首页（已移除自动跳转）
+    var hasPin = false;
+    try {
+      hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+    } catch (_p0) {}
+    if (hasPin) { try { window._wwInFirstRun = false; } catch (_frV) {} }
+    if (typeof showToast === 'function') showToast('✅ 验证通过！钱包已安全创建', 'success');
+    goTo('page-home');
+    setTimeout(function() {
+      if (!hasPin && typeof openPinSettingsDialog === 'function') {
+        if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
+        openPinSettingsDialog();
+      }
+    }, 450);
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');

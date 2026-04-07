@@ -75,7 +75,12 @@ async function saveWalletSecure(w, pin) {
       trxAddress: w.trxAddress,
       btcAddress: w.btcAddress || '',
       createdAt: w.createdAt,
-      backedUp: w.backedUp || false
+      backedUp: w.backedUp || false,
+      addrMap: w.addrMap || {
+        trx: w.trxAddress,
+        eth: w.ethAddress,
+        btc: w.btcAddress || ''
+      }
     };
     // 有 PIN → 加密敏感数据
     if (pin) {
@@ -106,7 +111,12 @@ function loadWalletPublic() {
         btcAddress: parsed.btcAddress || '',
         createdAt: parsed.createdAt,
         backedUp: parsed.backedUp || false,
-        hasEncrypted: !!parsed.encrypted
+        hasEncrypted: !!parsed.encrypted,
+        addrMap: parsed.addrMap || {
+          trx: parsed.trxAddress,
+          eth: parsed.ethAddress,
+          btc: parsed.btcAddress || ''
+        }
       };
       REAL_WALLET = window.REAL_WALLET;
       CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
@@ -137,7 +147,12 @@ function _saveWalletPlainPublicOnly(w) {
       trxAddress: w.trxAddress,
       btcAddress: w.btcAddress || '',
       createdAt: w.createdAt,
-      backedUp: w.backedUp || false
+      backedUp: w.backedUp || false,
+      addrMap: w.addrMap || {
+        trx: w.trxAddress,
+        eth: w.ethAddress,
+        btc: w.btcAddress || ''
+      }
     };
     localStorage.setItem('ww_wallet', JSON.stringify(safe));
   } catch(e) {}
@@ -236,7 +251,12 @@ async function createRealWallet(forcedWordCount) {
     btcAddress: btcWallet.address,
     privateKey: wallet.privateKey,
     trxPrivateKey: trxWallet.privateKey,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    addrMap: {
+      trx: trxAddr,
+      eth: wallet.address,
+      btc: btcWallet.address
+    }
   };
   window.REAL_WALLET = w;
   REAL_WALLET = w;
@@ -273,7 +293,12 @@ async function restoreWallet(mnemonic) {
     btcAddress: result.btc.address,
     createdAt: result.createdAt,
     hasEncrypted: !!pin,
-    backedUp: false
+    backedUp: false,
+    addrMap: result.addrMap || {
+      trx: result.trx.address,
+      eth: result.eth.address,
+      btc: result.btc.address
+    }
   };
   REAL_WALLET = pub;
   window.REAL_WALLET = pub;
@@ -289,7 +314,12 @@ async function restoreWallet(mnemonic) {
       privateKey: result.eth.privateKey,
       trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
-      backedUp: false
+      backedUp: false,
+      addrMap: result.addrMap || {
+        trx: result.trx.address,
+        eth: result.eth.address,
+        btc: result.btc.address
+      }
     };
     await saveWalletSecure(flatForStore, pin);
   } else {
@@ -298,7 +328,12 @@ async function restoreWallet(mnemonic) {
       trxAddress: result.trx.address,
       btcAddress: result.btc.address,
       createdAt: result.createdAt,
-      backedUp: false
+      backedUp: false,
+      addrMap: result.addrMap || {
+        trx: result.trx.address,
+        eth: result.eth.address,
+        btc: result.btc.address
+      }
     });
   }
   try { applyReferralCredit(); } catch (e2) {}
