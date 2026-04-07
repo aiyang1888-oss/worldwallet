@@ -1037,7 +1037,7 @@ document.addEventListener('click', function(e) {
       if (fnName === 'selectTransferCoin' && fnEl.hasAttribute('data-coin')) {
         window[fnName](fnEl.getAttribute('data-coin'));
       } else {
-        window[fnName]();
+        window[fnName](fnEl);
       }
     } catch (err) {
       console.error('[data-ww-fn] ' + fnName, err);
