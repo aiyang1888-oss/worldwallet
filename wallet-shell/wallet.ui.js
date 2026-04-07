@@ -428,8 +428,8 @@ function readUiLangFromStorage() {
   } catch (e) {}
   return null;
 }
-/** 全局 UI 语言（礼物页、收款页、万语地址展示等）；写入 localStorage 键 ww_ui_lang，未设置时默认中文 */
-var currentLang = readUiLangFromStorage() || 'zh';
+/** 全局 UI 语言（礼物页、收款页、万语地址展示等）；显式写入 localStorage 键 ww_ui_lang 可覆盖，否则跟随系统 detectDeviceLang() */
+var currentLang = readUiLangFromStorage() || (typeof detectDeviceLang === 'function' ? detectDeviceLang() : 'zh');
 
 function readKeyMnemonicLang() {
   try {
