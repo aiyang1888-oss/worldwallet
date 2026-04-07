@@ -6468,7 +6468,17 @@ function renderWwChartsPlaceholder() {
 }
 
 function continueAfterPinCheck() {
-  if (!wwHasPinConfigured()) { void _resumeWalletAfterUnlock(); return; }
+  if (typeof wwHasPinConfigured === 'function') {
+    if (!wwHasPinConfigured()) { void _resumeWalletAfterUnlock(); return; }
+  } else {
+    try {
+      var _pinLegacy = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
+      if (!_pinLegacy) { void _resumeWalletAfterUnlock(); return; }
+    } catch (_e) {
+      void _resumeWalletAfterUnlock();
+      return;
+    }
+  }
   const ov = document.getElementById('pinUnlockOverlay');
   const inp = document.getElementById('pinUnlockInput');
   const err = document.getElementById('pinUnlockError');
@@ -6486,11 +6496,25 @@ async function submitPageRestorePin() {
   const inp = document.getElementById('pinRestorePageInput');
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
-  if (!wwHasPinConfigured()) {
+  if (typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
     if (err) { err.textContent = '尚未在本机设置 PIN，请先创建或导入钱包并完成 PIN 设置'; err.style.display = 'block'; }
     if (inp) inp.value = '';
     if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
     return;
+  }
+  if (typeof wwHasPinConfigured !== 'function') {
+    try {
+      var _plain = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
+      if (!_plain || !/^\d{6}$/.test(String(_plain))) {
+        if (err) { err.textContent = '尚未在本机设置 PIN，请先创建或导入钱包并完成 PIN 设置'; err.style.display = 'block'; }
+        if (inp) inp.value = '';
+        if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+        return;
+      }
+    } catch (_e2) {
+      if (err) { err.textContent = '无法读取 PIN 状态'; err.style.display = 'block'; }
+      return;
+    }
   }
   const got = inp ? String(inp.value).trim() : '';
   var ok = typeof verifyPin === 'function' ? await verifyPin(got) : false;
