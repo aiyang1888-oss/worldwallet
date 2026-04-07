@@ -3020,8 +3020,13 @@ function checkVerify() {
 
 // ── PIN 恢复页（page-password-restore）──────────────────────────────
 var _pinRestoreBuffer = '';
+var _pinRestoreVerifyTimer = null;
 
 function initPinRestore() {
+  if (_pinRestoreVerifyTimer) {
+    clearTimeout(_pinRestoreVerifyTimer);
+    _pinRestoreVerifyTimer = null;
+  }
   _pinRestoreBuffer = '';
   updatePinRestoreDisplay();
   var errorDiv = document.getElementById('pinRestoreError');
@@ -3048,6 +3053,10 @@ function updatePinRestoreDisplay() {
 
 function handlePinRestoreKey(key) {
   tapHaptic(12);
+  if (_pinRestoreVerifyTimer) {
+    clearTimeout(_pinRestoreVerifyTimer);
+    _pinRestoreVerifyTimer = null;
+  }
   var errorDiv = document.getElementById('pinRestoreError');
   if (key === 'del') {
     _pinRestoreBuffer = _pinRestoreBuffer.slice(0, -1);
@@ -3057,11 +3066,17 @@ function handlePinRestoreKey(key) {
   }
   updatePinRestoreDisplay();
   if (_pinRestoreBuffer.length === 6) {
-    setTimeout(function () { verifyPinRestore(); }, 300);
+    _pinRestoreVerifyTimer = setTimeout(function () {
+      _pinRestoreVerifyTimer = null;
+      if (_pinRestoreBuffer.length !== 6) return;
+      verifyPinRestore();
+    }, 300);
   }
 }
 
 function verifyPinRestore() {
+  if (_pinRestoreBuffer.length !== 6) return;
+  var pin = _pinRestoreBuffer;
   showWalletLoading();
   setTimeout(function () {
     try {
@@ -3074,7 +3089,6 @@ function verifyPinRestore() {
         updatePinRestoreDisplay();
         return;
       }
-      var pin = _pinRestoreBuffer;
       if (w.hasEncrypted) {
         if (typeof decryptSensitive !== 'function') {
           hideWalletLoading();
@@ -3130,6 +3144,10 @@ function verifyPinRestore() {
 }
 
 function finishPinRestoreSuccess() {
+  if (_pinRestoreVerifyTimer) {
+    clearTimeout(_pinRestoreVerifyTimer);
+    _pinRestoreVerifyTimer = null;
+  }
   _pinRestoreBuffer = '';
   updatePinRestoreDisplay();
   if (typeof showToast === 'function') showToast('✅ PIN 验证成功！', 'success');
