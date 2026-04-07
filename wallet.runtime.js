@@ -3793,14 +3793,18 @@ function fillKeyword(kw) {
 
 function selectHbType(type) {
   hbType = type;
-  document.getElementById('hbTypeNormal').style.borderColor = type==='normal'?'var(--gold)':'var(--border)';
-  document.getElementById('hbTypeLucky').style.borderColor = type==='lucky'?'var(--gold)':'var(--border)';
+  var n = document.getElementById('hbTypeNormal');
+  var l = document.getElementById('hbTypeLucky');
+  if (n) n.style.borderColor = type === 'normal' ? 'var(--gold)' : 'var(--border)';
+  if (l) l.style.borderColor = type === 'lucky' ? 'var(--gold)' : 'var(--border)';
   updateHbPreview();
 }
 function changeCount(delta) {
-  hbCount = Math.max(1, Math.min(100, hbCount+delta));
-  document.getElementById('hbCountVal').textContent = hbCount;
-  (_safeEl('hbCountDisplay')||document.getElementById('hbCountVal')).textContent = hbCount+' 个';
+  hbCount = Math.max(1, Math.min(100, hbCount + delta));
+  var hc = document.getElementById('hbCountVal');
+  if (hc) hc.textContent = hbCount;
+  var disp = document.getElementById('hbCountDisplay');
+  if (disp) disp.textContent = hbCount + ' 个';
   updateHbPreview();
 }
 
