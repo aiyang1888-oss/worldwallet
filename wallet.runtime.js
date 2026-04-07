@@ -1751,22 +1751,6 @@ function wwTickIdleLock() {
   window._wwForceIdleLock = true;
 }
 
-
-function shakeTransferAmountTooHigh() {
-  try {
-    var el = document.getElementById('transferAmount');
-    if (!el) return;
-    var i = 0;
-    var id = setInterval(function () {
-      el.style.transform = (i++ % 2) ? 'translateX(4px)' : 'translateX(-4px)';
-      if (i > 6) {
-        clearInterval(id);
-        el.style.transform = '';
-      }
-    }, 45);
-  } catch (_e) {}
-}
-
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
   var taEl = document.getElementById('transferAddr');
