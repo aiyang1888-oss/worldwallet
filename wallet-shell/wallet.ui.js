@@ -2535,6 +2535,10 @@ function renderTxHistoryFromCache() {
     return;
   }
   el.innerHTML = filtered.map(function(tx) { return txHistoryRowHtml(tx); }).join('');
+  if (!el._wwTxHistoryDelegated && typeof wwTxHistoryRowOnClick === 'function') {
+    el._wwTxHistoryDelegated = true;
+    el.addEventListener('click', wwTxHistoryRowOnClick);
+  }
   try { if(typeof updateReputationSettingsRow==='function') updateReputationSettingsRow(); } catch(_rep2) {}
 }
 

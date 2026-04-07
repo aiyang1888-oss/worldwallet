@@ -1,5 +1,42 @@
 // wallet.tx.js — 交易：转账/余额/价格/历史
 
+/**
+ * 通用异步重试：遇 e.status === 429 时指数退避（1s → 2s → 4s）。
+ */
+async function callWithRetry(fn, maxRetries, initialDelay) {
+  maxRetries = maxRetries === undefined ? 3 : maxRetries;
+  initialDelay = initialDelay === undefined ? 1000 : initialDelay;
+  for (var i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      if (e && e.status === 429 && i < maxRetries - 1) {
+        var delay = initialDelay * Math.pow(2, i);
+        await new Promise(function (resolve) { setTimeout(resolve, delay); });
+      } else {
+        throw e;
+      }
+    }
+  }
+}
+
+/**
+ * 公网 fetch：先走 wwFetchRetry（内部 429/503 退避），若仍为 429 则交给 callWithRetry 外层指数退避。
+ */
+async function wwFetch429Retry(input, init) {
+  return callWithRetry(async function () {
+    var res = typeof wwFetchRetry === 'function'
+      ? await wwFetchRetry(input, init || {})
+      : await fetch(input, init || {});
+    if (res.status === 429) {
+      var err = new Error('Too Many Requests');
+      err.status = 429;
+      throw err;
+    }
+    return res;
+  });
+}
+
 function confirmTransfer() {
   if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
     showToast('📡 当前无网络，无法完成转账', 'warning');
@@ -211,7 +248,15 @@ async function loadBalances() {
     let btcBal = 0;
     try {
       if (REAL_WALLET.btcAddress) {
-        const btcRes = await fetch(`https://mempool.space/api/address/${REAL_WALLET.btcAddress}`);
+        const btcRes = await callWithRetry(async function () {
+          var r = await fetch('https://mempool.space/api/address/' + REAL_WALLET.btcAddress);
+          if (r.status === 429) {
+            var e = new Error('Too Many Requests');
+            e.status = 429;
+            throw e;
+          }
+          return r;
+        });
         const btcData = await btcRes.json();
         btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
       }
@@ -231,7 +276,9 @@ async function loadBalances() {
     set('valUsdt', fmtUsd(usdtUsd));
     // 更新涨跌幅（从 CoinGecko 获取）
     try {
-      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true');
+      const cgChgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true';
+      const r2 = await wwFetch429Retry(cgChgUrl, { method: 'GET' });
+      if (!r2.ok) throw new Error('cg ' + r2.status);
       const d2 = await r2.json();
       const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
       if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
@@ -247,9 +294,16 @@ async function loadBalances() {
   set('totalBalanceSub', '≈ ' + (total * cnyRate).toFixed(0) + ' CNY · 实时价格');
   // 尝试获取实时汇率
   if(!window._cnyRate) {
-    fetch('https://api.exchangerate-api.com/v4/latest/USD')
-      .then(r=>r.json()).then(d=>{ window._cnyRate = d.rates?.CNY || 7.2; })
-      .catch(()=>{});
+    callWithRetry(function () {
+      return fetch('https://api.exchangerate-api.com/v4/latest/USD').then(function (r) {
+        if (r.status === 429) {
+          var err = new Error('Too Many Requests');
+          err.status = 429;
+          throw err;
+        }
+        return r.json();
+      });
+    }).then(function (d) { window._cnyRate = d.rates && d.rates.CNY || 7.2; }).catch(function () {});
   }
 
     // ── 同步 COINS 余额（兑换页使用）──
@@ -274,8 +328,9 @@ async function loadBalances() {
 async function getPrices() {
   if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
   try {
-    // CoinGecko 免费价格 API（无需 key）
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd');
+    const cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd';
+    const res = await wwFetch429Retry(cgUrl, { method: 'GET' });
+    if (!res.ok) throw new Error('cg ' + res.status);
     const data = await res.json();
     priceCache = {
       usdt: data.tether?.usd || 1,
@@ -286,6 +341,7 @@ async function getPrices() {
     priceCacheTime = Date.now();
     return priceCache;
   } catch(e) {
+    if (priceCache) return priceCache;
     return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
   }
 }
@@ -302,8 +358,9 @@ async function loadTxHistory() {
     // TRX 转账记录
     const trxAddr = REAL_WALLET.trxAddress;
     if(trxAddr && trxAddr.startsWith('T')) {
-      const r1 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`);
-      const d1 = await r1.json();
+      const u1 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+      const r1 = await wwFetch429Retry(u1, { method: 'GET' });
+      const d1 = r1.ok ? await r1.json() : {};
       if(d1.data) {
         for(const tx of d1.data.slice(0,5)) {
           const isOut = tx.from === trxAddr;
@@ -322,8 +379,9 @@ async function loadTxHistory() {
       }
 
       // TRX 原生交易
-      const r2 = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}/transactions?limit=5&only_confirmed=true`);
-      const d2 = await r2.json();
+      const u2 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions?limit=5&only_confirmed=true';
+      const r2 = await wwFetch429Retry(u2, { method: 'GET' });
+      const d2 = r2.ok ? await r2.json() : {};
       if(d2.data) {
         for(const tx of d2.data.slice(0,3)) {
           const contract = tx.raw_data?.contract?.[0];
@@ -483,6 +541,32 @@ function getTransferFeeSpeed() {
   return 'normal';
 }
 
+/** 防止交易列表 innerHTML 注入 */
+function wwEscapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function wwTxSanitizeColor(c) {
+  var s = String(c || '').trim();
+  if (/^#[0-9A-Fa-f]{3,8}$/.test(s)) return s;
+  return 'inherit';
+}
+function wwTxHistoryRowOnClick(ev) {
+  var t = ev.target;
+  var row = t && t.closest ? t.closest('.ww-tx-history-row') : null;
+  if (!row) return;
+  var coin = String(row.getAttribute('data-coin') || '').toLowerCase();
+  var hash = String(row.getAttribute('data-hash') || '');
+  if (!hash) return;
+  var base = coin === 'eth' ? 'https://etherscan.io/tx/' : 'https://tronscan.org/#/transaction/';
+  try {
+    window.open(base + encodeURIComponent(hash), '_blank', 'noopener,noreferrer');
+  } catch (e) {}
+}
+
 function txHistoryEmptyHtml() {
   const L = (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'zh';
   const M = {
@@ -504,21 +588,26 @@ function txHistoryEmptyHtml() {
 }
 
 function txHistoryRowHtml(tx) {
-  return `
-      <div onclick="window.open((tx.coin==='eth'?'https://etherscan.io/tx/':'https://tronscan.org/#/transaction/')+tx.hash,'_blank')"
-        style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"
-        onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-        <div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${tx.icon}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${tx.type} ${tx.coin}</div>
-          <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tx.addr.slice(0,8)}...${tx.addr.slice(-6)}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:14px;font-weight:700;color:${tx.color}">${tx.amount}</div>
-          <div style="font-size:10px;color:var(--text-muted)">${tx.time}</div>
-        </div>
-      </div>
-    `;
+  var addr = String(tx.addr || '');
+  var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
+  var coin = String(tx.coin || '');
+  var hash = String(tx.hash || '');
+  var col = wwTxSanitizeColor(tx.color);
+  return (
+    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + wwEscapeHtml(coin) + '" data-hash="' + wwEscapeHtml(hash) + '"' +
+    ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s"' +
+    ' onmouseover="this.style.opacity=\'0.8\'" onmouseout="this.style.opacity=\'1\'">' +
+    '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + wwEscapeHtml(tx.icon) + '</div>' +
+    '<div style="flex:1;min-width:0">' +
+    '<div style="font-size:13px;font-weight:600;color:var(--text)">' + wwEscapeHtml(tx.type) + ' ' + wwEscapeHtml(tx.coin) + '</div>' +
+    '<div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + wwEscapeHtml(addrLine) + '</div>' +
+    '</div>' +
+    '<div style="text-align:right;flex-shrink:0">' +
+    '<div style="font-size:14px;font-weight:700;color:' + col + '">' + wwEscapeHtml(tx.amount) + '</div>' +
+    '<div style="font-size:10px;color:var(--text-muted)">' + wwEscapeHtml(tx.time) + '</div>' +
+    '</div>' +
+    '</div>'
+  );
 }
 
 function txHistoryFriendlyHtml(icon, title, hint) {
