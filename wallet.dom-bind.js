@@ -59,6 +59,16 @@
     });
   }
 
+  /** PIN 输入框：仅保留数字并限制 6 位，避免粘贴/输入法带入非数字导致误报失败 */
+  function bindPinSixDigits(id) {
+    var n = document.getElementById(id);
+    if (!n) return;
+    n.addEventListener('input', function () {
+      var v = String(n.value || '').replace(/\D/g, '').slice(0, 6);
+      if (n.value !== v) n.value = v;
+    });
+  }
+
   function handleWwClick(ev) {
     var coinHost = ev.target.closest('[data-coin]');
     if (coinHost && coinHost.getAttribute('data-coin')) {
@@ -172,6 +182,8 @@
   function run() {
     bindFormSubmit('pageRestorePinForm', 'submitPageRestorePin');
     bindFormSubmit('pinUnlockForm', 'submitPinUnlock');
+    bindPinSixDigits('pinRestorePageInput');
+    bindPinSixDigits('pinUnlockInput');
 
     bindSelect('keyPageLang', 'switchLang');
     bindSelect('mnemonicLength', 'changeMnemonicLength');
