@@ -3338,7 +3338,13 @@ function wwAutoRebalanceLoad() {
 }
 
 function wwAutoRebalancePortfolioParts() {
-  var u = parseFloat((document.getElementById('valUsdt') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
+  var valEl = document.getElementById('valUsdt');
+  var u = 0;
+  if (valEl) {
+    u = parseFloat((valEl.textContent || '').replace(/[^0-9.\-]/g, '')) || 0;
+  } else if (typeof window._lastTotalUsd === 'number' && isFinite(window._lastTotalUsd)) {
+    u = window._lastTotalUsd;
+  }
   var total = u;
   if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }] };
   return {
