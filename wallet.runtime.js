@@ -6227,6 +6227,7 @@ function wwHideHbSuccessOverlay() {
     if (typeof goHomeTransfer === 'function') window.goHomeTransfer = goHomeTransfer;
     if (typeof hideQR === 'function') window.hideQR = hideQR;
     if (typeof loadBalances === 'function') window.loadBalances = loadBalances;
+    if (typeof loadTrxResource === 'function') window.loadTrxResource = loadTrxResource;
     if (typeof loadTxHistory === 'function') window.loadTxHistory = loadTxHistory;
     if (typeof openCustomizeAddr === 'function') window.openCustomizeAddr = openCustomizeAddr;
     if (typeof openPinSettingsDialog === 'function') window.openPinSettingsDialog = openPinSettingsDialog;
