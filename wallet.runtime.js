@@ -1466,10 +1466,15 @@ function claimHongbao() {
   submitClaim(); // 调用真实领取
 }
 
-function copyKeyword() {
+function copyKeyword(ev) {
   navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
-  const btn = event?.target?.closest('div');
-  if(btn) { const old = btn.textContent; btn.textContent = '✅ 已复制'; setTimeout(()=>btn.textContent=old, 1500); }
+  var e = ev || (typeof window !== 'undefined' ? window.event : null);
+  var btn = e && e.target && typeof e.target.closest === 'function' ? e.target.closest('div') : null;
+  if (btn) {
+    var old = btn.textContent;
+    btn.textContent = '✅ 已复制';
+    setTimeout(function () { btn.textContent = old; }, 1500);
+  }
 }
 
 
