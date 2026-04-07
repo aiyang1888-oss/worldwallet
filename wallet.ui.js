@@ -3353,6 +3353,9 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       setTimeout(function () { goTo('page-welcome'); }, 50);
       return;
     }
+    /* 有 URL hash 且对应页面存在时由 wwApplyHashRoute 导航，勿在 50ms 再用 ww_last_page 覆盖深链 */
+    var _hashPid = (location.hash || '').replace(/^#/, '');
+    if (_hashPid && document.getElementById(_hashPid)) return;
     if (last && ALLOW_RESTORE.includes(last) && document.getElementById(last)) {
       setTimeout(function () { goTo(last); }, 50);
     }
