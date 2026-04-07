@@ -503,18 +503,22 @@ body {
 .home-chart-addr-tight {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
   gap: 0;
   margin: 0;
   padding: 0;
 }
 #page-home .home-chart-addr-tight .home-balance-chart-head {
-  margin-bottom: 0 !important;
-  padding-bottom: 0 !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: center !important;
 }
 #page-home .home-chart-addr-tight .home-balance-chart-title {
-  line-height: 1.25;
+  line-height: 1.2;
+  display: block;
 }
 #page-home .home-chart-addr-tight .home-addr-stack {
   margin-top: 0 !important;
@@ -634,6 +638,7 @@ body {
 .ww-balance-hidden #totalBalanceDisplay,
 .ww-balance-hidden #totalBalanceSub,
 .ww-balance-hidden #homeBalanceChartWrap,
+.ww-balance-hidden #page-home .home-chart-addr-tight > .home-balance-chart-head,
 .ww-balance-hidden #portfolioPieCanvas,
 .ww-balance-hidden #portfolioPieLegend,
 .ww-balance-hidden #page-home .asset-amount,
@@ -1233,14 +1238,18 @@ body {
   -webkit-backdrop-filter: none !important;
 }
 
-/* 首页图表：折叠占位，保留「近7日」标题行；SVG/foot 彻底不占位 */
+/* 首页图表：标题在 wrap 外；wrap 仅含 SVG/foot，高度锁 0 不占位 */
 #page-home #homeBalanceChartWrap {
-  height: auto !important;
+  height: 0 !important;
+  max-height: 0 !important;
   min-height: 0 !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   padding: 0 !important;
   margin: 0 !important;
   border: none !important;
+  line-height: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
 }
 #page-home .home-balance-chart-head {
   margin-bottom: 0 !important;
@@ -1264,11 +1273,16 @@ body {
   margin-top: 0 !important;
 }
 
-/* 彻底隐藏图表，保留标题 */
+/* 彻底隐藏图表区占位（标题已移出 wrap） */
 #homeBalanceChartWrap {
-  height: auto !important;
+  height: 0 !important;
+  max-height: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
+  overflow: hidden !important;
+  line-height: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 #homeBalanceChartWrap .home-balance-chart-svg {

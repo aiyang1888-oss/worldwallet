@@ -5534,7 +5534,8 @@ function drawHomeBalanceChart(totalUsd) {
   if(!wrap || !svg) return;
   const t = Number(totalUsd);
   if(!t || t <= 0 || !isFinite(t)) { wrap.style.display = 'none'; return; }
-  wrap.style.display = 'block';
+  /* 勿设 display:block，否则会撑开已折叠的 chart wrap，在标题与万语地址之间留下大块空白 */
+  wrap.style.removeProperty('display');
   const days = ['6天前','5天前','4天前','3天前','2天前','昨天','今天'];
   const seed = Math.abs(Math.sin((t % 1000) * 13.37));
   const pts = [];
