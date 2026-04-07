@@ -27,4 +27,4 @@
 - TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在对应 `id="page-…"`。
 - TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均含有效实现（含 runtime 中别名封装）。
 
-**提交：** `99785f2`
+**提交：** `15d6730`
