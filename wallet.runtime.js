@@ -4107,10 +4107,12 @@ function showHbQR() {
 }
 
 function copyShareText() {
-  const txt = document.getElementById('kwShareText').textContent;
+  const el = document.getElementById('kwShareText');
+  if (!el) return;
+  const txt = el.textContent;
   navigator.clipboard?.writeText(txt).catch(()=>{});
-  document.getElementById('kwShareText').style.opacity = '0.6';
-  setTimeout(()=>document.getElementById('kwShareText').style.opacity='1', 800);
+  el.style.opacity = '0.6';
+  setTimeout(function () { el.style.opacity = '1'; }, 800);
 }
 
 function onClaimInput() {
