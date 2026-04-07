@@ -6033,16 +6033,26 @@ function wwHideHbSuccessOverlay() {
   } catch (_ww) {}
 })();
 
-// 核心流程别名：与自动化测试/外部集成约定的命名（映射到既有实现）
+// 核心流程别名：具名包装便于静态检查与外部集成（行为与 confirmTransfer/submitClaim/goHomeTransfer 一致）
+function sendTransfer() {
+  return confirmTransfer.apply(this, arguments);
+}
+function claimGift() {
+  return submitClaim.apply(this, arguments);
+}
+function openSend() {
+  return goHomeTransfer.apply(this, arguments);
+}
+function openReceive() {
+  if (typeof goTab === 'function') goTab('tab-addr');
+}
+
+// 核心流程别名：挂到 window（与自动化测试/外部集成约定的命名）
 (function wwExposeCoreAliases() {
   try {
-    if (typeof confirmTransfer === 'function') window.sendTransfer = confirmTransfer;
-    if (typeof submitClaim === 'function') window.claimGift = submitClaim;
-    if (typeof goHomeTransfer === 'function') window.openSend = goHomeTransfer;
-    if (typeof goTab === 'function') {
-      window.openReceive = function openReceive() {
-        goTab('tab-addr');
-      };
-    }
+    if (typeof sendTransfer === 'function') window.sendTransfer = sendTransfer;
+    if (typeof claimGift === 'function') window.claimGift = claimGift;
+    if (typeof openSend === 'function') window.openSend = openSend;
+    if (typeof openReceive === 'function') window.openReceive = openReceive;
   } catch (_al) {}
 })();
