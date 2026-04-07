@@ -6767,6 +6767,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof promptWalletNotifications === 'function') window.promptWalletNotifications = promptWalletNotifications;
     if (typeof selectTransferCoin === 'function') window.selectTransferCoin = selectTransferCoin;
     if (typeof setSwapMax === 'function') window.setSwapMax = setSwapMax;
+    if (typeof shareSuccess === 'function') window.shareSuccess = shareSuccess;
     if (typeof shareHbCreatedKeyword === 'function') window.shareHbCreatedKeyword = shareHbCreatedKeyword;
     if (typeof startVerify === 'function') window.startVerify = startVerify;
     if (typeof submitClaim === 'function') window.submitClaim = submitClaim;
