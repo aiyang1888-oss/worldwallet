@@ -1677,9 +1677,10 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
   if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
-    // 有钱包时显示导航栏
-    if(REAL_WALLET && REAL_WALLET.ethAddress) {
-      document.getElementById('tabBar').style.display = 'flex';
+    // 有钱包时显示底栏（任一条链上地址即可，勿仅判断 eth，避免 TRX/BTC 钱包被误判）
+    var _tbHome = document.getElementById('tabBar');
+    if (_tbHome && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
+      _tbHome.style.display = 'flex';
     }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
