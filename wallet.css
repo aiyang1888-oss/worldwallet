@@ -391,7 +391,7 @@ body {
   height: 56px; background: var(--bg2);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;
-  padding: 0 max(18px, env(safe-area-inset-left, 0px)) 0 max(18px, env(safe-area-inset-right, 0px));
+  padding: 0 max(18px, env(safe-area-inset-right, 0px)) 0 max(18px, env(safe-area-inset-left, 0px));
   gap: 14px; flex-shrink: 0;
   position: relative;
   z-index: 2;
@@ -420,7 +420,7 @@ body {
 }
 
 /* ── 首页 ── */
-.home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-left, 0px)) 22px max(18px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--border); }
+.home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-right, 0px)) 22px max(18px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--border); }
 .home-backup-banner {
   display: none;
   background: rgba(231, 76, 60, 0.16);
