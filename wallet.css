@@ -116,7 +116,8 @@ body {
   #verifyQuestions input[type="text"],
   #page-transfer textarea,
   #page-hongbao input#hbBlessing,
-  #page-hongbao input#hbMessage {
+  #page-hongbao input#hbMessage,
+  #pinUnlockInput {
     font-size: 16px !important;
   }
 }

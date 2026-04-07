@@ -153,7 +153,12 @@ function saveWallet(w) {
 
 function loadWallet() {
   loadWalletPublic();
-  if (REAL_WALLET && REAL_WALLET.ethAddress) {
+  /* 须与 wwHasWalletPublic 一致：仅 TRX/BTC 的旧数据也有 ethAddress 为空的情况 */
+  var _hasPub = false;
+  try {
+    _hasPub = typeof wwHasWalletPublic === 'function' ? !!wwHasWalletPublic(REAL_WALLET) : !!(REAL_WALLET && (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress || REAL_WALLET.btcAddress));
+  } catch (_hw) {}
+  if (_hasPub) {
     try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
   }
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
