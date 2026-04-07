@@ -838,7 +838,6 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
     var curId = curEl && curEl.id;
@@ -857,6 +856,7 @@ function goTo(pageId, opts) {
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='flex';
+  try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   var _tabBarEl = document.getElementById('tabBar');
   if (_tabBarEl) _tabBarEl.style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
