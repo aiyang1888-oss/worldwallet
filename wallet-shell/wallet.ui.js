@@ -88,7 +88,7 @@ var WW_WORDS_EXTRA = {
 
 
 // ── 万语地址系统 ──────────────────────────────────────────
-var ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
+// ADDR_WORDS：由 wallet.runtime.js 统一定义（const），此处不重复声明
 
 // 手机键盘可打出的字符（仅保留真正可输入的字母字符）
 var SINGLE_CHARS = {
@@ -429,7 +429,7 @@ function readUiLangFromStorage() {
   return null;
 }
 /** 全局 UI 语言（礼物页、收款页、万语地址展示等）；显式写入 localStorage 键 ww_ui_lang 可覆盖，否则跟随系统 detectDeviceLang() */
-var currentLang = readUiLangFromStorage() || (typeof detectDeviceLang === 'function' ? detectDeviceLang() : 'zh');
+currentLang = readUiLangFromStorage() || (typeof detectDeviceLang === 'function' ? detectDeviceLang() : 'zh');
 
 function readKeyMnemonicLang() {
   try {
