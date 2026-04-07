@@ -1401,7 +1401,8 @@ function refreshKeyword() {
 }
 
 function setAmount(v) {
-  document.getElementById('hbAmount').value = v;
+  var _hbAmt = document.getElementById('hbAmount');
+  if (_hbAmt) _hbAmt.value = v;
   updateHbPreview();
 }
 
@@ -1443,7 +1444,8 @@ function toggleBatchSendPanel() {
 async function runBatchTransfer() {
   const ta = document.getElementById('batchTransferLines');
   const lines = (ta && ta.value ? ta.value : '').split(/\n/).map(function(l) { return l.trim(); }).filter(Boolean);
-  const amt = parseFloat(document.getElementById('transferAmount').value);
+  const _taAmt = document.getElementById('transferAmount');
+  const amt = parseFloat(_taAmt && _taAmt.value ? _taAmt.value : '');
   if(!lines.length) { showToast('❌ 请至少输入一个地址', 'error'); return; }
   if(!amt || amt <= 0) { showToast('❌ 请输入有效金额', 'error'); return; }
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
@@ -1457,8 +1459,11 @@ async function runBatchTransfer() {
   if(!confirm('将向 '+n+' 个地址各发送 '+amt+' '+transferCoin.name+'，确认？')) return;
   let okCount = 0;
   for(let i = 0; i < lines.length; i++) {
-    document.getElementById('transferAddr').value = lines[i];
-    document.getElementById('transferAmount').value = String(amt);
+    const _addrEl = document.getElementById('transferAddr');
+    const _amtEl2 = document.getElementById('transferAmount');
+    if (!_addrEl || !_amtEl2) { showToast('❌ 转账表单未就绪', 'error'); break; }
+    _addrEl.value = lines[i];
+    _amtEl2.value = String(amt);
     const ok = await broadcastRealTransfer();
     if(ok) { okCount++; if(typeof saveRecentTransferAddr==='function') saveRecentTransferAddr(lines[i]); }
     else { showToast('第 '+(i+1)+' 笔发送失败，已停止', 'error'); break; }
