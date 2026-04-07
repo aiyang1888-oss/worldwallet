@@ -3175,9 +3175,23 @@ function showPinRestoreError(msg) {
 }
 
 function _resumeWalletAfterUnlock() {
-  // 解密敏感数据并临时注入 REAL_WALLET
+  // 解密敏感数据并临时注入 REAL_WALLET（须等解密完成后再导航，否则首页/余额与私钥状态竞态）
   var pin = '';
   try { pin = wwGetStoredPin(); } catch(e) {}
+  function doResumeAfterUnlock() {
+    updateAddr();
+    const tb = document.getElementById('tabBar');
+    if(tb) tb.style.display = 'flex';
+    setTimeout(loadBalances, 500);
+    if(window._wwUnlockPreservePage) {
+      window._wwUnlockPreservePage = false;
+      window._wwForceIdleLock = false;
+      try { wwResetActivityClock(); } catch(e) {}
+      return;
+    }
+    window._wwForceIdleLock = false;
+    goTo('page-home');
+  }
   if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
     decryptSensitive(pin).then(function(sensitive) {
       if (sensitive && REAL_WALLET) {
@@ -3186,21 +3200,17 @@ function _resumeWalletAfterUnlock() {
         REAL_WALLET.mnemonic = sensitive.mnemonic;
         REAL_WALLET.enMnemonic = sensitive.enMnemonic;
         REAL_WALLET.words = sensitive.words;
+        doResumeAfterUnlock();
+      } else {
+        if (typeof showToast === 'function') showToast('解密失败，请重试', 'error');
       }
-    }).catch(function(e) { console.error('[unlock decrypt]', e); });
-  }
-  updateAddr();
-  const tb = document.getElementById('tabBar');
-  if(tb) tb.style.display = 'flex';
-  setTimeout(loadBalances, 500);
-  if(window._wwUnlockPreservePage) {
-    window._wwUnlockPreservePage = false;
-    window._wwForceIdleLock = false;
-    try { wwResetActivityClock(); } catch(e) {}
+    }).catch(function(e) {
+      console.error('[unlock decrypt]', e);
+      if (typeof showToast === 'function') showToast('解密失败，请重试', 'error');
+    });
     return;
   }
-  window._wwForceIdleLock = false;
-  goTo('page-home');
+  doResumeAfterUnlock();
 }
 function wwB64Bytes(u8) {
   var s = '';
