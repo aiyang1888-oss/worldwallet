@@ -362,34 +362,40 @@ function renderHomeAddrChip() {
 }
 
 function initAddrWords() {
-  __wanYuInitAddrWordsCallCount++;
-  console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
-    addrWordsLen: typeof ADDR_WORDS !== 'undefined' ? ADDR_WORDS.length : -1,
-    alreadyInit: __wanYuAddrInitialized
-  });
-  if (__wanYuAddrInitialized && ADDR_WORDS.length === 10) {
-    renderAddrWords();
-    return;
-  }
-  if (tryLoadWanYuAddrFromStorage()) {
-    __wanYuAddrInitialized = true;
+  if (__wanYuInitLock) return;
+  __wanYuInitLock = true;
+  try {
+    __wanYuInitAddrWordsCallCount++;
+    console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
+      addrWordsLen: typeof ADDR_WORDS !== 'undefined' ? ADDR_WORDS.length : -1,
+      alreadyInit: __wanYuAddrInitialized
+    });
+    if (__wanYuAddrInitialized && ADDR_WORDS.length === 10) {
+      renderAddrWords();
+      return;
+    }
+    if (tryLoadWanYuAddrFromStorage()) {
+      __wanYuAddrInitialized = true;
+      renderAddrWords();
+      persistWanYuAddrToStorage();
+      syncNativeAddrDisplaysToAllViews();
+      return;
+    }
+    ADDR_WORDS.length = 0;
+    for (let i = 0; i < 10; i++) {
+      ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
+    }
+    var preEl = document.getElementById('addrPrefix');
+    var sufEl = document.getElementById('addrSuffix');
+    if (preEl) preEl.textContent = randDigits(8);
+    if (sufEl) sufEl.textContent = randDigits(8);
     renderAddrWords();
     persistWanYuAddrToStorage();
     syncNativeAddrDisplaysToAllViews();
-    return;
+    __wanYuAddrInitialized = true;
+  } finally {
+    __wanYuInitLock = false;
   }
-  ADDR_WORDS.length = 0;
-  for (let i = 0; i < 10; i++) {
-    ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
-  }
-  var preEl = document.getElementById('addrPrefix');
-  var sufEl = document.getElementById('addrSuffix');
-  if (preEl) preEl.textContent = randDigits(8);
-  if (sufEl) sufEl.textContent = randDigits(8);
-  renderAddrWords();
-  persistWanYuAddrToStorage();
-  syncNativeAddrDisplaysToAllViews();
-  __wanYuAddrInitialized = true;
 }
 
 function renderAddrWords() {
