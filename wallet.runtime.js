@@ -6066,8 +6066,10 @@ async function openPinSettingsDialog() {
 
 // 时钟
 function updateTime() {
-  const now=new Date();
-  document.getElementById('statusTime').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const now = new Date();
+  var el = document.getElementById('statusTime');
+  if (!el) return;
+  el.textContent = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
 }
 updateTime(); window._timeInterval = setInterval(updateTime,60000);
 try {
