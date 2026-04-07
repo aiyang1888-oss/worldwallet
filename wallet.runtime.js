@@ -570,10 +570,17 @@ window.addEventListener('beforeunload', function() {
   try { sessionStorage.clear(); } catch (e) {}
 });
 
-/** 是否已配置 PIN（hash 标志，非 PIN 明文） */
+/** 是否已配置 PIN（hash、迁移标志，或尚未迁移的 6 位明文） */
 function wwHasPinConfigured() {
   try {
-    return !!(localStorage.getItem('ww_pin_hash') || localStorage.getItem('ww_pin_set') === '1');
+    if (localStorage.getItem('ww_pin_hash')) return true;
+    if (localStorage.getItem('ww_pin_set') === '1') return true;
+    var p = '';
+    if (typeof Store !== 'undefined' && Store.getPin) p = Store.getPin();
+    else {
+      p = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
+    }
+    return !!(p && /^\d{6}$/.test(String(p)));
   } catch (e) { return false; }
 }
 (function wwMigratePlainPinToHashOnce() {
