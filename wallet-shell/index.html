@@ -1,6 +1,6 @@
 <!-- worldtoken.cc v20260405 -->
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh" class="ww-addr-pending">
 <head>
 
 
@@ -75,8 +75,25 @@
       </div>
     </div>
 
-    <!-- ══ PIN 解锁（原密码恢复入口） ══ -->
-    
+    <!-- ══ PIN 解锁（欢迎页「PIN 解锁钱包」） ══ -->
+    <div class="page" id="page-password-restore">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">PIN 解锁</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding:24px 20px;display:flex;flex-direction:column;align-items:center;max-width:400px;margin:0 auto;box-sizing:border-box">
+        <p style="font-size:13px;color:var(--text-muted);text-align:center;line-height:1.6;margin-bottom:20px;width:100%">输入本机已设置的 6 位数字 PIN，验证通过后进入钱包。</p>
+        <form id="pageRestorePinForm" novalidate onsubmit="event.preventDefault(); void submitPageRestorePin();" style="width:100%;max-width:320px;margin:0">
+          <div id="pageRestorePinPanel" style="width:100%">
+            <input id="pinRestorePageInput" type="password" name="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="6 位数字 PIN" style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px;box-sizing:border-box" />
+            <div id="pageRestorePinError" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;text-align:center"></div>
+            <button type="submit" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px">解锁</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- 创建页 -->
     <div class="page" id="page-create">
       <div class="nav-bar">
@@ -671,14 +688,16 @@
       <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">输入 PIN</div>
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">已设置 6 位数字 PIN，用于保护钱包访问</div>
       <div id="wwAntiPhishBadge" style="display:none;font-size:13px;font-weight:700;color:var(--gold);margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.38);line-height:1.4"></div>
-      <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitPinUnlock()" />
-      <div style="display:flex;gap:8px;margin-bottom:12px">
-        <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockBackspace()">⌫ 退格</button>
-        <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
-      </div>
-      <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
-      <button class="btn-primary" class="u13" onclick="submitPinUnlock()">解锁</button>
-      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
+      <form id="pinUnlockForm" novalidate onsubmit="event.preventDefault(); void submitPinUnlock();" style="margin:0">
+        <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" aria-label="6 位数字 PIN" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" />
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockBackspace()">⌫ 退格</button>
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
+        </div>
+        <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
+        <button type="submit" class="btn-primary u13">解锁</button>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
+      </form>
     </div>
   </div>
 
@@ -847,6 +866,7 @@
 <script src="wallet.core.js"></script>
 <script src="wallet.addr.js"></script>
 <script src="wallet.tx.js"></script>
+<script src="wallet.runtime.js"></script>
 <script src="wallet.ui.js"></script>
 
 
