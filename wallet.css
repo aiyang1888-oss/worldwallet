@@ -109,15 +109,14 @@ body {
   }
 }
 
-/* iOS：输入框字号小于 16px 时聚焦会强制缩放页面，关键表单区统一 16px */
+/* iOS：小于 16px 的输入聚焦会缩放页面；PIN 解锁框为内联 20px，不在此列 */
 @media (max-width: 500px) {
   #page-import textarea,
   #page-import input[type="text"],
   #verifyQuestions input[type="text"],
   #page-transfer textarea,
   #page-hongbao input#hbBlessing,
-  #page-hongbao input#hbMessage,
-  #pinUnlockInput {
+  #page-hongbao input#hbMessage {
     font-size: 16px !important;
   }
 }
