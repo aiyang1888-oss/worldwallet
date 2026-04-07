@@ -1,20 +1,23 @@
-# Round 1 修复报告 - 2026-04-07 20:07
+# Round 1 修复报告 - 2026-04-07 20:17
 
 ## 发现的问题
-- [P2] 领取礼物成功后未使用已实现的 `page-claimed` 页面，直接跳转首页，导致「领取成功」专页闲置、流程与 `app.html` 不一致。
+- [P1] `openCoinPicker` 在 `#coinPickerList` 不存在时对 `list.innerHTML` 赋值会抛错，导致同文件后续脚本无法执行。
+- [P1] `switchHbType` 在 `#btnNormal` / `#btnLucky` 不存在时访问 `n.style` / `l.style` 会抛错。
 
 ## 修复内容
-- 文件：wallet.ui.js
-- 函数：submitClaim
-- 修改：领取成功（新旧礼物格式两路）时写入 `#claimedAmount` / `#claimedMessage` 并 `goTo('page-claimed')`。
+- 文件：wallet.runtime.js
+- 函数：openCoinPicker, switchHbType
+- 修改：在操作 DOM 前增加空节点判断并提前返回。
 
 ## 修改文件
-- wallet.ui.js
+- wallet.runtime.js
 
 ## 剩余问题
-- 无（本轮静态测试 TEST-A/B/C 均通过；未做浏览器手测）
+- 无（本轮静态与绑定测试均通过；其余为架构/体验类非阻断项可后续迭代）。
 
 ## 测试结果
-- TEST-A: PASS 全部 `data-ww-fn` 均有全局函数或由 `wallet.runtime.js` 挂到 `window`
-- TEST-B: PASS 全部 `data-ww-go` 目标均存在对应 `id="page-*"`
-- TEST-C: PASS 所列核心函数均有非空实现（含别名 `sendTransfer`/`claimGift`/`openSend`/`openReceive`）
+- TEST-A: PASS — 全部 `data-ww-fn` 在已加载脚本中存在 `function` / `window` 绑定。
+- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在对应 `id="page-*"`。
+- TEST-C: PASS — 所列核心函数在 `wallet.runtime.js` 或别名暴露处均有非空实现。
+
+**Git:** `485abfd` — fix: guard openCoinPicker and switchHbType when optional DOM is missing
