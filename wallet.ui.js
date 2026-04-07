@@ -833,6 +833,7 @@ function closeTotpUnlock() {
   if (pinErr) { pinErr.style.display = 'none'; pinErr.textContent = 'PIN错误'; }
   if (pov) pov.classList.add('show');
   try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
+  if (pinInp) setTimeout(function () { try { pinInp.focus(); } catch (_pf) {} }, 200);
 }
 
 function goTo(pageId, opts) {
