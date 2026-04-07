@@ -789,14 +789,7 @@ function _saveWalletPlainPublicOnly(w) {
   } catch(e) {}
 }
 
-function loadWallet() {
-  loadWalletPublic();
-  if (REAL_WALLET && REAL_WALLET.ethAddress) {
-    try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
-  }
-  try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
-  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
-}
+/* loadWallet 定义在 wallet.core.js（含万语地址初始化与移除 html.ww-addr-pending）；勿在此重复声明，否则会覆盖核心实现导致异常 */
 
 const WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
 function getRefInvitesMap() {
@@ -6417,7 +6410,7 @@ async function submitPageRestorePin() {
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
   if (!wwHasPinConfigured()) {
-    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
+    if (err) { err.textContent = '尚未在本机设置 PIN，请先创建或导入钱包并完成 PIN 设置'; err.style.display = 'block'; }
     if (inp) inp.value = '';
     if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
     return;
@@ -6535,21 +6528,7 @@ const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
 try { var _ap0 = document.querySelector('.page.active'); applySeoForPage(_ap0 && _ap0.id ? _ap0.id : 'page-welcome'); applyOfflineState(); window.addEventListener('online', applyOfflineState); window.addEventListener('offline', applyOfflineState); } catch(e) {}
 try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } catch (e) {}
 
-(function () {
-  function wwHashToPageId() {
-    var h = (location.hash || '').replace(/^#/, '');
-    if (!h) return null;
-    return document.getElementById(h) ? h : null;
-  }
-  function wwApplyHashRoute() {
-    var pid = wwHashToPageId();
-    if (pid && typeof goTo === 'function') goTo(pid);
-  }
-  window.addEventListener('hashchange', function () {
-    wwApplyHashRoute();
-  });
-  setTimeout(wwApplyHashRoute, 0);
-})();
+/* hash 路由由 wallet.ui.js 统一处理（含 wwEnsureInitialHashRoute）；勿重复注册，避免双次 goTo 与行为不一致 */
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

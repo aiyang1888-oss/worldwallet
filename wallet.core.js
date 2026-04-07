@@ -184,6 +184,7 @@ function loadWallet() {
   }
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
   try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
+  try { if (typeof hideWalletLoading === 'function') hideWalletLoading(); } catch (_hl) {}
 }
 
 async function createRealWallet(forcedWordCount) {

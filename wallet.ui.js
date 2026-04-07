@@ -3039,20 +3039,20 @@ function continueAfterPinCheck() {
     _resumeWalletAfterUnlock();
   }
 }
-function submitPageRestorePin() {
-  var want = '';
-  try { want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || ''; } catch (e) {}
+async function submitPageRestorePin() {
   const inp = document.getElementById('pinRestorePageInput');
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
-  if (!want) {
-    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
+  if (typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
+    if (err) { err.textContent = '尚未在本机设置 PIN，请先创建或导入钱包并完成 PIN 设置'; err.style.display = 'block'; }
     if (inp) inp.value = '';
     if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
     return;
   }
   const got = inp ? String(inp.value).trim() : '';
-  if (got === want) {
+  var ok = typeof verifyPin === 'function' ? await verifyPin(got) : false;
+  if (ok) {
+    if (typeof wwSetSessionPin === 'function') wwSetSessionPin(got);
     if (err) { err.style.display = 'none'; err.textContent = ''; }
     if (inp) inp.value = '';
     if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
