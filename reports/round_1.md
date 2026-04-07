@@ -1,23 +1,21 @@
 # Round 1 修复报告 - 2026-04-07
 
 ## 发现的问题
-- [P1] `wallet.runtime.js` 中 `randomBlessing` 与 `createHongbao` 在 `#hbMessage`、`#hbAmount` 或口令展示页节点未挂载时可能对 `null` 访问 `.value` / `.textContent` / `.innerHTML`，导致脚本异常中断（静态分析 STEP 3）。
+- [P2] 转账成功页缺少 `#successTxHash` / `#successTxLink` 节点：`wallet.runtime.js` 在广播成功后写入交易哈希与浏览器链接，但 DOM 不存在时 `_safeEl` 回退为临时对象，哈希无法持久化到页面，`shareSuccess` 复制分享文案时也无法附带链上记录。
 
 ## 修复内容
-- 文件：wallet.runtime.js
-- 函数：randomBlessing, createHongbao
-- 修改：对礼物页输入框使用存在性判断；口令展示区 DOM 更新统一经 `_safeEl`，避免缺失节点抛错。
+- 文件：wallet.html
+- 函数：N/A（DOM 结构）
+- 修改：在 `page-transfer-success` 底部信息行增加隐藏的 `successTxHash` 与可展开的 `successTxLink`，与现有脚本中的 `getElementById` / `_safeEl` 约定一致。
 
 ## 修改文件
-- wallet.runtime.js
+- wallet.html
 
 ## 剩余问题
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载的 runtime 覆盖前者，长期应收敛为单模块或显式委托，避免行为分叉。
-- 无其它阻塞性项；TEST-A/B 自动化核对通过。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名函数，依赖加载顺序由后者覆盖前者，长期维护成本高（本轮未改动）。
+- [P3] 部分 `JSON.parse(localStorage…)` 路径仍依赖存储内容合法 JSON（非本轮范围）。
 
 ## 测试结果
-- TEST-A: PASS 全部 `data-ww-fn` 均有全局函数定义或 `wwExposeDataWwFnHandlers` 挂载
-- TEST-B: PASS 全部 `data-ww-go` 在 `wallet.html` 中有对应 `id="page-*"`
-- TEST-C: PASS 抽样核对 `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift`、`submitClaim`（claimGift 别名）、`confirmTransfer`（sendTransfer 别名）、`goHomeTransfer`（openSend 别名）、`openReceive` 均含实质逻辑，非空壳
-
-Git: `3ac6d4a`
+- TEST-A: PASS — `data-ww-fn` 所列函数均在 `wallet.ui.js` / `wallet.runtime.js` / `wallet.addr.js` 等中有对应全局函数定义。
+- TEST-B: PASS — 所有 `data-ww-go` 目标均在 `wallet.html` 中存在 `id="page-*"` 页面容器。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`（映射 `confirmTransfer`）、`createGift`、`claimGift`（映射 `submitClaim`）、`openSend` / `openReceive` 均有非空实现。
