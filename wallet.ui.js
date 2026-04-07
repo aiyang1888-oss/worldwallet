@@ -3440,6 +3440,16 @@ function getMnemonicFromImport() {
     var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
     raw = inputs.map(function(el){ return String(el.value || '').trim(); }).filter(Boolean).join(' ');
   }
+  /* goTo(page-import) 使用 initImportGrid 的 iw_* 格子；用户清空粘贴框后仍可从格子读取 */
+  if (!raw) {
+    var syncLen = importGridWordCount || 12;
+    var fromIw = [];
+    for (var i = 0; i < syncLen; i++) {
+      var inp = document.getElementById('iw_' + i);
+      if (inp) fromIw.push(String(inp.value || '').trim());
+    }
+    raw = fromIw.filter(Boolean).join(' ');
+  }
   raw = raw.replace(/\s+/g, ' ').trim();
   var words = raw ? raw.split(' ').filter(Boolean) : [];
   if (![12,15,18,21,24].includes(words.length)) return '';
