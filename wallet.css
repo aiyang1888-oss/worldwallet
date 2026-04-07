@@ -103,22 +103,15 @@ body {
     left: 0 !important;
   }
   .status-bar { display: none !important; }
-  /* 状态栏已隐藏时，页面勿再预留 50px，否则真机顶部出现空白条 */
-  .page {
-    top: 0 !important;
-    /* 无模拟状态栏时须为刘海/灵动岛预留顶部安全区，否则导航栏与首行内容被遮挡 */
-    padding-top: env(safe-area-inset-top, 0px);
-  }
 }
 
-/* iOS：小于 16px 的输入聚焦会缩放页面；PIN 解锁框为内联 20px，不在此列 */
+/* iOS：输入框字号小于 16px 时聚焦会强制缩放页面，关键表单区统一 16px */
 @media (max-width: 500px) {
   #page-import textarea,
   #page-import input[type="text"],
   #verifyQuestions input[type="text"],
   #page-transfer textarea,
-  #page-hongbao input#hbAmount,
-  #page-hongbao input#hbMessage {
+  #page-hongbao input#hbBlessing {
     font-size: 16px !important;
   }
 }
@@ -132,7 +125,6 @@ body {
   box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px #111120;
   overflow: hidden;
   position: relative;
-  isolation: isolate;
   display: flex;
   flex-direction: column;
 }
@@ -151,11 +143,11 @@ body {
 }
 .status-time { font-weight: 600; color: var(--text); font-size: 14px; }
 
-.pages { flex: 1; position: relative; overflow: hidden; width: 100%; }
+/* flex:1 1 0 + min-height:0：避免子项全为 absolute 时中间区高度塌陷，导致 .phone 缩成一条、底栏被 body 居中到视口中央 */
+.pages { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; }
 
 /* 隐藏 pages 容器内游离元素（不属于任何 .page） */
-/* #qrOverlay 为 .pages 内非 .page 节点，须排除，否则 display:none 会压过 .qr-overlay.show */
-.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#wt-toast):not(#toastMsg):not(#qrOverlay) { display: none !important; }
+.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg) { display: none !important; }
 .page {
   position: absolute;
   top: 50px; left: 0; right: 0; bottom: 0;
@@ -226,8 +218,6 @@ body {
   -webkit-backdrop-filter: blur(14px);
   border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
   padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
-  position: relative;
-  z-index: 100;
 }
 
 .tab-item {
@@ -398,7 +388,7 @@ body {
   height: 56px; background: var(--bg2);
   border-bottom: 1px solid var(--border);
   display: flex; align-items: center;
-  padding: 0 max(18px, env(safe-area-inset-right, 0px)) 0 max(18px, env(safe-area-inset-left, 0px));
+  padding: 0 max(18px, env(safe-area-inset-left, 0px)) 0 max(18px, env(safe-area-inset-right, 0px));
   gap: 14px; flex-shrink: 0;
   position: relative;
   z-index: 2;
@@ -427,7 +417,7 @@ body {
 }
 
 /* ── 首页 ── */
-.home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-right, 0px)) 22px max(18px, env(safe-area-inset-left, 0px)); border-bottom: 1px solid var(--border); }
+.home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-left, 0px)) 22px max(18px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--border); }
 .home-backup-banner {
   display: none;
   background: rgba(231, 76, 60, 0.16);
@@ -487,13 +477,6 @@ body {
 .home-chain-strip.home-chain-strip--dim .home-short-addr {
   color: rgba(255,255,255,0.38);
 }
-[data-theme="light"] .home-chain-strip.home-chain-strip--dim .home-short-addr {
-  color: rgba(18, 18, 26, 0.45);
-}
-/* 浅色主题：链上短地址与图表脚注勿沿用深色主题的浅色字，否则在浅底上几乎不可读 */
-[data-theme="light"] .home-short-addr {
-  color: var(--text-dim);
-}
 .home-mini-chain {
   display: flex;
   align-items: center;
@@ -533,9 +516,6 @@ body {
 .home-balance-chart-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
 .home-balance-chart-svg { width: 100%; height: 88px; display: block; }
 .home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
-[data-theme="light"] .home-balance-chart-foot {
-  color: var(--text-muted);
-}
 /* —— balance hide / scroll-top / tab swipe (patch) —— */
 .ww-balance-privacy-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-right: 2px; box-sizing: border-box; }
 .ww-balance-hide-btn {
@@ -545,17 +525,6 @@ body {
   transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 .ww-balance-hide-btn[aria-pressed="true"] { border-color: rgba(200,168,75,0.5); color: var(--gold-light); background: rgba(200,168,75,0.1); }
-/* 浅色首页 header 为浅底，沿用深色半透明白边/白字会导致按钮几乎不可见 */
-[data-theme="light"] .ww-balance-hide-btn {
-  border-color: rgba(0, 0, 0, 0.12);
-  background: rgba(0, 0, 0, 0.05);
-  color: var(--text-dim);
-}
-[data-theme="light"] .ww-balance-hide-btn[aria-pressed="true"] {
-  border-color: rgba(184, 146, 42, 0.45);
-  color: var(--gold);
-  background: rgba(184, 146, 42, 0.12);
-}
 .ww-balance-hidden #totalBalanceDisplay,
 .ww-balance-hidden #totalBalanceSub,
 .ww-balance-hidden #homeBalanceChartWrap,
@@ -681,7 +650,7 @@ body {
   margin-bottom: 4px;
 }
 .addr-num {
-  font-size: 13px; color: var(--text-muted);
+  font-size: 13px; color: #555;
   letter-spacing: 3px;
   font-variant-numeric: tabular-nums;
   padding-left: 2px;
@@ -751,8 +720,6 @@ body {
   align-items: center; justify-content: center;
   z-index: 100;
 }
-/* TOTP 须在 PIN 遮罩之上，避免两 overlay 同时存在时误点到底层 */
-#totpUnlockOverlay.show { z-index: 101; }
 
 @keyframes wtShake {
   0%,100% { transform: translateX(0); }
@@ -789,6 +756,7 @@ body {
   z-index: 100;
 }
 .qr-overlay.show { display: flex; }
+.overlay.show { display: flex !important; }
 .overlay-sheet {
   background: var(--bg2); border-radius: 24px;
   padding: 24px; width: 320px; max-height: 80vh;
@@ -835,58 +803,28 @@ body {
 .swap-info-val.gold { color: var(--gold); }
 
 /* ── 底部导航 ── */
+#tabBar {
+  margin-top: auto;
+}
 .tab-bar {
   height: 76px; background: var(--bg2);
   border-top: 1px solid var(--border);
   display: flex; align-items: center;
   justify-content: space-around;
   padding-bottom: 12px; flex-shrink: 0;
-  width: 100%; position: relative; z-index: 100;
-  box-sizing: border-box;
-}
-/* 默认隐藏底栏；主 Tab 页除 goTo() 内联外，用 :has() 在对应 .page.active 时强制 flex，避免竞态导致底栏一直为 none。勿在 #tabBar 上复用 .u5 */
-#tabBar {
-  display: none;
-  /* 高于 .overlay(100) / pin-setup(120)，避免全屏层叠上下文下误挡点击 */
-  z-index: 160;
-  pointer-events: auto;
-}
-.phone:has(#page-home.active) #tabBar,
-.phone:has(#page-addr.active) #tabBar,
-.phone:has(#page-swap.active) #tabBar,
-.phone:has(#page-settings.active) #tabBar,
-.phone:has(#page-hongbao.active) #tabBar {
-  display: flex !important;
-  visibility: visible;
+  width: 100%; position: relative; z-index: 10;
 }
 .tab-item {
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 3px;
+  align-items: center; gap: 3px;
   font-size: 10px; color: var(--text-muted);
-  cursor: pointer; padding: 4px 6px;
-  flex: 1 1 0;
-  min-width: 0;
+  cursor: pointer; padding: 4px 10px;
   border-radius: 10px; transition: all 0.2s;
-  pointer-events: auto;
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  user-select: none;
 }
 .tab-item.active { color: var(--gold); }
-.tab-icon {
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-.tab-icon svg { width: 22px; height: 22px; display: block; flex-shrink: 0; }
+.tab-icon { font-size: 22px; }
+.tab-icon svg { width: 22px; height: 22px; display: block; }
 .tab-item .tab-icon svg { color: inherit; }
-.tab-item > span:last-child {
-  line-height: 1.15;
-  text-align: center;
-}
 #page-faq .faq-body { padding: 0 16px 32px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
 #page-faq .faq-block { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
 #page-faq .faq-block h3 { font-size: 15px; font-weight: 700; color: var(--gold); margin: 0 0 8px; }
@@ -1034,7 +972,7 @@ body {
   z-index: 120;
   padding-bottom: 24px;
 }
-.pin-setup-overlay.show { display: flex !important; }
+.pin-setup-overlay.show { display: flex; }
 .pin-setup-panel {
   width: 100%; max-width: 360px;
   background: var(--bg2);
@@ -1054,9 +992,6 @@ body {
   transition: background 0.15s, border-color 0.15s;
 }
 .pin-dot.filled { background: var(--gold); border-color: var(--gold); }
-@media (prefers-reduced-motion: reduce) {
-  .pin-dot { transition: none; }
-}
 .pin-keypad {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
   max-width: 280px; margin: 0 auto;
@@ -1075,28 +1010,6 @@ body {
 .pin-setup-cancel {
   margin-top: 14px; text-align: center;
   font-size: 14px; color: var(--gold); cursor: pointer;
-}
-
-/* PIN 恢复页（page-password-restore）：略大的圆点，与全屏页键盘对齐 */
-#page-password-restore .ww-pin-restore-dots .pin-dot {
-  width: 16px;
-  height: 16px;
-}
-#page-password-restore #pinRestoreKeypad.pin-keypad {
-  max-width: 280px;
-  margin-left: auto;
-  margin-right: auto;
-}
-#page-password-restore #pinRestoreKeypad .pin-key-sub {
-  font-size: 15px;
-  color: var(--text-dim);
-}
-#page-password-restore #pinRestoreKeypad .pin-key {
-  touch-action: manipulation;
-}
-/* 数字键盘布局占位格：不拦截点击，避免误触空白区域吞掉触摸/焦点 */
-#page-password-restore #pinRestoreKeypad > div:empty {
-  pointer-events: none;
 }
 
 .offline-banner {

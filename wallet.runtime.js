@@ -1653,32 +1653,7 @@ function shortChainAddr(addr) {
   return t.slice(0, 5) + '…' + t.slice(-4);
 }
 function updateHomeChainStrip() {
-  const strip = document.getElementById('homeChainStrip');
-  const trxEl = document.getElementById('homeShortTrx');
-  const ethEl = document.getElementById('homeShortEth');
-  const btcEl = document.getElementById('homeShortBtc');
-  const btcWrap = document.getElementById('homeMiniBtcWrap');
-  if (!strip || !trxEl || !ethEl) return;
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
-    trxEl.textContent = '—';
-    ethEl.textContent = '—';
-    if (btcEl) btcEl.textContent = '—';
-    if (btcWrap) btcWrap.style.display = 'flex';
-    strip.classList.add('home-chain-strip--dim');
-    return;
-  }
-  const trx = REAL_WALLET.trxAddress || '';
-  const eth = REAL_WALLET.ethAddress || '';
-  const btc = REAL_WALLET.btcAddress || '';
-  trxEl.textContent = shortChainAddr(trx || '--');
-  ethEl.textContent = shortChainAddr(eth || '--');
-  if (btc && btc.length > 2 && btc !== '--') {
-    btcEl.textContent = shortChainAddr(btc);
-  } else {
-    btcEl.textContent = '—';
-  }
-  if (btcWrap) btcWrap.style.display = 'flex';
-  strip.classList.remove('home-chain-strip--dim');
+  /* 首页 TRX/ETH/BTC 链上圆形条已移除，保留空函数供旧调用 */
 }
 
 function updateHomeBackupBanner() {
@@ -2023,7 +1998,6 @@ function applyHideZeroTokens() {
   if(cb) cb.checked = hide;
   const rows = [
     { id: 'assetRowUsdt', balId: 'balUsdt' },
-    { id: 'assetRowTrx', balId: 'balTrx' },
     { id: 'assetRowEth', balId: 'balEth' },
     { id: 'btcAssetRow', balId: 'balBtc' },
   ];
@@ -3194,16 +3168,14 @@ function wwAutoRebalanceLoad() {
 
 function wwAutoRebalancePortfolioParts() {
   var u = parseFloat((document.getElementById('valUsdt') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var t = parseFloat((document.getElementById('valTrx') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
   var e = parseFloat((document.getElementById('valEth') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
   var b = parseFloat((document.getElementById('valBtc') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
-  var total = u + t + e + b;
-  if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }, { k: 'TRX', p: 0 }, { k: 'ETH', p: 0 }, { k: 'BTC', p: 0 }] };
+  var total = u + e + b;
+  if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }, { k: 'ETH', p: 0 }, { k: 'BTC', p: 0 }] };
   return {
     total: total,
     parts: [
       { k: 'USDT', p: 100 * u / total },
-      { k: 'TRX', p: 100 * t / total },
       { k: 'ETH', p: 100 * e / total },
       { k: 'BTC', p: 100 * b / total }
     ]
@@ -3216,7 +3188,7 @@ function wwAutoRebalancePopulate() {
   if (!body) return;
   var th = parseInt((document.getElementById('wwAutoRebalThreshold') || {}).value || '8', 10);
   if (!isFinite(th) || th < 1) th = 8;
-  var target = { USDT: 40, TRX: 15, ETH: 30, BTC: 15 };
+  var target = { USDT: 45, ETH: 35, BTC: 20 };
   var data = wwAutoRebalancePortfolioParts();
   if (!data.total) {
     body.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无估值数据，请返回首页刷新余额后再试。</div>';
@@ -3250,8 +3222,8 @@ function wwSentimentHash(s) {
 function wwSentimentPopulate() {
   var box = document.getElementById('wwSentimentList');
   if (!box) return;
-  var coins = ['USDT', 'TRX', 'ETH', 'BTC'];
-  var els = ['chgUsdt', 'chgTrx', 'chgEth', 'chgBtc'];
+  var coins = ['USDT', 'ETH', 'BTC'];
+  var els = ['chgUsdt', 'chgEth', 'chgBtc'];
   var out = [];
   for (var i = 0; i < coins.length; i++) {
     var ch = (document.getElementById(els[i]) || {}).textContent || '';
@@ -5678,7 +5650,7 @@ async function loadBalances() {
   if(btn) btn.textContent = '查询中...';
   
   // 更新标签为加载中
-  ['balUsdt','balTrx','balEth'].forEach(id => {
+  ['balUsdt','balEth','balBtc'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.textContent = '...';
   });
@@ -5745,8 +5717,6 @@ async function loadBalances() {
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
     set('valUsdt', fmtUsd(usdtUsd));
-    set('balTrx', fmt(trxBal));
-    set('valTrx', fmtUsd(trxUsd));
     set('balEth', fmt(ethBal));
     set('valEth', fmtUsd(ethUsd));
     // 更新涨跌幅（从 CoinGecko 获取）
@@ -5755,7 +5725,6 @@ async function loadBalances() {
       const d2 = await r2.json();
       const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
       if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
-      if(d2.tron?.usd_24h_change!==undefined) set('chgTrx', fmtChg(d2.tron.usd_24h_change));
       if(d2.ethereum?.usd_24h_change!==undefined) set('chgEth', fmtChg(d2.ethereum.usd_24h_change));
     } catch(e) {}
     if(tbd) tbd.classList.remove('home-balance--loading');

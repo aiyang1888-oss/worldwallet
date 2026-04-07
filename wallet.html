@@ -8,7 +8,7 @@
 <!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
 <meta name="wt-tron-api-key" content="">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https: http:; img-src 'self' data: https:; font-src 'self'">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldToken</title>
 <meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/USDT/BTC多链">
 <meta name="keywords" content="加密钱包,多语言,WorldToken,TRX,ETH,USDT,BTC,区块链">
@@ -75,34 +75,8 @@
       </div>
     </div>
 
-    <!-- PIN 解锁（本机 PIN 进入钱包） -->
-    <div class="page" id="page-password-restore">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-welcome')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
-        <div class="nav-title">PIN 解锁</div>
-      </div>
-      <div class="ww-pin-restore-content" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;min-height:0">
-        <div style="text-align:center;margin-bottom:30px;">
-          <div style="font-size:48px;margin-bottom:20px;">🔐</div>
-          <h3 style="margin:10px 0;color:var(--text);font-size:18px;font-weight:700;">输入 PIN 码</h3>
-          <p style="color:var(--text-muted);font-size:14px;line-height:1.5;">请输入您的 6 位 PIN 码解锁钱包</p>
-        </div>
-        <div id="pinRestoreDisplay" class="ww-pin-restore-dots" style="display:flex;gap:12px;margin:20px 0;">
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
-          <div class="pin-dot"></div>
-        </div>
-        <div id="pinRestoreError" style="display:none;color:var(--red);font-size:14px;margin:10px 0;text-align:center;max-width:280px;"></div>
-        <div id="pinRestoreKeypad" class="pin-keypad ww-pin-restore-keypad" style="width:100%;max-width:280px;margin-top:20px;"></div>
-        <div style="margin-top:30px;text-align:center;">
-          <a href="#" onclick="goTo('page-import');return false;" style="color:var(--gold);font-size:14px;text-decoration:none;">忘记 PIN？使用助记词恢复 →</a>
-        </div>
-      </div>
-    </div>
-
+    <!-- ══ PIN 解锁（原密码恢复入口） ══ -->
+    
     <!-- 创建页 -->
     <div class="page" id="page-create">
       <div class="nav-bar">
@@ -166,7 +140,7 @@
           <span>请抄写并妥善保管这<b id="warnWordCount">12</b>个词；以上为当前钱包的<b>真实助记词</b>。12/15/18/21/24词对应不同熵与<b>不同地址</b>，在上方切换词数将重新生成钱包。任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
         </div>
         <button class="btn-primary" onclick="startVerify()">✅ 我已抄写，开始验证</button>
-        <div onclick="saveAndSkipVerify()" style="margin-top:8px;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer">⏭️ 暂时忽略验证</div>
+        <div onclick="goTo(window._keyBackPage||'page-settings')" style="margin-top:8px;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer">⏭️ 暂时忽略验证</div>
       </div>
 
     </div>
@@ -202,13 +176,10 @@
             </svg>
           </div>
         </div>
-        <div class="home-greeting ww-balance-privacy-row">
-          <span>总资产估值</span>
-          <button type="button" id="balanceHideToggle" class="ww-balance-hide-btn" aria-label="隐藏余额" title="隐藏余额">👁</button>
-        </div>
+        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
-        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap">
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
           </div>
@@ -223,33 +194,8 @@
             <button type="button" id="homeEditAddrBtn" onclick="editHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">修改地址</button>
           </div>
         </div>
-
-        <div id="homeChainStrip" class="home-chain-strip">
-          <div class="home-mini-chain" title="Tron (TRX)">
-            <span class="home-mini-icon" aria-hidden="true" style="font-size:20px;line-height:1">🔴</span>
-            <span class="home-chain-tag">TRX</span>
-            <span id="homeShortTrx" class="home-short-addr">--</span>
-          </div>
-          <div class="home-mini-chain" title="Ethereum (ETH)">
-            <span class="home-mini-icon" aria-hidden="true" style="font-size:20px;line-height:1">🔷</span>
-            <span class="home-chain-tag">ETH</span>
-            <span id="homeShortEth" class="home-short-addr">--</span>
-          </div>
-          <div id="homeMiniBtcWrap" class="home-mini-chain" title="Bitcoin (BTC)">
-            <span class="home-mini-icon" aria-hidden="true"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#F7931A"/><path fill="#fff" d="M20.8 13.9c.2-1.6-1-2.5-2.7-3l.5-2.3-1.4-.3-.5 2.2c-.4-.1-.7-.2-1.1-.3l.5-2.3-1.4-.3-.5 2.3c-.3-.1-.6-.1-.8-.2v-.1l-2.4-.5-.4 1.6 1.2.3c.6.1.7.5.7.9l-.7 2.6c0 .1-.1.1-.1.1h-.2l-.9-.2-.2 1.8 2.2.5c.4.1.7.2 1 .3l-.6 2.4 1.4.3.5-2.3c.4.1.8.2 1.2.3l-.5 2.4 1.4.3.5-2.3c2.3.7 4 .4 4.7-1.5.6-1.6 0-2.6-1.2-3.2zm-2.3 4.8c-.4 1.7-3.3.8-4.2.6l.8-2.9c.9.2 3.7.8 3.4 2.3zm.4-5.1c-.4 1.5-2.8.8-3.5.6l.7-2.7c.7.2 3 .8 2.8 2.1z"/></svg></span>
-            <span class="home-chain-tag">BTC</span>
-            <span id="homeShortBtc" class="home-short-addr">--</span>
-          </div>
         </div>
         </div>
-      </div>
-
-      <div class="quick-btns">
-        <div class="quick-btn" onclick="goTo('page-transfer')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">📤</div><div class="quick-btn-label">转账</div></div>
-        <div class="quick-btn" onclick="goTab('tab-addr')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">📥</div><div class="quick-btn-label">收款</div></div>
-        <div class="quick-btn" onclick="goTab('tab-swap')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">🔄</div><div class="quick-btn-label">兑换</div></div>
-        <div class="quick-btn" onclick="goTo('page-hongbao')"><div class="quick-btn-icon" style="font-size:22px;line-height:1">🎁</div><div class="quick-btn-label">礼物</div></div>
-      </div>
       
       <div id="trxResourceCard" style="display:none;margin:0 16px 10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -285,15 +231,6 @@
             <div class="asset-change up" id="chgUsdt">+0.01%</div>
           </div>
         </div>
-        <div class="asset-item" id="assetRowTrx">
-          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🔴</div>
-          <div class="asset-info"><div class="asset-name">TRX</div><div class="asset-chain">Tron</div></div>
-          <div class="asset-right">
-            <div class="asset-amount" id="balTrx">--</div>
-            <div class="asset-value" id="valTrx">$--</div>
-            <div class="asset-change up" id="chgTrx">+0.8%</div>
-          </div>
-        </div>
         <div class="asset-item" id="assetRowEth">
           <div class="asset-icon" style="background:rgba(100,100,255,0.12)">🔷</div>
           <div class="asset-info"><div class="asset-name">ETH</div><div class="asset-chain">Ethereum</div></div>
@@ -303,7 +240,7 @@
             <div class="asset-change up" id="chgEth">+2.4%</div>
           </div>
         </div>
-        <div class="asset-item u5" id="btcAssetRow">
+        <div class="asset-item" id="btcAssetRow" class="u5">
           <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🟠</div>
           <div class="asset-info"><div class="asset-name">BTC</div><div class="asset-chain">Bitcoin</div></div>
           <div class="asset-right">
@@ -333,6 +270,8 @@
     </div>
 
     <!-- 地址页（核心升级版）-->
+    </div>
+
     <div class="page" id="page-addr">
       <div class="addr-content" style="padding-top:10px">
 
@@ -436,16 +375,19 @@
       </div>
     </div>
 
+
+
       <!-- QR 弹窗 -->
       <div class="qr-overlay" id="qrOverlay" onclick="hideQR()">
         <div class="qr-card" onclick="event.stopPropagation()">
           <div class="qr-placeholder">📱</div>
           <div class="qr-addr-main" id="qrAddrMain" style="font-size:11px;word-break:break-all;letter-spacing:1px">38294651龙桜서م春月БRกA92847361</div>
-          <div class="qr-addr-num u5" id="qrAddrNum"></div>
+          <div class="qr-addr-num" id="qrAddrNum" class="u5"></div>
           <div class="qr-chain" id="qrChainAddr">--</div>
           <button class="qr-close" onclick="hideQR()">关闭</button>
         </div>
       </div>
+    </div>
 
     <!-- 转账页 -->
     <div class="page" id="page-transfer">
@@ -511,7 +453,7 @@
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
-        <div class="nav-back" onclick="goTab('tab-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" onclick="goTab('tab-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1" role="button" tabindex="0" aria-label="返回首页">‹</div>
         <div class="nav-title">设置</div>
       </div>
       <div class="u14">
@@ -668,7 +610,7 @@
       <div class="key-content" style="padding-top:12px">
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入 6 位礼物口令</div>
         <div id="claimInputBox">
-          <input id="claimInput" type="text" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="口令" inputmode="text"
+          <input id="claimInput" type="text" maxlength="32" placeholder="口令" autocomplete="off"
             style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitClaim()" />
         </div>
         <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-top:16px" onclick="submitClaim()">领取</button>
@@ -753,7 +695,7 @@
         <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
       </div>
       <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
-      <button type="button" class="btn-primary u13" onclick="submitPinUnlock()">解锁</button>
+      <button class="btn-primary" class="u13" onclick="submitPinUnlock()">解锁</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
     </div>
   </div>
@@ -765,7 +707,7 @@
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
       <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button type="button" class="btn-primary u13" onclick="submitTotpUnlock()">验证并进入</button>
+      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
     </div>
   </div>
@@ -784,17 +726,18 @@
   </div>
 
 
-  <!-- 底部导航 -->
-  <div class="tab-bar" id="tabBar" role="tablist" aria-label="主导航">
-    <div class="tab-item active" id="tab-home" role="tab" aria-selected="true" tabindex="0" data-tab="tab-home" onclick="goTab('tab-home')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
-    <div class="tab-item" id="tab-addr" role="tab" aria-selected="false" tabindex="0" data-tab="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
-    <div class="tab-item" id="tab-swap" role="tab" aria-selected="false" tabindex="0" data-tab="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
-    <div class="tab-item" id="tab-hongbao" role="tab" aria-selected="false" tabindex="0" data-tab="tab-hongbao" onclick="goTab('tab-hongbao')"><span class="tab-icon"><span style="font-size:20px;line-height:1">🎁</span></span><span>礼物</span></div>
-    <div class="tab-item" id="tab-settings" role="tab" aria-selected="false" tabindex="0" data-tab="tab-settings" onclick="goTab('tab-settings')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.06-.7-1.66-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.66.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.06.7 1.66.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.66-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span>设置</span></div>
+  <!-- 底部导航（勿加 .u5：该工具类为 display:none，会压过 .tab-bar 的 flex，导致底栏不可点） -->
+  <div class="tab-bar" id="tabBar">
+    <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
+    <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
+    <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
+    <div class="tab-item" id="tab-hongbao" onclick="goTab('tab-hongbao')"><span class="tab-icon"><span style="font-size:20px;line-height:1">🎁</span></span><span>礼物</span></div>
+    <div class="tab-item" id="tab-settings" onclick="goTab('tab-settings')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.06-.7-1.66-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.66.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.06.7 1.66.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.66-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span>设置</span></div>
   </div>
 
   <button type="button" id="wwScrollTopBtn" class="ww-scroll-top-btn" aria-label="回到顶部" title="回到顶部">↑</button>
 
+  <!-- PIN 设置遮罩须在 .phone 内：与 dist 一致，避免 absolute/inset:0 相对视口盖住底栏 -->
   <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
     <div class="pin-setup-panel" onclick="event.stopPropagation()">
       <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
@@ -805,7 +748,7 @@
     </div>
   </div>
 
-  <!-- 礼物发送成功弹窗（须在 .phone 内：.overlay 为 position:absolute/inset:0，相对手机框定位） -->
+  <!-- 礼物发送成功弹窗 -->
   <div class="overlay" id="hbSuccessOverlay" style="display:none;flex-direction:column;align-items:center;justify-content:center">
     <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
       <div style="font-size:40px;margin-bottom:12px">🎁</div>
@@ -816,9 +759,6 @@
   </div>
 
 </div>
-
-
-  
 
 <!-- wt-pad-0001 -->
 <!-- wt-pad-0002 -->
