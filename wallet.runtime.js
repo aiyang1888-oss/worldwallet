@@ -2003,12 +2003,12 @@ function getNativeAddr() {
   const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
   const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
   const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
-  return prefix + words + suffix;
+  return prefix + '-' + words + '-' + suffix;
 }
 
 function copyHomeAddr() {
   const addr = getNativeAddr();
-  const btn = document.getElementById('homeCopyBtn');
+  const btn = document.getElementById('homeCopyAddrBtn');
   const done = () => {
     if(btn) {
       btn.textContent = '✅ 已复制';
