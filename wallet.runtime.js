@@ -6500,7 +6500,21 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   try {
     var last = sessionStorage.getItem('ww_last_page');
     if (!last || !ALLOW_RESTORE.includes(last) || !document.getElementById(last)) return;
-    var hasWallet = typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET);
+    var hasWallet = false;
+    if (typeof wwWalletHasAnyChainAddress === 'function') {
+      var _rwR = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+      hasWallet = wwWalletHasAnyChainAddress(_rwR);
+      if (!hasWallet && typeof loadWallet === 'function') {
+        try {
+          var _wwStR = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+          if (wwWalletHasAnyChainAddress(_wwStR)) {
+            loadWallet();
+            _rwR = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+            hasWallet = wwWalletHasAnyChainAddress(_rwR);
+          }
+        } catch (_eR) {}
+      }
+    }
     if (!hasWallet) {
       try { sessionStorage.removeItem('ww_last_page'); } catch (_r) {}
       return;
