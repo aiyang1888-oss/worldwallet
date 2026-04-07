@@ -1,23 +1,26 @@
-# Round 1 修复报告 - 2026-04-08 03:26
+# Round 1 修复报告 - 2026-04-08 12:00
 
 ## 发现的问题
-- [P1] `wallet.core.js` 中 `createRealWallet`：`if (typeof setWalletCreateStep === 'function')` 后未调用 `setWalletCreateStep(n)`，仅执行 `await walletCreateYield()`，导致创建钱包时加载遮罩上的步骤文案（1/3、2/3、3/3）从不更新。
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载的 `wallet.runtime.js` 覆盖前者；依赖显式 `wwExposeDataWwFnHandlers` 将 `data-ww-fn` 处理器挂到 `window`，维护成本高。
-- [P3] `wallet.css` 花括号已平衡（330 对）；`data-ww-go` 目标页均在 `wallet.html` 中存在对应 `id="page-*"`。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数声明，最终以 `wallet.runtime.js` 为准；`data-ww-fn` 依赖文件末尾 `wwExposeDataWwFnHandlers` 显式挂到 `window`，后续维护需注意加载顺序与重复定义。
+- [P3] `wallet.tx.js` 中 `confirmTransfer` 与 `wallet.runtime.js` 中同名函数并存，运行时以后者为准，前者为事实上的死代码，易造成阅读混淆（非功能阻断）。
 
 ## 修复内容
-- 文件：`wallet.core.js`
-- 函数：`createRealWallet`
-- 修改：在三处异步阶段分别调用 `setWalletCreateStep(1|2|3)`，再 `await walletCreateYield()`，与 `setWalletCreateStep` 内标签「1/3 生成密钥」「2/3 派生地址」「3/3 完成」一致。
+- 无需代码修改：本轮静态测试（TEST-A/B/C）与 `wallet.css` 花括号检查均已通过，未发现 P0/P1/P2 阻断项。
 
 ## 修改文件
-- `wallet.core.js`
+- 无（仅更新本报告）
 
 ## 剩余问题
-- [P3] 双文件重复定义同一全局函数，长期建议合并或模块化以减少覆盖风险。
-- [P3] 部分 `JSON.parse(localStorage...)` 未统一包在 try-catch（多数已在调用方处理）；非本轮阻断项。
+- [P3] 长期可将转账确认等逻辑单点化，避免 `wallet.tx.js` 与 `wallet.runtime.js` 重复定义。
+- [P3] 部分路径仍存在 `JSON.parse` 依赖调用方 try-catch 的惯例；与本轮自动化清单无冲突。
 
 ## 测试结果
-- TEST-A: PASS — `data-ww-fn` 所列名称在运行时由 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 挂到 `window`，或由先加载脚本中的全局函数提供；内联委托与 `wallet.dom-bind.js` 使用 `window[fn]`。
-- TEST-B: PASS — 所有 `data-ww-go` 目标（如 `page-welcome`、`page-password-restore`、`page-home`、`page-hongbao` 等）在 `wallet.html` 中均有对应 `id="page-*"` 的 `.page` 容器。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`confirmTransfer`（转账确认）、`createGift`、`submitClaim`（与 `claimGift` 别名一致）、`goHomeTransfer`（与 `openSend` 别名一致）、`goTab('tab-addr')`（`openReceive`）均含非空可执行逻辑。
+- TEST-A: PASS — `wallet.html` 中全部 `data-ww-fn` 均在已加载脚本中存在对应全局 `function` / `async function` / `window.*`（含 `wallet.runtime.js` 末尾显式导出）。
+- TEST-B: PASS — 全部 `data-ww-go` 目标（如 `page-welcome`、`page-password-restore`、`page-home`、`page-hongbao`、`page-claim` 等）均在 `wallet.html` 中存在 `id="page-*"`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 函数体均含可执行逻辑（非仅注释/空行）。
+
+## STEP 1 扫描摘要（归档）
+- **data-ww-fn（去重）**：createNewWallet, startVerify, checkVerify, goToPinConfirm, confirmPin, pinVerifyEnterWallet, promptWalletNotifications, copyHomeAddr, goHomeTransfer, loadTxHistory, copyNative, openCustomizeAddr, hideQR, doTransfer, closeTransferConfirm, confirmTransfer, shareSuccess, openPinSettingsDialog, wwOpenBackupFromSettings, deleteWalletRow, wwSwapRecordsToast, setSwapMax, doSwap, doImportWallet, createGift, copyHbCreatedKeyword, shareHbCreatedKeyword, copyKw, shareKw, showHbQR, copyShareText, submitClaim, pinUnlockBackspace, pinUnlockClear, closePinUnlock, submitTotpUnlock, closeTotpUnlock, confirmTotpSetup, closeTotpSetup, closePinSetupOverlay, wwHideHbSuccessOverlay。
+- **id="page-*"**：page-welcome, page-password-restore, page-create, page-key, page-key-verify, page-pin-setup, page-pin-confirm, page-pin-verify, page-home, page-addr, page-transfer, page-swoosh, page-transfer-success, page-settings, page-swap, page-import, page-hongbao, page-hb-keyword, page-claim, page-claimed, page-hb-records, page-faq。
+- **data-ww-go**：page-create, page-password-restore, page-import, page-welcome, page-faq, page-key-verify, page-pin-setup, page-settings, page-home, page-claim, page-hb-records, page-hongbao。
+- **wallet.css**：`{` 与 `}` 各 330，平衡。
