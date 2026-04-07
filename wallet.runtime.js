@@ -3577,7 +3577,13 @@ function shareSuccess(fromEl) {
   var msg = '我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.cc';
   if (txText) msg += '\n\n链上记录：'+txText;
   navigator.clipboard?.writeText(msg).catch(function(){});
-  var btn = fromEl && fromEl.nodeType === 1 ? fromEl : (typeof event !== 'undefined' && event && event.target && typeof event.target.closest === 'function' ? event.target.closest('[data-ww-fn="shareSuccess"]') : null);
+  var btn = fromEl && fromEl.nodeType === 1 ? fromEl : null;
+  if (!btn) {
+    try {
+      var ae = document.activeElement;
+      if (ae && typeof ae.closest === 'function') btn = ae.closest('[data-ww-fn="shareSuccess"]');
+    } catch (_ae) {}
+  }
   if (btn) {
     var nested = btn.querySelector('div:last-child');
     if (nested) {
