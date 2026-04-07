@@ -13,19 +13,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-/** 安全读取 URL 查询参数（防反射型 XSS / 超长输入） */
-function getSafeUrlParam(name) {
-  try {
-    const url = new URL(location.href);
-    const value = url.searchParams.get(name);
-    if (!value) return '';
-    if (value.length > 256) return '';
-    if (!/^[a-zA-Z0-9\-_]+$/.test(value)) return '';
-    return value;
-  } catch (e) {
-    return '';
-  }
-}
 
 document.addEventListener('click', function(ev) {
   var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
@@ -833,21 +820,10 @@ function goTo(pageId, opts) {
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='flex';
-  if (pageId === 'page-home') {
-    try {
-      if (typeof loadWalletPublic === 'function') {
-        var _wwR = localStorage.getItem('ww_wallet');
-        if (_wwR && (!REAL_WALLET || !(REAL_WALLET.ethAddress || REAL_WALLET.trxAddress))) {
-          var _j = JSON.parse(_wwR);
-          if (_j && (_j.ethAddress || _j.trxAddress)) loadWalletPublic();
-        }
-      }
-    } catch (_e) {}
-  }
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = (REAL_WALLET && (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress)) ? 'flex' : 'none';
+      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -960,7 +936,7 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   }
   if (pageId === 'page-home' && REAL_WALLET) {
     if (REAL_WALLET.trxAddress) setTimeout(loadTxHistory, 500);
-    if (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress) setTimeout(loadBalances, 500);
+    if (REAL_WALLET.ethAddress) setTimeout(loadBalances, 500);
   }
   try { if (typeof wwUpdateScrollTopBtn === 'function') wwUpdateScrollTopBtn(); } catch (e) {}
   try {
@@ -1406,19 +1382,19 @@ async function loadTrxResource() {
 
 function wwGetIdleLockMinutes() {
   try {
-    var mins = parseInt(localStorage.getItem('ww_idle_lock_mins') || '5', 10);
-    if (isNaN(mins) || mins < 3) mins = 3;
-    if (mins > 60) mins = 60;
-    return mins;
-  } catch (e) {
-    return 5;
-  }
+    var v = localStorage.getItem('ww_lock_idle_min');
+    if(v === '1' || v === '5' || v === '15') return parseInt(v, 10);
+  } catch(e) {}
+  return 0;
 }
 function wwApplyIdleLockLabel() {
   var el = document.getElementById('settingsIdleLockValue');
   if(!el) return;
   var m = wwGetIdleLockMinutes();
-  el.textContent = '闲置 ' + m + ' 分钟';
+  if(m === 1) el.textContent = '1 分钟';
+  else if(m === 5) el.textContent = '5 分钟';
+  else if(m === 15) el.textContent = '15 分钟';
+  else el.textContent = '关闭';
 }
 
 function wwResetActivityClock() {
@@ -1427,7 +1403,7 @@ function wwResetActivityClock() {
 function wwTickIdleLock() {
   var mins = wwGetIdleLockMinutes();
   if(!mins) return;
-  if(typeof wwHasPinConfigured === 'function' ? !wwHasPinConfigured() : !localStorage.getItem('ww_pin')) return;
+  if(!localStorage.getItem('ww_pin')) return;
   if(!REAL_WALLET) return;
   var pov = document.getElementById('pinUnlockOverlay');
   var tov = document.getElementById('totpUnlockOverlay');
@@ -2085,10 +2061,7 @@ function wwUpdateTxSimulation() {
   host.textContent = lines.join('\n');
 }
 
-function openTransferCoinPicker() {
-  var el = document.getElementById('transferCoinOverlay');
-  if (el) el.classList.add('show');
-}
+function openTransferCoinPicker() {}
 
 function closeTransferCoinPicker() {
   var el = document.getElementById('transferCoinOverlay');
@@ -2509,10 +2482,7 @@ async function loadSwapPrices() {
   }
 }
 
-function closeCoinPicker() {
-  var el = document.getElementById('coinPickerOverlay');
-  if (el) el.classList.remove('show');
-}
+function closeCoinPicker() {}
 
 function setSwapMax() {
   var u = swapUsdtCoin();
@@ -3085,8 +3055,12 @@ function submitPageRestorePin() {
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
   if (!want) {
-    if (err) { err.textContent = '本机未保存 PIN，无法通过此方式解锁。请先创建或导入钱包，并在设置中设置 6 位 PIN。'; err.style.display = 'block'; }
+    if (err) {
+      err.textContent = '尚未在本机设置 PIN。请先通过「创建新钱包」或「导入已有钱包」完成流程并设置 6 位 PIN。';
+      err.style.display = 'block';
+    }
     if (inp) inp.value = '';
+    if (typeof showToast === 'function') showToast('本机未设置 PIN，无法使用此项解锁', 'info', 3200);
     if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
     return;
   }
@@ -3193,7 +3167,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress));
+      hasWallet = !!(_d && _d.ethAddress);
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');
@@ -3269,21 +3243,14 @@ function syncImportPasteFromGrid() {
 function syncImportGrid(text) {
   var normalized = String(text || '').replace(/\s+/g, ' ').trim();
   var words = normalized ? normalized.split(' ').filter(Boolean) : [];
-
-  // 验证导入的词数量
-  if (words.length > 0 && ![12,15,18,21,24].includes(words.length)) {
-    console.warn('[syncImportGrid] 无效的词数量:', words.length);
-    return;
-  }
-
   var currentCount = document.querySelectorAll('#importGrid .import-word').length || 12;
   var targetCount = [12,15,18,21,24].includes(words.length) ? words.length : currentCount;
   if (currentCount !== targetCount && [12,15,18,21,24].includes(targetCount)) renderImportGrid(targetCount);
   var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
   inputs.forEach(function(el, idx){
-    var val = words[idx] || '';
+    var val = String(el.value || '').trim();
     if (val.length > 4) val = val.substring(0, 4);
-    el.value = val;
+    el.value = words[idx] || val;
   });
   var badge = document.getElementById('importWordCountBadge');
   if (badge) badge.textContent = words.length + '/' + inputs.length;

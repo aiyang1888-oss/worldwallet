@@ -635,14 +635,7 @@ async function wwVerifyTotpCode(secretB32, input) {
 }
 
 function markBackupDone() {
-  let w = {};
-  try {
-    w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
-  } catch (e) {
-    console.error('[backupStatus] JSON.parse failed:', e);
-    showToast('钱包数据损坏', 'error');
-    return;
-  }
+  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
   w.backedUp = true;
   localStorage.setItem('ww_wallet', JSON.stringify(w));
   if(REAL_WALLET) REAL_WALLET.backedUp = true;

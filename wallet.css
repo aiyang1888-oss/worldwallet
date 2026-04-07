@@ -119,8 +119,7 @@ body {
   #page-import input[type="text"],
   #verifyQuestions input[type="text"],
   #page-transfer textarea,
-  #page-hongbao input[type="text"],
-  #page-hongbao input[type="number"] {
+  #page-hongbao input#hbBlessing {
     font-size: 16px !important;
   }
 }

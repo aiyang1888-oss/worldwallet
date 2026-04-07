@@ -1,5 +1,7 @@
 /*! WorldToken wallet.runtime.js — split from wallet.html; refactor incrementally. */
 
+var _wwCurrentPin = null;
+
 // 强制清除旧 Service Worker 和缓存
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
@@ -486,27 +488,21 @@ var _wwSessionPin = '';
 function wwGetSessionPin() { return _wwSessionPin || ''; }
 function wwSetSessionPin(p) {
   _wwSessionPin = p ? String(p) : '';
+  _wwCurrentPin = p ? String(p) : null;
   clearTimeout(window._wwSessionPinTimeout);
   window._wwSessionPinTimeout = setTimeout(function() {
     _wwSessionPin = '';
+    _wwCurrentPin = null;
     console.log('[SessionPin] 会话 PIN 已自动清除');
   }, 15 * 60 * 1000);
 }
 function wwClearSessionPin() {
   clearTimeout(window._wwSessionPinTimeout);
   window._wwSessionPinTimeout = null;
+  clearTimeout(window._wwCurrentPinClearTimer);
+  window._wwCurrentPinClearTimer = null;
   _wwSessionPin = '';
-}
-
-function wwCleanupStorage() {
-  try {
-    for (let i = localStorage.length - 1; i >= 0; i--) {
-      const key = localStorage.key(i);
-      if (key && (key.includes('_temp') || key.includes('_pending'))) {
-        try { localStorage.removeItem(key); } catch (e) {}
-      }
-    }
-  } catch (e) {}
+  _wwCurrentPin = null;
 }
 
 function wwCleanupMemory() {
@@ -519,6 +515,8 @@ function wwCleanupMemory() {
   }
   window._wwSessionPin = '';
   window._wwCurrentPin = null;
+  clearTimeout(window._wwCurrentPinClearTimer);
+  window._wwCurrentPinClearTimer = null;
   window._wwTotpPendingSecret = null;
   window._wwLastActivityTs = null;
   window._wwLastPortfolioParts = null;
@@ -528,7 +526,17 @@ function wwCleanupMemory() {
   window._wwTxHistoryCache = null;
   clearTimeout(window._wwSessionPinTimeout);
   clearTimeout(window._wwIdleLockTimer);
-  wwCleanupStorage();
+}
+
+function wwCleanupStorage() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('_temp') || key.includes('_pending'))) {
+        try { localStorage.removeItem(key); } catch (e) {}
+      }
+    }
+  } catch (e) {}
 }
 
 document.addEventListener('visibilitychange', function() {
@@ -545,6 +553,7 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('beforeunload', function() {
   wwClearSessionPin();
   wwCleanupMemory();
+  try { wwCleanupStorage(); } catch (_wcs) {}
   try { sessionStorage.clear(); } catch (e) {}
 });
 
@@ -745,8 +754,8 @@ async function decryptSensitive(pin) {
 
 // ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
 function saveWallet(w) {
-  // 如果有 PIN，使用加密存储；否则只存公开信息
-  var pin = wwGetSessionPin();
+  // 如果有 PIN，使用加密存储；否则只存公开信息（内存 _wwCurrentPin，与 wwSetSessionPin 同步）
+  var pin = _wwCurrentPin || '';
   if (pin) {
     saveWalletSecure(w, pin).catch(function(e) {
       console.error('[saveWallet] 加密存储失败，降级明文:', e);
@@ -796,7 +805,7 @@ function normalizeRefCode(s) {
 function captureReferralFromUrl() {
   try {
     var u = new URL(location.href);
-    var r = typeof getSafeUrlParam === 'function' ? getSafeUrlParam('ref') : (u.searchParams.get('ref') || '');
+    var r = u.searchParams.get('ref');
     if (r) {
       r = normalizeRefCode(r);
       if (r.length >= 6) {
@@ -1527,6 +1536,11 @@ async function submitTotpUnlock() {
     }
     return;
   }
+  window._wwCurrentPin = pin;
+  clearTimeout(window._wwCurrentPinClearTimer);
+  window._wwCurrentPinClearTimer = setTimeout(function() {
+    window._wwCurrentPin = null;
+  }, 30 * 60 * 1000);
   const ov = document.getElementById('totpUnlockOverlay');
   if (ov) ov.classList.remove('show');
   if (err) err.style.display = 'none';
@@ -1562,14 +1576,7 @@ function goTo(pageId, opts) {
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='';
-  var _tabBar = document.getElementById('tabBar');
-  if (_tabBar) {
-    if (pageId === 'page-home') {
-      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
-    } else {
-      _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
-    }
-  }
+  document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
     // 永远默认 12 词，生成全新钱包
     currentMnemonicLength = 12;
@@ -1648,6 +1655,10 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
   if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
+    // 有钱包时显示导航栏
+    if(REAL_WALLET && REAL_WALLET.ethAddress) {
+      document.getElementById('tabBar').style.display = 'flex';
+    }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
@@ -2364,34 +2375,30 @@ function wwDappReload() {
 }
 function wwGetIdleLockMinutes() {
   try {
-    var mins = parseInt(localStorage.getItem('ww_idle_lock_mins') || '5', 10);
-    // 最少 3 分钟，最多 60 分钟
-    if (isNaN(mins) || mins < 3) mins = 3;
-    if (mins > 60) mins = 60;
-    return mins;
-  } catch (e) {
-    return 5;
-  }
+    var v = localStorage.getItem('ww_lock_idle_min');
+    if(v === '1' || v === '5' || v === '15') return parseInt(v, 10);
+  } catch(e) {}
+  return 0;
 }
 function wwApplyIdleLockLabel() {
   var el = document.getElementById('settingsIdleLockValue');
   if(!el) return;
   var m = wwGetIdleLockMinutes();
-  el.textContent = '闲置 ' + m + ' 分钟';
+  if(m === 1) el.textContent = '1 分钟';
+  else if(m === 5) el.textContent = '5 分钟';
+  else if(m === 15) el.textContent = '15 分钟';
+  else el.textContent = '关闭';
 }
 function wwCycleIdleLockMinutes() {
-  var cur = parseInt(localStorage.getItem('ww_idle_lock_mins') || '5', 10);
-  if (isNaN(cur) || cur < 3) cur = 3;
-  if (cur > 60) cur = 60;
-  var steps = [3, 5, 15, 30, 60];
-  var idx = steps.indexOf(cur);
-  var next = steps[(idx < 0 ? 0 : idx + 1) % steps.length];
+  var cur = wwGetIdleLockMinutes();
+  var next = cur === 0 ? 1 : (cur === 1 ? 5 : (cur === 5 ? 15 : 0));
   try {
-    localStorage.setItem('ww_idle_lock_mins', String(next));
+    if(next === 0) localStorage.removeItem('ww_lock_idle_min');
+    else localStorage.setItem('ww_lock_idle_min', String(next));
   } catch(e) {}
   wwApplyIdleLockLabel();
   wwResetActivityClock();
-  if(typeof showToast==='function') showToast('闲置 ' + next + ' 分钟后锁定', 'info', 2200);
+  if(typeof showToast==='function') showToast(next === 0 ? '已关闭闲置锁定' : ('闲置 ' + next + ' 分钟后锁定'), 'info', 2200);
 }
 function wwResetActivityClock() {
   window._wwLastActivityTs = Date.now();
@@ -2419,6 +2426,7 @@ function wwTickIdleLock() {
     setTimeout(function() { try { inp.focus(); } catch(e) {} }, 200);
   }
   wwCleanupMemory();
+  try { wwCleanupStorage(); } catch (_wcs2) {}
   window._wwUnlockPreservePage = true;
   window._wwForceIdleLock = true;
 }
@@ -4452,14 +4460,7 @@ function deleteWallet() {
 }
 
 function markBackupDone() {
-  let w = {};
-  try {
-    w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
-  } catch (e) {
-    console.error('[backupStatus] JSON.parse failed:', e);
-    showToast('钱包数据损坏', 'error');
-    return;
-  }
+  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
   w.backedUp = true;
   localStorage.setItem('ww_wallet', JSON.stringify(w));
   if(REAL_WALLET) REAL_WALLET.backedUp = true;
@@ -6367,7 +6368,7 @@ async function submitPageRestorePin() {
   const err = document.getElementById('pageRestorePinError');
   const panel = document.getElementById('pageRestorePinPanel');
   if (!wwHasPinConfigured()) {
-    if (err) { err.textContent = '本机未保存 PIN，无法通过此方式解锁。请先创建或导入钱包，并在设置中设置 6 位 PIN。'; err.style.display = 'block'; }
+    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
     if (inp) inp.value = '';
     if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
     return;
@@ -6558,33 +6559,18 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (obj === REAL_WALLET || (obj && typeof obj === 'object' && obj.privateKey)) {
       return '[SENSITIVE_DATA_FILTERED]';
     }
+    if (typeof obj === 'string' && (obj.includes('privateKey') || obj.includes('mnemonic'))) {
+      return '[SENSITIVE_DATA_FILTERED]';
+    }
     return obj;
   };
-  console.log = function(...args) {
-    originalLog.apply(console, args.map(sanitize));
+  console.log = function() {
+    return originalLog.apply(console, Array.from(arguments).map(sanitize));
   };
-  console.error = function(...args) {
-    originalError.apply(console, args.map(sanitize));
+  console.error = function() {
+    return originalError.apply(console, Array.from(arguments).map(sanitize));
   };
-  console.warn = function(...args) {
-    originalWarn.apply(console, args.map(sanitize));
+  console.warn = function() {
+    return originalWarn.apply(console, Array.from(arguments).map(sanitize));
   };
 })();
-
-function wwSafeLog(level, msg, data) {
-  if (typeof data === 'object' && data) {
-    const safe = {};
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-        if (key.includes('private') || key.includes('secret') || key.includes('mnemonic')) {
-          safe[key] = '[FILTERED]';
-        } else {
-          safe[key] = data[key];
-        }
-      }
-    }
-    (console[level] || console.log)('[WW]', msg, safe);
-  } else {
-    (console[level] || console.log)('[WW]', msg, data);
-  }
-}

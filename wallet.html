@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0">
 <!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
 <meta name="wt-tron-api-key" content="">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>WorldToken</title>
 <meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/USDT/BTC多链">
@@ -196,13 +196,10 @@
             </svg>
           </div>
         </div>
-        <div class="home-greeting ww-balance-privacy-row">
-          <span>总资产估值</span>
-          <button type="button" id="balanceHideToggle" class="ww-balance-hide-btn" aria-pressed="false" aria-label="隐藏余额" title="隐藏余额">👁</button>
-        </div>
+        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
-        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap">
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
           </div>
@@ -714,7 +711,7 @@
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
       <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button type="button" class="btn-primary u13" onclick="submitTotpUnlock()">验证并进入</button>
+      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
     </div>
   </div>
