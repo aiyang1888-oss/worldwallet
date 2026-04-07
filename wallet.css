@@ -106,6 +106,8 @@ body {
   /* 状态栏已隐藏时，页面勿再预留 50px，否则真机顶部出现空白条 */
   .page {
     top: 0 !important;
+    /* 无模拟状态栏时须为刘海/灵动岛预留顶部安全区，否则导航栏与首行内容被遮挡 */
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
