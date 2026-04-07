@@ -3475,3 +3475,23 @@ function shareHbCreatedKeyword() {
     }
   } catch (e) {}
 }
+
+function wwBindDataActionNav() {
+  document.querySelectorAll('[data-action="create"]').forEach(function (el) {
+    el.addEventListener('click', function () { goTo('page-create'); });
+  });
+  document.querySelectorAll('[data-action="unlock"]').forEach(function (el) {
+    el.addEventListener('click', function () { goTo('page-password-restore'); });
+  });
+  document.querySelectorAll('[data-action="import"]').forEach(function (el) {
+    el.addEventListener('click', function () { goTo('page-import'); });
+  });
+  document.querySelectorAll('[data-action="back"]').forEach(function (el) {
+    el.addEventListener('click', function () { goTo('page-welcome'); });
+  });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', wwBindDataActionNav);
+} else {
+  wwBindDataActionNav();
+}
