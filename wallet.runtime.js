@@ -3670,14 +3670,17 @@ function setExpiry(h) {
 
 function randomBlessing() {
   const b = BLESSINGS[Math.floor(Math.random()*BLESSINGS.length)];
-  document.getElementById('hbMessage').value = b;
+  var msg = document.getElementById('hbMessage');
+  if (msg) msg.value = b;
 }
 
 function createHongbao() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
   currentKeyword = genKeyword();
-  const amount = parseFloat(document.getElementById('hbAmount').value) || 100;
-  const blessing = document.getElementById('hbMessage').value;
+  var hbAmtEl = document.getElementById('hbAmount');
+  var hbMsgEl = document.getElementById('hbMessage');
+  const amount = parseFloat(hbAmtEl && hbAmtEl.value) || 100;
+  const blessing = hbMsgEl ? hbMsgEl.value : '';
   const count = hbCount;
   const perPerson = hbType==='normal' ? (amount/count).toFixed(2) : null;
   const expireAt = Date.now() + hbExpiry * 3600 * 1000;
@@ -3705,17 +3708,16 @@ function createHongbao() {
   allHb[currentKeyword] = hbData;
   localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
 
-  // 更新UI
-  document.getElementById('kwKeyword').textContent = currentKeyword;
-  document.getElementById('kwBlessingText').textContent = blessing;
-  document.getElementById('kwAmtText').textContent = amount + ' USDT';
-  document.getElementById('kwCntText').textContent = '共' + count + '份礼物';
-  document.getElementById('kwExpText').textContent = '有效期' + hbExpiry + '小时';
-  document.getElementById('kwShareKeyword').textContent = currentKeyword;
-  document.getElementById('kwProgress').textContent = '0 / ' + count + ' 已领取';
-  document.getElementById('kwProgressBar').style.width = '0%';
-  const shareUrl = 'https://worldtoken.cc/wallet.html';
-  document.getElementById('kwShareText').innerHTML = '🎁 我给你发了一个WorldToken礼物！<br>口令：<span style="color:var(--gold);font-weight:700">' + currentKeyword + '</span><br>打开WorldToken → 输入口令 → 立即领取 💰<br><span style="color:var(--text-muted);font-size:11px">有效期' + hbExpiry + '小时，先到先得</span>';
+  // 更新UI（使用 _safeEl，避免节点未挂载时抛错中断流程）
+  _safeEl('kwKeyword').textContent = currentKeyword;
+  _safeEl('kwBlessingText').textContent = blessing;
+  _safeEl('kwAmtText').textContent = amount + ' USDT';
+  _safeEl('kwCntText').textContent = '共' + count + '份礼物';
+  _safeEl('kwExpText').textContent = '有效期' + hbExpiry + '小时';
+  _safeEl('kwShareKeyword').textContent = currentKeyword;
+  _safeEl('kwProgress').textContent = '0 / ' + count + ' 已领取';
+  _safeEl('kwProgressBar').style.width = '0%';
+  _safeEl('kwShareText').innerHTML = '🎁 我给你发了一个WorldToken礼物！<br>口令：<span style="color:var(--gold);font-weight:700">' + currentKeyword + '</span><br>打开WorldToken → 输入口令 → 立即领取 💰<br><span style="color:var(--text-muted);font-size:11px">有效期' + hbExpiry + '小时，先到先得</span>';
 
   goTo('page-hb-keyword');
 }
