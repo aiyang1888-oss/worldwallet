@@ -4822,45 +4822,6 @@ function copyAllMnemonic(btn) {
 
 
 
-// ── 从导入格子获取助记词 ──────────────────────────────────────────
-function getMnemonicFromGrid() {
-  const len = importGridWordCount || 12;
-  const words = [];
-  // 先尝试从 textarea 粘贴区读取
-  const paste = document.getElementById('importPaste');
-  if(paste && paste.value.trim()) {
-    const pasted = paste.value.trim().split(/\s+/);
-    if([12,15,18,21,24].includes(pasted.length)) return pasted.join(' ');
-  }
-  // 从格子读取
-  for(let i = 0; i < len; i++) {
-    const inp = document.getElementById('iw_' + i);
-    if(!inp || !inp.value.trim()) {
-      const errEl = document.getElementById('importError');
-      if(errEl) { errEl.style.display='block'; errEl.textContent=`第${i+1}个词不能为空`; }
-      showToast(`❌ 第${i+1}个词不能为空`, 'error');
-      return null;
-    }
-    words.push(inp.value.trim());
-  }
-  return words.join(' ');
-}
-
-function doImportWallet() {
-  const mnemonic = getMnemonicFromGrid();
-  if(!mnemonic) return;
-  restoreWallet(mnemonic).then(w => {
-    if(w) {
-      updateAddr();
-      document.getElementById('tabBar').style.display = 'flex';
-      setTimeout(loadBalances, 500);
-      goTo('page-home');
-      showToast('✅ 钱包导入成功！', 'success');
-    }
-  });
-}
-
-
 // ── 二维码生成 ──────────────────────────────────────────────────
 function generateQRCode(text, canvasId) {
   const canvas = document.getElementById(canvasId || 'qrCanvas');
