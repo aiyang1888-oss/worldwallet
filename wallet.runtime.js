@@ -6255,14 +6255,25 @@ function checkVerify() {
     _safeEl('verifyError').style.display = 'none';
     if (typeof markBackupDone === 'function') markBackupDone();
     updateAddr();
-    // 助记词验证通过后必须重新设置 PIN，避免残留旧钱包的 PIN 导致跳过设置页
+    // 助记词验证通过后必须重新设置 PIN，避免残留旧钱包的 PIN / 内存会话 / Store 导致跳过设置页或误判 hasPin
     try {
+      window._wwRequirePinSetupAfterMnemonic = true;
+      window._wwPinSetupDone = false;
+      if (typeof wwClearSessionPin === 'function') wwClearSessionPin();
       localStorage.removeItem('ww_pin');
       localStorage.removeItem('ww_pin_confirm');
       localStorage.removeItem('ww_pin_setup_done');
       localStorage.removeItem('ww_pin_hash');
       localStorage.removeItem('ww_pin_set');
       localStorage.removeItem('ww_unlock_pin');
+      if (typeof Store !== 'undefined' && Store) {
+        if (typeof Store.remove === 'function') {
+          Store.remove('ww_pin_hash');
+          Store.remove('ww_pin');
+          Store.remove('ww_unlock_pin');
+        }
+        if (typeof Store.clearPin === 'function') Store.clearPin();
+      }
     } catch (_) {}
     if (typeof showToast === 'function') showToast('✅ 验证通过！钱包已安全创建', 'success');
     try { window._wwPinSetupDraft = ''; } catch (_pd) {}
@@ -6452,6 +6463,7 @@ async function pinVerifyEnterWallet() {
     console.error('[pinVerifyEnterWallet decrypt]', e);
   }
   try { window._wwInFirstRun = false; } catch (_fr) {}
+  try { window._wwRequirePinSetupAfterMnemonic = false; } catch (_frf) {}
   if (typeof showToast === 'function') showToast('欢迎使用 WorldToken', 'success');
   updateAddr();
   var tb = document.getElementById('tabBar');
@@ -6471,6 +6483,13 @@ async function pinVerifyEnterWallet() {
 
 
 async function _resumeWalletAfterUnlock() {
+  // 助记词验证后已清空 PIN：勿走「无 PIN → 直接首页」路径，必须先完成 PIN 设置
+  try {
+    if (window._wwRequirePinSetupAfterMnemonic && typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
+      goTo('page-pin-setup');
+      return;
+    }
+  } catch (_pinGate) {}
   // 解密敏感数据并临时注入 REAL_WALLET（须在进入首页 / 拉余额前完成，避免竞态）
   var pin = (typeof wwGetSessionPin === 'function' ? wwGetSessionPin() : '') || '';
   try {

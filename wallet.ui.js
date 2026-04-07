@@ -3022,6 +3022,12 @@ function startVerify() {
 /* checkVerify 定义在 wallet.runtime.js（助记词通过后 PIN 设置 → 确认 → 验证 → 首页） */
 
 async function _resumeWalletAfterUnlock() {
+  try {
+    if (window._wwRequirePinSetupAfterMnemonic && typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
+      goTo('page-pin-setup');
+      return;
+    }
+  } catch (_pinGate) {}
   // 解密敏感数据并临时注入 REAL_WALLET（须在进入首页 / 拉余额前完成，避免竞态）
   var pin = (typeof wwGetSessionPin === 'function' ? wwGetSessionPin() : '') || '';
   try { if (!pin) pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
