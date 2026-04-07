@@ -15,7 +15,7 @@ if ('serviceWorker' in navigator) {
 
 
 document.addEventListener('click', function(ev) {
-  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
+  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,#balanceHideToggle,.btn-primary,.btn-secondary');
   if (!el) return;
   tapHaptic(12);
 }, true);
