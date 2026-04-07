@@ -597,7 +597,10 @@ function wwTotpEnabled() {
 /** 读取本机 PIN 字符串（与 js/storage.js Store.getPin 行为一致：兼容 ww_unlock_pin 并迁移到 ww_pin） */
 function wwGetStoredPin() {
   try {
-    if (typeof Store !== 'undefined' && Store.getPin) return Store.getPin();
+    if (typeof Store !== 'undefined' && Store.getPin) {
+      var s = Store.getPin();
+      return s == null || s === '' ? '' : String(s).trim();
+    }
   } catch (e) {}
   try {
     var raw = localStorage.getItem('ww_pin');
@@ -611,7 +614,7 @@ function wwGetStoredPin() {
         raw = leg;
       }
     }
-    return raw === null || raw === '' ? '' : String(raw);
+    return raw === null || raw === '' ? '' : String(raw).trim();
   } catch (e3) {
     return '';
   }
