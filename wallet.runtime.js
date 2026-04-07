@@ -497,6 +497,57 @@ function wwClearSessionPin() {
   window._wwSessionPinTimeout = null;
   _wwSessionPin = '';
 }
+
+function wwCleanupStorage() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('_temp') || key.includes('_pending'))) {
+        try { localStorage.removeItem(key); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+}
+
+function wwCleanupMemory() {
+  if (REAL_WALLET) {
+    REAL_WALLET.privateKey = null;
+    REAL_WALLET.trxPrivateKey = null;
+    REAL_WALLET.mnemonic = null;
+    REAL_WALLET.enMnemonic = null;
+    REAL_WALLET.words = null;
+  }
+  window._wwSessionPin = '';
+  window._wwCurrentPin = null;
+  window._wwTotpPendingSecret = null;
+  window._wwLastActivityTs = null;
+  window._wwLastPortfolioParts = null;
+  window._wwLastPortfolioTotal = null;
+  window._wwUnlockPreservePage = false;
+  window._wwForceIdleLock = false;
+  window._wwTxHistoryCache = null;
+  clearTimeout(window._wwSessionPinTimeout);
+  clearTimeout(window._wwIdleLockTimer);
+  wwCleanupStorage();
+}
+
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) {
+    wwClearSessionPin();
+    if (REAL_WALLET) {
+      REAL_WALLET.privateKey = null;
+      REAL_WALLET.trxPrivateKey = null;
+      REAL_WALLET.mnemonic = null;
+    }
+  }
+});
+
+window.addEventListener('beforeunload', function() {
+  wwClearSessionPin();
+  wwCleanupMemory();
+  try { sessionStorage.clear(); } catch (e) {}
+});
+
 /** 是否已配置 PIN（hash 标志，非 PIN 明文） */
 function wwHasPinConfigured() {
   try {
@@ -1026,7 +1077,7 @@ async function restoreWallet(mnemonic) {
       btcAddress: btcAddr2,                 // BTC address (simplified)
       createdAt: Date.now()
     };
-    REAL_WALLET = w;
+    window.REAL_WALLET = w;
     saveWallet(w);
     applyReferralCredit();
     return w;
@@ -1511,7 +1562,14 @@ function goTo(pageId, opts) {
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='';
-  document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
+  var _tabBar = document.getElementById('tabBar');
+  if (_tabBar) {
+    if (pageId === 'page-home') {
+      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
+    } else {
+      _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
+    }
+  }
   if(pageId==='page-key') {
     // 永远默认 12 词，生成全新钱包
     currentMnemonicLength = 12;
@@ -1590,10 +1648,6 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
   if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
-    // 有钱包时显示导航栏
-    if(REAL_WALLET && REAL_WALLET.ethAddress) {
-      document.getElementById('tabBar').style.display = 'flex';
-    }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
@@ -2360,6 +2414,9 @@ function wwTickIdleLock() {
     try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap3) {}
     setTimeout(function() { try { inp.focus(); } catch(e) {} }, 200);
   }
+  wwCleanupMemory();
+  window._wwUnlockPreservePage = true;
+  window._wwForceIdleLock = true;
 }
 
 const TRON_GRID = 'https://api.trongrid.io';
@@ -4382,7 +4439,7 @@ function deleteWallet() {
   localStorage.removeItem('ww_wallet');
   localStorage.removeItem('ww_hongbaos');
   try { localStorage.removeItem('ww_ref_install_credited'); } catch (_x) {}
-  REAL_WALLET = null;
+  window.REAL_WALLET = null;
   currentMnemonicLength = 12;
   // 跳回欢迎页
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -6067,7 +6124,7 @@ function startVerify() {
       if(!indices.includes(idx)) indices.push(idx);
     }
     words = indices.map(i => pool[i]);
-    if(!REAL_WALLET) REAL_WALLET = {};
+    if(!REAL_WALLET) window.REAL_WALLET = {};
     REAL_WALLET.words = words;
     REAL_WALLET.mnemonic = words.join(' ');
     saveWallet(REAL_WALLET);
@@ -6479,4 +6536,26 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       if (name !== 'worldtoken-v202604060428') caches.delete(name);
     });
   });
+})();
+
+// 防止在控制台输出敏感数据
+(function wwSanitizeConsoleOutput() {
+  const originalLog = console.log;
+  const originalError = console.error;
+  const originalWarn = console.warn;
+  const sanitize = function(obj) {
+    if (obj === REAL_WALLET || (obj && typeof obj === 'object' && obj.privateKey)) {
+      return '[SENSITIVE_DATA_FILTERED]';
+    }
+    return obj;
+  };
+  console.log = function(...args) {
+    originalLog.apply(console, args.map(sanitize));
+  };
+  console.error = function(...args) {
+    originalError.apply(console, args.map(sanitize));
+  };
+  console.warn = function(...args) {
+    originalWarn.apply(console, args.map(sanitize));
+  };
 })();

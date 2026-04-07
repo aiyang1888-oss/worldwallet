@@ -767,12 +767,6 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  if (pageId === 'page-home') {
-    try {
-      var _rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-      if (!_rw || !_rw.ethAddress) pageId = 'page-welcome';
-    } catch (_gh) {}
-  }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
