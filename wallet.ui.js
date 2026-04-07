@@ -168,6 +168,11 @@ var _safeEl = (id) => document.getElementById(id) || {
 };
 
 var REAL_WALLET = null;
+/** 是否已加载任一条链的公开地址（勿仅用 ethAddress，避免 TRX 等场景下首页空白/底栏消失） */
+function wwHasPublicWallet() {
+  var w = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+  return !!(w && (w.ethAddress || w.trxAddress || w.btcAddress));
+}
 var WW_APP_VERSION = '1.0.0';
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
 var currentMnemonicLength = 12;
@@ -231,7 +236,7 @@ var WW_REF_INVITES_KEY = 'ww_ref_invites_v1';
 function updateReferralSettingsUI() {
   var linkEl = document.getElementById('settingsRefLink');
   var countEl = document.getElementById('settingsRefCount');
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+  if (!wwHasPublicWallet()) {
     if (linkEl) linkEl.textContent = '创建或导入钱包后生成邀请链接';
     if (countEl) countEl.textContent = '—';
     return;
@@ -790,7 +795,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
+      _tabBar.style.display = wwHasPublicWallet() ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -1108,7 +1113,7 @@ function updateHomeChainStrip() {
   const btcEl = document.getElementById('homeShortBtc');
   const btcWrap = document.getElementById('homeMiniBtcWrap');
   if (!strip || !trxEl || !ethEl) return;
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+  if (!wwHasPublicWallet()) {
     trxEl.textContent = '—';
     ethEl.textContent = '—';
     if (btcEl) btcEl.textContent = '—';
@@ -1133,7 +1138,7 @@ function updateHomeChainStrip() {
 function updateHomeBackupBanner() {
   var b = document.getElementById('homeBackupBanner');
   if (!b) return;
-  var show = REAL_WALLET && REAL_WALLET.ethAddress && !REAL_WALLET.backedUp;
+  var show = wwHasPublicWallet() && !REAL_WALLET.backedUp;
   b.style.display = show ? 'block' : 'none';
 }
 
@@ -3153,7 +3158,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && _d.ethAddress);
+      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress || _d.btcAddress));
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');
