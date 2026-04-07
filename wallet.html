@@ -434,8 +434,9 @@
     <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="nav-bar">
-        <div class="nav-back"></div>
+        <div class="nav-back" onclick="goTo('page-home')" role="button" tabindex="0" aria-label="返回" style="display:flex;align-items:center;gap:2px;font-size:15px;font-weight:600;color:var(--gold);cursor:pointer;width:auto;min-width:64px;line-height:1;padding:8px 6px 8px 0;margin-left:-4px;box-sizing:border-box"><span style="font-size:30px;font-weight:900;line-height:1">‹</span><span style="letter-spacing:0.04em">返回</span></div>
         <div class="nav-title">设置</div>
+        <div class="nav-right"></div>
       </div>
       <div class="u14">
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
@@ -676,7 +677,7 @@
         <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
       </div>
       <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
-      <button class="btn-primary" class="u13" onclick="submitPinUnlock()">解锁</button>
+      <button type="button" class="btn-primary u13" onclick="submitPinUnlock()">解锁</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
     </div>
   </div>
@@ -688,7 +689,7 @@
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
       <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
+      <button type="button" class="btn-primary u13" onclick="submitTotpUnlock()">验证并进入</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
     </div>
   </div>
