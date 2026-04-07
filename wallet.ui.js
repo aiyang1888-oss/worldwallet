@@ -28,7 +28,17 @@ function updateImportWordCount() {
   const badge = document.getElementById('importWordCountBadge');
   if(!badge) return;
   const n = countMnemonicWords(input ? input.value : '');
-  badge.textContent = n + '/12';
+  var total = typeof importGridWordCount === 'number' && importGridWordCount > 0 ? importGridWordCount : 12;
+  var grid = document.getElementById('importGrid');
+  if (grid) {
+    var nw = grid.querySelectorAll('.import-word').length;
+    if (nw) total = nw;
+    else {
+      var iw = grid.querySelectorAll('[id^="iw_"]').length;
+      if (iw) total = iw;
+    }
+  }
+  badge.textContent = n + '/' + total;
 }
 
 function showWalletLoading() {
@@ -3165,6 +3175,7 @@ function renderImportGrid(wordCount) {
   var badge = document.getElementById('importWordCountBadge');
   if (!grid) return;
   var n = [12,15,18,21,24].includes(Number(wordCount)) ? Number(wordCount) : 12;
+  importGridWordCount = n;
   var html = '';
   for (var i = 0; i < n; i++) {
     html += '<input class="import-word" data-index="'+i+'" type="text" autocomplete="off" spellcheck="false" placeholder="'+(i+1)+'" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box;text-align:center" oninput="syncImportPasteFromGrid()" />';
