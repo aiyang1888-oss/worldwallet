@@ -3,8 +3,21 @@
   function wwCall(name) {
     try {
       var g = typeof window !== 'undefined' ? window : {};
-      if (typeof g[name] === 'function') return g[name].apply(g, Array.prototype.slice.call(arguments, 1));
-    } catch (_e) {}
+      if (typeof g[name] !== 'function') return undefined;
+      var ret = g[name].apply(g, Array.prototype.slice.call(arguments, 1));
+      if (ret != null && typeof ret.then === 'function' && typeof ret.catch === 'function') {
+        ret.catch(function (err) {
+          try {
+            if (typeof safeLog === 'function') safeLog('[wwCall async] ' + name, err);
+          } catch (_sl) {}
+        });
+      }
+      return ret;
+    } catch (_e) {
+      try {
+        if (typeof safeLog === 'function') safeLog('[wwCall] ' + name, _e);
+      } catch (_s) {}
+    }
     return undefined;
   }
 
