@@ -1436,6 +1436,10 @@ function wwTickIdleLock() {
   if(!mins) return;
   if(!wwGetStoredPin()) return;
   if(!REAL_WALLET) return;
+  var _apIdle = document.querySelector('.page.active');
+  if (_apIdle && _apIdle.id === 'page-password-restore') return;
+  var _pinSetupOv = document.getElementById('pinSetupOverlay');
+  if (_pinSetupOv && _pinSetupOv.classList.contains('show')) return;
   var pov = document.getElementById('pinUnlockOverlay');
   var tov = document.getElementById('totpUnlockOverlay');
   if(pov && pov.classList.contains('show')) return;

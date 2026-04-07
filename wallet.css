@@ -154,7 +154,7 @@ body {
 .pages { flex: 1; position: relative; overflow: hidden; width: 100%; }
 
 /* 隐藏 pages 容器内游离元素（不属于任何 .page） */
-.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg) { display: none !important; }
+.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#wt-toast):not(#toastMsg) { display: none !important; }
 .page {
   position: absolute;
   top: 50px; left: 0; right: 0; bottom: 0;
