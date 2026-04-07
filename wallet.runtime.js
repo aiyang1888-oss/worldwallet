@@ -6221,3 +6221,17 @@ function wwHideHbSuccessOverlay() {
     if (typeof wwHideHbSuccessOverlay === 'function') window.wwHideHbSuccessOverlay = wwHideHbSuccessOverlay;
   } catch (_ww) {}
 })();
+
+// 核心流程别名：与自动化测试/外部集成约定的命名（映射到既有实现）
+(function wwExposeCoreAliases() {
+  try {
+    if (typeof confirmTransfer === 'function') window.sendTransfer = confirmTransfer;
+    if (typeof submitClaim === 'function') window.claimGift = submitClaim;
+    if (typeof goHomeTransfer === 'function') window.openSend = goHomeTransfer;
+    if (typeof goTab === 'function') {
+      window.openReceive = function openReceive() {
+        goTab('tab-addr');
+      };
+    }
+  } catch (_al) {}
+})();
