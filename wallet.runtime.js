@@ -15,11 +15,6 @@ if ('serviceWorker' in navigator) {
 function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
 }
-document.addEventListener('click', function(ev) {
-  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
-  if (!el) return;
-  tapHaptic(12);
-}, true);
 
 function parseUsdFromBalanceTxt(txt) {
   if (!txt) return 0;
