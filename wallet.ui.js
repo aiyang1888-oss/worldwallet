@@ -334,12 +334,15 @@ window.addEventListener('load', () => {
 window.addEventListener('pageshow', function () {
   try { initMnemonicLengthSelectors(); } catch (_iml3) {}
 });
-// 强刷后：若已保存钱包则进首页，否则欢迎页；不恢复 URL hash 深链
+// 强刷后：若已保存钱包则进首页，否则欢迎页；先读取 hash 深链再清 URL（供首屏 goTo 与下方 wwApplyHashRoute 一致）
 document.querySelectorAll('.page').forEach(p => {
   p.classList.remove('active');
   p.style.display = '';
 });
+var _wwBootHash = '';
 try {
+  var _h0 = (location.hash || '').replace(/^#/, '');
+  if (_h0 && document.getElementById(_h0)) _wwBootHash = _h0;
   if (typeof history !== 'undefined' && history.replaceState) {
     var _u0 = new URL(location.href);
     _u0.hash = '';
@@ -358,7 +361,7 @@ try {
 } catch (_eWb) {}
 if (_savedWalletBoot && typeof goTo === 'function') {
   /* 同步进入首页：若用 setTimeout(0)，本段上方已去掉所有 .page.active，会多出一帧全空白 */
-  goTo('page-home');
+  goTo(_wwBootHash || 'page-home');
 } else {
   var welcomePage = document.getElementById('page-welcome');
   if (welcomePage) {
@@ -366,6 +369,9 @@ if (_savedWalletBoot && typeof goTo === 'function') {
   }
   var _tbBoot = document.getElementById('tabBar');
   if (_tbBoot) _tbBoot.style.display = 'none';
+  if (_wwBootHash && typeof goTo === 'function') {
+    goTo(_wwBootHash);
+  }
 }
 
 var SAMPLE_KEYS = {
@@ -3335,7 +3341,10 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   }
   function wwApplyHashRoute() {
     var pid = wwHashToPageId();
-    if (pid && typeof goTo === 'function') goTo(pid);
+    if (!pid || typeof goTo !== 'function') return;
+    var cur = document.querySelector('.page.active');
+    if (cur && cur.id === pid) return;
+    goTo(pid);
   }
   window.addEventListener('hashchange', function () {
     wwApplyHashRoute();
