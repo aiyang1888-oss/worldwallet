@@ -1062,6 +1062,10 @@ body {
 #page-password-restore #pinRestoreKeypad .pin-key {
   touch-action: manipulation;
 }
+/* 数字键盘布局占位格：不拦截点击，避免误触空白区域吞掉触摸/焦点 */
+#page-password-restore #pinRestoreKeypad > div:empty {
+  pointer-events: none;
+}
 
 .offline-banner {
   display: none;

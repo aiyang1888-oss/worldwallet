@@ -3304,8 +3304,15 @@ function submitPinUnlock() {
   const ov = document.getElementById('pinUnlockOverlay');
   const err = document.getElementById('pinUnlockError');
   const panel = document.getElementById('pinUnlockPanel');
-  /* 须存在 6 位已存 PIN；避免 want 与 got 均为空字符串时被误判为解锁成功 */
-  if (want && want.length === 6 && got === want) {
+  /* 须存在 6 位数字 PIN；与设置 PIN 流程一致，避免非数字/异常 localStorage 导致误提示或误判 */
+  var pinStoredOk = want && want.length === 6 && /^\d{6}$/.test(want);
+  if (!pinStoredOk) {
+    if (err) { err.textContent = '未检测到有效 PIN，请前往设置重新设置'; err.style.display = 'block'; }
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+    if (inp) inp.value = '';
+    return;
+  }
+  if (got === want) {
     if(ov) ov.classList.remove('show');
     if(typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
       showTotpUnlockOverlay();
