@@ -1489,6 +1489,13 @@ function goTo(pageId, opts) {
   opts = opts || {};
   if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (!wwWalletHasAnyChainAddress(_rwGo) && typeof loadWallet === 'function') {
+      try {
+        var _wwSt = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+        if (wwWalletHasAnyChainAddress(_wwSt)) loadWallet();
+      } catch (_e) {}
+      _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    }
     if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {

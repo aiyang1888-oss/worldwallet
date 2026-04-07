@@ -799,6 +799,13 @@ function goTo(pageId, opts) {
   opts = opts || {};
   if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (!wwWalletHasAnyChainAddress(_rwGo) && typeof loadWallet === 'function') {
+      try {
+        var _wwStUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+        if (wwWalletHasAnyChainAddress(_wwStUi)) loadWallet();
+      } catch (_e) {}
+      _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    }
     if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
@@ -3195,6 +3202,9 @@ function openPinSettingsDialog() {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
       hasWallet = wwWalletHasAnyChainAddress(_d);
     } catch (_e) {}
+    if (hasWallet && typeof loadWallet === 'function') {
+      try { loadWallet(); } catch (_lwBoot) {}
+    }
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');
   }
