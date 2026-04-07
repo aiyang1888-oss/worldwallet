@@ -6663,6 +6663,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof doSwap === 'function') window.doSwap = doSwap;
     if (typeof doTransfer === 'function') window.doTransfer = doTransfer;
     if (typeof editHomeAddr === 'function') window.editHomeAddr = editHomeAddr;
+    if (typeof goHomeTransfer === 'function') window.goHomeTransfer = goHomeTransfer;
     if (typeof hideQR === 'function') window.hideQR = hideQR;
     if (typeof loadBalances === 'function') window.loadBalances = loadBalances;
     if (typeof loadTxHistory === 'function') window.loadTxHistory = loadTxHistory;

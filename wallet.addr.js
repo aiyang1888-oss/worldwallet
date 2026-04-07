@@ -577,6 +577,13 @@ function editHomeAddr() {
   if (typeof goTab === 'function') goTab('tab-addr');
 }
 
+function goHomeTransfer() {
+  tapHaptic(12);
+  if (typeof selectTransferCoin === 'function') selectTransferCoin('usdt');
+  else if (typeof window !== 'undefined' && typeof window.selectTransferCoin === 'function') window.selectTransferCoin('usdt');
+  else if (typeof goTo === 'function') goTo('page-transfer');
+}
+
 function getNativeAddr() {
   if(currentLang === 'en') return CHAIN_ADDR;
   try {
