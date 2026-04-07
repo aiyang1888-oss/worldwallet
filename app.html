@@ -16,7 +16,7 @@
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <!-- ethers.js for real BIP39 wallet generation -->
 <!-- ethers.js - 钱包派生库，约800KB -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
+<script src="assets/lib/ethers.umd.min.js" type="application/javascript"></script>
 <!-- TronWeb 懒加载，仅转账时加载 -->
 <script>
 function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
