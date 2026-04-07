@@ -783,7 +783,9 @@ function closeTotpUnlock() {
   if (ov) ov.classList.remove('show');
   const pov = document.getElementById('pinUnlockOverlay');
   const pinInp = document.getElementById('pinUnlockInput');
+  const pinErr = document.getElementById('pinUnlockError');
   if (pinInp) pinInp.value = '';
+  if (pinErr) { pinErr.style.display = 'none'; pinErr.textContent = 'PIN错误'; }
   if (pov) pov.classList.add('show');
   try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
 }
@@ -3197,7 +3199,8 @@ function submitPinUnlock() {
   const ov = document.getElementById('pinUnlockOverlay');
   const err = document.getElementById('pinUnlockError');
   const panel = document.getElementById('pinUnlockPanel');
-  if(got === want) {
+  /* 须存在 6 位已存 PIN；避免 want 与 got 均为空字符串时被误判为解锁成功 */
+  if (want && want.length === 6 && got === want) {
     if(ov) ov.classList.remove('show');
     if(typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
       showTotpUnlockOverlay();
