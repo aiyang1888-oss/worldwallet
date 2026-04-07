@@ -523,16 +523,13 @@ function getNativeAddr() {
     if (snap && String(snap).split('-').length === 3 && ADDR_WORDS.length === 10) {
       var mid = String(snap).split('-')[1] || '';
       var valid = true;
-      var off = 0;
       for (var j = 0; j < 10; j++) {
-        var w = ADDR_WORDS[j] && ADDR_WORDS[j].word;
-        if (!w || mid.slice(off, off + w.length) !== w) {
+        if (!ADDR_WORDS[j] || String(ADDR_WORDS[j].word) !== mid.charAt(j)) {
           valid = false;
           break;
         }
-        off += w.length;
       }
-      if (valid && off === mid.length) return snap;
+      if (valid) return snap;
     }
   } catch (_e) {}
   const prefix = _wanYuP8FromDomOrStorage(document.getElementById('addrPrefix'), 'wallet_prefix', '38294651');
