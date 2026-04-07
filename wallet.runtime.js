@@ -1920,7 +1920,10 @@ function copySingle(text, el) {
   setTimeout(()=>el.textContent=orig,1500);
 }
 
-function showQR() { document.getElementById('qrOverlay').classList.add('show'); }
+function showQR() {
+  var el = document.getElementById('qrOverlay');
+  if (el) el.classList.add('show');
+}
 
 let currentQRChain = 'native';
 const QR_CHAIN_DATA = {
@@ -1991,7 +1994,10 @@ function toggleQRChain() {
   const idx = chains.indexOf(currentQRChain);
   switchQRChain(chains[(idx+1)%chains.length]);
 }
-function hideQR() { document.getElementById('qrOverlay').classList.remove('show'); }
+function hideQR() {
+  var el = document.getElementById('qrOverlay');
+  if (el) el.classList.remove('show');
+}
 
 
 // KEYWORDS_ZH 已迁移到 KW_ZH
