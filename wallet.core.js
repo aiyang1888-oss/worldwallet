@@ -682,7 +682,13 @@ async function wwVerifyTotpCode(secretB32, input) {
 }
 
 function markBackupDone() {
-  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
+  var w = {};
+  try {
+    w = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+    if (!w || typeof w !== 'object') w = {};
+  } catch (_mb) {
+    w = {};
+  }
   w.backedUp = true;
   localStorage.setItem('ww_wallet', JSON.stringify(w));
   if(REAL_WALLET) REAL_WALLET.backedUp = true;
