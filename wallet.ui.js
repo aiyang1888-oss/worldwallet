@@ -3237,6 +3237,13 @@ function getMnemonicFromImport() {
   var raw = paste ? String(paste.value || '').trim() : '';
   if (!raw) {
     var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
+    if (!inputs.length) {
+      inputs = Array.from(document.querySelectorAll('#importGrid input[id^="iw_"]')).sort(function (a, b) {
+        var na = parseInt(String(a.id || '').replace(/^iw_/, ''), 10);
+        var nb = parseInt(String(b.id || '').replace(/^iw_/, ''), 10);
+        return (na || 0) - (nb || 0);
+      });
+    }
     raw = inputs.map(function(el){ return String(el.value || '').trim(); }).filter(Boolean).join(' ');
   }
   raw = raw.replace(/\s+/g, ' ').trim();
