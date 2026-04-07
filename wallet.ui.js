@@ -542,40 +542,6 @@ function applyOfflineState() {
   } catch (e2) {}
 }
 
-/**
- * 欢迎页「PIN 解锁钱包」：本机已有钱包且已设 6 位 PIN 时弹出解锁层，验证通过后进入首页。
- */
-function unlockWalletFromWelcome() {
-  var hasWallet = false;
-  try {
-    var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-    hasWallet = !!(_d && _d.ethAddress);
-  } catch (_e) {
-    hasWallet = false;
-  }
-  if (!hasWallet) {
-    if (typeof showToast === 'function') showToast('未找到本机钱包，请先创建或导入', 'warning');
-    return;
-  }
-  var pin = '';
-  try {
-    pin = localStorage.getItem('ww_pin') || '';
-  } catch (_e2) {
-    pin = '';
-  }
-  if (!pin || !/^\d{6}$/.test(pin)) {
-    if (typeof showToast === 'function') showToast('尚未设置 PIN，请先创建或导入钱包并完成 PIN 设置', 'info');
-    return;
-  }
-  try {
-    if (typeof loadWallet === 'function') loadWallet();
-  } catch (_lw) {}
-  try {
-    window._wwForceIdleLock = false;
-  } catch (_fl) {}
-  if (typeof continueAfterPinCheck === 'function') continueAfterPinCheck();
-}
-
 function wwBase32Encode(buf) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   let bits = 0, val = 0, out = '';
@@ -781,6 +747,24 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
+  // 欢迎页「PIN 解锁钱包」：无独立 DOM 页，落到首页并弹出 PIN 遮罩（与 pinUnlockOverlay 一致）
+  if (pageId === 'page-password-restore') {
+    var hasWallet = false;
+    try {
+      var _ww = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      hasWallet = !!(_ww && _ww.ethAddress);
+    } catch (_e) {}
+    if (!hasWallet) {
+      if (typeof showToast === 'function') showToast('暂无本地钱包，请先创建或导入', 'warning');
+      goTo('page-welcome');
+      return;
+    }
+    goTo('page-home');
+    setTimeout(function () {
+      if (typeof continueAfterPinCheck === 'function') continueAfterPinCheck();
+    }, 0);
+    return;
+  }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
