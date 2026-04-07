@@ -1039,6 +1039,7 @@ function initBalancePrivacyToggle() {
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     btn.textContent = on ? '\uD83D\uDE48' : '\uD83D\uDC41';
     btn.setAttribute('title', on ? '显示余额' : '隐藏余额');
+    btn.setAttribute('aria-label', on ? '显示余额' : '隐藏余额');
   }
   apply();
   btn.addEventListener('click', function () {
