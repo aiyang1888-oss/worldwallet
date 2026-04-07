@@ -486,6 +486,10 @@ body {
 [data-theme="light"] .home-chain-strip.home-chain-strip--dim .home-short-addr {
   color: rgba(18, 18, 26, 0.45);
 }
+/* 浅色主题：链上短地址与图表脚注勿沿用深色主题的浅色字，否则在浅底上几乎不可读 */
+[data-theme="light"] .home-short-addr {
+  color: var(--text-dim);
+}
 .home-mini-chain {
   display: flex;
   align-items: center;
@@ -525,6 +529,9 @@ body {
 .home-balance-chart-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
 .home-balance-chart-svg { width: 100%; height: 88px; display: block; }
 .home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
+[data-theme="light"] .home-balance-chart-foot {
+  color: var(--text-muted);
+}
 /* —— balance hide / scroll-top / tab swipe (patch) —— */
 .ww-balance-privacy-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-right: 2px; box-sizing: border-box; }
 .ww-balance-hide-btn {
