@@ -2473,7 +2473,7 @@ async function broadcastRealTransfer() {
   if(!amt || amt<=0 || isNaN(amt)){showToast('金额无效','error');return false;}
   if(amt>10000){showToast('单笔超10000限额','error');return false;}
   const bal = (transferCoin.bal||0);
-  if(amt>bal){showToast('余额不足','error');shakeTransferAmountTooHigh();return false;}
+  if(amt>bal){showToast('余额不足','error');return false;}
 
   const txkey = Date.now()+Math.random();
   window._wwPendingTxs = window._wwPendingTxs || {};
@@ -2516,8 +2516,12 @@ async function sendUSDT_TRC20(toAddr, amount) {
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
   if(!Number.isFinite(amount) || amount<=0 || amount>1e8){throw new Error('金额范围错误');}
-  const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
-  if(amtSun<=0 || amtSun>1e14){throw new Error('精度错误');}
+  var _usdt6 = Number(amount).toFixed(6);
+  var _dot = _usdt6.indexOf('.');
+  var _ip = _dot < 0 ? _usdt6 : _usdt6.slice(0, _dot);
+  var _fp = _dot < 0 ? '000000' : (_usdt6.slice(_dot + 1) + '000000').slice(0, 6);
+  const amtSun = parseInt(_ip, 10) * 1000000 + parseInt(_fp, 10);
+  if(amtSun<=0 || amtSun>1e14 || !Number.isFinite(amtSun)){throw new Error('精度错误');}
   const tx = await tw.transactionBuilder.triggerSmartContract(
     USDT_TRC20,
     'transfer(address,uint256)',
