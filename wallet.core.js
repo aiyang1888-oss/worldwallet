@@ -1,4 +1,5 @@
 // wallet.core.js — 钱包核心：创建/加密/存储/派生
+// SECURITY: 加密与 KDF 见 core/security.js（Argon2id/scrypt + AES-GCM）；本文件不再重复实现 deriveKeyFromPin。
 
 /** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明 */
 var REAL_WALLET = null;
@@ -25,57 +26,18 @@ function loadQRCodeLib(){
   return _qrLoadPromise;
 }
 
-async function deriveKeyFromPin(pin, salt) {
-  const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']
-  );
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  );
-}
-
-async function encryptWithPin(plaintext, pin) {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const key = await deriveKeyFromPin(pin, salt);
-  const enc = new TextEncoder();
-  const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
-    key,
-    enc.encode(plaintext)
-  );
-  return {
-    salt: btoa(String.fromCharCode(...salt)),
-    iv: btoa(String.fromCharCode(...iv)),
-    data: btoa(String.fromCharCode(...new Uint8Array(encrypted)))
-  };
-}
-
-async function decryptWithPin(bundle, pin) {
-  const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
-  const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
-  const data = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
-  const key = await deriveKeyFromPin(pin, salt);
-  const decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv }, key, data
-  );
-  return new TextDecoder().decode(decrypted);
-}
+/** encryptWithPin / decryptWithPin 由 core/security.js 提供（Argon2id/scrypt + AES-GCM；旧包 PBKDF2 解密） */
 
 async function saveWalletSecure(w, pin) {
   try {
-    // 公开信息（始终明文存储）
     var safe = {
+      version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
       ethAddress: w.ethAddress,
       trxAddress: w.trxAddress,
       btcAddress: w.btcAddress || '',
       createdAt: w.createdAt,
       backedUp: w.backedUp || false,
+      hasEncrypted: !!pin,
       addrMap: (function () {
         var am = w.addrMap || {};
         return {
@@ -86,20 +48,14 @@ async function saveWalletSecure(w, pin) {
         };
       })()
     };
-    // 有 PIN → 加密敏感数据
-    if (pin) {
-      var sensitive = JSON.stringify({
-        mnemonic: w.mnemonic,
-        enMnemonic: w.enMnemonic || w.mnemonic,
-        words: w.words,
-        privateKey: w.privateKey,
-        trxPrivateKey: w.trxPrivateKey
-      });
+    if (pin && w.mnemonic) {
+      var normMn = String(w.mnemonic).trim().replace(/\s+/g, ' ');
+      var sensitive = JSON.stringify({ mnemonic: normMn });
       safe.encrypted = await encryptWithPin(sensitive, pin);
     }
     localStorage.setItem('ww_wallet', JSON.stringify(safe));
   } catch (e) {
-    console.error('[saveWalletSecure] error:', e);
+    console.error('[saveWalletSecure] error');
   }
 }
 
@@ -110,6 +66,7 @@ function loadWalletPublic() {
       var parsed = JSON.parse(d);
       // 只加载公开信息，不加载敏感数据
       window.REAL_WALLET = {
+        version: parsed.version || 1,
         ethAddress: parsed.ethAddress,
         trxAddress: parsed.trxAddress,
         btcAddress: parsed.btcAddress || '',
@@ -141,9 +98,12 @@ async function decryptSensitive(pin) {
     var parsed = JSON.parse(d);
     if (!parsed.encrypted) return null;
     var plaintext = await decryptWithPin(parsed.encrypted, pin);
-    return JSON.parse(plaintext);
+    var obj = JSON.parse(plaintext);
+    if (typeof wwNormalizeDecryptedSensitive === 'function') {
+      return wwNormalizeDecryptedSensitive(obj);
+    }
+    return { mnemonic: (obj && (obj.mnemonic || obj.enMnemonic)) ? String(obj.mnemonic || obj.enMnemonic).trim().replace(/\s+/g, ' ') : '' };
   } catch (e) {
-    console.error('[decryptSensitive] error:', e);
     return null;
   }
 }
@@ -171,16 +131,13 @@ function _saveWalletPlainPublicOnly(w) {
 }
 
 function saveWallet(w) {
-  // 如果有 PIN，使用加密存储；否则只存公开信息
   var pin = '';
-  try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
+  try { pin = localStorage.getItem('ww_pin') || ''; } catch (e) {}
   if (pin) {
-    saveWalletSecure(w, pin).catch(function(e) {
-      console.error('[saveWallet] 加密存储失败，降级明文:', e);
+    saveWalletSecure(w, pin).catch(function () {
       _saveWalletPlainPublicOnly(w);
     });
   } else {
-    // 无 PIN：只存公开信息，不存敏感数据
     _saveWalletPlainPublicOnly(w);
   }
 }
@@ -227,7 +184,8 @@ async function createRealWallet(forcedWordCount) {
       : getTargetMnemonicWordCount();
     const entropyBytes = getEntropyByteCountForMnemonicWords(nWords);
     mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
-    wallet = ethers.Wallet.fromMnemonic(mnemonic);
+    var ethPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.eth) ? DERIVE_PATHS.eth : "m/44'/60'/0'/0/0";
+    wallet = ethers.Wallet.fromMnemonic(mnemonic, ethPath);
   } catch (e) {
     console.error('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
@@ -235,8 +193,10 @@ async function createRealWallet(forcedWordCount) {
   if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
   try {
-    trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-    btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
+    var trxPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.trx) ? DERIVE_PATHS.trx : "m/44'/195'/0'/0/0";
+    var btcPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.btc) ? DERIVE_PATHS.btc : "m/44'/0'/0'/0/0";
+    trxWallet = ethers.Wallet.fromMnemonic(mnemonic, trxPath);
+    btcWallet = ethers.Wallet.fromMnemonic(mnemonic, btcPath);
   } catch (e) {
     console.error('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
@@ -275,6 +235,35 @@ async function createRealWallet(forcedWordCount) {
   REAL_WALLET = w;
   CHAIN_ADDR = w.trxAddress || '--';
   saveWallet(w);
+  try {
+    window.TEMP_WALLET = {
+      mnemonic: w.mnemonic,
+      enMnemonic: w.enMnemonic,
+      words: w.words,
+      wordCount: w.words ? w.words.length : 12,
+      ethAddress: w.ethAddress,
+      trxAddress: w.trxAddress,
+      btcAddress: w.btcAddress,
+      addrMap: w.addrMap,
+      createdAt: w.createdAt
+    };
+  } catch (_tw) {}
+  try {
+    var pubCr = {
+      version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
+      ethAddress: w.ethAddress,
+      trxAddress: w.trxAddress,
+      btcAddress: w.btcAddress || '',
+      createdAt: w.createdAt,
+      backedUp: w.backedUp || false,
+      hasEncrypted: !!(function () {
+        try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
+      })(),
+      addrMap: w.addrMap
+    };
+    REAL_WALLET = pubCr;
+    window.REAL_WALLET = pubCr;
+  } catch (_pub) {}
   applyReferralCredit();
   try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
   return w;
@@ -323,13 +312,9 @@ async function restoreWallet(mnemonic) {
   if (pin) {
     var flatForStore = {
       mnemonic: result.mnemonic,
-      enMnemonic: result.mnemonic,
-      words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
       ethAddress: result.eth.address,
       trxAddress: result.trx.address,
       btcAddress: result.btc.address,
-      privateKey: result.eth.privateKey,
-      trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
       backedUp: false,
       addrMap: (function () {
@@ -420,11 +405,12 @@ function importWalletFlexible(raw) {
 }
 
 function generateLocalMnemonic() {
-  const words = [];
-  for(let i = 0; i < 12; i++) {
-    words.push(BIP39_WORDS[Math.floor(Math.random() * BIP39_WORDS.length)]);
+  if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.entropyToMnemonic) {
+    try {
+      return ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
+    } catch (_e) {}
   }
-  return words.join(' ');
+  return 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 }
 
 function formatWalletCreateError(e) {

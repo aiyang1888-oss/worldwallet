@@ -15,18 +15,20 @@ if (typeof TRON_GRID === 'undefined') var TRON_GRID = 'https://api.trongrid.io';
 if (typeof ETH_RPC === 'undefined') var ETH_RPC = 'https://rpc.ankr.com/eth';
 var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 var ENTROPY_MAP = { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 };
-var DERIVE_PATHS = {
-  eth: "m/44'/60'/0'/0/0",
-  trx: "m/44'/195'/0'/0/0",
-  btc: "m/44'/0'/0'/0/0"
-};
+var DERIVE_PATHS = (typeof WW_DERIVE_PATHS !== 'undefined')
+  ? WW_DERIVE_PATHS
+  : {
+    eth: "m/44'/60'/0'/0/0",
+    trx: "m/44'/195'/0'/0/0",
+    btc: "m/44'/0'/0'/0/0"
+  };
 
 /**
  * 生成新钱包
  * @param {number} wordCount - 助记词词数 (12/15/18/21/24)
  * @returns {Promise<{mnemonic:string, eth:object, trx:object, btc:object}>}
  */
-async function createWallet(wordCount) {
+async function wwCoreCreateWallet(wordCount) {
   wordCount = wordCount || 12;
   var bytes = ENTROPY_MAP[wordCount] || 16;
   var mnemonic = ethers.utils.entropyToMnemonic(
@@ -47,6 +49,10 @@ async function createWallet(wordCount) {
       derived_from: 'eth'
     }
   };
+}
+
+async function createWallet(wordCount) {
+  return wwCoreCreateWallet(wordCount);
 }
 
 /**
@@ -102,6 +108,15 @@ function deriveAddress(mnemonic) {
     eth: { address: ethWallet.address, privateKey: ethWallet.privateKey },
     trx: { address: trxAddr, privateKey: trxWallet.privateKey },
     btc: { address: btcWallet.address, privateKey: btcWallet.privateKey }
+  };
+}
+
+function derivePrivateKeysFromMnemonic(mnemonic) {
+  var d = deriveAddress(mnemonic);
+  return {
+    ethPrivateKey: d.eth.privateKey,
+    trxPrivateKey: d.trx.privateKey,
+    btcPrivateKey: d.btc.privateKey
   };
 }
 

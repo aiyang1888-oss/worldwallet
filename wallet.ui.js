@@ -295,50 +295,27 @@ var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb',
 
 /**
  * 生成密钥页用临时钱包（不写 localStorage、不赋值 REAL_WALLET；验证通过后由流程持久化）
+ * 派生逻辑统一走 core/wallet.js 的 wwCoreCreateWallet，不在此重复实现路径。
  */
-async function createWallet(forcedWordCount) {
-  if (typeof ethers === 'undefined') {
-    throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
+async function wwCreateWalletUI(forcedWordCount) {
+  if (typeof wwCoreCreateWallet !== 'function') {
+    throw new Error('钱包核心未加载');
   }
   var nWords = (typeof forcedWordCount === 'number' && [12, 15, 18, 21, 24].includes(forcedWordCount)) ? forcedWordCount : 12;
-  var entropyBytes =
-    typeof getEntropyByteCountForMnemonicWords === 'function'
-      ? getEntropyByteCountForMnemonicWords(nWords)
-      : { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 }[nWords] || 16;
-  var mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
-  var wallet = ethers.Wallet.fromMnemonic(mnemonic);
-  var trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-  var btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
-  var trxAddr = '';
-  try {
-    if (typeof loadTronWeb === 'function') await loadTronWeb();
-    if (typeof TronWeb !== 'undefined') {
-      trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-    } else {
-      trxAddr = 'T' + trxWallet.address.slice(2, 35);
-    }
-  } catch (_e2) {
-    trxAddr = 'T' + trxWallet.address.slice(2, 35);
-  }
+  var base = await wwCoreCreateWallet(nWords);
   return {
-    mnemonic: mnemonic,
-    enMnemonic: mnemonic,
-    words: mnemonic.split(/\s+/).filter(Boolean),
-    wordCount: nWords,
-    eth: { address: wallet.address, privateKey: wallet.privateKey },
-    trx: { address: trxAddr, privateKey: trxWallet.privateKey },
-    btc: { address: btcWallet.address, privateKey: btcWallet.privateKey },
-    ethAddress: wallet.address,
-    trxAddress: trxAddr,
-    btcAddress: btcWallet.address,
-    privateKey: wallet.privateKey,
-    trxPrivateKey: trxWallet.privateKey,
-    createdAt: Date.now(),
-    addrMap: {
-      trx: trxAddr,
-      eth: wallet.address,
-      btc: btcWallet.address
-    }
+    mnemonic: base.mnemonic,
+    enMnemonic: base.mnemonic,
+    words: base.mnemonic.split(/\s+/).filter(Boolean),
+    wordCount: base.wordCount,
+    eth: base.eth,
+    trx: base.trx,
+    btc: base.btc,
+    ethAddress: base.eth.address,
+    trxAddress: base.trx.address,
+    btcAddress: base.btc.address,
+    createdAt: base.createdAt,
+    addrMap: base.addrMap
   };
 }
 
@@ -355,7 +332,7 @@ async function createNewWallet() {
   try { window._wwInFirstRun = true; } catch (_fr0) {}
   showWalletLoading();
   try {
-    var w = await createWallet(12);
+    var w = await wwCreateWalletUI(12);
     window.TEMP_WALLET = w;
     goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
@@ -864,7 +841,7 @@ function goTo(pageId, opts) {
       if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
       syncKeyPageLangSelect();
       showWalletLoading();
-      Promise.resolve(createWallet(12))
+      Promise.resolve(wwCreateWalletUI(12))
         .then(function (w) {
           window.TEMP_WALLET = w;
           hideWalletLoading();
@@ -1429,6 +1406,9 @@ function wwTickIdleLock() {
   if(Date.now() - last < mins * 60 * 1000) return;
   window._wwUnlockPreservePage = true;
   window._wwForceIdleLock = true;
+  try {
+    if (typeof wwClearSensitiveSession === 'function') wwClearSensitiveSession();
+  } catch (_idle) {}
   var inp = document.getElementById('pinUnlockInput');
   var err = document.getElementById('pinUnlockError');
   if(pov && inp) {
@@ -2558,7 +2538,7 @@ function initImportGrid(count) {
     div.innerHTML = `
       <span style="font-size:9px;color:var(--text-muted)">${i+1}</span>
       <input id="iw_${i}" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        style="width:100%;background:none;border:none;outline:none;font-size:12px;color:var(--text);text-align:center;font-family:inherit"
+        style="width:100%;background:none;border:none;outline:none;font-size:16px;color:var(--text);text-align:center;font-family:inherit"
         oninput="syncImportPaste()"
         onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();var _n=${Math.min(i + 1, count - 1)};document.getElementById('iw_'+_n)&&document.getElementById('iw_'+_n).focus();}">
     `;
@@ -2888,7 +2868,7 @@ async function changeMnemonicLength(n) {
   // 重新生成指定词数的钱包
   showWalletLoading();
   try {
-    var w = await createWallet(wordCount);
+    var w = await wwCreateWalletUI(wordCount);
     window.TEMP_WALLET = w;
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
   } catch(e) {
@@ -2912,8 +2892,8 @@ function startVerify() {
       words = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
     }
   }
-  if ((!words || words.length < 12) && REAL_WALLET && REAL_WALLET.mnemonic) {
-    words = REAL_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
+  if ((!words || words.length < 12) && typeof wwGetSessionMnemonic === 'function' && wwGetSessionMnemonic()) {
+    words = wwGetSessionMnemonic().trim().split(/\s+/).filter(Boolean);
   }
   if (!words || words.length < 12) {
     var persistedHasAddr = false;
@@ -2946,34 +2926,51 @@ function startVerify() {
       if(!indices.includes(idx)) indices.push(idx);
     }
     words = indices.map(i => pool[i]);
-    if(!REAL_WALLET) REAL_WALLET = {};
-    REAL_WALLET.mnemonic = words.join(' ');
-    REAL_WALLET.wordCount = words.length;
-    saveWallet(REAL_WALLET);
+    try {
+      window.TEMP_WALLET = window.TEMP_WALLET || {};
+      window.TEMP_WALLET.mnemonic = words.join(' ');
+      window.TEMP_WALLET.words = words.slice();
+    } catch (_tw) {}
+    if (!REAL_WALLET) REAL_WALLET = {};
+    if (typeof saveWallet === 'function') saveWallet({ ethAddress: REAL_WALLET.ethAddress, trxAddress: REAL_WALLET.trxAddress, btcAddress: REAL_WALLET.btcAddress || '', createdAt: REAL_WALLET.createdAt || Date.now(), backedUp: false, addrMap: REAL_WALLET.addrMap });
   }
-  // 验证开始时若存在完整 TEMP_WALLET，将链上地址与密钥写入 REAL_WALLET 并持久化（wallet.core saveWallet：有 PIN 则加密存私钥）
   if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic && (window.TEMP_WALLET.eth || window.TEMP_WALLET.ethAddress)) {
     var tw = window.TEMP_WALLET;
     var nested = tw.eth && tw.eth.address;
-    REAL_WALLET = {
-      ethAddress: nested ? tw.eth.address : tw.ethAddress,
-      trxAddress: nested ? tw.trx.address : tw.trxAddress,
-      btcAddress: nested ? tw.btc.address : (tw.btcAddress || ''),
+    var ethA = nested ? tw.eth.address : tw.ethAddress;
+    var trxA = nested ? tw.trx.address : tw.trxAddress;
+    var btcA = nested ? tw.btc.address : (tw.btcAddress || '');
+    var toSave = {
+      ethAddress: ethA,
+      trxAddress: trxA,
+      btcAddress: btcA,
       createdAt: tw.createdAt != null ? tw.createdAt : Date.now(),
+      backedUp: false,
       mnemonic: tw.mnemonic,
-      wordCount: tw.wordCount || words.length,
-      privateKey: nested ? tw.eth.privateKey : tw.privateKey,
-      trxPrivateKey: nested ? tw.trx.privateKey : tw.trxPrivateKey,
-      enMnemonic: tw.mnemonic,
-      words: words.slice(),
       addrMap: tw.addrMap || {
-        trx: nested ? tw.trx.address : tw.trxAddress,
-        eth: nested ? tw.eth.address : tw.ethAddress,
-        btc: nested ? tw.btc.address : (tw.btcAddress || '')
+        trx: trxA,
+        eth: ethA,
+        btc: btcA,
+        derived_from: 'eth'
       }
     };
+    if (typeof saveWallet === 'function') saveWallet(toSave);
+    REAL_WALLET = {
+      version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
+      ethAddress: ethA,
+      trxAddress: trxA,
+      btcAddress: btcA,
+      createdAt: toSave.createdAt,
+      backedUp: false,
+      hasEncrypted: !!(function () {
+        try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
+      })(),
+      addrMap: toSave.addrMap
+    };
     window.REAL_WALLET = REAL_WALLET;
-    if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
+    try {
+      if (typeof wwSetSessionMnemonic === 'function') wwSetSessionMnemonic(tw.mnemonic);
+    } catch (_sm) {}
   }
   verifyAnswers = {};
   
@@ -3030,19 +3027,16 @@ async function _resumeWalletAfterUnlock() {
   // 解密敏感数据并临时注入 REAL_WALLET（须在进入首页 / 拉余额前完成，避免竞态）
   var pin = (typeof wwGetSessionPin === 'function' ? wwGetSessionPin() : '') || '';
   try { if (!pin) pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
-  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
+  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted) {
     try {
       var sensitive = await decryptSensitive(pin);
-      if (sensitive && REAL_WALLET) {
-        REAL_WALLET.privateKey = sensitive.privateKey;
-        REAL_WALLET.trxPrivateKey = sensitive.trxPrivateKey;
-        REAL_WALLET.mnemonic = sensitive.mnemonic;
-        REAL_WALLET.enMnemonic = sensitive.enMnemonic;
-        REAL_WALLET.words = sensitive.words;
+      if (sensitive && sensitive.mnemonic && typeof wwSetSessionMnemonic === 'function') {
+        wwSetSessionMnemonic(sensitive.mnemonic);
       }
-    } catch (e) {
-      console.error('[unlock decrypt]', e);
-    }
+      if (sensitive && sensitive.mnemonic && typeof setSessionKeys === 'function') {
+        setSessionKeys({ mnemonic: sensitive.mnemonic });
+      }
+    } catch (_e) {}
   }
   updateAddr();
   const tb = document.getElementById('tabBar');
@@ -3247,7 +3241,7 @@ function renderImportGrid(wordCount) {
   var n = [12,15,18,21,24].includes(Number(wordCount)) ? Number(wordCount) : 12;
   var html = '';
   for (var i = 0; i < n; i++) {
-    html += '<input class="import-word" data-index="'+i+'" type="text" autocomplete="off" spellcheck="false" placeholder="'+(i+1)+'" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box;text-align:center" />';
+    html += '<input class="import-word" data-index="'+i+'" type="text" autocomplete="off" spellcheck="false" placeholder="'+(i+1)+'" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:16px;box-sizing:border-box;text-align:center" />';
   }
   grid.innerHTML = html;
   if (badge) badge.textContent = '0/' + n;

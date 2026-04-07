@@ -112,12 +112,6 @@ function tryLoadWanYuAddrFromStorage() {
     var suffix = localStorage.getItem('wallet_suffix');
     var wj = localStorage.getItem('wallet_addr_words');
     var rawFull = localStorage.getItem('wallet_native_addr');
-    console.log('[WanYuAddr] 从 localStorage 读取地址:', {
-      prefix: prefix,
-      suffix: suffix,
-      words: wj,
-      wallet_native_addr: rawFull
-    });
     if ((!prefix || !suffix) && rawFull && String(rawFull).indexOf('-') >= 0) {
       var parts = String(rawFull).split('-');
       if (parts.length === 3) {
@@ -151,7 +145,6 @@ function tryLoadWanYuAddrFromStorage() {
             var sufEl2 = document.getElementById('addrSuffix');
             if (preEl2) preEl2.textContent = prefix;
             if (sufEl2) sufEl2.textContent = suffix;
-            console.log('[WanYuAddr] 已从 wallet_native_addr 中段恢复 10 字');
             if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress && typeof deriveAddrWordsFromChain === 'function') {
               var midGot = ADDR_WORDS.map(function (w) { return w.word; }).join('');
               if (midGot !== deriveAddrWordsFromChain(REAL_WALLET.ethAddress)) {
@@ -395,10 +388,6 @@ function initAddrWords() {
   _lock = true;
   try {
     __wanYuInitAddrWordsCallCount++;
-    console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
-      addrWordsLen: typeof ADDR_WORDS !== 'undefined' ? ADDR_WORDS.length : -1,
-      alreadyInit: __wanYuAddrInitialized
-    });
     if (__wanYuAddrInitialized && ADDR_WORDS.length === 10) {
       renderAddrWords();
       return;
@@ -633,17 +622,26 @@ function copyBoth() {
   setTimeout(()=>{btn.innerHTML='📋 一键复制两个地址（母语 + 公链）';btn.style.borderColor='';btn.style.color='';},2500);
 }
 
+function wwGetMnemonicForDisplayCopy() {
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) return String(window.TEMP_WALLET.mnemonic);
+  if (typeof wwGetSessionMnemonic === 'function') {
+    var sm = wwGetSessionMnemonic();
+    if (sm) return String(sm);
+  }
+  return '';
+}
+
 function copyAllMnemonic(btn) {
   const words = [];
   var mnLang = (typeof keyMnemonicLang !== 'undefined' && keyMnemonicLang) ? keyMnemonicLang : 'zh';
   var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(mnLang) : (mnLang === 'en' ? 'en' : 'zh');
   const isEn = wlKey === 'en';
+  var rawMn = wwGetMnemonicForDisplayCopy();
   if(isEn) {
-    const mn = REAL_WALLET && REAL_WALLET.enMnemonic;
-    if(mn) mn.split(' ').forEach(w => words.push(w));
+    if(rawMn) rawMn.split(' ').forEach(w => words.push(w));
   } else {
     const wl = WT_WORDLISTS[wlKey];
-    const enMn = REAL_WALLET && REAL_WALLET.enMnemonic;
+    const enMn = rawMn;
     if(wl && enMn) {
       enMn.split(' ').forEach(enW => {
         const enIdx = WT_WORDLISTS.en.indexOf(enW);

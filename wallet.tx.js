@@ -1,5 +1,52 @@
 // wallet.tx.js — 交易：转账/余额/价格/历史
 
+function wwRequireUnlockedMnemonicForSign() {
+  var m = '';
+  if (typeof wwGetSessionMnemonic === 'function') m = wwGetSessionMnemonic();
+  if (!m && typeof getSessionKeys === 'function') {
+    var sk = getSessionKeys();
+    if (sk && sk.mnemonic) m = sk.mnemonic;
+  }
+  if (!m) throw new Error('请先解锁钱包（PIN）');
+  return m;
+}
+
+function wwDeriveForSign() {
+  var m = wwRequireUnlockedMnemonicForSign();
+  if (typeof deriveAddress !== 'function') throw new Error('钱包核心未加载');
+  return deriveAddress(m);
+}
+
+function wwZeroDerivedKeys(d) {
+  try {
+    if (d && d.eth) d.eth.privateKey = '';
+    if (d && d.trx) d.trx.privateKey = '';
+    if (d && d.btc) d.btc.privateKey = '';
+  } catch (_e) {}
+}
+
+async function wwSignWithUnlockedMnemonic(asyncFn) {
+  var d = wwDeriveForSign();
+  try {
+    return await asyncFn(d);
+  } finally {
+    wwZeroDerivedKeys(d);
+    d = null;
+    try {
+      if (typeof wwClearSensitiveFieldsOnRealWallet === 'function') wwClearSensitiveFieldsOnRealWallet();
+    } catch (_c) {}
+  }
+}
+
+function wwClearSensitiveFieldsOnRealWallet() {
+  try {
+    if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET) {
+      try { delete REAL_WALLET.privateKey; } catch (_a) {}
+      try { delete REAL_WALLET.trxPrivateKey; } catch (_b) {}
+    }
+  } catch (_e) {}
+}
+
 /**
  * 通用异步重试：遇 e.status === 429 时指数退避（1s → 2s → 4s）。
  */
@@ -160,58 +207,68 @@ function confirmTransfer() {
 
 async function sendTRX(toAddr, amount) {
   await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6);
-  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
-  const signed = await tw.trx.sign(tx);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'TRX 广播失败');
+  return wwSignWithUnlockedMnemonic(async function (d) {
+    var tw = new TronWeb({ fullHost: TRON_GRID });
+    var pk = d.trx.privateKey;
+    var pkHex = pk.startsWith('0x') ? pk.slice(2) : pk;
+    tw.setPrivateKey(pkHex);
+    var amtSun = Math.floor(amount * 1e6);
+    var tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx === 'function' ? getTronFeeLimitTrx() : 25000000) });
+    var signed = await tw.trx.sign(tx);
+    var result = await tw.trx.sendRawTransaction(signed);
+    if (result.result) return result.txid;
+    throw new Error(result.message || 'TRX 广播失败');
+  });
 }
 
 async function sendETH(toAddr, amount) {
-  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
-  const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
-  const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
-  const mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
-  const fd = await provider.getFeeData();
-  const txReq = {
-    to: toAddr,
-    value: ethers.utils.parseEther(amount.toString()),
-    gasLimit: 21000
-  };
-  const m = Math.round(mult * 100);
-  if(fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
-    txReq.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);
-    txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(m).div(100);
-  } else if(fd.gasPrice) {
-    txReq.gasPrice = fd.gasPrice.mul(m).div(100);
-  }
-  const tx = await wallet.sendTransaction(txReq);
-  await tx.wait(1);
-  return tx.hash;
+  return wwSignWithUnlockedMnemonic(async function (d) {
+    var provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
+    var wallet = new ethers.Wallet(d.eth.privateKey, provider);
+    var sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
+    var mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
+    var fd = await provider.getFeeData();
+    var txReq = {
+      to: toAddr,
+      value: ethers.utils.parseEther(amount.toString()),
+      gasLimit: 21000
+    };
+    var mp = Math.round(mult * 100);
+    if (fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
+      txReq.maxFeePerGas = fd.maxFeePerGas.mul(mp).div(100);
+      txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(mp).div(100);
+    } else if (fd.gasPrice) {
+      txReq.gasPrice = fd.gasPrice.mul(mp).div(100);
+    }
+    var tx = await wallet.sendTransaction(txReq);
+    await tx.wait(1);
+    return tx.hash;
+  });
 }
 
 async function sendUSDT_TRC20(toAddr, amount) {
   await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
-  const tx = await tw.transactionBuilder.triggerSmartContract(
-    USDT_TRC20,
-    'transfer(address,uint256)',
-    { feeLimit: (typeof getTronFeeLimitUsdt==='function' ? getTronFeeLimitUsdt() : 20000000) },
-    [
-      { type: 'address', value: toAddr },
-      { type: 'uint256', value: amtSun }
-    ],
-    REAL_WALLET.trxAddress // Base58格式，TronWeb自动处理
-  );
-  const signed = await tw.trx.sign(tx.transaction);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'USDT 广播失败');
+  return wwSignWithUnlockedMnemonic(async function (d) {
+    var tw = new TronWeb({ fullHost: TRON_GRID });
+    var pk = d.trx.privateKey;
+    var pkHex = pk.startsWith('0x') ? pk.slice(2) : pk;
+    tw.setPrivateKey(pkHex);
+    var amtSun = Math.floor(amount * 1e6);
+    var tx = await tw.transactionBuilder.triggerSmartContract(
+      USDT_TRC20,
+      'transfer(address,uint256)',
+      { feeLimit: (typeof getTronFeeLimitUsdt === 'function' ? getTronFeeLimitUsdt() : 20000000) },
+      [
+        { type: 'address', value: toAddr },
+        { type: 'uint256', value: amtSun }
+      ],
+      REAL_WALLET.trxAddress
+    );
+    var signed = await tw.trx.sign(tx.transaction);
+    var result = await tw.trx.sendRawTransaction(signed);
+    if (result.result) return result.txid;
+    throw new Error(result.message || 'USDT 广播失败');
+  });
 }
 
 async function loadBalances() {
