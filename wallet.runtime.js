@@ -382,6 +382,9 @@ document.addEventListener('visibilitychange', function() {
 
 window.addEventListener('beforeunload', function() {
   wwClearSessionPin();
+  try {
+    if (typeof wwClearSensitiveSession === 'function') wwClearSensitiveSession();
+  } catch (_bu) {}
   wwCleanupMemory();
   try { wwCleanupStorage(); } catch (_wcs) {}
   try { sessionStorage.clear(); } catch (e) {}
@@ -953,6 +956,9 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
+  if (pageId === 'page-welcome' && typeof wwClearSensitiveSession === 'function') {
+    try { wwClearSensitiveSession(); } catch (_g0) {}
+  }
   if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
     if (!wwWalletHasAnyChainAddress(_rwGo) && typeof loadWallet === 'function') {
@@ -1818,7 +1824,7 @@ async function broadcastRealTransfer() {
 
     if(coin === 'usdt') {
       // USDT TRC-20 转账
-      txHash = await sendUSDT_TRC20(addr, amt);
+      txHash = await safeSign('usdt', { to: addr, amount: amt }, '');
     } else if(coin === 'trx') {
       // TRX 转账：加载 TronWeb 后用 isAddress 校验（优于纯正则）
       await loadTronWeb();
@@ -1827,10 +1833,10 @@ async function broadcastRealTransfer() {
       } else if(!addr.match(/^T[a-zA-Z0-9]{33}$/)) {
         showToast('TRON地址格式错误','error'); return false;
       }
-      txHash = await sendTRX(addr, amt);
+      txHash = await safeSign('trx', { to: addr, amount: amt }, '');
     } else if(coin === 'eth') {
       // ETH 转账
-      txHash = await sendETH(addr, amt);
+      txHash = await safeSign('eth', { to: addr, amount: amt }, '');
     } else {
       showToast('⚠️ 暂不支持 ' + transferCoin.name + ' 转账', 'warning');
       return false;
@@ -3474,10 +3480,32 @@ function confirmTransfer() {
     showToast('📡 当前无网络，无法完成转账', 'warning');
     return;
   }
+  const ta = document.getElementById('transferAmount');
+  const adr = document.getElementById('transferAddr');
+  if (!ta || !adr) {
+    if (typeof showToast === 'function') showToast('❌ 转账表单未就绪', 'error');
+    return;
+  }
+  const addrPre = String(adr.value || '').trim();
+  const amtPre = parseFloat(ta.value);
+  const coinPre = transferCoin.id;
+  if (!addrPre) { if (typeof showToast === 'function') showToast('❌ 请输入收款地址', 'error'); return; }
+  if (coinPre === 'trx' || coinPre === 'usdt') {
+    if (addrPre[0] !== 'T') { if (typeof showToast === 'function') showToast('❌ TRX / USDT-TRC20 收款地址须以 T 开头', 'error'); return; }
+  } else if (coinPre === 'eth') {
+    if (!addrPre.startsWith('0x') || addrPre.length < 10) { if (typeof showToast === 'function') showToast('❌ ETH 收款地址须为 0x 开头的有效地址', 'error'); return; }
+  }
+  if (!isFinite(amtPre) || amtPre <= 0) { if (typeof showToast === 'function') showToast('❌ 请输入有效转账金额', 'error'); return; }
+  var balPre = 0;
+  if (typeof COINS !== 'undefined' && COINS.length) {
+    var cf = COINS.filter(function (c) { return c.id === coinPre; })[0];
+    if (cf) balPre = Number(cf.bal) || 0;
+  }
+  if (balPre < amtPre) { if (typeof showToast === 'function') showToast('❌ 余额不足', 'error'); return; }
   closeTransferConfirm();
   // 填充成功页数据
-  const amt = document.getElementById('transferAmount').value;
-  const addr = document.getElementById('transferAddr').value.trim();
+  const amt = ta.value;
+  const addr = adr.value.trim();
   saveRecentTransferAddr(addr);
   const amtF = parseFloat(amt)||0;
   const fee = (amtF*0.003).toFixed(2);

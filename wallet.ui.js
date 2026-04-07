@@ -783,6 +783,9 @@ function wwWalletHasAnyChainAddress(rw) {
 
 function goTo(pageId, opts) {
   opts = opts || {};
+  if (pageId === 'page-welcome' && typeof wwClearSensitiveSession === 'function') {
+    try { wwClearSensitiveSession(); } catch (_g0) {}
+  }
   if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
     if (!wwWalletHasAnyChainAddress(_rwGo) && typeof loadWallet === 'function') {
@@ -1468,13 +1471,13 @@ async function broadcastRealTransfer() {
 
     if(coin === 'usdt') {
       // USDT TRC-20 转账
-      txHash = await sendUSDT_TRC20(addr, amt);
+      txHash = await safeSign('usdt', { to: addr, amount: amt }, '');
     } else if(coin === 'trx') {
       // TRX 转账
-      txHash = await sendTRX(addr, amt);
+      txHash = await safeSign('trx', { to: addr, amount: amt }, '');
     } else if(coin === 'eth') {
       // ETH 转账
-      txHash = await sendETH(addr, amt);
+      txHash = await safeSign('eth', { to: addr, amount: amt }, '');
     } else {
       showToast('⚠️ 暂不支持 ' + transferCoin.name + ' 转账', 'warning');
       return false;

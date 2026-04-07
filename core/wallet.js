@@ -7,7 +7,7 @@
  *   importWallet(mnemonic)    → 导入钱包
  *   deriveAddress(mnemonic)   → 派生地址
  *   getBalance(addresses)     → 查询余额
- *   sendTx(chain, to, amount, privateKey) → 发送交易
+ *   sendTx → 已废弃私钥路径，请使用 wallet.tx.js 的 safeSign
  */
 
 // ── 配置（TRON_GRID / ETH_RPC 由 js/api-config.js 注入，缺省时兜底）──
@@ -188,18 +188,11 @@ async function getBalance(addresses) {
  * @returns {Promise<{txHash:string}|{error:string}>}
  */
 async function sendTx(chain, to, amount, privateKey) {
-  try {
-    if (chain === 'trx') {
-      return await _sendTRX(to, amount, privateKey);
-    } else if (chain === 'eth') {
-      return await _sendETH(to, amount, privateKey);
-    } else if (chain === 'usdt_trc20') {
-      return await _sendUSDT(to, amount, privateKey);
-    }
-    return { error: '不支持的链: ' + chain };
-  } catch (e) {
-    return { error: e.message || '转账失败' };
-  }
+  void chain;
+  void to;
+  void amount;
+  void privateKey;
+  return { error: 'WW_USE_SAFESIGN' };
 }
 
 // ── 内部转账实现 ──

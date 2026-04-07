@@ -35,6 +35,9 @@ async function wwSignWithUnlockedMnemonic(asyncFn) {
     try {
       if (typeof wwClearSensitiveFieldsOnRealWallet === 'function') wwClearSensitiveFieldsOnRealWallet();
     } catch (_c) {}
+    try {
+      if (typeof wwClearSessionMnemonic === 'function') wwClearSessionMnemonic();
+    } catch (_m) {}
   }
 }
 
@@ -46,6 +49,25 @@ function wwClearSensitiveFieldsOnRealWallet() {
     }
   } catch (_e) {}
 }
+
+/**
+ * 统一链上签名/广播入口：chain 'trx'|'eth'|'usdt'；tx { to, amount }；pin 预留（会话已解锁时传空字符串）
+ */
+async function safeSign(chain, tx, pin) {
+  if (!tx || typeof tx !== 'object') throw new Error('invalid tx');
+  if (pin != null && String(pin).length > 0 && typeof verifyPin === 'function') {
+    var ok = await verifyPin(String(pin));
+    if (!ok) throw new Error('PIN');
+  }
+  var to = tx.to;
+  var amount = tx.amount;
+  if (chain === 'trx') return await sendTRX(to, amount);
+  if (chain === 'eth') return await sendETH(to, amount);
+  if (chain === 'usdt' || chain === 'usdt_trc20') return await sendUSDT_TRC20(to, amount);
+  throw new Error('unsupported chain');
+}
+
+try { if (typeof window !== 'undefined') window.safeSign = safeSign; } catch (_s) {}
 
 /**
  * 通用异步重试：遇 e.status === 429 时指数退避（1s → 2s → 4s）。

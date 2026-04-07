@@ -93,6 +93,11 @@ function wwIsLegacyEncryptedBundle(bundle) {
     typeof bundle.data === 'string';
 }
 
+/** 历史 argon2id 密文（当前运行时已移除 Argon2，无法解密，仅用于识别与提示） */
+function wwIsArgon2idEncryptedBundle(bundle) {
+  return !!(bundle && typeof bundle === 'object' && bundle.kdf === 'argon2id');
+}
+
 async function decryptWithPin(bundle, pin) {
   if (wwIsLegacyEncryptedBundle(bundle)) {
     var saltL = wwB64ToBytes(bundle.salt);
@@ -106,6 +111,9 @@ async function decryptWithPin(bundle, pin) {
   var iv = wwB64ToBytes(bundle.iv);
   var ct = wwB64ToBytes(bundle.ct);
   var rawKey;
+  if (wwIsArgon2idEncryptedBundle(bundle)) {
+    throw new Error('WW_LEGACY_ARGON2ID_UNSUPPORTED');
+  }
   if (bundle.kdf === 'scrypt') {
     rawKey = await wwRawKeyScrypt(pin, salt, bundle.kdfParams || {});
   } else {
@@ -127,7 +135,7 @@ function wwNormalizeDecryptedSensitive(parsed) {
 
 var _wwSessionMnemonic = null;
 var _wwSessionMnemonicTimer = null;
-var WW_SESSION_MNEMONIC_TTL_MS = 15 * 60 * 1000;
+var WW_SESSION_MNEMONIC_TTL_MS = 30 * 1000;
 
 function wwSetSessionMnemonic(mnemonic) {
   _wwSessionMnemonic = mnemonic ? String(mnemonic) : null;
