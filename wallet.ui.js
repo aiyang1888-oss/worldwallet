@@ -3204,24 +3204,7 @@ function openPinSettingsDialog() {
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
 }
 
-// 时钟
-function updateTime() {
-  const now=new Date();
-  document.getElementById('statusTime').textContent=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-}
-updateTime(); window._timeInterval = setInterval(updateTime,60000);
-try {
-  wwResetActivityClock();
-  ['pointerdown','touchstart','keydown','scroll','click'].forEach(function(ev) {
-    document.addEventListener(ev, function() { wwResetActivityClock(); }, { capture: true, passive: true });
-  });
-  setInterval(function() { try { wwTickIdleLock(); } catch(e) {} }, 15000);
-  setInterval(function() { try { if (typeof wwRecurringTick === 'function') wwRecurringTick(); } catch(e) {} }, 60000);
-  wwApplyIdleLockLabel();
-} catch(e) {}
-var lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
-try { var _ap0 = document.querySelector('.page.active'); applySeoForPage(_ap0 && _ap0.id ? _ap0.id : 'page-welcome'); applyOfflineState(); window.addEventListener('online', applyOfflineState); window.addEventListener('offline', applyOfflineState); } catch(e) {}
-try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } catch (e) {}
+/* 时钟、闲置锁、活动重置、SEO/离线、余额隐私与滚动顶按钮由 wallet.runtime.js 统一初始化，避免与下文重复注册定时器与监听器 */
 
 (function () {
   function wwHashToPageId() {
