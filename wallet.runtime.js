@@ -1312,7 +1312,9 @@ function shortChainAddr(addr) {
   return t.slice(0, 5) + '…' + t.slice(-4);
 }
 function updateHomeChainStrip() {
-  /* 首页 TRX/ETH/BTC 链上圆形条已移除，保留空函数供旧调用 */
+  try {
+    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
+  } catch (_e) {}
 }
 
 function updateHomeBackupBanner() {
