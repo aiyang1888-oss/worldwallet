@@ -5030,10 +5030,17 @@ function ethFloatToWeiString(v) {
 }
 function buildReceiveQrPayload(chain, addr, amountRaw) {
   var realAddr = addr;
+  var selectedChain = chain;
   if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET) {
-    if (chain === 'trx' && REAL_WALLET.trxAddress) realAddr = REAL_WALLET.trxAddress;
-    else if (chain === 'eth' && REAL_WALLET.ethAddress) realAddr = REAL_WALLET.ethAddress;
-    else if (chain === 'btc' && REAL_WALLET.btcAddress) realAddr = REAL_WALLET.btcAddress;
+    if (selectedChain === 'trx' && REAL_WALLET.trxAddress) {
+      realAddr = REAL_WALLET.trxAddress;
+    } else if (selectedChain === 'eth' && REAL_WALLET.ethAddress) {
+      realAddr = REAL_WALLET.ethAddress;
+    } else if (selectedChain === 'btc' && REAL_WALLET.btcAddress) {
+      realAddr = REAL_WALLET.btcAddress;
+    } else if (selectedChain === 'native' && REAL_WALLET.btcAddress) {
+      realAddr = REAL_WALLET.btcAddress;
+    }
   }
   if (!realAddr) return '';
   const raw = (document.getElementById('qrReceiveAmount') && document.getElementById('qrReceiveAmount').value) || amountRaw || '';

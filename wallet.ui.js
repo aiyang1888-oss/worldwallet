@@ -3521,11 +3521,8 @@ function shareHbCreatedKeyword() {
     showToast('请先创建礼物', 'warning');
     return;
   }
-  if(keyword && keyword.length<=64){
-    var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(keyword.substring(0,32));
-  }else{
-    return;
-  }
+  // 链接仅携带前 32 字符（与领取页输入上限一致）；全文口令仍在分享文案中
+  var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(keyword.substring(0, 32));
   var text = 'WorldToken 礼物口令：' + keyword + ' 打开链接领取 ' + shareUrl;
   if (navigator.share) {
     navigator.share({ title: '礼物', text: text }).catch(function () {});
