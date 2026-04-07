@@ -654,7 +654,7 @@ async function finalizeImportedWalletAfterPin(pin) {
   try {
     flat = JSON.parse(raw);
   } catch (e) {
-    console.error('JSON fail');
+    console.error(e);
     return;
   }
   var pinStr = String(pin || '');
@@ -772,6 +772,16 @@ function closeTotpUnlock() {
   try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
 }
 
+/** 任一条链上公开地址存在即视为已有钱包（勿仅依赖 ethAddress，否则首页底栏被隐藏、像空白页） */
+function wwWalletHasAnyChainAddress(rw) {
+  try {
+    if (!rw || typeof rw !== 'object') return false;
+    return !!(rw.ethAddress || rw.trxAddress || rw.btcAddress);
+  } catch (_e) {
+    return false;
+  }
+}
+
 function goTo(pageId, opts) {
   opts = opts || {};
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
@@ -791,7 +801,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
+      _tabBar.style.display = wwWalletHasAnyChainAddress(REAL_WALLET) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -2543,9 +2553,9 @@ function renderTxHistoryFromCache() {
     return;
   }
   filtered.forEach(function (tx) {
-    const div = document.createElement('div');
-    div.innerHTML = txHistoryRowHtml(tx);
-    if (div.firstChild) el.appendChild(div.firstChild);
+    var d = document.createElement('div');
+    d.innerHTML = txHistoryRowHtml(tx);
+    if (d.firstChild) el.appendChild(d.firstChild);
   });
   if (!el._wwTxHistoryDelegated && typeof wwTxHistoryRowOnClick === 'function') {
     el._wwTxHistoryDelegated = true;
@@ -3130,7 +3140,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && _d.ethAddress);
+      hasWallet = wwWalletHasAnyChainAddress(_d);
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');
@@ -3206,9 +3216,9 @@ function syncImportPasteFromGrid() {
 function syncImportGrid(text) {
   var normalized = String(text || '').replace(/\s+/g, ' ').trim();
   var words = normalized ? normalized.split(' ').filter(Boolean) : [];
-  var currentCount = document.querySelectorAll('#importGrid .import-word').length || 12;
-  var targetCount = [12,15,18,21,24].includes(words.length) ? words.length : currentCount;
-  if (currentCount !== targetCount && [12,15,18,21,24].includes(targetCount)) renderImportGrid(targetCount);
+  var current = document.querySelectorAll('#importGrid .import-word').length || 12;
+  var target = [12,15,18,21,24].includes(words.length) ? words.length : current;
+  if (current !== target && [12,15,18,21,24].includes(target)) renderImportGrid(target);
   var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
   inputs.forEach(function(el, idx){
     var val = String(el.value || '').trim();
@@ -3370,7 +3380,11 @@ function shareHbCreatedKeyword() {
     showToast('请先创建礼物', 'warning');
     return;
   }
-  var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(keyword);
+  if(keyword && keyword.length<=64){
+    var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(keyword.substring(0,32));
+  }else{
+    return;
+  }
   var text = 'WorldToken 礼物口令：' + keyword + ' 打开链接领取 ' + shareUrl;
   if (navigator.share) {
     navigator.share({ title: '礼物', text: text }).catch(function () {});
