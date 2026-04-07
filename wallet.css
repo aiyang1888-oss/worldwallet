@@ -246,13 +246,21 @@ body {
   font-weight: 600;
 }
 
-/* 欢迎页：抵消 .page 的 top:50px（模拟状态栏），背景顶满；真机仅用 safe-area，勿重复 50px */
+/* 欢迎页：抵消 .page 的 top:50px（.pages 已在状态栏之下，勿再 padding 模拟第二段 50px）；仅保留刘海安全区 */
 .page#page-welcome {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: flex-start !important;
   align-items: center !important;
-  margin-top: 0 !important;
   min-height: 0 !important;
   overflow: hidden !important;
   text-align: center !important;
@@ -263,8 +271,7 @@ body {
 }
 @media (min-width: 769px) {
   .page#page-welcome {
-    top: 0 !important;
-    padding-top: calc(50px + env(safe-area-inset-top, 0px)) !important;
+    padding-top: env(safe-area-inset-top, 0px) !important;
     padding-bottom: 80px !important;
     padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
     padding-right: max(20px, env(safe-area-inset-right, 0px)) !important;
@@ -272,7 +279,6 @@ body {
 }
 @media (max-width: 768px) {
   .page#page-welcome {
-    top: 0 !important;
     padding-top: env(safe-area-inset-top, 0px) !important;
     padding-bottom: max(80px, env(safe-area-inset-bottom, 0px)) !important;
     padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
