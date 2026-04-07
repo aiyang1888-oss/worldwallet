@@ -1217,12 +1217,38 @@ body {
   -webkit-backdrop-filter: none !important;
 }
 
-#homeBalanceChartWrap {
+/* 首页图表区域 - 完全贴底 */
+#page-home #homeBalanceChartWrap.home-balance-chart-wrap {
+  margin: 0 !important;
+  padding: 0 !important;
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
+  border-bottom: none !important;
 }
 
-.home-addr-stack {
+/* 图表的 SVG 和 foot 也要清零 */
+#page-home .home-balance-chart-svg {
+  display: block !important;
+  margin-bottom: 0 !important;
+}
+
+#page-home .home-balance-chart-foot {
+  display: none !important;  /* 如果这里有额外内容，直接隐藏 */
+  margin: 0 !important;
+  padding: 0 !important;
+  height: 0 !important;
+}
+
+/* 地址区域 - 顶部零间距 */
+#page-home .home-addr-stack {
+  margin: 0 !important;
+  padding: 0 !important;
   margin-top: 0 !important;
   padding-top: 0 !important;
+  border-top: none !important;
+}
+
+/* 如果地址区域外面还有容器，也清零 */
+#page-home [class*="home"] > .home-addr-stack {
+  margin-top: 0 !important;
 }
