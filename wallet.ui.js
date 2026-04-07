@@ -994,9 +994,15 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
         if (TAB_MAP[_k] === pageId) { _tid = _k; break; }
       }
       if (_tid) {
-        document.querySelectorAll('.tab-item').forEach(function (t) { t.classList.remove('active'); });
+        document.querySelectorAll('.tab-item').forEach(function (t) {
+          t.classList.remove('active');
+          t.setAttribute('aria-selected', 'false');
+        });
         var _te = document.getElementById(_tid);
-        if (_te) _te.classList.add('active');
+        if (_te) {
+          _te.classList.add('active');
+          _te.setAttribute('aria-selected', 'true');
+        }
       }
     }
   } catch (_ts) {}
@@ -1016,9 +1022,31 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
 }
 
 function goTab(tabId) {
-  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
-  document.getElementById(tabId)?.classList.add('active');
-  goTo(TAB_MAP[tabId]||'page-home');
+  var pageId = TAB_MAP[tabId] || 'page-home';
+  document.querySelectorAll('.tab-item').forEach(function (t) { t.classList.remove('active'); });
+  var tabEl = document.getElementById(tabId);
+  if (tabEl) tabEl.classList.add('active');
+  goTo(pageId);
+}
+
+/** 底栏：委托点击，避免 SVG/子节点上 inline onclick 在部分 WebView 中不触发 */
+function initTabBar() {
+  var bar = document.getElementById('tabBar');
+  if (!bar || bar.dataset.wwNavBound === '1') return;
+  bar.dataset.wwNavBound = '1';
+  bar.addEventListener(
+    'click',
+    function (ev) {
+      var raw = ev.target;
+      if (!raw || !raw.closest) return;
+      var item = raw.closest('.tab-item');
+      if (!item || !item.id || item.id.indexOf('tab-') !== 0) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      goTab(item.id);
+    },
+    true,
+  );
 }
 function wwUpdateScrollTopBtn() {
   var btn = document.getElementById('wwScrollTopBtn');
@@ -3445,7 +3473,7 @@ try {
 } catch(e) {}
 var lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
 try { var _ap0 = document.querySelector('.page.active'); applySeoForPage(_ap0 && _ap0.id ? _ap0.id : 'page-welcome'); applyOfflineState(); window.addEventListener('online', applyOfflineState); window.addEventListener('offline', applyOfflineState); } catch(e) {}
-try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } catch (e) {}
+try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); initTabBar(); } catch (e) {}
 
 (function () {
   function wwHashToPageId() {
