@@ -200,6 +200,23 @@
         <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span><button type="button" id="balanceHideToggle" class="ww-balance-hide-btn" aria-pressed="false" title="隐藏余额" aria-label="隐藏或显示余额">👁</button></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
+        <div id="homeChainStrip" class="home-chain-strip home-chain-strip--dim" role="region" aria-label="链上地址摘要">
+          <div class="home-mini-chain">
+            <span class="home-mini-icon" aria-hidden="true"><span style="font-size:18px;line-height:1">🔴</span></span>
+            <span class="home-chain-tag">TRX</span>
+            <span id="homeShortTrx" class="home-short-addr">—</span>
+          </div>
+          <div class="home-mini-chain">
+            <span class="home-mini-icon" aria-hidden="true"><span style="font-size:18px;line-height:1">🔷</span></span>
+            <span class="home-chain-tag">ETH</span>
+            <span id="homeShortEth" class="home-short-addr">—</span>
+          </div>
+          <div id="homeMiniBtcWrap" class="home-mini-chain">
+            <span class="home-mini-icon" aria-hidden="true"><span style="font-size:18px;line-height:1">🟠</span></span>
+            <span class="home-chain-tag">BTC</span>
+            <span id="homeShortBtc" class="home-short-addr">—</span>
+          </div>
+        </div>
         <div id="homeBalanceChartWrap" class="home-balance-chart-wrap">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
