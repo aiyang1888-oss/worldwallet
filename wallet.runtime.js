@@ -1658,7 +1658,6 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
   if(pageId==='page-addr') {
-    setTimeout(updateQRCode, 100);
     // 更新链地址显示
     if(REAL_WALLET) {
       const trx = REAL_WALLET.trxAddress || '--';
@@ -1673,6 +1672,11 @@ if(pageId==='page-import') { initImportGrid(); document.getElementById('importEr
       const ce = (_safeEl('chainEth') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* chainEth fallback */; if(ce) ce.textContent = eth;
       const cb = (_safeEl('chainBtc') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* chainBtc fallback */; if(cb) cb.textContent = btc;
     }
+    setTimeout(function () {
+      if (typeof updateQRCode === 'function') {
+        updateQRCode();
+      }
+    }, 100);
   }
   if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
