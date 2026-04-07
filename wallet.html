@@ -40,7 +40,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="WorldToken">
-<!-- 交互绑定见 wallet.dom-bind.js（CSP：无内联脚本） -->
+<!-- 页面交互由文末 wallet.dom-bind.js 绑定（data-ww-*）；CSP：无内联脚本/handler -->
 </head>
 <body>
 <div class="phone">
@@ -873,7 +873,6 @@
 <script src="wallet.addr.js"></script>
 <script src="wallet.tx.js"></script>
 <script src="wallet.runtime.js"></script>
-<script src="wallet.csp-handlers.js"></script>
 <script src="wallet.dom-bind.js"></script>
 
 
