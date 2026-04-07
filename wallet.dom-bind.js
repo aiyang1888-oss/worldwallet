@@ -186,6 +186,16 @@
     bindFormSubmit('pinUnlockForm', 'submitPinUnlock');
     bindPinSixDigits('pinRestorePageInput');
     bindPinSixDigits('pinUnlockInput');
+    bindPinSixDigits('pinInput');
+    bindPinSixDigits('pinConfirmInput');
+    bindPinSixDigits('pinVerifyInput');
+
+    bindInput('pinInput', 'wwOnPinSetupLen', false);
+    bindInput('pinConfirmInput', 'wwOnPinConfirmLen', false);
+
+    bindKeydownEnter('pinInput', 'goToPinConfirm');
+    bindKeydownEnter('pinConfirmInput', 'confirmPin');
+    bindKeydownEnter('pinVerifyInput', 'pinVerifyEnterWallet');
 
     bindSelect('keyPageLang', 'switchLang');
     bindSelect('mnemonicLength', 'changeMnemonicLength');

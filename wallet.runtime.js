@@ -1130,6 +1130,9 @@ const WW_PAGE_SEO = {
   'page-create': { title: '创建钱包 — WorldToken', description: '生成 BIP39 助记词，派生 TRX、ETH、BTC 地址。' },
   'page-key': { title: '备份助记词 — WorldToken', description: '请安全抄写并离线保存助记词，勿截图或上传网络。' },
   'page-key-verify': { title: '验证助记词 — WorldToken', description: '按提示输入助记词以确认您已正确备份。' },
+  'page-pin-setup': { title: '设置 PIN — WorldToken', description: '设置 6 位数字 PIN 以保护钱包与交易确认。' },
+  'page-pin-confirm': { title: '确认 PIN — WorldToken', description: '再次输入 PIN 以确认。' },
+  'page-pin-verify': { title: '验证 PIN — WorldToken', description: '输入 PIN 以进入钱包。' },
   'page-home': { title: '资产 — WorldToken', description: '查看余额、快捷转账、兑换与交易记录。' },
   'page-addr': { title: '收款地址 — WorldToken', description: '展示 TRX / ETH / BTC 地址与收款二维码。' },
   'page-transfer': { title: '转账 — WorldToken', description: '向万语地址或公链地址发送 USDT、TRX、ETH、BTC。' },
@@ -6250,20 +6253,183 @@ function checkVerify() {
     try {
       hasPin = typeof wwHasPinConfigured === 'function' ? wwHasPinConfigured() : !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
     } catch (_p0) {}
-    if (hasPin) { try { window._wwInFirstRun = false; } catch (_frV) {} }
     if (typeof showToast === 'function') showToast('✅ 验证通过！钱包已安全创建', 'success');
-    goTo('page-home');
-    setTimeout(function() {
-      if (!hasPin && typeof openPinSettingsDialog === 'function') {
-        if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
-        openPinSettingsDialog();
-      }
-    }, 450);
+    if (hasPin) {
+      try { window._wwInFirstRun = false; } catch (_frV) {}
+      goTo('page-home');
+    } else {
+      try { window._wwPinSetupDraft = ''; } catch (_pd) {}
+      var pi = document.getElementById('pinInput');
+      var pci = document.getElementById('pinConfirmInput');
+      var pvi = document.getElementById('pinVerifyInput');
+      if (pi) pi.value = '';
+      if (pci) pci.value = '';
+      if (pvi) pvi.value = '';
+      var pel = document.getElementById('pinError');
+      if (pel) pel.style.display = 'none';
+      var pve = document.getElementById('pinVerifyError');
+      if (pve) pve.style.display = 'none';
+      var pl = document.getElementById('pinLength');
+      var pcl = document.getElementById('pinConfirmLength');
+      if (pl) pl.textContent = '0';
+      if (pcl) pcl.textContent = '0';
+      goTo('page-pin-setup');
+      setTimeout(function () { if (pi) pi.focus(); }, 320);
+    }
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
     if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
   }
+}
+
+try { if (typeof window._wwPinSetupDraft !== 'string') window._wwPinSetupDraft = ''; } catch (_wwpds) {}
+
+function wwOnPinSetupLen() {
+  var n = document.getElementById('pinInput');
+  var s = document.getElementById('pinLength');
+  if (s) s.textContent = n ? String((n.value || '').length) : '0';
+}
+function wwOnPinConfirmLen() {
+  var n = document.getElementById('pinConfirmInput');
+  var s = document.getElementById('pinConfirmLength');
+  if (s) s.textContent = n ? String((n.value || '').length) : '0';
+}
+
+function goToPinConfirm() {
+  var pinEl = document.getElementById('pinInput');
+  var pin = pinEl ? String(pinEl.value || '').replace(/\D/g, '').slice(0, 6) : '';
+  if (pin.length !== 6 || !/^\d+$/.test(pin)) {
+    if (typeof showToast === 'function') showToast('请输入 6 位数字', 'error');
+    return;
+  }
+  try { window._wwPinSetupDraft = pin; } catch (_d) {}
+  var c = document.getElementById('pinConfirmInput');
+  var pe = document.getElementById('pinError');
+  if (c) c.value = '';
+  if (pe) pe.style.display = 'none';
+  var cl = document.getElementById('pinConfirmLength');
+  if (cl) cl.textContent = '0';
+  goTo('page-pin-confirm');
+  setTimeout(function () {
+    if (c) c.focus();
+  }, 320);
+}
+
+async function confirmPin() {
+  var a = '';
+  try { a = String(window._wwPinSetupDraft || ''); } catch (_a) { a = ''; }
+  var bEl = document.getElementById('pinConfirmInput');
+  var b = bEl ? String(bEl.value || '').replace(/\D/g, '').slice(0, 6) : '';
+  var err = document.getElementById('pinError');
+  if (b.length !== 6) {
+    if (typeof showToast === 'function') showToast('请输入 6 位数字', 'error');
+    return;
+  }
+  if (a !== b) {
+    if (err) err.style.display = 'block';
+    if (bEl) bEl.value = '';
+    var cl = document.getElementById('pinConfirmLength');
+    if (cl) cl.textContent = '0';
+    var cro = document.getElementById('pinConfirmPageRoot');
+    if (!cro) cro = bEl && bEl.closest ? bEl.closest('.key-content') : null;
+    if (cro) {
+      cro.classList.remove('wt-shake-wrong');
+      void cro.offsetWidth;
+      cro.classList.add('wt-shake-wrong');
+    }
+    return;
+  }
+  if (err) err.style.display = 'none';
+  try {
+    if (typeof savePinSecure === 'function') await savePinSecure(b);
+  } catch (e) {
+    console.error(e);
+    if (typeof showToast === 'function') showToast('PIN 保存失败', 'error');
+    return;
+  }
+  wwSetSessionPin(b);
+  try { localStorage.setItem('ww_pin_set', '1'); } catch (e) {}
+  try {
+    if (typeof saveWalletSecure === 'function' && REAL_WALLET) {
+      await saveWalletSecure(REAL_WALLET, b);
+      REAL_WALLET.hasEncrypted = true;
+    } else if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
+  } catch (e2) {
+    console.error(e2);
+    if (typeof showToast === 'function') showToast('钱包加密保存失败', 'error');
+    return;
+  }
+  try { if (typeof updateSettingsPage === 'function') updateSettingsPage(); } catch (_u) {}
+  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_u2) {}
+  try { window._wwPinSetupDraft = ''; } catch (_d2) {}
+  var pv = document.getElementById('pinVerifyInput');
+  var pve = document.getElementById('pinVerifyError');
+  if (pv) pv.value = '';
+  if (pve) pve.style.display = 'none';
+  goTo('page-pin-verify');
+  setTimeout(function () {
+    if (pv) pv.focus();
+  }, 320);
+}
+
+async function pinVerifyEnterWallet() {
+  var inp = document.getElementById('pinVerifyInput');
+  var pin = inp ? String(inp.value || '').replace(/\D/g, '').slice(0, 6) : '';
+  var pve = document.getElementById('pinVerifyError');
+  if (pin.length !== 6) {
+    if (typeof showToast === 'function') showToast('请输入 6 位数字 PIN', 'error');
+    return;
+  }
+  var ok = false;
+  try {
+    ok = typeof verifyPin === 'function' ? await verifyPin(pin) : false;
+  } catch (_e) {
+    ok = false;
+  }
+  if (!ok) {
+    if (pve) pve.style.display = 'block';
+    if (inp) inp.value = '';
+    var root = document.getElementById('pinVerifyPageRoot');
+    if (root) {
+      root.classList.remove('wt-shake-wrong');
+      void root.offsetWidth;
+      root.classList.add('wt-shake-wrong');
+    }
+    return;
+  }
+  if (pve) pve.style.display = 'none';
+  wwSetSessionPin(pin);
+  try {
+    if (REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
+      var sensitive = await decryptSensitive(pin);
+      if (sensitive && REAL_WALLET) {
+        REAL_WALLET.privateKey = sensitive.privateKey;
+        REAL_WALLET.trxPrivateKey = sensitive.trxPrivateKey;
+        REAL_WALLET.mnemonic = sensitive.mnemonic;
+        REAL_WALLET.enMnemonic = sensitive.enMnemonic;
+        REAL_WALLET.words = sensitive.words;
+      }
+    }
+  } catch (e) {
+    console.error('[pinVerifyEnterWallet decrypt]', e);
+  }
+  try { window._wwInFirstRun = false; } catch (_fr) {}
+  if (typeof showToast === 'function') showToast('欢迎使用 WorldToken', 'success');
+  updateAddr();
+  var tb = document.getElementById('tabBar');
+  if (tb) tb.style.display = 'flex';
+  setTimeout(function () {
+    try {
+      if (typeof loadBalances === 'function') loadBalances();
+    } catch (_l) {}
+  }, 500);
+  goTo('page-home');
+  setTimeout(function () {
+    try {
+      if (typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
+    } catch (_o) {}
+  }, 650);
 }
 
 
@@ -6691,6 +6857,11 @@ function wwHideHbSuccessOverlay() {
 (function wwExposeDataWwFnHandlers() {
   try {
     if (typeof checkVerify === 'function') window.checkVerify = checkVerify;
+    if (typeof goToPinConfirm === 'function') window.goToPinConfirm = goToPinConfirm;
+    if (typeof confirmPin === 'function') window.confirmPin = confirmPin;
+    if (typeof pinVerifyEnterWallet === 'function') window.pinVerifyEnterWallet = pinVerifyEnterWallet;
+    if (typeof wwOnPinSetupLen === 'function') window.wwOnPinSetupLen = wwOnPinSetupLen;
+    if (typeof wwOnPinConfirmLen === 'function') window.wwOnPinConfirmLen = wwOnPinConfirmLen;
     if (typeof closePinSetupOverlay === 'function') window.closePinSetupOverlay = closePinSetupOverlay;
     if (typeof closePinUnlock === 'function') window.closePinUnlock = closePinUnlock;
     if (typeof closeTotpSetup === 'function') window.closeTotpSetup = closeTotpSetup;

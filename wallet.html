@@ -183,6 +183,54 @@
       </div>
     </div>
 
+    <!-- PIN 设置（助记词验证通过后） -->
+    <div class="page" id="page-pin-setup">
+      <div class="nav-bar">
+        <div class="nav-back" data-ww-go="page-key-verify" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">设置 PIN</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding:40px 20px;text-align:center;max-width:420px;margin:0 auto;box-sizing:border-box">
+        <h2 style="color:var(--gold);margin:0 0 12px;font-size:20px;font-weight:700">设置 PIN 码</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.6">请设置 6 位数字 PIN，用于钱包解锁和交易确认</p>
+        <input id="pinInput" type="password" name="ww-pin-setup" inputmode="numeric" autocomplete="new-password" maxlength="6" placeholder="••••••" aria-label="6 位数字 PIN"
+          style="width:100%;max-width:260px;font-size:28px;text-align:center;letter-spacing:10px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);outline:none;box-sizing:border-box" />
+        <p style="color:var(--text-muted);font-size:12px;margin-top:10px"><span id="pinLength">0</span>/6</p>
+        <button type="button" class="btn-primary" style="margin-top:22px;padding:14px 0;width:100%;max-width:280px" data-ww-fn="goToPinConfirm">下一步</button>
+      </div>
+    </div>
+
+    <div class="page" id="page-pin-confirm">
+      <div class="nav-bar">
+        <div class="nav-back" data-ww-go="page-pin-setup" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">确认 PIN</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding:40px 20px;text-align:center;max-width:420px;margin:0 auto;box-sizing:border-box">
+        <h2 style="color:var(--gold);margin:0 0 12px;font-size:20px;font-weight:700">确认 PIN 码</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.6">请再次输入 PIN 以确认</p>
+        <input id="pinConfirmInput" type="password" name="ww-pin-confirm" inputmode="numeric" autocomplete="new-password" maxlength="6" placeholder="••••••" aria-label="再次输入 6 位 PIN"
+          style="width:100%;max-width:260px;font-size:28px;text-align:center;letter-spacing:10px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);outline:none;box-sizing:border-box" />
+        <p style="color:var(--text-muted);font-size:12px;margin-top:10px"><span id="pinConfirmLength">0</span>/6</p>
+        <p id="pinError" style="color:var(--red);font-size:13px;margin-top:12px;display:none">PIN 码不一致，请重新输入</p>
+        <button type="button" class="btn-primary" style="margin-top:22px;padding:14px 0;width:100%;max-width:280px" data-ww-fn="confirmPin">确认 PIN 码</button>
+      </div>
+    </div>
+
+    <div class="page" id="page-pin-verify">
+      <div class="nav-bar">
+        <div class="nav-title" style="width:100%;text-align:center">验证 PIN</div>
+      </div>
+      <div id="pinVerifyPageRoot" class="key-content" style="padding:40px 20px;text-align:center;max-width:420px;margin:0 auto;box-sizing:border-box">
+        <h2 style="color:var(--gold);margin:0 0 12px;font-size:20px;font-weight:700">验证 PIN 码</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;line-height:1.6">请输入 PIN 以进入钱包</p>
+        <input id="pinVerifyInput" type="password" name="ww-pin-verify" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="输入 PIN"
+          style="width:100%;max-width:260px;font-size:28px;text-align:center;letter-spacing:10px;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);outline:none;box-sizing:border-box" />
+        <p id="pinVerifyError" style="color:var(--red);font-size:13px;margin-top:12px;display:none">PIN 错误，请重试</p>
+        <button type="button" class="btn-primary" style="margin-top:22px;padding:14px 0;width:100%;max-width:280px" data-ww-fn="pinVerifyEnterWallet">进入钱包</button>
+      </div>
+    </div>
+
     <!-- 首页 -->
     <div class="page" id="page-home">
       

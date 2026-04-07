@@ -3033,14 +3033,29 @@ function checkVerify() {
     try {
       hasPin = typeof wwHasPinConfigured === 'function' ? wwHasPinConfigured() : !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
     } catch (_p0) {}
-    if (hasPin) { try { window._wwInFirstRun = false; } catch (_frV) {} }
-    showToast('✅ 验证通过！钱包已安全创建', 'success'); goTo('page-home');
-    setTimeout(function() {
-      if (!hasPin && typeof openPinSettingsDialog === 'function') {
-        if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
-        openPinSettingsDialog();
-      }
-    }, 450);
+    showToast('✅ 验证通过！钱包已安全创建', 'success');
+    if (hasPin) {
+      try { window._wwInFirstRun = false; } catch (_frV) {}
+      goTo('page-home');
+    } else {
+      try { window._wwPinSetupDraft = ''; } catch (_pd) {}
+      var pi = document.getElementById('pinInput');
+      var pci = document.getElementById('pinConfirmInput');
+      var pvi = document.getElementById('pinVerifyInput');
+      if (pi) pi.value = '';
+      if (pci) pci.value = '';
+      if (pvi) pvi.value = '';
+      var pel = document.getElementById('pinError');
+      if (pel) pel.style.display = 'none';
+      var pve = document.getElementById('pinVerifyError');
+      if (pve) pve.style.display = 'none';
+      var pl = document.getElementById('pinLength');
+      var pcl = document.getElementById('pinConfirmLength');
+      if (pl) pl.textContent = '0';
+      if (pcl) pcl.textContent = '0';
+      goTo('page-pin-setup');
+      setTimeout(function () { if (pi) pi.focus(); }, 320);
+    }
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
