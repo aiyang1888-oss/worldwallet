@@ -840,6 +840,10 @@ body {
   padding-bottom: 12px; flex-shrink: 0;
   width: 100%; position: relative; z-index: 10;
 }
+/* 默认隐藏底栏；主 Tab 页由 goTo() 设置 style.display='flex'（内联覆盖）。勿在 #tabBar 上复用 .u5，否则 .u5 会覆盖 .tab-bar 的 flex 导致底部导航异常 */
+#tabBar {
+  display: none;
+}
 .tab-item {
   display: flex; flex-direction: column;
   align-items: center; gap: 3px;
