@@ -5,7 +5,7 @@ var __wanYuInitAddrWordsCallCount = 0;
 /** 防止重复生成：已成功载入或生成 10 字 + 前后缀后设为 true */
 var __wanYuAddrInitialized = false;
 /** 防止 initAddrWords 重入（嵌套调用竞态） */
-var __wanYuInitLock = false;
+var _lock = false;
 
 /** 优先 localStorage（避免页面占位符 38294651/92847361 覆盖已持久化的 8 位前后缀） */
 function _wanYuP8FromDomOrStorage(el, key, fallback8) {
@@ -94,7 +94,11 @@ function persistWanYuAddrToStorage() {
     var slots = ADDR_WORDS.map(function (w) {
       return { word: w.word, lang: w.lang || 'zh', custom: !!w.custom };
     });
-    localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
+    try {
+      localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
+    } catch (e) {
+      console.error(e);
+    }
   } catch (e) {
     console.error('[WanYuAddr]', e);
   }
@@ -331,8 +335,8 @@ function renderHomeAddrChip() {
 }
 
 function initAddrWords() {
-  if (__wanYuInitLock) return;
-  __wanYuInitLock = true;
+  if (_lock) return;
+  _lock = true;
   try {
     __wanYuInitAddrWordsCallCount++;
     console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
@@ -363,7 +367,7 @@ function initAddrWords() {
     try { if (typeof updateAddr === 'function') updateAddr(); } catch (_u2) {}
     __wanYuAddrInitialized = true;
   } finally {
-    __wanYuInitLock = false;
+    _lock = false;
   }
 }
 
@@ -376,10 +380,9 @@ function renderAddrWords() {
   if(suf) suf.textContent = (suf.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
   container.innerHTML = '';
   ADDR_WORDS.forEach(function (w) {
-    const span = document.createElement('span');
-    span.textContent = w.word;
-    span.style.cssText = w.custom ? 'color:#f0d070' : 'color:#8888bb';
-    container.appendChild(span);
+    const s = document.createElement('span');
+    s.textContent = w.word;
+    container.appendChild(s);
   });
   const m = document.getElementById('addrMain');
   if (m) m.textContent = ADDR_WORDS.map(w => w.word).join('');
@@ -447,11 +450,11 @@ function openWordEditor(idx) {
     return;
   }
   if (trimmed.length > 4) {
-    alert('最多4字');
+    alert('max 4');
     return;
   }
-  if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff]+$/.test(trimmed)) {
-    alert('仅字符');
+  if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af]+$/.test(trimmed)) {
+    alert('chars only');
     return;
   }
   ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
@@ -515,14 +518,14 @@ function getNativeAddr() {
     var snap = localStorage.getItem('wallet_native_addr');
     if (snap && String(snap).split('-').length === 3 && ADDR_WORDS.length === 10) {
       var mid = String(snap).split('-')[1] || '';
-      var valid = true;
-      for (let j = 0; j < 10; j++) {
-        if (!ADDR_WORDS[j] || ADDR_WORDS[j].word !== mid[j]) {
-          valid = false;
+      var ok = true;
+      for (var i = 0; i < 10; i++) {
+        if (!ADDR_WORDS[i] || ADDR_WORDS[i].word !== mid[i]) {
+          ok = false;
           break;
         }
       }
-      if (valid) return snap;
+      if (ok) return snap;
     }
   } catch (_e) {}
   const prefix = _wanYuP8FromDomOrStorage(document.getElementById('addrPrefix'), 'wallet_prefix', '38294651');

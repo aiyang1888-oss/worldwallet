@@ -588,7 +588,7 @@ function txHistoryEmptyHtml() {
 }
 
 function txHistoryRowHtml(tx) {
-  const escapeHtml = function (s) {
+  const esc = function (s) {
     const d = document.createElement('div');
     d.textContent = String(s || '');
     return d.innerHTML;
@@ -597,14 +597,14 @@ function txHistoryRowHtml(tx) {
   var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
   var coin = String(tx.coin || '');
   var hash = String(tx.hash || '');
-  const addrEscaped = escapeHtml(addrLine);
-  const amountEscaped = escapeHtml(tx.amount);
-  const typeEscaped = escapeHtml(tx.type);
-  const coinEscaped = escapeHtml(coin);
-  const iconEscaped = escapeHtml(tx.icon);
-  const timeEscaped = escapeHtml(tx.time);
-  const hashAttr = escapeHtml(tx.hash);
-  const coinAttr = escapeHtml(tx.coin);
+  const addrEscaped = esc(addrLine);
+  const amountEscaped = esc(tx.amount);
+  const typeEscaped = esc(tx.type);
+  const coinEscaped = esc(tx.coin);
+  const iconEscaped = esc(tx.icon);
+  const timeEscaped = esc(tx.time);
+  const hashAttr = esc(tx.hash);
+  const coinAttr = esc(tx.coin);
   var col = wwTxSanitizeColor(tx.color);
   return (
     '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + coinAttr + '" data-hash="' + hashAttr + '"' +

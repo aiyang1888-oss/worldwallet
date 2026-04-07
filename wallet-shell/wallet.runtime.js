@@ -1,6 +1,6 @@
 /*! WorldToken wallet.runtime.js — split from wallet.html; refactor incrementally. */
 
-var _wwCurrentPin = null;
+var _pin = null;
 
 // 强制清除旧 Service Worker 和缓存
 if ('serviceWorker' in navigator) {
@@ -488,21 +488,21 @@ var _wwSessionPin = '';
 function wwGetSessionPin() { return _wwSessionPin || ''; }
 function wwSetSessionPin(p) {
   _wwSessionPin = p ? String(p) : '';
-  _wwCurrentPin = p ? String(p) : null;
+  _pin = p ? String(p) : null;
   clearTimeout(window._wwSessionPinTimeout);
   window._wwSessionPinTimeout = setTimeout(function() {
     _wwSessionPin = '';
-    _wwCurrentPin = null;
+    _pin = null;
     console.log('[SessionPin] 会话 PIN 已自动清除');
   }, 15 * 60 * 1000);
 }
 function wwClearSessionPin() {
   clearTimeout(window._wwSessionPinTimeout);
   window._wwSessionPinTimeout = null;
-  clearTimeout(window._wwCurrentPinClearTimer);
-  window._wwCurrentPinClearTimer = null;
+  clearTimeout(window._pinClearTimer);
+  window._pinClearTimer = null;
   _wwSessionPin = '';
-  _wwCurrentPin = null;
+  _pin = null;
 }
 
 function wwCleanupMemory() {
@@ -514,9 +514,9 @@ function wwCleanupMemory() {
     REAL_WALLET.words = null;
   }
   window._wwSessionPin = '';
-  window._wwCurrentPin = null;
-  clearTimeout(window._wwCurrentPinClearTimer);
-  window._wwCurrentPinClearTimer = null;
+  _pin = null;
+  clearTimeout(window._pinClearTimer);
+  window._pinClearTimer = null;
   window._wwTotpPendingSecret = null;
   window._wwLastActivityTs = null;
   window._wwLastPortfolioParts = null;
@@ -754,11 +754,9 @@ async function decryptSensitive(pin) {
 
 // ── 旧 saveWallet（保留兼容，内部调用 saveWalletSecure）──
 function saveWallet(w) {
-  var pin = _wwCurrentPin || '';
+  var pin = _pin || '';
   if (pin) {
-    saveWalletSecure(w, pin).catch(function (e) {
-      _saveWalletPlainPublicOnly(w);
-    });
+    saveWalletSecure(w, pin).catch(function (e) { _saveWalletPlainPublicOnly(w); });
   } else {
     _saveWalletPlainPublicOnly(w);
   }
@@ -1498,7 +1496,7 @@ async function submitTotpUnlock() {
     if (err) err.style.display = 'block';
     return;
   }
-  const pin = (typeof window._wwCurrentPin !== 'undefined' && window._wwCurrentPin) ? window._wwCurrentPin : wwGetSessionPin();
+  const pin = _pin || wwGetSessionPin();
   if (!pin) {
     if (err) err.textContent = '请先通过 PIN 解锁钱包';
     if (err) err.style.display = 'block';
@@ -1533,10 +1531,10 @@ async function submitTotpUnlock() {
     }
     return;
   }
-  _wwCurrentPin = pin;
-  clearTimeout(window._wwCurrentPinClearTimer);
-  window._wwCurrentPinClearTimer = setTimeout(function () {
-    _wwCurrentPin = null;
+  _pin = pin;
+  clearTimeout(window._pinClearTimer);
+  window._pinClearTimer = setTimeout(function () {
+    _pin = null;
   }, 30 * 60 * 1000);
   const ov = document.getElementById('totpUnlockOverlay');
   if (ov) ov.classList.remove('show');

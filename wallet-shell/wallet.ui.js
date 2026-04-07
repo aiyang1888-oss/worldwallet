@@ -654,7 +654,7 @@ async function finalizeImportedWalletAfterPin(pin) {
   try {
     flat = JSON.parse(raw);
   } catch (e) {
-    console.error('JSON fail');
+    console.error(e);
     return;
   }
   var pinStr = String(pin || '');
@@ -2543,9 +2543,9 @@ function renderTxHistoryFromCache() {
     return;
   }
   filtered.forEach(function (tx) {
-    const div = document.createElement('div');
-    div.innerHTML = txHistoryRowHtml(tx);
-    if (div.firstChild) el.appendChild(div.firstChild);
+    var d = document.createElement('div');
+    d.innerHTML = txHistoryRowHtml(tx);
+    if (d.firstChild) el.appendChild(d.firstChild);
   });
   if (!el._wwTxHistoryDelegated && typeof wwTxHistoryRowOnClick === 'function') {
     el._wwTxHistoryDelegated = true;
@@ -3206,9 +3206,9 @@ function syncImportPasteFromGrid() {
 function syncImportGrid(text) {
   var normalized = String(text || '').replace(/\s+/g, ' ').trim();
   var words = normalized ? normalized.split(' ').filter(Boolean) : [];
-  var currentCount = document.querySelectorAll('#importGrid .import-word').length || 12;
-  var targetCount = [12,15,18,21,24].includes(words.length) ? words.length : currentCount;
-  if (currentCount !== targetCount && [12,15,18,21,24].includes(targetCount)) renderImportGrid(targetCount);
+  var current = document.querySelectorAll('#importGrid .import-word').length || 12;
+  var target = [12,15,18,21,24].includes(words.length) ? words.length : current;
+  if (current !== target && [12,15,18,21,24].includes(target)) renderImportGrid(target);
   var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
   inputs.forEach(function(el, idx){
     var val = String(el.value || '').trim();
