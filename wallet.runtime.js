@@ -4124,7 +4124,7 @@ function initImportGrid(count) {
     div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px';
     div.innerHTML = `
       <span style="font-size:9px;color:var(--text-muted)">${i+1}</span>
-      <input id="iw_${i}" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+      <input id="iw_${i}" class="import-word" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         style="width:100%;background:none;border:none;outline:none;font-size:16px;color:var(--text);text-align:center;font-family:inherit"
         oninput="syncImportPaste()"
         onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();var _n=${Math.min(i + 1, count - 1)};document.getElementById('iw_'+_n)&&document.getElementById('iw_'+_n).focus();}">
