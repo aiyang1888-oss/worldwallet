@@ -1,4 +1,10 @@
 // wallet.tx.js — 交易：转账/余额/价格/历史
+// SECURITY: 本文件用 IIFE 包裹，避免 sendETH/sendTRX/sendUSDT_TRC20 挂到 window；对外仅暴露 safeSign 等白名单。
+
+(function () {
+  'use strict';
+  var priceCache = null;
+  var priceCacheTime = 0;
 
 function wwRequireUnlockedMnemonicForSign() {
   var m = '';
@@ -66,8 +72,6 @@ async function safeSign(chain, tx, pin) {
   if (chain === 'usdt' || chain === 'usdt_trc20') return await sendUSDT_TRC20(to, amount);
   throw new Error('unsupported chain');
 }
-
-try { if (typeof window !== 'undefined') window.safeSign = safeSign; } catch (_s) {}
 
 /**
  * 通用异步重试：遇 e.status === 429 时指数退避（1s → 2s → 4s）。
@@ -721,3 +725,18 @@ function formatTimeAgo(ts) {
 function applyTxHistoryFilter() {
   renderTxHistoryFromCache();
 }
+
+  if (typeof window !== 'undefined') {
+    window.safeSign = safeSign;
+    window.confirmTransfer = confirmTransfer;
+    window.loadBalances = loadBalances;
+    window.loadTxHistory = loadTxHistory;
+    window.updateTransferAddrBook = updateTransferAddrBook;
+    window.applyTxHistoryFilter = applyTxHistoryFilter;
+    window.parseUsdFromBalanceTxt = parseUsdFromBalanceTxt;
+    window.cancelHomeBalanceAnim = cancelHomeBalanceAnim;
+    window.animateHomeUsdTo = animateHomeUsdTo;
+    window.getTransferFeeSpeed = getTransferFeeSpeed;
+    window.wwTxHistoryRowOnClick = wwTxHistoryRowOnClick;
+  }
+})();
