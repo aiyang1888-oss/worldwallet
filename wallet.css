@@ -161,8 +161,8 @@ body {
 /* flex:1 1 0 + min-height:0：避免子项全为 absolute 时中间区高度塌陷，导致 .phone 缩成一条、底栏被 body 居中到视口中央 */
 .pages { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; }
 
-/* 隐藏 pages 容器内游离元素（不属于任何 .page） */
-.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg) { display: none !important; }
+/* 隐藏 pages 容器内游离元素（不属于任何 .page）；#qrOverlay 由 .qr-overlay / .show 控制显隐，勿强制 display:none!important 否则弹层无法打开 */
+.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg):not(#qrOverlay) { display: none !important; }
 .page {
   position: absolute;
   top: 50px; left: 0; right: 0; bottom: 0;
