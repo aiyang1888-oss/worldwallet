@@ -2025,7 +2025,10 @@ function wwUpdateTxSimulation() {
   host.textContent = lines.join('\n');
 }
 
-function openTransferCoinPicker() {}
+function openTransferCoinPicker() {
+  var el = document.getElementById('transferCoinOverlay');
+  if (el) el.classList.add('show');
+}
 
 function closeTransferCoinPicker() {
   var el = document.getElementById('transferCoinOverlay');
@@ -2446,7 +2449,10 @@ async function loadSwapPrices() {
   }
 }
 
-function closeCoinPicker() {}
+function closeCoinPicker() {
+  var el = document.getElementById('coinPickerOverlay');
+  if (el) el.classList.remove('show');
+}
 
 function setSwapMax() {
   var u = swapUsdtCoin();
