@@ -3128,20 +3128,7 @@ function closePinUnlock() {
   if(ov) ov.classList.remove('show');
 }
 
-
-function openPinSettingsDialog() {
-  const cur = localStorage.getItem('ww_pin') || '';
-  const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
-  if(a === null) return;
-  const t = a.trim();
-  if(t === '') { localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
-  if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
-  localStorage.setItem('ww_pin', t);
-  try { window._wwInFirstRun = false; } catch (_frPs) {}
-  showToast('PIN 已保存', 'success');
-  if (typeof updateSettingsPage === 'function') updateSettingsPage();
-  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
-}
+/* openPinSettingsDialog：由 wallet.runtime.js 提供（savePinSecure / wwClearSessionPin，勿在此保留明文 PIN 存根） */
 
 /* 时钟、闲置锁、活动重置、SEO/离线、余额隐私与滚动顶按钮由 wallet.runtime.js 统一初始化，避免与下文重复注册定时器与监听器 */
 
