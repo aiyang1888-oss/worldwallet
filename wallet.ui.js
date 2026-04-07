@@ -357,7 +357,8 @@ try {
   }
 } catch (_eWb) {}
 if (_savedWalletBoot && typeof goTo === 'function') {
-  setTimeout(function () { goTo('page-home'); }, 0);
+  /* 同步进入首页：若用 setTimeout(0)，本段上方已去掉所有 .page.active，会多出一帧全空白 */
+  goTo('page-home');
 } else {
   var welcomePage = document.getElementById('page-welcome');
   if (welcomePage) {
@@ -838,7 +839,8 @@ function goTo(pageId, opts) {
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='flex';
-  document.getElementById('tabBar').style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
+  var _tabBarEl = document.getElementById('tabBar');
+  if (_tabBarEl) _tabBarEl.style.display = MAIN_PAGES.includes(pageId)?'flex':'none';
   if(pageId==='page-key') {
     var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen || (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic);
     if (_skipKey) {
@@ -930,7 +932,8 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   if(pageId==='page-home') {
     // 有钱包时显示导航栏
     if(REAL_WALLET && REAL_WALLET.ethAddress) {
-      document.getElementById('tabBar').style.display = 'flex';
+      var _tbHome = document.getElementById('tabBar');
+      if (_tbHome) _tbHome.style.display = 'flex';
     }
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
