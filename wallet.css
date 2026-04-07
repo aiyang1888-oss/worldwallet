@@ -1007,6 +1007,9 @@ body {
   transition: background 0.15s, border-color 0.15s;
 }
 .pin-dot.filled { background: var(--gold); border-color: var(--gold); }
+@media (prefers-reduced-motion: reduce) {
+  .pin-dot { transition: none; }
+}
 .pin-keypad {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
   max-width: 280px; margin: 0 auto;

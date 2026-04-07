@@ -809,7 +809,15 @@ async function submitTotpUnlock() {
     if (err) err.style.display = 'block';
     return;
   }
-  const ok = await wwVerifyTotpCode(sec, got);
+  var ok = false;
+  try {
+    ok = await wwVerifyTotpCode(sec, got);
+  } catch (e) {
+    try { console.error('[submitTotpUnlock]', e); } catch (_) {}
+    if (err) err.style.display = 'block';
+    if (inp) inp.value = '';
+    return;
+  }
   if (!ok) {
     if (err) err.style.display = 'block';
     if (inp) inp.value = '';
@@ -3333,6 +3341,8 @@ function pinUnlockClear() {
   inp.addEventListener('input', function () {
     var err = document.getElementById('pinUnlockError');
     if (err) err.style.display = 'none';
+    var v = String(inp.value || '');
+    if (/^\d{6}$/.test(v) && typeof submitPinUnlock === 'function') submitPinUnlock();
   });
 })();
 function closePinUnlock() {
