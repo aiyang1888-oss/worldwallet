@@ -3410,6 +3410,12 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       var lastNoWallet = sessionStorage.getItem('ww_last_page');
       if (lastNoWallet && MAIN_PAGES.includes(lastNoWallet)) {
         setTimeout(function () { goTo('page-welcome'); }, 50);
+        return;
+      }
+      var _hashNoW = (location.hash || '').replace(/^#/, '');
+      if (_hashNoW && document.getElementById(_hashNoW)) return;
+      if (lastNoWallet === 'page-password-restore' && document.getElementById('page-password-restore')) {
+        setTimeout(function () { goTo('page-password-restore'); }, 50);
       }
       return;
     }
