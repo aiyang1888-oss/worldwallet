@@ -50,8 +50,7 @@ async function wwRawKeyArgon2id(pin, salt, params) {
     mem: m,
     hashLen: 32,
     parallelism: p,
-    type: argon2.argon2id,
-    raw: true
+    type: argon2.ArgonType.Argon2id
   });
   var h = res.hash || res;
   if (!(h instanceof Uint8Array) || h.length !== 32) throw new Error('argon2 key length');
