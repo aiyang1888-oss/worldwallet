@@ -1,53 +1,22 @@
-# Round 1 修复报告 - 2026-04-07 23:11
-
-## STEP 1 扫描摘要
-
-### wallet.html — `data-ww-fn`（41 个，去重）
-checkVerify, closePinSetupOverlay, closePinUnlock, closeTotpSetup, closeTotpUnlock, closeTransferConfirm, confirmPin, confirmTotpSetup, confirmTransfer, copyHbCreatedKeyword, copyHomeAddr, copyKw, copyNative, copyShareText, createGift, createNewWallet, deleteWalletRow, doImportWallet, doSwap, doTransfer, goHomeTransfer, goToPinConfirm, hideQR, loadTxHistory, openCustomizeAddr, openPinSettingsDialog, pinUnlockBackspace, pinUnlockClear, pinVerifyEnterWallet, promptWalletNotifications, setSwapMax, shareHbCreatedKeyword, shareKw, shareSuccess, showHbQR, startVerify, submitClaim, submitTotpUnlock, wwHideHbSuccessOverlay, wwOpenBackupFromSettings, wwSwapRecordsToast
-
-### wallet.html — `id="page-*"`（页面）
-page-welcome, page-password-restore, page-create, page-key, page-key-verify, page-pin-setup, page-pin-confirm, page-pin-verify, page-home, page-addr, page-transfer, page-swoosh, page-transfer-success, page-settings, page-swap, page-import, page-hongbao, page-hb-keyword, page-claim, page-claimed, page-hb-records, page-faq
-
-### wallet.html — `data-ww-go`（12 个唯一目标，均存在对应 `id="page-*"`）
-page-claim, page-create, page-faq, page-hb-records, page-home, page-hongbao, page-import, page-key-verify, page-password-restore, page-pin-setup, page-settings, page-welcome
-
-### wallet.css
-花括号计数：`{` 330 个、`}` 330 个，**平衡**。
-
-### wallet.runtime.js / wallet.ui.js
-存在大量顶层 `function name()` / `async function name()` 及文件末尾 `wwExposeDataWwFnHandlers` 中对 `window.*` 的显式挂载；`data-ww-fn` 依赖的全局可调用名在加载顺序下可用（见 STEP 4）。
-
----
+# Round 1 修复报告 - 2026-04-07 23:45
 
 ## 发现的问题
-
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数（如 `goTo`、`doTransfer`、`copyKw` 等），**后加载的 `wallet.runtime.js` 会覆盖前者**。当前行为与 TEST-A 一致，但长期维护易产生「改了 ui 却不生效」的错觉；建议后续拆分职责或合并单源实现。
-- [P3] 脚本依赖链：`ethers` → `scrypt-js` → `api-config` → `storage` → … → `wallet.runtime.js` → `wallet.dom-bind.js`；顺序合理，未发现明显缺失依赖。
-
----
+- [P2] `wallet.runtime.js` 重复定义 `loadTxHistory`，在脚本顺序下覆盖 `wallet.tx.js` 中的实现，导致丢失 `TRON_GRID` 与 `wwFetch429Retry` 请求路径，首页「最近交易」刷新更易失败或受 429 影响。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，以后加载者为准；需避免再次在 runtime 中复制已存在于 `wallet.tx.js` / `wallet.addr.js` 的逻辑。
+- [P3] `wallet.css` 花括号已平衡（330/330）。
 
 ## 修复内容
-
-- 文件：无（本轮自动化测试全部通过，未引入功能性代码变更）
-- 函数：—
-- 修改：仅新增本报告；代码库行为与扫描前一致
-
----
+- 文件：`wallet.runtime.js`
+- 函数：`loadTxHistory`（删除 runtime 内重复定义）
+- 修改：移除与 `wallet.tx.js` 重复的 `loadTxHistory`，保留单一实现以使用 TronGrid 配置与 429 重试。
 
 ## 修改文件
-
-- `reports/round_1.md`
-
----
+- `wallet.runtime.js`
 
 ## 剩余问题
-
-- P3：`ui`/`runtime` 双份实现的技术债（非阻断，可后续重构）
-
----
+- 无（本轮自动化 TEST-A/B/C 均通过；Telegram 工作区通知未配置，需在父仓库 `.env` 配置 `TELEGRAM_BOT_TOKEN` 与 `TELEGRAM_CHAT_ID` 后使用 `scripts/telegram-notify-working.sh`）。
 
 ## 测试结果
-
-- TEST-A: PASS — 每个 `data-ww-fn` 均在工程内以顶层 `function` 声明或 `window.*` 暴露形式存在，可被 `wallet.dom-bind.js` / `window[fn]` 解析
-- TEST-B: PASS — 每个 `data-ww-go` 目标在 `wallet.html` 中均有对应 `id="page-*"` 的容器
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`createGift` 均具非空实现；`sendTransfer`→`confirmTransfer`、`claimGift`→`submitClaim`、`openSend`→`goHomeTransfer`、`openReceive`→`goTab('tab-addr')` 由 `wallet.runtime.js` 中 `wwExposeCoreAliases` 提供别名，语义满足约定
+- TEST-A: PASS — `data-ww-fn` 所列函数均在合并后的 JS 中存在全局 `function` / `async function` 定义。
+- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中有对应 `id="page-*"`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`（映射 `confirmTransfer`）、`createGift`、`claimGift`（映射 `submitClaim`）、`openSend`（映射 `goHomeTransfer`）、`openReceive`（runtime 内别名）均具非空实现。
