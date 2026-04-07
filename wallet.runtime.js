@@ -4463,9 +4463,10 @@ function submitClaim() {
   localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
 
   const rank = hb.claimed.length;
-  document.getElementById('claimedAmount').textContent = amt;
-  document.getElementById('claimedKeyword').textContent = kw;
-  document.getElementById('claimedRank').textContent = '第 '+rank+' 个领取 · 共'+hb.count+'份礼物';
+  var _claimAmt = document.getElementById('claimedAmount');
+  if (_claimAmt) _claimAmt.textContent = String(amt) + ' USDT';
+  var _claimMsg = document.getElementById('claimedMessage');
+  if (_claimMsg) _claimMsg.textContent = '口令：' + kw + ' · 第 ' + rank + ' 个领取 · 共 ' + hb.count + ' 份礼物';
   goTo('page-claimed');
 }
 
