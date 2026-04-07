@@ -784,7 +784,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = (REAL_WALLET && REAL_WALLET.ethAddress) ? 'flex' : 'none';
+      _tabBar.style.display = (REAL_WALLET && (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress)) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -897,7 +897,7 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   }
   if (pageId === 'page-home' && REAL_WALLET) {
     if (REAL_WALLET.trxAddress) setTimeout(loadTxHistory, 500);
-    if (REAL_WALLET.ethAddress) setTimeout(loadBalances, 500);
+    if (REAL_WALLET.ethAddress || REAL_WALLET.trxAddress) setTimeout(loadBalances, 500);
   }
   try { if (typeof wwUpdateScrollTopBtn === 'function') wwUpdateScrollTopBtn(); } catch (e) {}
   try {
@@ -3124,7 +3124,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = !!(_d && _d.ethAddress);
+      hasWallet = !!(_d && (_d.ethAddress || _d.trxAddress));
     } catch (_e) {}
     if (typeof goTo !== 'function') return;
     goTo(hasWallet ? 'page-home' : 'page-welcome');
