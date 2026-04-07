@@ -2071,7 +2071,8 @@ function shakeTransferAmountTooHigh() {
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
-  var addrRaw = document.getElementById('transferAddr').value.trim();
+  var taEl = document.getElementById('transferAddr');
+  var addrRaw = taEl ? String(taEl.value || '').trim() : '';
   const coin = transferCoin.id;
   var det = typeof detectAddressAndCoin === 'function' ? detectAddressAndCoin(addrRaw) : { type: 'unknown' };
   var addr = addrRaw;
@@ -2097,7 +2098,8 @@ async function broadcastRealTransfer() {
     showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
     return false;
   }
-  const amt = parseFloat(document.getElementById('transferAmount').value);
+  var amtInp = document.getElementById('transferAmount');
+  const amt = parseFloat(amtInp && amtInp.value != null ? amtInp.value : '');
   if(!amt || amt<=0 || isNaN(amt)){showToast('金额无效','error');return false;}
   if(amt>10000){showToast('单笔超10000限额','error');return false;}
   const bal = (transferCoin.bal||0);
