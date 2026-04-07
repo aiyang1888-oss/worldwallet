@@ -4,6 +4,7 @@
 - [P1] `broadcastRealTransfer` 中在 `transferAddr` / `transferAmount` 未挂载到 DOM 时直接访问 `.value`，可能抛错并中断转账流程（STEP 3：`getElementById` 后无 null 检查）。
 
 ## 修复内容
+- 提交：`2ca021e`（代码修复）
 - 文件：wallet.ui.js
 - 函数：broadcastRealTransfer
 - 修改：在读取输入前先取得元素并做空值判断，失败时提示「转账表单未就绪」并返回 false。
