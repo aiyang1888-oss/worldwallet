@@ -5868,7 +5868,10 @@ function startVerify() {
         if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
       }
     }
-    const pool = SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh;
+    var _wlK = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(currentLang) : (currentLang === 'en' ? 'en' : 'zh');
+    const pool = (typeof WT_WORDLISTS !== 'undefined' && WT_WORDLISTS[_wlK] && WT_WORDLISTS[_wlK].length)
+      ? WT_WORDLISTS[_wlK]
+      : (SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh);
     const indices = [];
     while(indices.length < nPick) {
       const idx = Math.floor(Math.random() * pool.length);

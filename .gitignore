@@ -41,6 +41,9 @@ yarn-error.*
 
 app-example
 
+# Large upstream file (optional) for scripts/generate-zh-cn-wordlist.cjs — curl modood pcas-code.json if needed
+scripts/pcas-code.json
+
 # generated native folders
 /ios
 /android
