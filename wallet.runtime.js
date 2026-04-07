@@ -396,7 +396,7 @@ function wwHasPinConfigured() {
     var p = '';
     if (typeof Store !== 'undefined' && Store.getPin) p = Store.getPin();
     else {
-      p = (_pin || '') || localStorage.getItem('ww_unlock_pin') || '';
+      p = (_pin || '') || localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
     }
     return !!(p && /^\d{6}$/.test(String(p)));
   } catch (e) { return false; }
