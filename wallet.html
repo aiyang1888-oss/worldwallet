@@ -788,6 +788,16 @@
 
   <button type="button" id="wwScrollTopBtn" class="ww-scroll-top-btn" aria-label="回到顶部" title="回到顶部">↑</button>
 
+  <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
+    <div class="pin-setup-panel" onclick="event.stopPropagation()">
+      <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
+      <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
+      <div class="pin-dots" id="pinDots"></div>
+      <div class="pin-keypad" id="pinKeypad"></div>
+      <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+    </div>
+  </div>
+
 </div>
 
 
@@ -804,17 +814,6 @@
 
 
   
-
-  <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
-        <div class="pin-setup-panel" onclick="event.stopPropagation()">
-          <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
-          <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
-          <div class="pin-dots" id="pinDots"></div>
-          <div class="pin-keypad" id="pinKeypad"></div>
-          <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
-        </div>
-      </div>
-
 
 <!-- wt-pad-0001 -->
 <!-- wt-pad-0002 -->
