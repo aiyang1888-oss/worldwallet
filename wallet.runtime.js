@@ -3710,7 +3710,13 @@ function createHongbao() {
     claimed: [],  // {addr, amount, time}
     creator: REAL_WALLET.trxAddress
   };
-  const allHb = JSON.parse(localStorage.getItem('ww_hongbaos')||'{}');
+  var allHb = {};
+  try {
+    allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}');
+    if (!allHb || typeof allHb !== 'object') allHb = {};
+  } catch (_hb) {
+    allHb = {};
+  }
   allHb[currentKeyword] = hbData;
   localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
 
@@ -3850,7 +3856,13 @@ function deleteWallet() {
 }
 
 function markBackupDone() {
-  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
+  var w = {};
+  try {
+    w = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+    if (!w || typeof w !== 'object') w = {};
+  } catch (_mb) {
+    w = {};
+  }
   w.backedUp = true;
   localStorage.setItem('ww_wallet', JSON.stringify(w));
   if(REAL_WALLET) REAL_WALLET.backedUp = true;
