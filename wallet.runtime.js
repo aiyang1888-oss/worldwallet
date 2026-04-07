@@ -5313,7 +5313,8 @@ function checkVerify() {
   Object.keys(verifyAnswers).forEach(pos => {
     const input = document.getElementById('verify_' + pos);
     const val = input ? input.value.trim().toLowerCase() : '';
-    const correct = verifyAnswers[pos].toLowerCase();
+    const rawAns = verifyAnswers[pos];
+    const correct = rawAns != null ? String(rawAns).toLowerCase() : '';
     if(val !== correct) {
       allCorrect = false;
       if(input) input.style.color = '#ff6060';
