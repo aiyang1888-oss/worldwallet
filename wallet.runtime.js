@@ -3637,6 +3637,7 @@ function switchHbType(type) {
   hbType = type;
   const n = document.getElementById('btnNormal');
   const l = document.getElementById('btnLucky');
+  if (!n || !l) return;
   if(type === 'normal') {
     n.style.background = 'linear-gradient(135deg,#b8982a,#e8c850)';
     n.style.color = '#0a0a05';
@@ -4049,6 +4050,7 @@ function setSwapMax() {
 function openCoinPicker(target) {
   pickerTarget=target;
   const list=document.getElementById('coinPickerList');
+  if (!list) return;
   list.innerHTML='';
   COINS.forEach(coin=>{
     const current = target==='from'?swapFrom:swapTo;
