@@ -3010,59 +3010,7 @@ function startVerify() {
   }, 300);
 }
 
-function checkVerify() {
-  let allCorrect = true;
-  Object.keys(verifyAnswers).forEach(pos => {
-    const input = document.getElementById('verify_' + pos);
-    const val = input ? input.value.trim().toLowerCase() : '';
-    const correct = verifyAnswers[pos].toLowerCase();
-    if(val !== correct) {
-      allCorrect = false;
-      if(input) input.style.color = '#ff6060';
-    } else {
-      if(input) input.style.color = '#4ac84a';
-    }
-  });
-  
-  if(allCorrect) {
-    _safeEl('verifyError').style.display = 'none';
-    // 验证通过，显示成功页
-    if (typeof markBackupDone === 'function') markBackupDone();
-    updateAddr();
-    var hasPin = false;
-    try {
-      hasPin = typeof wwHasPinConfigured === 'function' ? wwHasPinConfigured() : !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
-    } catch (_p0) {}
-    showToast('✅ 验证通过！钱包已安全创建', 'success');
-    if (hasPin) {
-      try { window._wwInFirstRun = false; } catch (_frV) {}
-      goTo('page-home');
-    } else {
-      try { window._wwPinSetupDraft = ''; } catch (_pd) {}
-      var pi = document.getElementById('pinInput');
-      var pci = document.getElementById('pinConfirmInput');
-      var pvi = document.getElementById('pinVerifyInput');
-      if (pi) pi.value = '';
-      if (pci) pci.value = '';
-      if (pvi) pvi.value = '';
-      var pel = document.getElementById('pinError');
-      if (pel) pel.style.display = 'none';
-      var pve = document.getElementById('pinVerifyError');
-      if (pve) pve.style.display = 'none';
-      var pl = document.getElementById('pinLength');
-      var pcl = document.getElementById('pinConfirmLength');
-      if (pl) pl.textContent = '0';
-      if (pcl) pcl.textContent = '0';
-      goTo('page-pin-setup');
-      setTimeout(function () { if (pi) pi.focus(); }, 320);
-    }
-  } else {
-    _safeEl('verifyError').style.display = 'block';
-    const vroot = document.getElementById('verifyShakeRoot');
-    if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
-  }
-}
-
+/* checkVerify 定义在 wallet.runtime.js（助记词通过后 PIN 设置 → 确认 → 验证 → 首页） */
 
 async function _resumeWalletAfterUnlock() {
   // 解密敏感数据并临时注入 REAL_WALLET（须在进入首页 / 拉余额前完成，避免竞态）

@@ -6385,8 +6385,14 @@ async function pinVerifyEnterWallet() {
   var inp = document.getElementById('pinVerifyInput');
   var pin = inp ? String(inp.value || '').replace(/\D/g, '').slice(0, 6) : '';
   var pve = document.getElementById('pinVerifyError');
+  try {
+    if (window._wwPinVerifyErrTimer) {
+      clearTimeout(window._wwPinVerifyErrTimer);
+      window._wwPinVerifyErrTimer = null;
+    }
+  } catch (_t0) {}
   if (pin.length !== 6) {
-    if (typeof showToast === 'function') showToast('请输入 6 位数字 PIN', 'error');
+    if (typeof showToast === 'function') showToast('请输入 6 位数字', 'error');
     return;
   }
   var ok = false;
@@ -6397,15 +6403,32 @@ async function pinVerifyEnterWallet() {
   }
   if (!ok) {
     if (pve) pve.style.display = 'block';
-    if (inp) inp.value = '';
     var root = document.getElementById('pinVerifyPageRoot');
     if (root) {
       root.classList.remove('wt-shake-wrong');
       void root.offsetWidth;
       root.classList.add('wt-shake-wrong');
     }
+    try {
+      window._wwPinVerifyErrTimer = setTimeout(function () {
+        window._wwPinVerifyErrTimer = null;
+        if (pve) pve.style.display = 'none';
+        if (inp) {
+          inp.value = '';
+          try {
+            inp.focus();
+          } catch (_f) {}
+        }
+      }, 2000);
+    } catch (_t1) {}
     return;
   }
+  try {
+    if (window._wwPinVerifyErrTimer) {
+      clearTimeout(window._wwPinVerifyErrTimer);
+      window._wwPinVerifyErrTimer = null;
+    }
+  } catch (_t2) {}
   if (pve) pve.style.display = 'none';
   wwSetSessionPin(pin);
   try {
