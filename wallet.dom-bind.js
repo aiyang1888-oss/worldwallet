@@ -60,6 +60,14 @@
   }
 
   function handleWwClick(ev) {
+    var coinHost = ev.target.closest('[data-coin]');
+    if (coinHost && coinHost.getAttribute('data-coin')) {
+      var coin = coinHost.getAttribute('data-coin');
+      if (typeof selectTransferCoin === 'function') selectTransferCoin(coin);
+      ev.preventDefault();
+      return;
+    }
+
     var el = ev.target.closest(
       '[data-ww-go],[data-ww-go-tab],[data-ww-go-keyback],[data-ww-go-import-back],[data-ww-go-with-opts],[data-ww-fn],[data-ww-copy-from],[data-ww-load-trx]'
     );

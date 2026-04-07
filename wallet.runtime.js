@@ -483,18 +483,7 @@ function mnemonicFromLang(mnemonic, lang) {
   }).join(" ");
 }
 
-const _safeEl = (id) => document.getElementById(id) || {
-  textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
-  classList: {add:()=>{},remove:()=>{},contains:()=>false},
-  href: '', disabled: false,
-  addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
-};
-/** REAL_WALLET 在 wallet.core.js 声明；此处不重复 let/var */
-
-/** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
-let currentMnemonicLength = 12;
-/** 导入页格子词数（与 #importGrid 一致；勿与密钥页 currentMnemonicLength 混用） */
-let importGridWordCount = 12;
+/** _safeEl、currentMnemonicLength、importGridWordCount 由先加载的 wallet.ui.js 声明；此处勿重复 let/const，否则整段 runtime 脚本解析失败 */
 
 /** 会话 PIN（仅存内存，不读 localStorage 明文） */
 var _wwSessionPin = '';

@@ -260,7 +260,7 @@
             <span id="balRefreshBtn" class="home-refresh-link" data-ww-fn="loadBalances">刷新</span>
           </div>
         </div>
-        <div class="asset-item" id="assetRowUsdt">
+        <div class="asset-item asset-card" id="assetRowUsdt" data-coin="usdt" data-ww-fn="selectTransferCoin">
           <div class="asset-icon" style="background:rgba(38,161,123,0.15)">💚</div>
           <div class="asset-info"><div class="asset-name">USDT</div><div class="asset-chain">TRC-20 · Tron</div></div>
           <div class="asset-right">
@@ -951,7 +951,11 @@ document.addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
     try {
-      window[fnName]();
+      if (fnName === 'selectTransferCoin' && fnEl.hasAttribute('data-coin')) {
+        window[fnName](fnEl.getAttribute('data-coin'));
+      } else {
+        window[fnName]();
+      }
     } catch (err) {
       console.error('[data-ww-fn] ' + fnName, err);
     }
