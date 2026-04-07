@@ -26,6 +26,8 @@ html {
   --nav-h: 56px;
   --page-pad-x: 18px;
   --page-pad-y: 16px;
+  /* 首页「我的资产 / 最近交易」与搜索框同一水平内边距 */
+  --home-section-pad-x: 16px;
   --line-body: 1.55;
   --line-tight: 1.35;
   /* —— Design System v1 tokens —— */
@@ -143,7 +145,8 @@ body {
 }
 .status-time { font-weight: 600; color: var(--text); font-size: 14px; }
 
-.pages { flex: 1; position: relative; overflow: hidden; }
+/* flex:1 1 0 + min-height:0：避免子项全为 absolute 时中间区高度塌陷，导致 .phone 缩成一条、底栏被 body 居中到视口中央 */
+.pages { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; }
 
 /* 隐藏 pages 容器内游离元素（不属于任何 .page） */
 .pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg) { display: none !important; }
@@ -155,6 +158,7 @@ body {
   overscroll-behavior: contain;
   display: flex; flex-direction: column;
   background: var(--bg);
+  color: var(--text);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -586,7 +590,7 @@ body {
 .transfer-contact-del { font-size: 11px; color: var(--text-muted); cursor: pointer; padding: 4px 6px; flex-shrink: 0; user-select: none; }
 .transfer-contact-empty { font-size: 12px; color: var(--text-muted); padding: 8px 4px; }
 .transfer-addr-dd-item .contact-nick-mark { color: var(--gold); font-weight: 600; margin-right: 6px; }
-.quick-btns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 20px; }
+.quick-btns { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px var(--home-section-pad-x, 16px); }
 #wwCandleChartHost { box-shadow: inset 0 0 0 1px rgba(200,168,75,0.08); }
 .quick-btn {
   flex: 1 1 18%; min-width: 56px; background: var(--bg2);
@@ -596,8 +600,64 @@ body {
 .quick-btn:hover { border-color: var(--gold); }
 .quick-btn-icon { font-size: 22px; margin-bottom: 4px; line-height: 1; display: flex; align-items: center; justify-content: center; height: 28px; }
 .quick-btn-label { font-size: 11px; color: var(--text-dim); }
-.assets-section { padding: 0 20px 20px; border-top: 1px solid rgba(200,168,75,0.4); margin-top: 4px; padding-top: 4px; }
-.assets-title { font-size: 12px; color: var(--text-muted); margin: 12px 0 10px; letter-spacing: 1px; }
+.assets-section {
+  padding: 12px var(--home-section-pad-x, 16px) 20px;
+  border-top: 1px solid rgba(200,168,75,0.4);
+  margin-top: 4px;
+}
+.assets-title { font-size: 12px; color: var(--text-muted); margin: 0 0 10px; letter-spacing: 1px; }
+
+/* 首页 · 区块标题行：标题与「刷新」同一行、垂直居中，左右与搜索框对齐 */
+#page-home .home-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+  min-height: 36px;
+}
+#page-home .home-section-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+#page-home .home-refresh-link {
+  font-size: 11px;
+  color: var(--gold);
+  cursor: pointer;
+  line-height: 1.2;
+  padding: 6px 0;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+#page-home .home-tx-section {
+  padding: 0 var(--home-section-pad-x, 16px) 16px;
+  box-sizing: border-box;
+}
+#page-home .home-tx-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.25;
+}
+#page-home #txHistoryFilter.home-tx-filter {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  margin: 0 0 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg3);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
 .asset-item {
   display: flex; align-items: center; gap: 12px;
   background: var(--bg2); border-radius: 14px;
@@ -801,6 +861,9 @@ body {
 .swap-info-val.gold { color: var(--gold); }
 
 /* ── 底部导航 ── */
+#tabBar {
+  margin-top: auto;
+}
 .tab-bar {
   height: 76px; background: var(--bg2);
   border-top: 1px solid var(--border);

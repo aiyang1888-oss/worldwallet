@@ -194,12 +194,6 @@
             <button type="button" id="homeEditAddrBtn" onclick="editHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">修改地址</button>
           </div>
         </div>
-        
-          <div id="homeMiniBtcWrap" class="home-mini-chain" title="Bitcoin (BTC)">
-            <span class="home-mini-icon" aria-hidden="true"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><circle cx="16" cy="16" r="16" fill="#F7931A"/><path fill="#fff" d="M20.8 13.9c.2-1.6-1-2.5-2.7-3l.5-2.3-1.4-.3-.5 2.2c-.4-.1-.7-.2-1.1-.3l.5-2.3-1.4-.3-.5 2.3c-.3-.1-.6-.1-.8-.2v-.1l-2.4-.5-.4 1.6 1.2.3c.6.1.7.5.7.9l-.7 2.6c0 .1-.1.1-.1.1h-.2l-.9-.2-.2 1.8 2.2.5c.4.1.7.2 1 .3l-.6 2.4 1.4.3.5-2.3c.4.1.8.2 1.2.3l-.5 2.4 1.4.3.5-2.3c2.3.7 4 .4 4.7-1.5.6-1.6 0-2.6-1.2-3.2zm-2.3 4.8c-.4 1.7-3.3.8-4.2.6l.8-2.9c.9.2 3.7.8 3.4 2.3zm.4-5.1c-.4 1.5-2.8.8-3.5.6l.7-2.7c.7.2 3 .8 2.8 2.1z"/></svg></span>
-            <span class="home-chain-tag">BTC</span>
-            <span id="homeShortBtc" class="home-short-addr">--</span>
-          </div>
         </div>
         </div>
       
@@ -218,14 +212,14 @@
       
       
       <div class="assets-section">
-        <div class="assets-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div class="assets-title home-section-head">
           <span>我的资产</span>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+          <div class="home-section-head-actions">
             <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;margin:0">
               <input type="checkbox" id="hideZeroTokens" onchange="onHideZeroTokensChange()" style="accent-color:var(--gold);width:14px;height:14px" />
               隐藏零余额
             </label>
-            <span id="balRefreshBtn" onclick="loadBalances()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+            <span id="balRefreshBtn" class="home-refresh-link" onclick="loadBalances()">刷新</span>
           </div>
         </div>
         <div class="asset-item" id="assetRowUsdt">
@@ -235,15 +229,6 @@
             <div class="asset-amount" id="balUsdt">--</div>
             <div class="asset-value" id="valUsdt">$--</div>
             <div class="asset-change up" id="chgUsdt">+0.01%</div>
-          </div>
-        </div>
-        <div class="asset-item" id="assetRowTrx">
-          <div class="asset-icon" style="background:rgba(255,165,0,0.12)">🔴</div>
-          <div class="asset-info"><div class="asset-name">TRX</div><div class="asset-chain">Tron</div></div>
-          <div class="asset-right">
-            <div class="asset-amount" id="balTrx">--</div>
-            <div class="asset-value" id="valTrx">$--</div>
-            <div class="asset-change up" id="chgTrx">+0.8%</div>
           </div>
         </div>
         <div class="asset-item" id="assetRowEth">
@@ -268,12 +253,12 @@
       </div>
 
       <!-- 交易记录区 -->
-      <div style="margin:0 0 16px 0">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <span style="font-size:13px;font-weight:600;color:var(--text)">最近交易</span>
-          <span onclick="loadTxHistory()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+      <div class="home-tx-section">
+        <div class="home-section-head">
+          <span class="home-tx-title">最近交易</span>
+          <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
         </div>
-        <input type="search" id="txHistoryFilter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" style="width:100%;box-sizing:border-box;padding:10px 12px;margin-bottom:10px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;outline:none" />
+        <input type="search" id="txHistoryFilter" class="home-tx-filter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" />
         <div id="txHistoryList">
           <div class="tx-empty-friendly">
             <div class="tx-empty-icon" aria-hidden="true">📬</div>
@@ -285,8 +270,6 @@
     </div>
 
     <!-- 地址页（核心升级版）-->
-    </div>
-
     <div class="page" id="page-addr">
       <div class="addr-content" style="padding-top:10px">
 
@@ -402,7 +385,6 @@
           <button class="qr-close" onclick="hideQR()">关闭</button>
         </div>
       </div>
-    </div>
 
     <!-- 转账页 -->
     <div class="page" id="page-transfer">
@@ -741,8 +723,8 @@
   </div>
 
 
-  <!-- 底部导航 -->
-  <div class="tab-bar u5" id="tabBar">
+  <!-- 底部导航（勿加 .u5：该工具类为 display:none，会压过 .tab-bar 的 flex，导致底栏不可点） -->
+  <div class="tab-bar" id="tabBar">
     <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
     <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
     <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
@@ -752,33 +734,28 @@
 
   <button type="button" id="wwScrollTopBtn" class="ww-scroll-top-btn" aria-label="回到顶部" title="回到顶部">↑</button>
 
-</div>
-
-
-
-    <!-- 礼物发送成功弹窗 -->
-    <div class="overlay" id="hbSuccessOverlay" style="display:none;flex-direction:column;align-items:center;justify-content:center">
-      <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
-        <div style="font-size:40px;margin-bottom:12px">🎁</div>
-        <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
-        <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
-        <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
-      </div>
-    </div>
-
-
-  
-
+  <!-- PIN 设置遮罩须在 .phone 内：与 dist 一致，避免 absolute/inset:0 相对视口盖住底栏 -->
   <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
-        <div class="pin-setup-panel" onclick="event.stopPropagation()">
-          <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
-          <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
-          <div class="pin-dots" id="pinDots"></div>
-          <div class="pin-keypad" id="pinKeypad"></div>
-          <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
-        </div>
-      </div>
+    <div class="pin-setup-panel" onclick="event.stopPropagation()">
+      <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
+      <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
+      <div class="pin-dots" id="pinDots"></div>
+      <div class="pin-keypad" id="pinKeypad"></div>
+      <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+    </div>
+  </div>
 
+  <!-- 礼物发送成功弹窗 -->
+  <div class="overlay" id="hbSuccessOverlay" style="display:none;flex-direction:column;align-items:center;justify-content:center">
+    <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">🎁</div>
+      <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
+      <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
+      <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
+    </div>
+  </div>
+
+</div>
 
 <!-- wt-pad-0001 -->
 <!-- wt-pad-0002 -->
