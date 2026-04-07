@@ -95,6 +95,9 @@ function persistWanYuAddrToStorage() {
   try {
     var slots = ADDR_WORDS.map(w => ({ word: w.word, lang: w.lang || 'zh', custom: !!w.custom }));
     localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
+    if (typeof getNativeAddr === 'function') {
+      localStorage.setItem('wallet_native_addr', getNativeAddr());
+    }
   } catch (e) {
     console.error('[WanYuAddr]', e);
   }
@@ -147,6 +150,13 @@ function tryLoadWanYuAddrFromStorage() {
             if (preEl2) preEl2.textContent = prefix;
             if (sufEl2) sufEl2.textContent = suffix;
             console.log('[WanYuAddr] 已从 wallet_native_addr 中段恢复 10 字');
+            if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress && typeof deriveAddrWordsFromChain === 'function') {
+              var midGot = ADDR_WORDS.map(function (w) { return w.word; }).join('');
+              if (midGot !== deriveAddrWordsFromChain(REAL_WALLET.ethAddress)) {
+                ADDR_WORDS.length = 0;
+                return false;
+              }
+            }
             return true;
           }
         }
@@ -169,6 +179,13 @@ function tryLoadWanYuAddrFromStorage() {
     var sufEl = document.getElementById('addrSuffix');
     if (preEl) preEl.textContent = prefix;
     if (sufEl) sufEl.textContent = suffix;
+    if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress && typeof deriveAddrWordsFromChain === 'function') {
+      var midCheck = ADDR_WORDS.map(function (w) { return w.word; }).join('');
+      if (midCheck !== deriveAddrWordsFromChain(REAL_WALLET.ethAddress)) {
+        ADDR_WORDS.length = 0;
+        return false;
+      }
+    }
     return true;
   } catch (e) {
     console.warn('[WanYuAddr] tryLoadWanYuAddrFromStorage 异常:', e);
@@ -224,6 +241,46 @@ function ensureNativeAddrInitialized() {
 var WW_ZH_ADDR_CHAR_FALLBACK =
   '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪天地人和日月星斗甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥东南西北' +
   '等的个多咕咚得到来更中一二三四五六七八九十百千万千大小国人心正开平安乐吉祥如意';
+
+/**
+ * 从公链地址确定性派生 10 个万语字（与 ADDR_WORDS_LIB / randWanYuZhChar 同一字池：SINGLE_CHARS.zh）。
+ * 使用 UTF-8 地址字符串的 SHA-256，每 2 个十六进制位映射一字。
+ */
+function deriveAddrWordsFromChain(chainAddress) {
+  var pool = (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.zh && SINGLE_CHARS.zh.length)
+    ? SINGLE_CHARS.zh
+    : WW_ZH_ADDR_CHAR_FALLBACK;
+  var norm = String(chainAddress || '').trim();
+  if (!norm || norm.length < 10) {
+    var fallback = '';
+    for (var f = 0; f < 10; f++) {
+      fallback += pool[Math.floor(Math.random() * pool.length)];
+    }
+    return fallback;
+  }
+  norm = norm.toLowerCase();
+  var hashHex = '';
+  try {
+    if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.sha256 && ethers.utils.toUtf8Bytes) {
+      hashHex = ethers.utils.sha256(ethers.utils.toUtf8Bytes(norm)).replace(/^0x/i, '');
+    }
+  } catch (e0) {
+    hashHex = '';
+  }
+  if (!hashHex || hashHex.length < 20) {
+    var fb = '';
+    for (var g = 0; g < 10; g++) {
+      fb += pool[Math.floor(Math.random() * pool.length)];
+    }
+    return fb;
+  }
+  var out = '';
+  for (var i = 0; i < 10; i++) {
+    var idx = parseInt(hashHex.substring(i * 2, i * 2 + 2), 16) % pool.length;
+    out += pool[idx];
+  }
+  return out;
+}
 
 function randWanYuZhChar() {
   const pool = (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.zh && SINGLE_CHARS.zh.length)
@@ -351,8 +408,17 @@ function initAddrWords() {
       return;
     }
     ADDR_WORDS.length = 0;
-    for (let i = 0; i < 10; i++) {
-      ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
+    var ethForDerive = (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : '';
+    if (ethForDerive) {
+      var midDerived = deriveAddrWordsFromChain(ethForDerive);
+      var midArr = Array.from(midDerived);
+      for (var wi = 0; wi < 10; wi++) {
+        ADDR_WORDS.push({ word: midArr[wi] || randWanYuZhChar(), lang: 'zh', custom: false });
+      }
+    } else {
+      for (let i = 0; i < 10; i++) {
+        ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
+      }
     }
     var preEl = document.getElementById('addrPrefix');
     var sufEl = document.getElementById('addrSuffix');

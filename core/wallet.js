@@ -43,7 +43,8 @@ async function createWallet(wordCount) {
     addrMap: {
       trx: addresses.trx.address,
       eth: addresses.eth.address,
-      btc: addresses.btc.address
+      btc: addresses.btc.address,
+      derived_from: 'eth'
     }
   };
 }
@@ -69,7 +70,8 @@ function importWallet(mnemonic) {
       addrMap: {
         trx: addresses.trx.address,
         eth: addresses.eth.address,
-        btc: addresses.btc.address
+        btc: addresses.btc.address,
+        derived_from: 'eth'
       }
     };
   } catch (e) {

@@ -253,68 +253,7 @@ function randLang() {
   return allLangs[Math.floor(Math.random()*allLangs.length)];
 }
 
-function initAddrWords() {
-  ADDR_WORDS.length = 0;
-  for(let i=0;i<10;i++) {
-    const lang = randLang();
-    ADDR_WORDS.push({word: randWord(lang), lang, custom: false});
-  }
-  // 随机前后缀
-  document.getElementById('addrPrefix').textContent = randDigits(8);
-  document.getElementById('addrSuffix').textContent = randDigits(8);
-  renderAddrWords();
-  // 同步所有地方的地址显示（统一单行）
-  setTimeout(() => {
-    const addr = getNativeAddr();
-    // 统一样式：单行 + 居中
-    const ADDR_STYLE = 'font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;display:block';
-    // 首页芯片
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) {
-      const pre = addr.substring(0, 8);
-      const mid = addr.substring(8, 18);
-      const suf = addr.substring(18);
-      chip.innerHTML = '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + pre + '</span>' +
-        '<span style="color:#f0d070;font-weight:700;font-size:13px;letter-spacing:1px">' + mid + '</span>' +
-        '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + suf + '</span>';
-      chip.style.cssText += ';text-align:center;display:block';
-    }
-    // QR大字（居中 + 高亮）
-    const qp1 = document.getElementById('qrPart1');
-    const qp2 = document.getElementById('qrPart2');
-    if(qp1) {
-      const prefix = document.getElementById('addrPrefix')?.textContent || '';
-      const suffix = document.getElementById('addrSuffix')?.textContent || '';
-      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
-      ADDR_WORDS.forEach(w => {
-        if(w.custom) {
-          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
-        } else {
-          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
-        }
-      });
-      html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
-      qp1.innerHTML = html;
-    }
-    if(qp2) qp2.style.display = 'none';
-    // QR弹窗
-    const qm = document.getElementById('qrAddrMain');
-    if(qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
-    // 设置页
-    const sa = document.getElementById('settingsAddr');
-    if(sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    // swoosh（单行居中）
-    const sfp1 = _safeEl('swooshFromPart1');
-    const sfp2 = _safeEl('swooshFromPart2');
-    if(sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(sfp2) sfp2.style.display = 'none';
-    // 成功页（单行居中）
-    const suc1 = _safeEl('successFromPart1');
-    const suc2 = _safeEl('successFromPart2');
-    if(suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(suc2) suc2.style.display = 'none';
-  }, 50);
-}
+// initAddrWords 由 wallet.addr.js 提供（公链地址派生中段 + tryLoad 持久化）
 
 function renderAddrWords() {
   const container = document.getElementById('addrWords');
