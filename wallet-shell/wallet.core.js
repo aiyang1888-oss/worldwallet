@@ -1,5 +1,8 @@
 // wallet.core.js — 钱包核心：创建/加密/存储/派生
 
+/** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明 */
+var REAL_WALLET = null;
+
 function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
 }
@@ -153,6 +156,25 @@ function saveWallet(w) {
 
 function loadWallet() {
   loadWalletPublic();
+  // 万语地址：先于其他 UI，统一从 localStorage 载入 ADDR_WORDS 并一次性刷新各展示位
+  try {
+    if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
+  } catch (_na) {}
+  try {
+    if (typeof updateAddr === 'function') updateAddr();
+  } catch (_ua) {}
+  function _wwRevealAddrAfterPaint() {
+    try {
+      document.documentElement.classList.remove('ww-addr-pending');
+    } catch (_c) {}
+  }
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(_wwRevealAddrAfterPaint);
+    });
+  } else {
+    setTimeout(_wwRevealAddrAfterPaint, 0);
+  }
   if (REAL_WALLET && REAL_WALLET.ethAddress) {
     try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
   }
@@ -214,6 +236,7 @@ async function createRealWallet(forcedWordCount) {
   window.REAL_WALLET = w;
   saveWallet(w);
   applyReferralCredit();
+  try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
   return w;
 }
 

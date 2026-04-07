@@ -443,8 +443,8 @@ const _safeEl = (id) => document.getElementById(id) || {
   href: '', disabled: false,
   addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
 };
+/** REAL_WALLET 在 wallet.core.js 声明；此处不重复 let/var */
 
-let REAL_WALLET = null;
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
 let currentMnemonicLength = 12;
 /** 导入页格子词数（与 #importGrid 一致；勿与密钥页 currentMnemonicLength 混用） */

@@ -167,7 +167,6 @@ var _safeEl = (id) => document.getElementById(id) || {
   addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
 };
 
-var REAL_WALLET = null;
 var WW_APP_VERSION = '1.0.0';
 /** 密钥页词数；新建默认 12，须与 #mnemonicLength、下方网格词数一致（仅内存，不写入 localStorage） */
 var currentMnemonicLength = 12;
@@ -409,12 +408,7 @@ var ADDR_SAMPLES = {
   ro:{main:'București Cluj · Omul sfințește locul', num:'3829461'},
 };
 
-var CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--'
-// 如果有真实钱包，使用真实 TRX 地址
-;
-// ETH/BTC 地址动态读取（不用 const 硬编码）
-function getEthAddr() { return (REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : '--'; }
-function getBtcAddr() { return (REAL_WALLET && REAL_WALLET.btcAddress) ? REAL_WALLET.btcAddress : '--'; }
+// CHAIN_ADDR、getEthAddr、getBtcAddr：wallet.runtime.js（晚于本文件加载）
 var ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
 
 /** 密钥页助记词显示语言（与 wordlists 语言键一致） */
