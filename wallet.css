@@ -119,9 +119,18 @@ body {
   #page-import input[type="text"],
   #verifyQuestions input[type="text"],
   #page-transfer textarea,
-  #page-hongbao input#hbBlessing {
+  #page-hongbao input#hbBlessing,
+  #pinRestorePageInput {
     font-size: 16px !important;
   }
+}
+
+/* PIN 解锁页：与 key-content 一致，避免小屏下内容贴顶 */
+.ww-pin-restore-body {
+  min-height: min(60vh, 520px);
+}
+.ww-pin-restore-panel {
+  box-shadow: var(--shadow-float, 0 12px 40px rgba(0, 0, 0, 0.35));
 }
 
 .phone {

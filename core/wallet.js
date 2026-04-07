@@ -10,9 +10,9 @@
  *   sendTx(chain, to, amount, privateKey) → 发送交易
  */
 
-// ── 配置（TRON_GRID / ETH_RPC 由 js/api-config.js 注入，缺省时兜底）──
-if (typeof TRON_GRID === 'undefined') var TRON_GRID = 'https://api.trongrid.io';
-if (typeof ETH_RPC === 'undefined') var ETH_RPC = 'https://rpc.ankr.com/eth';
+// ── 配置 ──
+var TRON_GRID = 'https://api.trongrid.io';
+var ETH_RPC = 'https://rpc.ankr.com/eth';
 var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 var ENTROPY_MAP = { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 };
 var DERIVE_PATHS = {
@@ -95,7 +95,7 @@ function deriveAddress(mnemonic) {
 
 /**
  * 查询多链余额
- * @param {{eth:string, trx:string}} addresses - 地址
+ * @param {{eth:string, trx:string, btc?:string}} addresses - 地址（btc 可选）
  * @returns {Promise<{eth:number, trx:number, usdt:number, btc:number, totalUsd:number}>}
  */
 async function getBalance(addresses) {
@@ -103,49 +103,60 @@ async function getBalance(addresses) {
   var prices = { eth: 0, trx: 0, btc: 0 };
 
   try {
-    // 并发查询价格和余额
-    var trxUrl = TRON_GRID + '/v1/accounts/' + encodeURIComponent(addresses.trx || '');
-    var trxFetch = typeof wwFetchRetry === 'function'
-      ? wwFetchRetry(trxUrl, { method: 'GET' })
-      : fetch(trxUrl);
-    var [priceData, trxData] = await Promise.all([
-      fetch('https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD')
+    var btcUrl = addresses.btc
+      ? 'https://mempool.space/api/address/' + encodeURIComponent(addresses.btc)
+      : null;
+
+    var fetches = [
+      fetch('https://min-api.cryptocompare.com/data/pricemulti?fsyms=ETH,TRX,BTC&tsyms=USD')
         .then(function(r) { return r.json(); }).catch(function() { return {}; }),
-      trxFetch
-        .then(function(r) { if (!r || !r.ok) return {}; return r.json(); }).catch(function() { return {}; })
-    ]);
+      fetch(
+        TRON_GRID + '/v1/accounts/' + addresses.trx,
+        typeof wtTronGridFetchInit === 'function' ? wtTronGridFetchInit({}) : {}
+      )
+        .then(function(r) { return r.json(); }).catch(function() { return {}; })
+    ];
+    if (btcUrl) {
+      fetches.push(fetch(btcUrl).then(function(r) { return r.json(); }).catch(function() { return {}; }));
+    }
 
-    // 价格
-    if (priceData && priceData.USD) prices.eth = priceData.USD;
+    var responses = await Promise.all(fetches);
+    var priceMulti = responses[0];
+    var trxData = responses[1];
+    var btcData = btcUrl ? responses[2] : null;
 
-    // TRX 余额
+    if (priceMulti && priceMulti.ETH && priceMulti.ETH.USD) prices.eth = priceMulti.ETH.USD;
+    if (priceMulti && priceMulti.TRX && priceMulti.TRX.USD) prices.trx = priceMulti.TRX.USD;
+    if (priceMulti && priceMulti.BTC && priceMulti.BTC.USD) prices.btc = priceMulti.BTC.USD;
+
     if (trxData && trxData.data && trxData.data[0]) {
       var acct = trxData.data[0];
       result.trx = (acct.balance || 0) / 1e6;
-      // USDT TRC20
       var trc20 = acct.trc20 || [];
       trc20.forEach(function(t) {
         if (Object.keys(t)[0] === USDT_TRC20) {
-          result.usdt = parseInt(Object.values(t)[0]) / 1e6;
+          result.usdt = parseInt(Object.values(t)[0], 10) / 1e6;
         }
       });
     }
 
-    // ETH 余额
+    if (btcData && btcData.chain_stats) {
+      var funded = btcData.chain_stats.funded_txo_sum || 0;
+      var spent = btcData.chain_stats.spent_txo_sum || 0;
+      result.btc = (funded - spent) / 1e8;
+    }
+
     try {
-      var provider = typeof wwGetEthProvider === 'function' ? wwGetEthProvider() : new ethers.providers.JsonRpcProvider(ETH_RPC);
-      if (!provider) throw new Error('no eth provider');
+      var provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
       var ethBal = await provider.getBalance(addresses.eth);
       result.eth = parseFloat(ethers.utils.formatEther(ethBal));
     } catch (e) {}
 
-    // 总 USD
     result.totalUsd =
       result.usdt +
       result.trx * (prices.trx || 0.25) +
-      result.eth * prices.eth +
+      result.eth * (prices.eth || 0) +
       result.btc * (prices.btc || 60000);
-
   } catch (e) {
     console.error('[getBalance]', e.message);
   }
@@ -180,7 +191,7 @@ async function sendTx(chain, to, amount, privateKey) {
 async function _sendTRX(to, amount, privateKey) {
   await _loadTronWeb();
   var pk = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
-  var tw = new TronWeb(typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID });
+  var tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(pk);
   var sun = Math.floor(amount * 1e6);
   var from = tw.address.fromPrivateKey(pk);
@@ -192,7 +203,7 @@ async function _sendTRX(to, amount, privateKey) {
 }
 
 async function _sendETH(to, amount, privateKey) {
-  var provider = typeof wwGetEthProvider === 'function' ? wwGetEthProvider() : new ethers.providers.JsonRpcProvider(ETH_RPC);
+  var provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
   var wallet = new ethers.Wallet(privateKey, provider);
   var tx = await wallet.sendTransaction({
     to: to,
@@ -205,7 +216,7 @@ async function _sendETH(to, amount, privateKey) {
 async function _sendUSDT(to, amount, privateKey) {
   await _loadTronWeb();
   var pk = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
-  var tw = new TronWeb(typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID });
+  var tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(pk);
   var sun = Math.floor(amount * 1e6);
   var from = tw.address.fromPrivateKey(pk);
