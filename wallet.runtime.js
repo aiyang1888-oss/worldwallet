@@ -6302,6 +6302,10 @@ function startVerify() {
 }
 
 function checkVerify() {
+  if (!verifyAnswers || Object.keys(verifyAnswers).length === 0) {
+    if (typeof showToast === 'function') showToast('验证题目未加载，请返回密钥页后重试', 'error');
+    return;
+  }
   let allCorrect = true;
   Object.keys(verifyAnswers).forEach(pos => {
     const input = document.getElementById('verify_' + pos);
