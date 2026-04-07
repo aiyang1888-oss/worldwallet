@@ -1194,39 +1194,8 @@ function renderKeyGrid() {
   if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
 }
 
-function shortChainAddr(addr) {
-  if (!addr || addr === '--') return '—';
-  const t = String(addr).trim();
-  if (t.length <= 12) return t;
-  return t.slice(0, 5) + '…' + t.slice(-4);
-}
 function updateHomeChainStrip() {
-  const strip = document.getElementById('homeChainStrip');
-  const trxEl = document.getElementById('homeShortTrx');
-  const ethEl = document.getElementById('homeShortEth');
-  const btcEl = document.getElementById('homeShortBtc');
-  const btcWrap = document.getElementById('homeMiniBtcWrap');
-  if (!strip || !trxEl || !ethEl) return;
-  if (!REAL_WALLET || !wwWalletHasAnyChainAddress(REAL_WALLET)) {
-    trxEl.textContent = '—';
-    ethEl.textContent = '—';
-    if (btcEl) btcEl.textContent = '—';
-    if (btcWrap) btcWrap.style.display = 'flex';
-    strip.classList.add('home-chain-strip--dim');
-    return;
-  }
-  const trx = REAL_WALLET.trxAddress || '';
-  const eth = REAL_WALLET.ethAddress || '';
-  const btc = REAL_WALLET.btcAddress || '';
-  trxEl.textContent = shortChainAddr(trx || '--');
-  ethEl.textContent = shortChainAddr(eth || '--');
-  if (btc && btc.length > 2 && btc !== '--') {
-    btcEl.textContent = shortChainAddr(btc);
-  } else {
-    btcEl.textContent = '—';
-  }
-  if (btcWrap) btcWrap.style.display = 'flex';
-  strip.classList.remove('home-chain-strip--dim');
+  /* 首页链上地址摘要（TRX/ETH/BTC 芯片）已自 HTML 移除；保留空函数供调用方 */
 }
 
 /* updateHomeBackupBanner：wallet.runtime.js（避免与 runtime 重复定义） */
