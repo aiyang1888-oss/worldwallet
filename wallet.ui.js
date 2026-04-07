@@ -3302,6 +3302,8 @@ function pinUnlockBackspace() {
   const inp = document.getElementById('pinUnlockInput');
   if (!inp) return;
   inp.value = (inp.value || '').slice(0, -1);
+  const err = document.getElementById('pinUnlockError');
+  if (err) err.style.display = 'none';
   try { inp.focus(); } catch (e) {}
 }
 function pinUnlockClear() {
@@ -3312,6 +3314,15 @@ function pinUnlockClear() {
   if (err) err.style.display = 'none';
   try { inp.focus(); } catch (e) {}
 }
+(function initPinUnlockInputClearError() {
+  var inp = document.getElementById('pinUnlockInput');
+  if (!inp || inp.dataset.wwErrClear) return;
+  inp.dataset.wwErrClear = '1';
+  inp.addEventListener('input', function () {
+    var err = document.getElementById('pinUnlockError');
+    if (err) err.style.display = 'none';
+  });
+})();
 function closePinUnlock() {
   if(window._wwForceIdleLock) {
     if(typeof showToast==='function') showToast('闲置超时，请输入 PIN 解锁', 'warning', 2200);

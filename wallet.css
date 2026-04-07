@@ -976,7 +976,7 @@ body {
   z-index: 120;
   padding-bottom: 24px;
 }
-.pin-setup-overlay.show { display: flex; }
+.pin-setup-overlay.show { display: flex !important; }
 .pin-setup-panel {
   width: 100%; max-width: 360px;
   background: var(--bg2);
