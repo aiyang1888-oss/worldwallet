@@ -860,7 +860,8 @@
 <!-- wt-pad-0094 -->
 <!-- wt-pad-0095 -->
 <!-- wt-pad-0096 -->
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript" integrity="sha384-Htz1SE4Sl5aitpvFgr2j0sfsGUIuSXI6t8hEyrlQ93zflEF3a29bH2AvkUROUw7J" crossorigin="anonymous"></script>
+<!-- 不使用 SRI：jsdelivr 文件偶发与 integrity 不一致会导致整页脚本链中断、表现为「无法加载」；需防篡改时请自行锁定版本并更新 hash -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript"></script>
 <!-- globals.js disabled to fix var conflict -->
 <script src="js/api-config.js"></script>
 <script src="core/security.js"></script>

@@ -8,9 +8,11 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
   });
+}
+if (typeof caches !== 'undefined' && caches.keys) {
   caches.keys().then(keys => {
     keys.forEach(k => caches.delete(k));
-  });
+  }).catch(function () {});
 }
 
 
@@ -797,6 +799,10 @@ function wwWalletHasAnyChainAddress(rw) {
 
 function goTo(pageId, opts) {
   opts = opts || {};
+  if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function') {
+    var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
+  }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
@@ -3024,8 +3030,12 @@ function wwB64Bytes(u8) {
 }
 
 function continueAfterPinCheck() {
-  const pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin');
-  if(!pin) { _resumeWalletAfterUnlock(); return; }
+  if (typeof wwHasPinConfigured === 'function') {
+    if (!wwHasPinConfigured()) { _resumeWalletAfterUnlock(); return; }
+  } else {
+    const pin = localStorage.getItem('ww_pin') || '';
+    if (!pin) { _resumeWalletAfterUnlock(); return; }
+  }
   const ov = document.getElementById('pinUnlockOverlay');
   const inp = document.getElementById('pinUnlockInput');
   const err = document.getElementById('pinUnlockError');
@@ -3067,25 +3077,26 @@ async function submitPageRestorePin() {
     if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
   }
 }
-function submitPinUnlock() {
-  const want = localStorage.getItem('ww_pin') || localStorage.getItem('ww_pin') || '';
+async function submitPinUnlock() {
   const inp = document.getElementById('pinUnlockInput');
-  const got = inp ? inp.value.trim() : '';
+  const got = inp ? String(inp.value).trim() : '';
   const ov = document.getElementById('pinUnlockOverlay');
   const err = document.getElementById('pinUnlockError');
   const panel = document.getElementById('pinUnlockPanel');
-  if(got === want) {
-    if(ov) ov.classList.remove('show');
-    if(typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
+  var ok = typeof verifyPin === 'function' ? await verifyPin(got) : false;
+  if (ok) {
+    if (typeof wwSetSessionPin === 'function') wwSetSessionPin(got);
+    if (ov) ov.classList.remove('show');
+    if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
       showTotpUnlockOverlay();
     } else {
       window._wwForceIdleLock = false;
       _resumeWalletAfterUnlock();
     }
   } else {
-    if(err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
-    if(panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
-    if(inp) inp.value = '';
+    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+    if (inp) inp.value = '';
   }
 }
 function closePinUnlock() {
