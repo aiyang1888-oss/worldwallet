@@ -111,6 +111,8 @@ body {
     left: 0 !important;
   }
   .status-bar { display: none !important; }
+  /* 真机无模拟状态栏时，勿再预留 50px，避免顶部大块空白 */
+  .page { top: 0 !important; }
 }
 
 /* iOS：输入框字号小于 16px 时聚焦会强制缩放页面，关键表单区统一 16px */
