@@ -130,7 +130,9 @@ body {
   #pinUnlockInput,
   #totpUnlockInput,
   #totpSetupVerifyInput,
-  #page-home #txHistoryFilter.home-tx-filter {
+  #page-home #txHistoryFilter.home-tx-filter,
+  #page-key #keyPageLang,
+  #page-key #mnemonicLength {
     font-size: 16px !important;
   }
 }
