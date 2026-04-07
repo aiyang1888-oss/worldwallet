@@ -817,7 +817,7 @@ function goTo(pageId, opts) {
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = wwWalletHasAnyChainAddress(REAL_WALLET) ? 'flex' : 'none';
+      _tabBar.style.display = (typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
