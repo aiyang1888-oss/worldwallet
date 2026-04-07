@@ -175,7 +175,7 @@ async function createRealWallet(forcedWordCount) {
   if (typeof ethers === 'undefined') {
     throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
   }
-  if (typeof setWalletCreateStep === 'function') 
+  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(1);
   await walletCreateYield();
   let mnemonic, wallet, trxWallet, btcWallet, trxAddr;
   try {
@@ -190,7 +190,7 @@ async function createRealWallet(forcedWordCount) {
     safeLog('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
   }
-  if (typeof setWalletCreateStep === 'function') 
+  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(2);
   await walletCreateYield();
   try {
     var trxPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.trx) ? DERIVE_PATHS.trx : "m/44'/195'/0'/0/0";
@@ -212,7 +212,7 @@ async function createRealWallet(forcedWordCount) {
   } catch (e2) {
     trxAddr = 'T' + trxWallet.address.slice(2, 35);
   }
-  if (typeof setWalletCreateStep === 'function') 
+  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(3);
   await walletCreateYield();
   const w = {
     mnemonic: mnemonic,
