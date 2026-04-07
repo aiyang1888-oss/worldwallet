@@ -3483,6 +3483,7 @@ function renderImportGrid(wordCount) {
   var badge = document.getElementById('importWordCountBadge');
   if (!grid) return;
   var n = [12,15,18,21,24].includes(Number(wordCount)) ? Number(wordCount) : 12;
+  importGridWordCount = n;
   var html = '';
   for (var i = 0; i < n; i++) {
     html += '<input class="import-word" data-index="'+i+'" type="text" autocomplete="off" spellcheck="false" placeholder="'+(i+1)+'" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box;text-align:center" oninput="syncImportPasteFromGrid()" />';
@@ -3539,7 +3540,7 @@ function syncImportGrid(text) {
 (function initImportWalletPage(){
   function run(){
     if (!document.getElementById('importGrid')) return;
-    renderImportGrid(12);
+    initImportGrid(12);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run, { once:true });
   else run();
