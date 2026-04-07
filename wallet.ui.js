@@ -2852,8 +2852,11 @@ function showToast(msg, type='info', duration=2500) {
   if(!t) {
     t = document.createElement('div');
     t.id = 'wt-toast';
-    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,20,40,0.95);color:#e0e0f0;padding:10px 20px;border-radius:12px;font-size:13px;z-index:9999;pointer-events:none;transition:opacity 0.3s;white-space:nowrap;max-width:80vw;text-align:center;border:1px solid rgba(200,168,75,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.5)';
-    document.body.appendChild(t);
+    /* 挂在 .phone 内并用 absolute，避免桌面端 fixed 落在「手机框」外 */
+    var _toastHost = document.querySelector('.phone') || document.body;
+    var _inPhone = _toastHost.classList && _toastHost.classList.contains('phone');
+    t.style.cssText = (_inPhone ? 'position:absolute' : 'position:fixed') + ';bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,20,40,0.95);color:#e0e0f0;padding:10px 20px;border-radius:12px;font-size:13px;z-index:9999;pointer-events:none;transition:opacity 0.3s;white-space:nowrap;max-width:80vw;text-align:center;border:1px solid rgba(200,168,75,0.3);box-shadow:0 4px 20px rgba(0,0,0,0.5)';
+    _toastHost.appendChild(t);
   }
   const colors = {info:'#e0e0f0', success:'#4ac84a', error:'#ff6060', warning:'#ffcc44'};
   t.style.color = colors[type] || colors.info;
