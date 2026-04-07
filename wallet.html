@@ -668,7 +668,7 @@
       <div class="key-content" style="padding-top:12px">
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入 6 位礼物口令</div>
         <div id="claimInputBox">
-          <input id="claimInput" type="text" maxlength="32" placeholder="口令" autocomplete="off"
+          <input id="claimInput" type="text" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="口令" inputmode="text"
             style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitClaim()" />
         </div>
         <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-top:16px" onclick="submitClaim()">领取</button>
