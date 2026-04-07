@@ -3206,6 +3206,11 @@ function openPinSettingsDialog() {
     if (hasWallet && typeof loadWallet === 'function') {
       try { loadWallet(); } catch (_lwBoot) {}
     }
+    try {
+      if (typeof wwWalletHasAnyChainAddress === 'function') {
+        hasWallet = wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null);
+      }
+    } catch (_hw) {}
     if (typeof goTo !== 'function') return;
     if (claimKw) {
       goTo('page-claim');
