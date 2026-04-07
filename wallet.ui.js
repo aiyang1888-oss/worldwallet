@@ -293,6 +293,49 @@ var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb',
 
 /** 仅内存 window.TEMP_WALLET：密钥页展示用，不调用 saveWallet / localStorage */
 
+/**
+ * 生成密钥页用临时钱包（不写 localStorage、不赋值 REAL_WALLET；验证通过后由流程持久化）
+ */
+async function createWallet(forcedWordCount) {
+  if (typeof ethers === 'undefined') {
+    throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
+  }
+  var nWords = (typeof forcedWordCount === 'number' && [12, 15, 18, 21, 24].includes(forcedWordCount)) ? forcedWordCount : 12;
+  var entropyBytes =
+    typeof getEntropyByteCountForMnemonicWords === 'function'
+      ? getEntropyByteCountForMnemonicWords(nWords)
+      : { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 }[nWords] || 16;
+  var mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
+  var wallet = ethers.Wallet.fromMnemonic(mnemonic);
+  var trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
+  var btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
+  var trxAddr = '';
+  try {
+    if (typeof loadTronWeb === 'function') await loadTronWeb();
+    if (typeof TronWeb !== 'undefined') {
+      trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
+    } else {
+      trxAddr = 'T' + trxWallet.address.slice(2, 35);
+    }
+  } catch (_e2) {
+    trxAddr = 'T' + trxWallet.address.slice(2, 35);
+  }
+  return {
+    mnemonic: mnemonic,
+    enMnemonic: mnemonic,
+    words: mnemonic.split(/\s+/).filter(Boolean),
+    wordCount: nWords,
+    eth: { address: wallet.address, privateKey: wallet.privateKey },
+    trx: { address: trxAddr, privateKey: trxWallet.privateKey },
+    btc: { address: btcWallet.address, privateKey: btcWallet.privateKey },
+    ethAddress: wallet.address,
+    trxAddress: trxAddr,
+    btcAddress: btcWallet.address,
+    privateKey: wallet.privateKey,
+    trxPrivateKey: trxWallet.privateKey,
+    createdAt: Date.now()
+  };
+}
 
 async function createNewWallet() {
   try { window._wwInFirstRun = true; } catch (_fr0) {}
