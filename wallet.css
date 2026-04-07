@@ -1200,3 +1200,11 @@ body {
 
 .ww-tx-history-row { transition: opacity 0.2s; }
 .ww-tx-history-row:hover { opacity: 0.8; }
+
+/* Force status bar to match welcome page surface (#1a1a2e); overrides nested/earlier rules */
+.status-bar {
+  background-color: #1a1a2e !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
