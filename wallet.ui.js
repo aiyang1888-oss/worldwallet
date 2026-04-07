@@ -1110,7 +1110,7 @@ function updateHomeChainStrip() {
   const btcEl = document.getElementById('homeShortBtc');
   const btcWrap = document.getElementById('homeMiniBtcWrap');
   if (!strip || !trxEl || !ethEl) return;
-  if (!REAL_WALLET || !REAL_WALLET.ethAddress) {
+  if (!REAL_WALLET || !wwWalletHasAnyChainAddress(REAL_WALLET)) {
     trxEl.textContent = '—';
     ethEl.textContent = '—';
     if (btcEl) btcEl.textContent = '—';
