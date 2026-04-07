@@ -480,6 +480,9 @@ body {
 .home-chain-strip.home-chain-strip--dim .home-short-addr {
   color: rgba(255,255,255,0.38);
 }
+[data-theme="light"] .home-chain-strip.home-chain-strip--dim .home-short-addr {
+  color: rgba(18, 18, 26, 0.45);
+}
 .home-mini-chain {
   display: flex;
   align-items: center;
