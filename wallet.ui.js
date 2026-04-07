@@ -3388,7 +3388,8 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 
 // ── 刷新恢复当前页 ────────────────────────────────────────────────
 (function() {
-  var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings','page-hongbao'];
+  /* 含 page-password-restore：否则在 PIN 解锁页刷新会被首屏 boot 带去首页，无法继续输入 PIN */
+  var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings','page-hongbao','page-password-restore'];
   try {
     var last = sessionStorage.getItem('ww_last_page');
     var hasWallet = false;
