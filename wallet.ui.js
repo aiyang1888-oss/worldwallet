@@ -1141,10 +1141,12 @@ function updateHomeChainStrip() {
   const btc = REAL_WALLET.btcAddress || '';
   trxEl.textContent = shortChainAddr(trx || '--');
   ethEl.textContent = shortChainAddr(eth || '--');
-  if (btc && btc.length > 2 && btc !== '--') {
-    btcEl.textContent = shortChainAddr(btc);
-  } else {
-    btcEl.textContent = '—';
+  if (btcEl) {
+    if (btc && btc.length > 2 && btc !== '--') {
+      btcEl.textContent = shortChainAddr(btc);
+    } else {
+      btcEl.textContent = '—';
+    }
   }
   if (btcWrap) btcWrap.style.display = 'flex';
   strip.classList.remove('home-chain-strip--dim');
@@ -1433,12 +1435,15 @@ var ETH_RPC = 'https://eth.llamarpc.com';
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
-  const addr = document.getElementById('transferAddr').value.trim();
+  const addrEl = document.getElementById('transferAddr');
+  const amtEl = document.getElementById('transferAmount');
+  if (!addrEl || !amtEl) { showToast('⚠️ 转账表单未就绪', 'warning'); return false; }
+  const addr = String(addrEl.value || '').trim();
   if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
     showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
     return false;
   }
-  const amt = parseFloat(document.getElementById('transferAmount').value);
+  const amt = parseFloat(amtEl.value);
   const coin = transferCoin.id;
 
   if (!addr) {
