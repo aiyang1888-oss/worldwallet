@@ -163,7 +163,7 @@
           localStorage.removeItem('ww_hongbaos');
         } catch (_ls) {}
         try {
-          window.REAL_WALLET = null;
+          REAL_WALLET = null;
         } catch (_rw) {}
         if (typeof window.goTo === 'function') window.goTo('page-welcome');
         wwCall('showToast', '钱包已删除', 'success');

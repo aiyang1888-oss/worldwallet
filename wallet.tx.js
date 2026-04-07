@@ -9,8 +9,8 @@
 function wwRequireUnlockedMnemonicForSign() {
   var m = '';
   if (typeof wwGetSessionMnemonic === 'function') m = wwGetSessionMnemonic();
-  if (!m && typeof getSessionKeys === 'function') {
-    var sk = getSessionKeys();
+  if (!m && typeof wwGetSessionKeys === 'function') {
+    var sk = wwGetSessionKeys();
     if (sk && sk.mnemonic) m = sk.mnemonic;
   }
   if (!m) throw new Error('请先解锁钱包（PIN）');

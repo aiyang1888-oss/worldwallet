@@ -705,7 +705,7 @@ async function finalizeImportedWalletAfterPin(pin) {
   wwSetSessionPin(pinStr);
   await saveWalletSecure(flat, pinStr);
   localStorage.removeItem('ww_import_pending');
-  window.REAL_WALLET = {
+  REAL_WALLET = {
     mnemonic: flat.mnemonic,
     ethAddress: flat.ethAddress,
     trxAddress: flat.trxAddress,
@@ -1513,7 +1513,6 @@ async function broadcastRealTransfer() {
         if (REAL_WALLET) {
           try { delete REAL_WALLET.privateKey; } catch (_k1) {}
           try { delete REAL_WALLET.trxPrivateKey; } catch (_k2) {}
-          window.REAL_WALLET = REAL_WALLET;
         }
       } catch (_clr) {}
       try { if (typeof wwRecordSpendAfterBroadcast === 'function') wwRecordSpendAfterBroadcast(amt); } catch (_rs) {}
@@ -2438,7 +2437,6 @@ function deleteWallet() {
     try { localStorage.removeItem('ww_ref_install_credited'); } catch (_r) {}
   } catch (_e) {}
   REAL_WALLET = null;
-  try { window.REAL_WALLET = null; } catch (_w) {}
   currentMnemonicLength = 12;
   if (typeof goTo === 'function') goTo('page-welcome');
   else {
@@ -3001,7 +2999,6 @@ function startVerify() {
       })(),
       addrMap: toSave.addrMap
     };
-    window.REAL_WALLET = REAL_WALLET;
     try {
       if (typeof wwSetSessionMnemonic === 'function') wwSetSessionMnemonic(tw.mnemonic);
     } catch (_sm) {}
@@ -3241,7 +3238,7 @@ async function doImportWallet() {
       }
     };
 
-    window.REAL_WALLET = {
+    REAL_WALLET = {
       mnemonic: result.mnemonic,
       ethAddress: result.eth.address,
       trxAddress: result.trx.address,

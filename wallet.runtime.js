@@ -48,14 +48,14 @@ function animateHomeUsdTo(targetUsd, fmtUsdFn) {
   window._homeBalanceAnimRaf = requestAnimationFrame(tick);
 }
 
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='assets/lib/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
 var _qrLoadPromise=null;
 function loadQRCodeLib(){
   if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
   if(_qrLoadPromise)return _qrLoadPromise;
   _qrLoadPromise=new Promise(function(res,rej){
     var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
+    s.src='assets/lib/qrcode.min.js';
     s.async=true;
     s.onload=function(){res();};
     s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
@@ -3804,7 +3804,7 @@ function deleteWallet() {
   localStorage.removeItem('ww_wallet');
   localStorage.removeItem('ww_hongbaos');
   try { localStorage.removeItem('ww_ref_install_credited'); } catch (_x) {}
-  window.REAL_WALLET = null;
+  try { REAL_WALLET = null; } catch (_rw) {}
   currentMnemonicLength = 12;
   // 跳回欢迎页
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -5207,7 +5207,6 @@ function startVerify() {
       })(),
       addrMap: toSaveR.addrMap
     };
-    window.REAL_WALLET = REAL_WALLET;
     try {
       if (typeof wwSetSessionMnemonic === 'function') wwSetSessionMnemonic(tw.mnemonic);
     } catch (_sm) {}
@@ -5495,8 +5494,8 @@ async function pinVerifyEnterWallet() {
       if (sensitivePv && sensitivePv.mnemonic && typeof wwSetSessionMnemonic === 'function') {
         wwSetSessionMnemonic(sensitivePv.mnemonic);
       }
-      if (sensitivePv && sensitivePv.mnemonic && typeof setSessionKeys === 'function') {
-        setSessionKeys({ mnemonic: sensitivePv.mnemonic });
+      if (sensitivePv && sensitivePv.mnemonic && typeof wwApplySessionKeys === 'function') {
+        wwApplySessionKeys({ mnemonic: sensitivePv.mnemonic });
       }
     }
   } catch (_e) {}
@@ -5541,8 +5540,8 @@ async function _resumeWalletAfterUnlock() {
       if (sensitiveU && sensitiveU.mnemonic && typeof wwSetSessionMnemonic === 'function') {
         wwSetSessionMnemonic(sensitiveU.mnemonic);
       }
-      if (sensitiveU && sensitiveU.mnemonic && typeof setSessionKeys === 'function') {
-        setSessionKeys({ mnemonic: sensitiveU.mnemonic });
+      if (sensitiveU && sensitiveU.mnemonic && typeof wwApplySessionKeys === 'function') {
+        wwApplySessionKeys({ mnemonic: sensitiveU.mnemonic });
       }
     } catch (_e2) {}
   }
@@ -5938,7 +5937,7 @@ function deleteWalletRow() {
     localStorage.removeItem('ww_hongbaos');
   } catch (_ls) {}
   try {
-    window.REAL_WALLET = null;
+    REAL_WALLET = null;
   } catch (_rw) {}
   if (typeof goTo === 'function') goTo('page-welcome');
   if (typeof showToast === 'function') showToast('钱包已删除', 'success');

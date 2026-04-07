@@ -1,8 +1,8 @@
 // wallet.core.js — 钱包核心：创建/加密/存储/派生
 // SECURITY: 加密与 KDF 见 core/security.js（scrypt + AES-GCM）；本文件不再重复实现 deriveKeyFromPin。
 
-/** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明 */
-var REAL_WALLET = null;
+/** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明（let：不挂 window.REAL_WALLET） */
+let REAL_WALLET = null;
 /** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
 var CHAIN_ADDR = '--';
 
@@ -10,14 +10,14 @@ function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
 }
 
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='assets/lib/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
 
 function loadQRCodeLib(){
   if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
   if(_qrLoadPromise)return _qrLoadPromise;
   _qrLoadPromise=new Promise(function(res,rej){
     var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
+    s.src='assets/lib/qrcode.min.js';
     s.async=true;
     s.onload=function(){res();};
     s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
@@ -65,7 +65,7 @@ function loadWalletPublic() {
     if (d) {
       var parsed = JSON.parse(d);
       // 只加载公开信息，不加载敏感数据
-      window.REAL_WALLET = {
+      REAL_WALLET = {
         version: parsed.version || 1,
         ethAddress: parsed.ethAddress,
         trxAddress: parsed.trxAddress,
@@ -83,7 +83,6 @@ function loadWalletPublic() {
           };
         })()
       };
-      REAL_WALLET = window.REAL_WALLET;
       CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
     }
   } catch (e) {
@@ -231,7 +230,6 @@ async function createRealWallet(forcedWordCount) {
       derived_from: 'eth'
     }
   };
-  window.REAL_WALLET = w;
   REAL_WALLET = w;
   CHAIN_ADDR = w.trxAddress || '--';
   saveWallet(w);
@@ -264,7 +262,6 @@ async function createRealWallet(forcedWordCount) {
       addrMap: w.addrMap
     };
     REAL_WALLET = pubCr;
-    window.REAL_WALLET = pubCr;
   } catch (_pub) {}
   applyReferralCredit();
   try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
@@ -309,7 +306,6 @@ async function restoreWallet(mnemonic) {
     })()
   };
   REAL_WALLET = pub;
-  window.REAL_WALLET = pub;
   CHAIN_ADDR = (pub && pub.trxAddress) ? pub.trxAddress : '--';
   if (pin) {
     var flatForStore = {
@@ -700,3 +696,15 @@ function markBackupDone() {
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if (typeof wwPopulatePriceAlertForm === 'function') wwPopulatePriceAlertForm();
 }
+
+function getRealWalletPublic() {
+  if (!REAL_WALLET) return null;
+  return {
+    ethAddress: REAL_WALLET.ethAddress,
+    trxAddress: REAL_WALLET.trxAddress,
+    btcAddress: REAL_WALLET.btcAddress,
+    createdAt: REAL_WALLET.createdAt,
+    backedUp: REAL_WALLET.backedUp
+  };
+}
+window.getRealWalletPublic = getRealWalletPublic;

@@ -4,6 +4,9 @@
  * - 敏感会话：仅内存保存助记词会话，不长期挂 REAL_WALLET
  */
 
+(function () {
+  'use strict';
+
 var WW_ENCRYPT_PAYLOAD_VERSION = 2;
 
 /** 创建流程中的临时钱包（不挂 window，避免控制台直接读取） */
@@ -365,3 +368,24 @@ async function decryptWalletSensitive(pin) {
     return { ok: false, reason: 'unknown' };
   }
 }
+
+  window.WW_ENCRYPT_PAYLOAD_VERSION = WW_ENCRYPT_PAYLOAD_VERSION;
+  window.encryptWithPin = encryptWithPin;
+  window.decryptWithPin = decryptWithPin;
+  window.verifyPin = verifyPin;
+  window.savePinSecure = savePinSecure;
+  window.decryptWalletSensitive = decryptWalletSensitive;
+  window.wwGetTempWallet = wwGetTempWallet;
+  window.wwSetTempWallet = wwSetTempWallet;
+  window.wwPeekImportPending = wwPeekImportPending;
+  window.wwSetImportPending = wwSetImportPending;
+  window.wwTakeImportPending = wwTakeImportPending;
+  window.wwClearSensitiveSession = wwClearSensitiveSession;
+  window.wwGetSessionMnemonic = wwGetSessionMnemonic;
+  window.wwClearSessionMnemonic = wwClearSessionMnemonic;
+  window.wwNormalizeDecryptedSensitive = wwNormalizeDecryptedSensitive;
+  window.wwApplySessionKeys = setSessionKeys;
+  window.wwGetSessionKeys = getSessionKeys;
+  window.encryptTotpSecret = encryptTotpSecret;
+  window.decryptTotpSecret = decryptTotpSecret;
+})();
