@@ -7,10 +7,12 @@ DIST_DIR="$ROOT_DIR/dist"
 
 echo "🔄 同步 wallet-shell → dist/"
 
-# 复制核心文件
+# 子目录：整树复制，保证 js/core 与 wallet-shell 一致（含 idb-cache、*-cache 等）
 mkdir -p "$DIST_DIR/js" "$DIST_DIR/core"
-cp "$SHELL_DIR/js/api-config.js" "$DIST_DIR/js/" 2>/dev/null || true
-cp "$SHELL_DIR/core/"*.js "$DIST_DIR/core/" 2>/dev/null || true
+cp -r "$SHELL_DIR/js/"* "$DIST_DIR/js/"
+cp -r "$SHELL_DIR/core/"* "$DIST_DIR/core/"
+
+# 根目录资源
 cp "$SHELL_DIR/index.html" "$DIST_DIR/wallet.html"
 cp "$SHELL_DIR/wallet.css" "$DIST_DIR/"
 cp "$SHELL_DIR/wallet.core.js" "$DIST_DIR/"
@@ -18,6 +20,7 @@ cp "$SHELL_DIR/wallet.ui.js" "$DIST_DIR/"
 cp "$SHELL_DIR/wallet.addr.js" "$DIST_DIR/"
 cp "$SHELL_DIR/wallet.tx.js" "$DIST_DIR/"
 cp "$SHELL_DIR/wallet.runtime.js" "$DIST_DIR/"
+cp "$SHELL_DIR/wallet.dom-bind.js" "$DIST_DIR/"
 cp "$SHELL_DIR/wordlists.js" "$DIST_DIR/"
 
 # 创建 wordlists 目录并复制词库

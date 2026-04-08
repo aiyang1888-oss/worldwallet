@@ -5,7 +5,8 @@ node_modules/
 
 # Expo
 .expo/
-dist/
+dist/*
+!dist/.gitkeep
 web-build/
 # Generated from dist/assets by scripts/sync-public-wallet.js
 public/wallet.html
