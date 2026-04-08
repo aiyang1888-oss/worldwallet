@@ -19,3 +19,19 @@ npm run dev
 使用 `localhost` 亦可：`http://localhost:8766/wallet.html`（与上表等价）。
 
 自动化 / 环境变量：可设置 `WALLET_TEST_URL` 覆盖默认的 `http://127.0.0.1:8766/wallet.html`（见 `test-p0-auto.js`）。
+
+## 故障排除
+
+### `wallet.html` 返回 404
+
+说明 **8766 端口上的进程不是**「根目录为 `dist/` 的静态服务」。常见情况：在其它目录执行了裸的 `python3 -m http.server 8766`（未加 `--directory dist`）。
+
+处理：
+
+1. 查看占用：`lsof -iTCP:8766 -sTCP:LISTEN`
+2. 结束错误进程后，在 **WorldWallet 仓库根目录**执行：`npm run dev`
+3. 自检：`npm run dev:ping`（应输出 `OK`）
+
+### Puppeteer / 自动化报找不到 Chrome
+
+在项目目录执行：`npx puppeteer browsers install chrome`
