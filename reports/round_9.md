@@ -1,23 +1,23 @@
-# Round 9 修复报告 - 2026-04-08 08:09
+# Round 9 修复报告 - 2026-04-08 08:33
 
 ## 发现的问题
-- [P1] `wallet.runtime.js` 中 `markBackupDone` 对 `localStorage` 的 `ww_wallet` 使用 `JSON.parse`，未防护非法 JSON，数据损坏时会在用户确认备份流程中抛错并中断。
+- [P1] `wallet.runtime.js` 中 `setAmt`、`randomBlessing` 及 `createHongbao` 对 `#hbAmount` / `#hbMessage` 直接链式访问，在节点不存在时会抛错（承接 round_8「剩余问题」）。
 
 ## 修复内容
 - 文件：`wallet.runtime.js`
-- 函数：`markBackupDone`
-- 修改：用 try-catch 解析并归一化为对象后再写入 `backedUp`，避免解析异常导致崩溃。
+- 函数：`setAmt`、`randomBlessing`、`createHongbao`
+- 修改：对礼物金额与留言输入框先 `getElementById` 再判空后再读写，避免极端或精简 DOM 下崩溃。
 
 ## 修改文件
 - `wallet.runtime.js`
 
 ## 剩余问题
-- `page-home` 上 `#homeBalanceChartWrap` 仍存在重复 `class` 属性（HTML 小问题，不影响脚本）。
-- `wallet.core.js` 中同名 `markBackupDone` 仍为无防护解析；当前运行期以 `wallet.runtime.js` 后加载定义为准，若需双文件一致可后续同步。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 仍存在大量同名函数，后加载文件覆盖前者（架构债，本轮未改）。
+- [P3] TOTP 解锁弹窗内按钮仍存在重复 `class`（`btn-primary` 与 `u13`），可后续合并为单一 `class` 列表。
 
 ## 测试结果
-- TEST-A: PASS — `data-ww-fn` 仅 `selectTransferCoin`；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将其挂到 `window`，且 `wallet.ui.js` 亦赋值 `window.selectTransferCoin`。
-- TEST-B: PASS — `wallet.html` 中无 `data-ww-go` 属性。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在加载链中均有非空实现（`wallet.ui.js` / `wallet.runtime.js`）。
+- TEST-A: PASS — `data-ww-fn="selectTransferCoin"` 在合并后的 `wallet.ui.js` + `wallet.runtime.js` 中有对应全局绑定。
+- TEST-B: PASS — 无 `data-ww-go`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均有非空函数体。
 
-验证：将 `localStorage.ww_wallet` 设为非法 JSON 字符串后，在助记词流程触发「已备份」相关逻辑（或控制台调用 `markBackupDone()`），应不再出现未捕获异常，且备份状态可正常写入。
+Git：`96d2049` — `fix: guard hbAmount and hbMessage DOM access in gift helpers (setAmt, randomBlessing, createHongbao)`
