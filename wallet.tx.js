@@ -1,77 +1,4 @@
 // wallet.tx.js — 交易：转账/余额/价格/历史
-// SECURITY: 本文件用 IIFE 包裹，避免 sendETH/sendTRX/sendUSDT_TRC20 挂到 window；对外仅暴露 safeSign 等白名单。
-
-(function () {
-  'use strict';
-  var priceCache = null;
-  var priceCacheTime = 0;
-
-function wwRequireUnlockedMnemonicForSign() {
-  var m = '';
-  if (typeof wwGetSessionMnemonic === 'function') m = wwGetSessionMnemonic();
-  if (!m && typeof wwGetSessionKeys === 'function') {
-    var sk = wwGetSessionKeys();
-    if (sk && sk.mnemonic) m = sk.mnemonic;
-  }
-  if (!m) throw new Error('请先解锁钱包（PIN）');
-  return m;
-}
-
-function wwDeriveForSign() {
-  var m = wwRequireUnlockedMnemonicForSign();
-  if (typeof deriveAddress !== 'function') throw new Error('钱包核心未加载');
-  return deriveAddress(m);
-}
-
-function wwZeroDerivedKeys(d) {
-  try {
-    if (d && d.eth) d.eth.privateKey = '';
-    if (d && d.trx) d.trx.privateKey = '';
-    if (d && d.btc) d.btc.privateKey = '';
-  } catch (_e) {}
-}
-
-async function wwSignWithUnlockedMnemonic(asyncFn) {
-  var d = wwDeriveForSign();
-  try {
-    return await asyncFn(d);
-  } finally {
-    wwZeroDerivedKeys(d);
-    d = null;
-    try {
-      if (typeof wwClearSensitiveFieldsOnRealWallet === 'function') wwClearSensitiveFieldsOnRealWallet();
-    } catch (_c) {}
-    try {
-      if (typeof wwClearSessionMnemonic === 'function') wwClearSessionMnemonic();
-    } catch (_m) {}
-  }
-}
-
-function wwClearSensitiveFieldsOnRealWallet() {
-  try {
-    if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET) {
-      try { delete REAL_WALLET.privateKey; } catch (_a) {}
-      try { delete REAL_WALLET.trxPrivateKey; } catch (_b) {}
-    }
-  } catch (_e) {}
-}
-
-/**
- * 统一链上签名/广播入口：chain 'trx'|'eth'|'usdt'；tx { to, amount }；pin 预留（会话已解锁时传空字符串）
- */
-async function safeSign(chain, tx, pin) {
-  if (!tx || typeof tx !== 'object') throw new Error('invalid tx');
-  if (pin != null && String(pin).length > 0 && typeof verifyPin === 'function') {
-    var ok = await verifyPin(String(pin));
-    if (!ok) throw new Error('PIN');
-  }
-  var to = tx.to;
-  var amount = tx.amount;
-  if (chain === 'trx') return await sendTRX(to, amount);
-  if (chain === 'eth') return await sendETH(to, amount);
-  if (chain === 'usdt' || chain === 'usdt_trc20') return await sendUSDT_TRC20(to, amount);
-  throw new Error('unsupported chain');
-}
 
 /**
  * 通用异步重试：遇 e.status === 429 时指数退避（1s → 2s → 4s）。
@@ -208,7 +135,14 @@ function confirmTransfer() {
   broadcastRealTransfer().then(ok => {
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
     if(ok) {
-      goTo('page-swoosh'); // 广播成功，显示成功动画
+      // 与 wallet.runtime.js 一致：精简版无 page-swoosh / 动画 DOM 时回首页
+      if (document.getElementById('swooshCoin')) {
+        goTo('page-swoosh');
+      } else {
+        if (typeof showToast === 'function') showToast('✅ 转账已提交', 'success');
+        goTo('page-home');
+        setTimeout(function () { if (typeof loadBalances === 'function') loadBalances(); }, 2000);
+      }
     } else {
       showToast('⚠️ 转账广播失败，请检查余额和网络', 'warning');
     }
@@ -217,84 +151,79 @@ function confirmTransfer() {
     showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
   });
 
-  // 启动嗖动画
+  // 启动嗖动画（仅当完整版 DOM 存在；否则由上方 then 分支已回首页）
   setTimeout(() => {
     const coin = document.getElementById('swooshCoin');
+    if (!coin) return;
     const trail = document.getElementById('swooshTrail');
     const receiver = document.getElementById('swooshReceiver');
     const check = document.getElementById('swooshCheck');
     if(coin) coin.classList.add('swoosh-coin');
     if(trail) trail.classList.add('swoosh-trail');
     setTimeout(()=>{ if(receiver) receiver.classList.add('receiver-glow'); if(check) { check.textContent='✓'; check.style.color='#4ac84a'; check.style.fontSize='20px'; } }, 900);
-    // 动画结束后跳成功页
-    setTimeout(()=>{ goTo('page-transfer-success'); setTimeout(loadBalances, 2000); }, 1800);
+    setTimeout(()=>{
+      if (document.getElementById('page-transfer-success')) {
+        goTo('page-transfer-success');
+        setTimeout(loadBalances, 2000);
+      }
+    }, 1800);
   }, 200);
 }
 
 async function sendTRX(toAddr, amount) {
   await loadTronWeb();
-  return wwSignWithUnlockedMnemonic(async function (d) {
-    var tw = new TronWeb({ fullHost: TRON_GRID });
-    var pk = d.trx.privateKey;
-    var pkHex = pk.startsWith('0x') ? pk.slice(2) : pk;
-    tw.setPrivateKey(pkHex);
-    var amtSun = Math.floor(amount * 1e6);
-    var tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx === 'function' ? getTronFeeLimitTrx() : 25000000) });
-    var signed = await tw.trx.sign(tx);
-    var result = await tw.trx.sendRawTransaction(signed);
-    if (result.result) return result.txid;
-    throw new Error(result.message || 'TRX 广播失败');
-  });
+  const tw = new TronWeb({ fullHost: TRON_GRID });
+  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
+  const amtSun = Math.floor(amount * 1e6);
+  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
+  const signed = await tw.trx.sign(tx);
+  const result = await tw.trx.sendRawTransaction(signed);
+  if(result.result) return result.txid;
+  throw new Error(result.message || 'TRX 广播失败');
 }
 
 async function sendETH(toAddr, amount) {
-  return wwSignWithUnlockedMnemonic(async function (d) {
-    var provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
-    var wallet = new ethers.Wallet(d.eth.privateKey, provider);
-    var sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
-    var mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
-    var fd = await provider.getFeeData();
-    var txReq = {
-      to: toAddr,
-      value: ethers.utils.parseEther(amount.toString()),
-      gasLimit: 21000
-    };
-    var mp = Math.round(mult * 100);
-    if (fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
-      txReq.maxFeePerGas = fd.maxFeePerGas.mul(mp).div(100);
-      txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(mp).div(100);
-    } else if (fd.gasPrice) {
-      txReq.gasPrice = fd.gasPrice.mul(mp).div(100);
-    }
-    var tx = await wallet.sendTransaction(txReq);
-    await tx.wait(1);
-    return tx.hash;
-  });
+  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
+  const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
+  const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
+  const mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
+  const fd = await provider.getFeeData();
+  const txReq = {
+    to: toAddr,
+    value: ethers.utils.parseEther(amount.toString()),
+    gasLimit: 21000
+  };
+  const m = Math.round(mult * 100);
+  if(fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
+    txReq.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);
+    txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(m).div(100);
+  } else if(fd.gasPrice) {
+    txReq.gasPrice = fd.gasPrice.mul(m).div(100);
+  }
+  const tx = await wallet.sendTransaction(txReq);
+  await tx.wait(1);
+  return tx.hash;
 }
 
 async function sendUSDT_TRC20(toAddr, amount) {
   await loadTronWeb();
-  return wwSignWithUnlockedMnemonic(async function (d) {
-    var tw = new TronWeb({ fullHost: TRON_GRID });
-    var pk = d.trx.privateKey;
-    var pkHex = pk.startsWith('0x') ? pk.slice(2) : pk;
-    tw.setPrivateKey(pkHex);
-    var amtSun = Math.floor(amount * 1e6);
-    var tx = await tw.transactionBuilder.triggerSmartContract(
-      USDT_TRC20,
-      'transfer(address,uint256)',
-      { feeLimit: (typeof getTronFeeLimitUsdt === 'function' ? getTronFeeLimitUsdt() : 20000000) },
-      [
-        { type: 'address', value: toAddr },
-        { type: 'uint256', value: amtSun }
-      ],
-      REAL_WALLET.trxAddress
-    );
-    var signed = await tw.trx.sign(tx.transaction);
-    var result = await tw.trx.sendRawTransaction(signed);
-    if (result.result) return result.txid;
-    throw new Error(result.message || 'USDT 广播失败');
-  });
+  const tw = new TronWeb({ fullHost: TRON_GRID });
+  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
+  const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
+  const tx = await tw.transactionBuilder.triggerSmartContract(
+    USDT_TRC20,
+    'transfer(address,uint256)',
+    { feeLimit: (typeof getTronFeeLimitUsdt==='function' ? getTronFeeLimitUsdt() : 20000000) },
+    [
+      { type: 'address', value: toAddr },
+      { type: 'uint256', value: amtSun }
+    ],
+    REAL_WALLET.trxAddress // Base58格式，TronWeb自动处理
+  );
+  const signed = await tw.trx.sign(tx.transaction);
+  const result = await tw.trx.sendRawTransaction(signed);
+  if(result.result) return result.txid;
+  throw new Error(result.message || 'USDT 广播失败');
 }
 
 async function loadBalances() {
@@ -343,7 +272,7 @@ async function loadBalances() {
         const btcData = await btcRes.json();
         btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
       }
-    } catch(e) { safeLog('BTC query skipped'); }
+    } catch(e) { console.log('BTC query skipped'); }
 
     const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
     const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
@@ -369,6 +298,7 @@ async function loadBalances() {
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
+    if (typeof drawHomeBalanceChart === 'function') drawHomeBalanceChart(total);
     if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
     if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
     // 动态汇率（从价格接口获取，fallback 7.2）
@@ -401,12 +331,9 @@ async function loadBalances() {
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
     if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
-    safeLog('Balance load error:', e);
+    console.error('Balance load error:', e);
     if(tbd) tbd.classList.remove('home-balance--loading');
-    if(tbs) tbs.textContent = '暂时无法同步 · 请检查网络后点刷新';
     if(btn) btn.textContent = '刷新';
-    var balU = document.getElementById('balUsdt');
-    if(balU && balU.textContent === '...') balU.textContent = '--';
   }
 }
 
@@ -499,7 +426,7 @@ async function loadTxHistory() {
     renderTxHistoryFromCache();
 
   } catch(e) {
-    safeLog('加载交易记录失败:', e);
+    console.error('加载交易记录失败:', e);
     const en = (typeof currentLang !== 'undefined' && currentLang === 'en');
     el.innerHTML = txHistoryFriendlyHtml(
       '📡',
@@ -725,18 +652,3 @@ function formatTimeAgo(ts) {
 function applyTxHistoryFilter() {
   renderTxHistoryFromCache();
 }
-
-  if (typeof window !== 'undefined') {
-    window.safeSign = safeSign;
-    window.confirmTransfer = confirmTransfer;
-    window.loadBalances = loadBalances;
-    window.loadTxHistory = loadTxHistory;
-    window.updateTransferAddrBook = updateTransferAddrBook;
-    window.applyTxHistoryFilter = applyTxHistoryFilter;
-    window.parseUsdFromBalanceTxt = parseUsdFromBalanceTxt;
-    window.cancelHomeBalanceAnim = cancelHomeBalanceAnim;
-    window.animateHomeUsdTo = animateHomeUsdTo;
-    window.getTransferFeeSpeed = getTransferFeeSpeed;
-    window.wwTxHistoryRowOnClick = wwTxHistoryRowOnClick;
-  }
-})();
