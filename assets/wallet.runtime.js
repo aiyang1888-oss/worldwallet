@@ -2564,16 +2564,21 @@ function updateCrossChainSwapCompare() {
   var outTron = (pTo > 0) ? ((amtIn - feeTron) * pFrom / pTo) : 0;
   var outEth = (pTo > 0) ? ((amtIn - feeEth) * pFrom / pTo) * slipEth : 0;
   var ft = swapTo ? swapTo.name : '';
+  var outTrxFmt = swapTo && swapTo.id === 'trx';
+  function _wwFmtSwapCompare(x) {
+    if (outTrxFmt) return x.toFixed(2);
+    return x > 1 ? x.toFixed(4) : x.toFixed(8);
+  }
   var elT = document.getElementById('wwSwapCompareTron');
   var elE = document.getElementById('wwSwapCompareEth');
   var bT = document.getElementById('wwSwapCompareBadgeTron');
   var bE = document.getElementById('wwSwapCompareBadgeEth');
   var best = document.getElementById('wwSwapCompareBest');
-  if (elT) elT.textContent = amtIn > 0 ? (outTron > 1 ? outTron.toFixed(4) : outTron.toFixed(8)) + ' ' + ft : '—';
-  if (elE) elE.textContent = amtIn > 0 ? (outEth > 1 ? outEth.toFixed(4) : outEth.toFixed(8)) + ' ' + ft : '—';
+  if (elT) elT.textContent = amtIn > 0 ? _wwFmtSwapCompare(outTron) + ' ' + ft : '—';
+  if (elE) elE.textContent = amtIn > 0 ? _wwFmtSwapCompare(outEth) + ' ' + ft : '—';
   var better = '相近';
-  if (amtIn > 0 && outTron > outEth * 1.0001) { better = 'TRON 路径参考更优（预估多 ' + ((outTron - outEth) > 1 ? (outTron - outEth).toFixed(4) : (outTron - outEth).toFixed(8)) + ' ' + ft + '）'; if (bT) { bT.textContent = '较优'; bT.style.background = 'rgba(38,161,123,0.2)'; bT.style.color = '#26a17b'; } if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; } }
-  else if (amtIn > 0 && outEth > outTron * 1.0001) { better = '以太坊路径参考更优（预估多 ' + ((outEth - outTron) > 1 ? (outEth - outTron).toFixed(4) : (outEth - outTron).toFixed(8)) + ' ' + ft + '）'; if (bE) { bE.textContent = '较优'; bE.style.background = 'rgba(98,126,234,0.2)'; bE.style.color = '#627eea'; } if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; } }
+  if (amtIn > 0 && outTron > outEth * 1.0001) { better = 'TRON 路径参考更优（预估多 ' + _wwFmtSwapCompare(outTron - outEth) + ' ' + ft + '）'; if (bT) { bT.textContent = '较优'; bT.style.background = 'rgba(38,161,123,0.2)'; bT.style.color = '#26a17b'; } if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; } }
+  else if (amtIn > 0 && outEth > outTron * 1.0001) { better = '以太坊路径参考更优（预估多 ' + _wwFmtSwapCompare(outEth - outTron) + ' ' + ft + '）'; if (bE) { bE.textContent = '较优'; bE.style.background = 'rgba(98,126,234,0.2)'; bE.style.color = '#627eea'; } if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; } }
   else {
     if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; }
     if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; }
@@ -4198,7 +4203,8 @@ function renderSwapUI() {
   (_safeEl('swapToIcon') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToIcon fallback */.textContent=t.icon;
   (_safeEl('swapToName') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToName fallback */.textContent=t.name;
   (_safeEl('swapToChain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToChain fallback */.textContent=t.chain;
-  const rate = (swapFrom.price/swapTo.price).toFixed(swapTo.price>100?6:4);
+  const rateNum = swapFrom.price / swapTo.price;
+  const rate = t.id === 'trx' ? rateNum.toFixed(2) : rateNum.toFixed(swapTo.price > 100 ? 6 : 4);
   (_safeEl('swapRate') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRate fallback */.textContent=`1 ${f.name} ≈ ${rate} ${t.name}`;
 }
 
@@ -4209,7 +4215,7 @@ function calcSwap() {
   const pTo = swapTo.price || 1;
   const fee = amtIn * 0.003;
   const amtOut = ((amtIn - fee) * pFrom / pTo);
-  const fmt = amtOut > 1 ? amtOut.toFixed(4) : amtOut.toFixed(8);
+  const fmt = swapTo.id === 'trx' ? amtOut.toFixed(2) : (amtOut > 1 ? amtOut.toFixed(4) : amtOut.toFixed(8));
   (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent = fmt;
   (_safeEl('swapInUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapInUSD fallback */.textContent = '$'+(amtIn*pFrom).toFixed(2);
   (_safeEl('swapOutUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapOutUSD fallback */.textContent = '$'+((amtIn-fee)*pFrom).toFixed(2);
@@ -4217,7 +4223,7 @@ function calcSwap() {
   // 更新汇率显示
   const rate = pFrom / pTo;
   const rateEl = (_safeEl('swapRateInfo') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRateInfo fallback */;
-  if(rateEl) rateEl.textContent = `1 ${swapFrom.name} ≈ ${rate > 1 ? rate.toFixed(4) : rate.toFixed(8)} ${swapTo.name}`;
+  if(rateEl) rateEl.textContent = `1 ${swapFrom.name} ≈ ${swapTo.id === 'trx' ? rate.toFixed(2) : (rate > 1 ? rate.toFixed(4) : rate.toFixed(8))} ${swapTo.name}`;
   try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc) {}
 }
 
@@ -4283,7 +4289,7 @@ function doSwap() {
   if(overlay) {
     _safeEl('swapConfirmFrom').textContent = amt + ' ' + swapFrom.name;
     _safeEl('swapConfirmTo').textContent = out + ' ' + swapTo.name;
-    _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (swapFrom.price/swapTo.price).toFixed(6) + ' ' + swapTo.name;
+    _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (swapFrom.price/swapTo.price).toFixed(swapTo.id === 'trx' ? 2 : 6) + ' ' + swapTo.name;
     overlay.classList.add('show');
   } else {
     // 直接跳转 DEX

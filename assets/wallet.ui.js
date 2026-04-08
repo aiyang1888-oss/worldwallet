@@ -2630,7 +2630,7 @@ function calcSwap() {
   var pTo = (t && t.price) ? t.price : 0.12;
   var fee = amtIn * 0.003;
   var amtOut = pTo > 0 ? ((amtIn - fee) * pFrom / pTo) : 0;
-  var fmt = amtOut > 1 ? amtOut.toFixed(4) : amtOut.toFixed(8);
+  var fmt = amtOut.toFixed(2);
   var outEl = _safeEl('swapAmountOut');
   if (outEl) outEl.textContent = fmt;
 }
