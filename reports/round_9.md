@@ -4,6 +4,7 @@
 - [P3] `wallet.runtime.js` 在 `wallet.ui.js` 之后加载，重复定义并覆盖全局 `goTo`、`deleteWallet`、`getTransferContacts`，导致运行时实际执行的是 runtime 版本（与 UI 在页面显隐、导入页 `_wwInFirstRun`、删除钱包后状态等细节上不一致），与 round_8「单一来源」目标冲突。
 
 ## 修复内容
+- 提交：`6f01255`
 - 文件：wallet.ui.js
 - 函数：`wwDeferRestoreNavAfterRuntime`（IIFE）
 - 修改：在脚本末尾用 `setTimeout(0)` 于 runtime 执行完毕后，将 UI 中的 `goTo`、`deleteWallet`、`getTransferContacts` 重新赋回 `window`，保证全局调用与产品设计一致。
