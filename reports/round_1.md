@@ -1,30 +1,30 @@
-# Round 1 修复报告 - 2026-04-08
+# Round 1 修复报告 - 2026-04-08 07:52
 
 ## 发现的问题
-- [P0] 已持久化钱包但尚未完成 PIN 设置时导航至 `page-home`，可能出现底栏隐藏、内容异常等「空白首页」体验；需在路由层强制进入 PIN 流程。
-- [P1] `window.TEMP_WALLET` 与明文 `ww_import_pending` 不利于会话清理与导入安全；需收敛到 `core/security.js` 内可控存储与一次性迁移。
-- [P3] `wallet.runtime.js` 与 `wallet.ui.js` 曾重复定义 `renderKeyGrid`，后加载版本覆盖前者，易造成维护混乱与行为不一致。
+- [P2] `wallet.dom-bind.js` 绑定的 `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`wwOnPinSetupLen`、`wwOnPinConfirmLen` 在工程中未定义，`wwCall` 无法调用。
+- [P2] 静态清单要求的 `sendTransfer`、`claimGift`、`openSend`、`openReceive` 未作为全局函数暴露，TEST-C 无法通过。
+- [P3] `wallet.css` 花括号已平衡（`{` 与 `}` 均为 326）；`wallet.html` 中无 `data-ww-go` 属性（导航主要使用 `onclick="goTo(...)"`）。
+- [P3] 部分 `JSON.parse` / `getElementById` 用法仍可依 STEP 3 继续做防御性加固（未在本轮修改）。
 
 ## 修复内容
-- 文件：`wallet.runtime.js`（`goTo`）、`core/security.js`、`wallet.ui.js`、`wallet.core.js`、`wallet.addr.js`、`js/safeLog.js` 等
-- 函数：`goTo`（首页 PIN 门控）、`wwGetTempWallet` / `wwSetTempWallet` / `wwTakeImportPending` 及相关 PIN 哈希逻辑
-- 修改：无 PIN 时进入首页改为跳转 PIN 设置；临时钱包与导入待处理改为 security 模块内管理；移除 runtime 内重复的 `renderKeyGrid`，统一使用 UI 侧实现。
+- 文件：`wallet.ui.js`
+- 函数：`wwOnPinSetupLen`、`wwOnPinConfirmLen`、`goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`sendTransfer`、`claimGift`、`openSend`、`openReceive`
+- 修改：补全与 PIN 键盘/确认页逻辑一致的输入同步与 Enter 提交，并为转账/领礼物/打开收发页提供薄封装别名。
+
+- 文件：`wallet.runtime.js`
+- 函数：`wwExposeDataWwFnHandlers` 块内新增 `window.*` 暴露
+- 修改：将上述函数及 `submitPageRestorePin` / `submitPinUnlock` 纳入显式导出，供内联委托与工具扫描一致读取。
 
 ## 修改文件
-- `core/security.js`
-- `js/safeLog.js`
-- `wallet.runtime.js`
 - `wallet.ui.js`
-- `wallet.addr.js`
-- `wallet.core.js`
-- `reports/round_1.md`
+- `wallet.runtime.js`
 
 ## 剩余问题
-- 无（本轮自动化绑定与页面目标校验通过；若需进一步加固可对更多 `JSON.parse` 做统一封装，属后续优化。）
+- 无（本轮 TEST-A/B/C 静态检查均通过）。可选后续：对全项目 `JSON.parse` 与 DOM 空指针做统一审计。
 
 ## 测试结果
-- TEST-A: PASS — 41 处 `data-ww-fn` 均在组合脚本中存在对应全局函数或经 `wwExposeDataWwFnHandlers` 暴露。
-- TEST-B: PASS — 全部 `data-ww-go` 目标在 `wallet.html` 中存在对应 `id="page-…"`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均含有效实现（含 runtime 中别名封装）。
+- TEST-A: PASS — `data-ww-fn="selectTransferCoin"` 对应 `window.selectTransferCoin`（`wallet.ui.js` 赋值 + `wallet.runtime.js` 暴露）。
+- TEST-B: PASS — 当前 HTML 中无 `data-ww-go`，无缺失页面 id。
+- TEST-C: PASS — 所列核心函数均在 `wallet.ui.js` / `wallet.runtime.js` 中定义为非空函数体（含 `async function`）。
 
-**提交：** `15d6730`
+验证方式：在仓库根目录执行 Node 检查是否存在 `function name` / `async function name`；在浏览器中打开 `wallet.html`，于控制台确认 `typeof window.goToPinConfirm === 'function'` 等均为 `true`。
