@@ -480,12 +480,15 @@ function openWordEditor(idx) {
 function copyHomeAddr() {
   const addr = getNativeAddr();
   const btn = document.getElementById('homeCopyAddrBtn');
+  const TID = '_wwCopyAddrResetTid';
   const done = () => {
     if(btn) {
-      btn.textContent = '✅ 已复制';
+      if (btn[TID]) clearTimeout(btn[TID]);
+      btn.textContent = '复制成功';
       btn.style.background = 'rgba(74,200,74,0.2)';
       btn.style.color = 'var(--green)';
-      setTimeout(() => {
+      btn[TID] = setTimeout(() => {
+        btn[TID] = 0;
         btn.textContent = '复制地址';
         btn.style.background = '';
         btn.style.color = '';
@@ -550,10 +553,51 @@ function getNativeAddr() {
 }
 
 function copyNative() {
-  navigator.clipboard?.writeText(getNativeAddr()).catch(()=>{});
-  const btn=document.getElementById('copyNativeBtn');
-  if(btn){btn.textContent='✅ 已复制'; btn.classList.add('copied');}
-  setTimeout(()=>{btn.textContent='📋 复制';if(btn) btn.classList.remove('copied');},2000);
+  const addr = getNativeAddr();
+  const btn = document.getElementById('copyNativeBtn');
+  const TID = '_wwCopyAddrResetTid';
+  const done = () => {
+    if (!btn) return;
+    if (btn[TID]) clearTimeout(btn[TID]);
+    btn.textContent = '复制成功';
+    btn.classList.add('copied');
+    btn[TID] = setTimeout(() => {
+      btn[TID] = 0;
+      btn.textContent = '📋 复制地址';
+      btn.classList.remove('copied');
+    }, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(done).catch(() => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = addr;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        done();
+      } catch (e) {
+        if (typeof showToast === 'function') showToast('复制失败，请长按地址手动复制', 'error');
+      }
+    });
+  } else {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = addr;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('复制失败，请长按地址手动复制', 'error');
+    }
+  }
 }
 
 function copyBoth() {
@@ -684,5 +728,17 @@ function copyQRAddr() {
     : '🌍 万语地址\n'+native+'\n\n⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr();
   navigator.clipboard?.writeText(text).catch(()=>{});
   const btn = _safeEl('qrCopyBtn');
-  if(btn) { btn.innerHTML='✅ 已复制'; setTimeout(()=>btn.innerHTML='📋 复制地址',1500); }
+  if (btn) {
+    const TID = '_wwCopyAddrResetTid';
+    if (btn[TID]) clearTimeout(btn[TID]);
+    btn.innerHTML = '复制成功';
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green)';
+    btn[TID] = setTimeout(() => {
+      btn[TID] = 0;
+      btn.innerHTML = '📋 复制地址';
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 1800);
+  }
 }
