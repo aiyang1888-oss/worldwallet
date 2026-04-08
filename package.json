@@ -1,6 +1,6 @@
 {
   "name": "worldwallet",
-  "description": "Web 钱包：真源 dist/；build 时 index.html 与 wallet.html 对齐，再 rsync dist/ → assets/",
+  "description": "Web 钱包：真源 dist/wallet.html；build 时同步 index.html、app.html，再 rsync → assets/",
   "scripts": {
     "sync-dist": "bash scripts/sync-dist.sh",
     "build": "npm run sync-dist",
