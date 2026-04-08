@@ -4525,6 +4525,14 @@ function submitClaim() {
     showToast('❌ 未找到此口令，请检查是否输入正确', 'error');
     return;
   }
+  // 兼容 wallet.ui.js createGift：claimed 可能为布尔；金额为 amount；缺省 count/expireAt/totalAmount
+  if (!Array.isArray(hb.claimed)) {
+    hb.claimed = hb.claimed === true ? [{ addr: '', amount: String(hb.amount != null ? hb.amount : ''), time: hb.created || Date.now() }] : [];
+  }
+  if (hb.expireAt == null) hb.expireAt = Number.MAX_SAFE_INTEGER;
+  if (hb.count == null || !(hb.count > 0)) hb.count = 1;
+  if (hb.totalAmount == null && hb.amount != null) hb.totalAmount = Number(hb.amount) || 0;
+  if (hb.perPerson == null && hb.amount != null) hb.perPerson = String(hb.amount);
   if(Date.now() > hb.expireAt) {
     showToast('⏰ 此礼物已过期', 'warning');
     return;
