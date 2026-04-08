@@ -6,6 +6,20 @@ let REAL_WALLET = null;
 /** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
 var CHAIN_ADDR = '--';
 
+/** 仅在通过校验后赋给 REAL_WALLET，避免半初始化对象被全局读到 */
+function _isValidWalletPublicSnapshot(o) {
+  if (!o || typeof o !== 'object') return false;
+  if (typeof o.ethAddress !== 'string' || !o.ethAddress) return false;
+  if (typeof o.trxAddress !== 'string' || !o.trxAddress) return false;
+  if (o.btcAddress != null && typeof o.btcAddress !== 'string') return false;
+  var am = o.addrMap;
+  if (!am || typeof am !== 'object') return false;
+  if (typeof am.eth !== 'string' || !am.eth) return false;
+  if (typeof am.trx !== 'string' || !am.trx) return false;
+  if (am.btc != null && typeof am.btc !== 'string') return false;
+  return true;
+}
+
 function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
 }
@@ -65,7 +79,7 @@ function loadWalletPublic() {
     if (d) {
       var parsed = JSON.parse(d);
       // 只加载公开信息，不加载敏感数据
-      REAL_WALLET = {
+      var nextRw = {
         version: parsed.version || 1,
         ethAddress: parsed.ethAddress,
         trxAddress: parsed.trxAddress,
@@ -83,7 +97,12 @@ function loadWalletPublic() {
           };
         })()
       };
-      CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
+      if (!_isValidWalletPublicSnapshot(nextRw)) {
+        safeLog('[loadWalletPublic] invalid stored wallet snapshot');
+        return;
+      }
+      REAL_WALLET = nextRw;
+      CHAIN_ADDR = REAL_WALLET.trxAddress ? REAL_WALLET.trxAddress : '--';
     }
   } catch (e) {
     safeLog('[loadWalletPublic] error:', e);
@@ -230,8 +249,6 @@ async function createRealWallet(forcedWordCount) {
       derived_from: 'eth'
     }
   };
-  REAL_WALLET = w;
-  CHAIN_ADDR = w.trxAddress || '--';
   saveWallet(w);
   try {
     if (typeof wwSetTempWallet === 'function') {
@@ -248,21 +265,24 @@ async function createRealWallet(forcedWordCount) {
       });
     }
   } catch (_tw) {}
-  try {
-    var pubCr = {
-      version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
-      ethAddress: w.ethAddress,
-      trxAddress: w.trxAddress,
-      btcAddress: w.btcAddress || '',
-      createdAt: w.createdAt,
-      backedUp: w.backedUp || false,
-      hasEncrypted: !!(function () {
-        try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
-      })(),
-      addrMap: w.addrMap
-    };
-    REAL_WALLET = pubCr;
-  } catch (_pub) {}
+  var pubCr = {
+    version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
+    ethAddress: w.ethAddress,
+    trxAddress: w.trxAddress,
+    btcAddress: w.btcAddress || '',
+    createdAt: w.createdAt,
+    backedUp: w.backedUp || false,
+    hasEncrypted: !!(function () {
+      try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
+    })(),
+    addrMap: w.addrMap
+  };
+  if (!_isValidWalletPublicSnapshot(pubCr)) {
+    safeLog('[createRealWallet] public snapshot validation failed');
+    throw new Error('创建失败：钱包状态异常');
+  }
+  REAL_WALLET = pubCr;
+  CHAIN_ADDR = w.trxAddress || '--';
   applyReferralCredit();
   try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
   return w;
@@ -305,8 +325,13 @@ async function restoreWallet(mnemonic) {
       };
     })()
   };
+  if (!_isValidWalletPublicSnapshot(pub)) {
+    safeLog('[restoreWallet] public snapshot validation failed');
+    showToast('❌ 钱包状态异常', 'error');
+    return null;
+  }
   REAL_WALLET = pub;
-  CHAIN_ADDR = (pub && pub.trxAddress) ? pub.trxAddress : '--';
+  CHAIN_ADDR = pub.trxAddress ? pub.trxAddress : '--';
   if (pin) {
     var flatForStore = {
       mnemonic: result.mnemonic,
