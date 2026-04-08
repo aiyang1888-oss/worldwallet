@@ -195,6 +195,41 @@ class TelegramNotifier {
 
     return await this.send(message);
   }
+
+  /**
+   * 通知：安全评分
+   * summary: { score, level, high, medium, low, trend, topIssue }
+   */
+  async sendSecurityScore(summary = {}) {
+    try {
+      const score    = summary.score    != null ? summary.score    : 'N/A';
+      const level    = summary.level    != null ? summary.level    : 'N/A';
+      const high     = summary.high     != null ? summary.high     : 0;
+      const medium   = summary.medium   != null ? summary.medium   : 0;
+      const low      = summary.low      != null ? summary.low      : 0;
+      const trend    = summary.trend    || 'N/A';
+      const topIssue = summary.topIssue || 'None';
+
+      const levelEmoji = { A: '🟢', B: '🔵', C: '🟡', D: '🔴' };
+      const trendEmoji = { up: '📈', down: '📉', flat: '➡️' };
+      const lEmoji = levelEmoji[level] || '⚪';
+      const tEmoji = trendEmoji[trend] || '';
+      const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Phnom_Penh' });
+
+      let message = `🔐 <b>[安全评分]</b>\n`;
+      message += `━━━━━━━━━━━━━━━━━━━\n`;
+      message += `评分: <b>${score}</b>  等级: ${lEmoji} <b>${level}</b>\n`;
+      message += `🔴 HIGH: <b>${high}</b>  🟡 MEDIUM: <b>${medium}</b>  🟢 LOW: <b>${low}</b>\n`;
+      message += `趋势: ${tEmoji} ${trend}\n`;
+      message += `Top Issue: <code>${String(topIssue).substring(0, 80)}</code>\n`;
+      message += `时间: ${timestamp}`;
+
+      return await this.send(message);
+    } catch (e) {
+      console.warn(`[TELEGRAM] sendSecurityScore warning: ${e.message}`);
+      return { status: 'failed', error: e.message };
+    }
+  }
 }
 
 module.exports = TelegramNotifier;
