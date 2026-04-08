@@ -5059,21 +5059,6 @@ function getMnemonicFromGrid() {
   return words.join(' ');
 }
 
-function doImportWallet() {
-  const mnemonic = getMnemonicFromGrid();
-  if(!mnemonic) return;
-  restoreWallet(mnemonic).then(w => {
-    if(w) {
-      updateAddr();
-      document.getElementById('tabBar').style.display = 'flex';
-      setTimeout(loadBalances, 500);
-      goTo('page-home');
-      showToast('✅ 钱包导入成功！', 'success');
-    }
-  });
-}
-
-
 // ── 二维码生成 ──────────────────────────────────────────────────
 function generateQRCode(text, canvasId) {
   const canvas = document.getElementById(canvasId || 'qrCanvas');

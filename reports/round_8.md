@@ -1,24 +1,21 @@
-# Round 8 修复报告 - 2026-04-08 08:30
+# Round 8 修复报告 - 2026-04-08
 
 ## 发现的问题
-- [P3] `#homeBalanceChartWrap` 存在重复 `class` 属性（`home-balance-chart-wrap` 与 `u5`），属无效 HTML；若简单合并为同一 `class` 列表，`.u5{display:none}` 会隐藏近 7 日资产图（与底栏注释「勿加 .u5」一致）。承接 round_7「剩余问题」。
+- [P0] `wallet.runtime.js` 与 `wallet.ui.js` 均定义全局 `doImportWallet`；脚本加载顺序使 **runtime 覆盖 UI**，导入钱包实际执行的是 runtime 内简化版（`restoreWallet` 直接回首页），用户无法走 UI 中的 **PIN 设置与 `finalizeImportedWalletAfterPin` 加密保存** 流程，与 `wallet.html` 产品设计不一致。
 
 ## 修复内容
-- 文件：`wallet.html`
-- 元素：`#homeBalanceChartWrap`
-- 修改：保留单一 `class="home-balance-chart-wrap"`，去掉误加的第二个 `class="u5"`，既消除重复属性又避免图表被隐藏。
+- 文件：wallet.runtime.js
+- 函数：doImportWallet（删除 runtime 侧重复实现）
+- 修改：仅保留 `wallet.ui.js` 中的 `async function doImportWallet` 作为唯一全局入口；`wwExposeDataWwFnHandlers` 仍会将 `window.doImportWallet` 指向该实现。
 
 ## 修改文件
-- `wallet.html`
+- wallet.runtime.js
 
 ## 剩余问题
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名函数，后加载文件覆盖前者（架构债，本轮未改）。
-- [P3] TOTP 解锁弹窗内按钮仍存在重复 `class`（`btn-primary` 与 `u13`），可后续合并为单一 `class` 列表。
-- [P1/P2] `wallet.runtime.js` 中 `setAmt`、`randomBlessing` 等对 `#hbAmount`/`#hbMessage` 仍假定节点存在，极端精简 DOM 时可加固。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 仍存在其它重复全局函数（如 `goTo`、`deleteWallet`、`getTransferContacts` 等），runtime 后加载会覆盖 UI；若需单一来源可继续收敛。
+- [P3] 精简 HTML 仍无独立节点：`page-transfer-success`、`page-swoosh`、`page-hb-keyword`、`page-verify-success` 等；`goTo` 已对缺失页降级到首页，可按产品需求补 DOM。
 
 ## 测试结果
-- TEST-A: PASS — 仅 `data-ww-fn="selectTransferCoin"`；`wallet.ui.js` 与 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 均保证 `window.selectTransferCoin` 可用。
-- TEST-B: PASS — 无 `data-ww-go`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空函数体或实质逻辑。
-
-Git：`56ba685` — `fix: remove duplicate class on home balance chart wrap (valid HTML, keep chart visible)`
+- TEST-A: PASS — `data-ww-fn` 仅 `selectTransferCoin`；`wwExposeDataWwFnHandlers` 挂载 `window.selectTransferCoin`。
+- TEST-B: PASS — `wallet.html` 中无 `data-ww-go` 属性。
+- TEST-C: PASS — 所列核心函数在 `wallet.ui.js` + `wallet.runtime.js` 合并解析后均有非空实现；`doImportWallet` 仅以 UI 为定义来源。
