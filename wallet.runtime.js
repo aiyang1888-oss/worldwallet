@@ -4118,8 +4118,10 @@ function openTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.add
 function closeTransferCoinPicker() { _safeEl('transferCoinOverlay').classList.remove('show'); }
 
 async function doTransfer() {
-  const addr = document.getElementById('transferAddr').value.trim();
-  const amt = document.getElementById('transferAmount').value;
+  var ta = document.getElementById('transferAddr');
+  var amtInp = document.getElementById('transferAmount');
+  const addr = ta ? String(ta.value || '').trim() : '';
+  const amt = amtInp ? String(amtInp.value || '') : '';
   if(!addr) { showToast('❌ 请输入接收地址', 'error'); return; }
   if(!amt || parseFloat(amt) <= 0) { showToast('❌ 请输入有效金额', 'error'); return; }
   const amtNum = parseFloat(amt) || 0;
@@ -4136,12 +4138,18 @@ async function doTransfer() {
   }
   const fee = (amtNum*0.003).toFixed(2);
   const actual = (amtNum - amtNum*0.003).toFixed(2);
-  document.getElementById('confirmAmount').textContent = amt+' '+transferCoin.name;
-  document.getElementById('confirmRecipient').textContent = addr.length>20 ? addr.slice(0,20)+'...' : addr;
-  document.getElementById('confirmFee').textContent = fee+' '+transferCoin.name;
-  document.getElementById('confirmActual').textContent = actual+' '+transferCoin.name;
-  document.getElementById('confirmChain').textContent = transferCoin.chain;
-  _safeEl('transferConfirmOverlay').classList.add('show');
+  var ca = document.getElementById('confirmAmount');
+  var cr = document.getElementById('confirmRecipient');
+  var cf = document.getElementById('confirmFee');
+  var cact = document.getElementById('confirmActual');
+  var cch = document.getElementById('confirmChain');
+  if (ca) ca.textContent = amt+' '+transferCoin.name;
+  if (cr) cr.textContent = addr.length>20 ? addr.slice(0,20)+'...' : addr;
+  if (cf) cf.textContent = fee+' '+transferCoin.name;
+  if (cact) cact.textContent = actual+' '+transferCoin.name;
+  if (cch) cch.textContent = transferCoin.chain;
+  var ov = _safeEl('transferConfirmOverlay');
+  if (ov && ov.classList) ov.classList.add('show');
 }
 
 function closeTransferConfirm() { _safeEl('transferConfirmOverlay').classList.remove('show'); }
@@ -4153,8 +4161,10 @@ function confirmTransfer() {
   }
   closeTransferConfirm();
   // 填充成功页数据
-  const amt = document.getElementById('transferAmount').value;
-  const addr = document.getElementById('transferAddr').value.trim();
+  var _amtEl = document.getElementById('transferAmount');
+  var _addrEl = document.getElementById('transferAddr');
+  const amt = _amtEl ? String(_amtEl.value || '') : '';
+  const addr = _addrEl ? String(_addrEl.value || '').trim() : '';
   saveRecentTransferAddr(addr);
   const amtF = parseFloat(amt)||0;
   const fee = (amtF*0.003).toFixed(2);
@@ -4171,13 +4181,13 @@ function confirmTransfer() {
   if(isEn) {
     _safeEl('successFromPart1').textContent = 'My Wallet';
     _safeEl('successFromPart2').textContent = '';
-    document.getElementById('successFromPart3').textContent = '';
+    _safeEl('successFromPart3').textContent = '';
     _safeEl('successFromLang').textContent = info.flag+' English · BIP39';
   } else {
     const parts = a.main.split(' · ');
     _safeEl('successFromPart1').textContent = parts[0]||'龙凤虎';
     _safeEl('successFromPart2').textContent = parts[1]||'举头望明月';
-    document.getElementById('successFromPart3').textContent = a.num||'3829461';
+    _safeEl('successFromPart3').textContent = a.num||'3829461';
     const fromAddr = getNativeAddr(); _safeEl('successFromLang').textContent = fromAddr.substring(0,12)+'...';
   }
 
