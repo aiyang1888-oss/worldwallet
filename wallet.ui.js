@@ -1585,25 +1585,6 @@ async function broadcastRealTransfer() {
 // ══ 转账系统 ══
 var transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
 
-function selectTransferCoin(coinId) {
-  var id = coinId != null ? String(coinId).trim() : '';
-  if (!id) return;
-  var coin = typeof COINS !== 'undefined' && COINS.find ? COINS.find(function (c) { return c && c.id === id; }) : null;
-  if (!coin) return;
-  transferCoin = {
-    id: coin.id,
-    name: coin.name,
-    chain: coin.chain,
-    icon: coin.icon,
-    bal: coin.bal,
-    price: coin.price
-  };
-  if (typeof goTo === 'function') goTo('page-transfer');
-  if (typeof calcTransferFee === 'function') calcTransferFee();
-}
-
-window.selectTransferCoin = selectTransferCoin;
-
 var WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
 function getRecentTransferAddrs() {
   try {
