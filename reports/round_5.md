@@ -1,23 +1,24 @@
-# Round 5 修复报告 - 2026-04-08
+# Round 5 修复报告 - 2026-04-08 08:23
 
 ## 发现的问题
-- [P1] `wallet.runtime.js` 中 `createHongbao` 在无 `page-hb-keyword` / `#kwKeyword` 等完整 DOM 的精简版中会连续对 `getElementById` 结果赋值导致运行时异常；且 `ww_hongbaos` 的 `JSON.parse` 未包裹 try-catch，损坏 localStorage 时会抛错。`copyKw`、`copyShareText` 在缺少 `#copyKwBtn`、`#kwShareText` 时同样会崩溃。
+- [P1] `submitClaim` 假定 `ww_hongbaos` 中每条记录均为 runtime「完整版」结构（`claimed` 为数组等）；`wallet.ui.js` 的 `createGift` 写入的精简结构使用 `claimed: false`（布尔），访问 `hb.claimed.length` / `.find` 会抛 `TypeError`，领取流程崩溃。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 仍存在大量同名函数，后加载覆盖前者（与 Round 4 一致，架构债务）。
+- [P3] `wallet.html` 中 `#homeBalanceChartWrap` 存在重复 `class` 属性（`class="..." class="u5"`），第二个类名可能被忽略。
 
 ## 修复内容
-- 文件：`wallet.runtime.js`
-- 函数：`createHongbao`、`copyKw`、`copyShareText`
-- 修改：`createHongbao` 对 `ww_hongbaos` 使用安全解析，若不存在口令详情区则保存数据后提示并跳转 `page-hongbao`；`copyKw`/`copyShareText` 在缺失 DOM 时提前返回。
+- 文件：wallet.runtime.js
+- 函数：submitClaim
+- 修改：在过期/领完校验前将精简版礼物记录规范化为数组型 `claimed`，并补全缺省的 `expireAt`、`count`、`totalAmount`、`perPerson`（与 `amount` 对齐），避免对布尔值取 `.length`。
 
 ## 修改文件
-- `wallet.runtime.js`
+- wallet.runtime.js
 
 ## 剩余问题
-- `goTo('page-import')` 分支中仍对 `#importError` 直接设 `style`（无 null 检查），若未来裁剪导入页需再防护。
-- 全项目 `getElementById` / `JSON.parse` 全面审计仍为可选后续。
+- [P3] 同名函数双文件覆盖、DOM 可选链与 `_safeEl` 未在全项目统一。
+- [P3] `switchHbType` / `selectHbType` 等在精简 DOM 无对应节点时若被调用仍可能抛错（当前入口较少）。
+- [P1] `fillKeyword` 等对 `claimInput` 仍为直接链式访问（未纳入本轮单点修复）。
 
 ## 测试结果
-- TEST-A: PASS — `data-ww-fn="selectTransferCoin"` 对应 `wallet.runtime.js` 中 `selectTransferCoin` 且由 `wwExposeDataWwFnHandlers` 挂到 `window`。
-- TEST-B: PASS — `wallet.html` 中无 `data-ww-go`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` + `wallet.runtime.js` 合并加载后均有非空实现（runtime 覆盖同名函数）。
-
-验证：在精简 DOM 下调用 `createHongbao()`（或从仍引用该函数的入口）应不再抛错；损坏的 `ww_hongbaos` JSON 不应导致未捕获异常；无复制按钮/分享文案节点时 `copyKw`/`copyShareText` 静默返回。
+- TEST-A: PASS — `data-ww-fn` 仅 `selectTransferCoin`；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将其挂到 `window`。
+- TEST-B: PASS — `wallet.html` 中无 `data-ww-go` 属性。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空函数体。
