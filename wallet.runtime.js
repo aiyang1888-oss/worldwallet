@@ -1565,9 +1565,16 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) {}
   applySeoForPage(pageId);
-  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   const activePage=document.getElementById(pageId);
-  if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
+  if(!activePage){
+    console.warn('[WorldToken] 页面不存在:',pageId);
+    if(pageId!=='page-home'){
+      const _wwGoFallback=document.getElementById('page-home');
+      if(_wwGoFallback)return goTo('page-home',opts);
+    }
+    return;
+  }
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
   activePage.classList.add('active');
   activePage.style.display='';
   var _tbGo = document.getElementById('tabBar');
