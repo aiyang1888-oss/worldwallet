@@ -477,52 +477,63 @@ function openWordEditor(idx) {
   persistWanYuAddrToStorage();
 }
 
+/** 同步复制（与 click 同栈，避免 Clipboard API 异步导致手势失效；浅色主题下仍可靠触发成功 UI） */
+function wwCopyTextSync(text) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = String(text || '');
+    ta.readOnly = true;
+    ta.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;padding:0;border:0;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      ta.setSelectionRange(0, ta.value.length);
+    } catch (_r) {}
+    var ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return !!ok;
+  } catch (_e) {
+    return false;
+  }
+}
+
 function copyHomeAddr() {
   const addr = getNativeAddr();
   const btn = document.getElementById('homeCopyAddrBtn');
   const TID = '_wwCopyAddrResetTid';
-  const done = () => {
-    if(btn) {
-      if (btn[TID]) clearTimeout(btn[TID]);
-      btn.textContent = '复制成功';
-      btn.style.background = 'rgba(74,200,74,0.2)';
-      btn.style.color = 'var(--green)';
-      btn[TID] = setTimeout(() => {
-        btn[TID] = 0;
-        btn.textContent = '复制地址';
-        btn.style.background = '';
-        btn.style.color = '';
-      }, 1800);
-    }
-    showToast('✅ 万语地址已复制到剪贴板', 'success', 2200);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(addr).then(done).catch(() => {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = addr;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        done();
-      } catch(e) { showToast('复制失败，请长按地址手动复制', 'error'); }
-    });
-  } else {
+  const applySuccessUI = () => {
+    if (!btn) return;
+    if (btn[TID]) clearTimeout(btn[TID]);
+    btn.textContent = '复制成功';
+    btn.classList.add('ww-copy-btn--success');
+    btn[TID] = setTimeout(() => {
+      btn[TID] = 0;
+      btn.textContent = '复制地址';
+      btn.classList.remove('ww-copy-btn--success');
+    }, 2000);
     try {
-      const ta = document.createElement('textarea');
-      ta.value = addr;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      done();
-    } catch(e) { showToast('复制失败，请长按地址手动复制', 'error'); }
+      showToast('✅ 万语地址已复制到剪贴板', 'success', 2200);
+    } catch (_t) {}
+  };
+  if (wwCopyTextSync(addr)) {
+    applySuccessUI();
+    return;
   }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(applySuccessUI).catch(() => {
+      if (wwCopyTextSync(addr)) applySuccessUI();
+      else {
+        try {
+          showToast('复制失败，请长按地址手动复制', 'error');
+        } catch (_e) {}
+      }
+    });
+    return;
+  }
+  try {
+    showToast('复制失败，请长按地址手动复制', 'error');
+  } catch (_e2) {}
 }
 
 function openHomeTransfer() {
@@ -556,7 +567,7 @@ function copyNative() {
   const addr = getNativeAddr();
   const btn = document.getElementById('copyNativeBtn');
   const TID = '_wwCopyAddrResetTid';
-  const done = () => {
+  const applySuccessUI = () => {
     if (!btn) return;
     if (btn[TID]) clearTimeout(btn[TID]);
     btn.textContent = '复制成功';
@@ -565,39 +576,20 @@ function copyNative() {
       btn[TID] = 0;
       btn.textContent = '📋 复制地址';
       btn.classList.remove('copied');
-    }, 1800);
+    }, 2000);
   };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(addr).then(done).catch(() => {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = addr;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        done();
-      } catch (e) {
-        if (typeof showToast === 'function') showToast('复制失败，请长按地址手动复制', 'error');
-      }
-    });
-  } else {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = addr;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      done();
-    } catch (e) {
-      if (typeof showToast === 'function') showToast('复制失败，请长按地址手动复制', 'error');
-    }
+  if (wwCopyTextSync(addr)) {
+    applySuccessUI();
+    return;
   }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(applySuccessUI).catch(() => {
+      if (wwCopyTextSync(addr)) applySuccessUI();
+      else if (typeof showToast === 'function') showToast('复制失败，请长按地址手动复制', 'error');
+    });
+    return;
+  }
+  if (typeof showToast === 'function') showToast('复制失败，请长按地址手动复制', 'error');
 }
 
 function copyBoth() {

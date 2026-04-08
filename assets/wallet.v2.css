@@ -660,7 +660,28 @@ body {
   display: flex; align-items: center; justify-content: center; gap: 4px;
 }
 .addr-action-btn:hover { background: rgba(200,168,75,0.18); }
-.addr-action-btn.copied { border-color: var(--green); color: var(--green); }
+.addr-action-btn.copied {
+  border-color: rgba(46, 160, 67, 0.9) !important;
+  color: #0a5d14 !important;
+  background: rgba(74, 200, 74, 0.22) !important;
+}
+[data-theme="light"] .addr-action-btn.copied {
+  border-color: rgba(36, 140, 56, 0.95) !important;
+  color: #064a12 !important;
+  background: rgba(74, 200, 74, 0.18) !important;
+}
+
+/* 首页「复制地址」：成功态需盖过内联与浅色主题 */
+#homeCopyAddrBtn.ww-copy-btn--success {
+  background: rgba(74, 200, 74, 0.38) !important;
+  color: #0a3d0a !important;
+  border: 1px solid rgba(46, 160, 67, 0.8) !important;
+}
+[data-theme="light"] #homeCopyAddrBtn.ww-copy-btn--success {
+  background: rgba(74, 200, 74, 0.3) !important;
+  color: #084208 !important;
+  border: 1px solid rgba(36, 130, 50, 0.95) !important;
+}
 
 /* 分隔 */
 .addr-bind-row {
