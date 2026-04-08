@@ -10,8 +10,9 @@
  * 用法：npm run telegram:cursor
  */
 import axios from 'axios';
-import { spawn } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import fs from 'fs';
+import { promisify } from 'util';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -63,6 +64,34 @@ if (!fs.existsSync(WORKSPACE)) deny(`工作区不存在: ${WORKSPACE}`);
 
 const GOTO_TARGET = path.join(WORKSPACE, 'dist', 'wallet.html');
 
+const execFileAsync = promisify(execFile);
+
+/** LaunchAgent 下 PATH 常不含 ~/.local/bin，必须解析出 cursor 真实路径 */
+function resolveCursorBin() {
+  const fromEnv = process.env.CURSOR_CLI_PATH;
+  if (fromEnv && fs.existsSync(fromEnv)) return fromEnv;
+  const home = process.env.HOME || '';
+  const candidates = [
+    path.join(home, '.local/bin/cursor'),
+    '/usr/local/bin/cursor',
+    '/opt/homebrew/bin/cursor',
+    '/Applications/Cursor.app/Contents/Resources/app/bin/cursor',
+  ];
+  for (const p of candidates) {
+    try {
+      if (p && fs.existsSync(p)) {
+        const st = fs.statSync(p);
+        if (st.isFile() || st.isSymbolicLink()) return p;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return 'cursor';
+}
+
+const CURSOR_BIN = resolveCursorBin();
+
 /** 输入框上方的常驻自定义键盘（ReplyKeyboardMarkup） */
 const REPLY_KEYBOARD = {
   keyboard: [
@@ -96,7 +125,7 @@ const INLINE_KEYBOARD = {
 
 /** @param {string[]} args */
 function runCursor(args) {
-  const child = spawn('cursor', args, {
+  const child = spawn(CURSOR_BIN, args, {
     detached: true,
     stdio: 'ignore',
     env: { ...process.env },
@@ -184,52 +213,66 @@ async function dispatchAction(chatId, action, opts = {}) {
       );
       return;
     case 'cw_new_agent': {
-      const { execFile } = await import('child_process');
-      await new Promise((resolve) => {
-        execFile(
-          'cursor',
+      await sendChat(
+        chatId,
+        `正在创建 Agent 会话…\nCLI: ${CURSOR_BIN}`,
+        withKeyboard
+      );
+      const agentEnv = {
+        ...process.env,
+        NO_OPEN_BROWSER: process.env.NO_OPEN_BROWSER || '1',
+        CI: process.env.CI || '1',
+      };
+      try {
+        const { stdout, stderr } = await execFileAsync(
+          CURSOR_BIN,
           ['agent', 'create-chat'],
-          { cwd: WORKSPACE, timeout: 60000, maxBuffer: 1024 * 64 },
-          async (err, stdout, stderr) => {
-            const raw = [stdout, stderr].filter(Boolean).join('\n').trim();
-            const id = raw.split(/\s+/)[0] || '';
-            const msg = err
-              ? `create-chat 失败: ${err.message}\n${raw.slice(0, 500)}`
-              : [
-                  '已创建新的 Cursor Agent 会话（空对话）',
-                  id ? `chat id:\n${id}` : raw || '(无输出)',
-                  '',
-                  '在本机终端可用: cursor agent --resume <id>',
-                ].join('\n');
-            try {
-              await sendChat(chatId, msg.slice(0, 4000), withKeyboard);
-            } catch (e) {
-              console.error(e);
-            }
-            resolve();
+          {
+            cwd: WORKSPACE,
+            timeout: 90000,
+            maxBuffer: 1024 * 1024,
+            env: agentEnv,
           }
         );
-      });
+        const raw = [stdout, stderr].filter(Boolean).join('\n').trim();
+        const firstLine = raw.split(/\r?\n/).filter(Boolean)[0] || '';
+        const id = /^[0-9a-f-]{36}$/i.test(firstLine.trim()) ? firstLine.trim() : raw.split(/\s+/)[0] || '';
+        const msg = [
+          '已创建新的 Cursor Agent 会话（空对话）',
+          id || raw ? `chat id:\n${id || raw || '(无输出)'}` : '(无输出)',
+          '',
+          '在本机终端: cursor agent --resume <id>',
+        ].join('\n');
+        await sendChat(chatId, msg.slice(0, 4000), withKeyboard);
+      } catch (e) {
+        const err = /** @type {NodeJS.ErrnoException & { stderr?: Buffer }} */ (e);
+        const hint = err.code === 'ENOENT' ? '\n提示: 设置 CURSOR_CLI_PATH 为 cursor 可执行文件绝对路径。' : '';
+        const stderr = err.stderr ? `\n${String(err.stderr).slice(0, 800)}` : '';
+        console.error('[cw_new_agent]', err);
+        await sendChat(
+          chatId,
+          `create-chat 失败: ${err.message}${stderr}${hint}`,
+          withKeyboard
+        );
+      }
       return;
     }
     case 'cw_agent_status': {
-      const { execFile } = await import('child_process');
-      await new Promise((resolve) => {
-        execFile(
-          'cursor',
-          ['agent', 'status'],
-          { cwd: WORKSPACE, timeout: 20000, maxBuffer: 1024 * 512 },
-          async (err, stdout, stderr) => {
-            const out = [stdout, stderr].filter(Boolean).join('\n').trim() || String(err?.message || '');
-            try {
-              await sendChat(chatId, `Agent status:\n${out.slice(0, 3500)}`, withKeyboard);
-            } catch (e) {
-              console.error(e);
-            }
-            resolve();
-          }
-        );
-      });
+      try {
+        const { stdout, stderr } = await execFileAsync(CURSOR_BIN, ['agent', 'status'], {
+          cwd: WORKSPACE,
+          timeout: 30000,
+          maxBuffer: 1024 * 512,
+          env: process.env,
+        });
+        const out = [stdout, stderr].filter(Boolean).join('\n').trim();
+        await sendChat(chatId, `Agent status:\n${out.slice(0, 3500)}`, withKeyboard);
+      } catch (e) {
+        const err = /** @type {NodeJS.ErrnoException & { stderr?: Buffer }} */ (e);
+        const stderr = err.stderr ? `\n${String(err.stderr).slice(0, 800)}` : '';
+        console.error('[cw_agent_status]', err);
+        await sendChat(chatId, `agent status 失败: ${err.message}${stderr}`, withKeyboard);
+      }
       return;
     }
     case 'cw_help':
@@ -292,7 +335,7 @@ async function handleMessage(msg) {
     await sendChat(chatId, '未授权使用此 Bot。');
     return;
   }
-  const t = (msg.text || '').trim();
+  const t = (msg.text || '').trim().replace(/\u200b/g, '');
 
   if (t === '/start' || t === '/cursor') {
     await sendChat(chatId, '下方为自定义键盘（在输入框上面）；再下一条消息带内联按钮。', {
@@ -307,7 +350,8 @@ async function handleMessage(msg) {
     return;
   }
 
-  const action = TEXT_TO_ACTION[t];
+  let action = TEXT_TO_ACTION[t];
+  if (!action && /^🆕\s*new\s*agent$/i.test(t)) action = 'cw_new_agent';
   if (action) {
     await dispatchAction(chatId, action);
     return;
@@ -335,7 +379,10 @@ async function poll() {
 
 async function main() {
   const me = await apiGet('getMe');
-  console.log(`[telegram-cursor-control] Bot @${me.username} 轮询中… 工作区: ${WORKSPACE}`);
+  console.log(
+    `[telegram-cursor-control] Bot @${me.username} 轮询中… 工作区: ${WORKSPACE}\n` +
+      `[telegram-cursor-control] cursor CLI: ${CURSOR_BIN}`
+  );
   await sendChat(ALLOWED_CHAT, `Cursor 遥控已启动（工作区: ${WORKSPACE}）\n发 /start 显示输入框上方按钮。`, {
     reply_markup: REPLY_KEYBOARD,
   }).catch(() => {});
