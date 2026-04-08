@@ -8,6 +8,12 @@ if [ -f "$ROOT_DIR/.env" ]; then
   # shellcheck disable=SC1091
   source "$ROOT_DIR/.env"
   set +a
+elif [ -f "$ROOT_DIR/assets/.env" ]; then
+  # 兼容：部分环境只在 assets/.env 配过 TELEGRAM_*（优先仍应用仓库根目录 .env）
+  set -a
+  # shellcheck disable=SC1091
+  source "$ROOT_DIR/assets/.env"
+  set +a
 fi
 TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 CHAT="${TELEGRAM_CHAT_ID:-}"
