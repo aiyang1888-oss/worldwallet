@@ -35,6 +35,7 @@ const BTN = {
   workspace: '📂 打开工作区',
   walletHtml: '📄 wallet.html',
   run: '▶ Run',
+  newAgent: '🆕 New Agent',
   agentStatus: 'ℹ️ Agent 状态',
   help: '❓ 帮助',
   panel: '⌨️ 显示按钮',
@@ -45,6 +46,7 @@ const TEXT_TO_ACTION = {
   [BTN.workspace]: 'cw_workspace',
   [BTN.walletHtml]: 'cw_wallet_html',
   [BTN.run]: 'cw_run',
+  [BTN.newAgent]: 'cw_new_agent',
   [BTN.agentStatus]: 'cw_agent_status',
   [BTN.help]: 'cw_help',
   [BTN.panel]: 'cw_panel',
@@ -65,8 +67,9 @@ const GOTO_TARGET = path.join(WORKSPACE, 'dist', 'wallet.html');
 const REPLY_KEYBOARD = {
   keyboard: [
     [{ text: BTN.workspace }, { text: BTN.walletHtml }],
-    [{ text: BTN.run }, { text: BTN.agentStatus }],
-    [{ text: BTN.help }, { text: BTN.panel }],
+    [{ text: BTN.run }, { text: BTN.newAgent }],
+    [{ text: BTN.agentStatus }, { text: BTN.help }],
+    [{ text: BTN.panel }],
   ],
   resize_keyboard: true,
   one_time_keyboard: false,
@@ -82,9 +85,12 @@ const INLINE_KEYBOARD = {
     ],
     [
       { text: BTN.run, callback_data: 'cw_run' },
-      { text: BTN.agentStatus, callback_data: 'cw_agent_status' },
+      { text: BTN.newAgent, callback_data: 'cw_new_agent' },
     ],
-    [{ text: BTN.help, callback_data: 'cw_help' }],
+    [
+      { text: BTN.agentStatus, callback_data: 'cw_agent_status' },
+      { text: BTN.help, callback_data: 'cw_help' },
+    ],
   ],
 };
 
@@ -177,6 +183,35 @@ async function dispatchAction(chatId, action, opts = {}) {
         withKeyboard
       );
       return;
+    case 'cw_new_agent': {
+      const { execFile } = await import('child_process');
+      await new Promise((resolve) => {
+        execFile(
+          'cursor',
+          ['agent', 'create-chat'],
+          { cwd: WORKSPACE, timeout: 60000, maxBuffer: 1024 * 64 },
+          async (err, stdout, stderr) => {
+            const raw = [stdout, stderr].filter(Boolean).join('\n').trim();
+            const id = raw.split(/\s+/)[0] || '';
+            const msg = err
+              ? `create-chat 失败: ${err.message}\n${raw.slice(0, 500)}`
+              : [
+                  '已创建新的 Cursor Agent 会话（空对话）',
+                  id ? `chat id:\n${id}` : raw || '(无输出)',
+                  '',
+                  '在本机终端可用: cursor agent --resume <id>',
+                ].join('\n');
+            try {
+              await sendChat(chatId, msg.slice(0, 4000), withKeyboard);
+            } catch (e) {
+              console.error(e);
+            }
+            resolve();
+          }
+        );
+      });
+      return;
+    }
     case 'cw_agent_status': {
       const { execFile } = await import('child_process');
       await new Promise((resolve) => {
@@ -208,6 +243,7 @@ async function dispatchAction(chatId, action, opts = {}) {
           `• 打开工作区 ≈ cursor -r -a ${WORKSPACE}`,
           '• 打开 wallet.html ≈ cursor -g …/dist/wallet.html:1',
           '• Run ≈ 后台 npm run dev（本地预览 dist）',
+          '• New Agent ≈ cursor agent create-chat（新会话 ID）',
           '• 仅 TELEGRAM_CHAT_ID 可使用',
         ].join('\n'),
         withKeyboard
@@ -239,6 +275,7 @@ async function handleCallback(q) {
     if (data === 'cw_agent_status') await answerCallback(q.id, '查询中…');
     else if (data === 'cw_help') await answerCallback(q.id, '帮助');
     else if (data === 'cw_run') await answerCallback(q.id, '已启动 dev');
+    else if (data === 'cw_new_agent') await answerCallback(q.id, '创建会话…');
     else if (data.startsWith('cw_')) await answerCallback(q.id, '已执行');
 
     await dispatchAction(chatId, data, { skipReplyKeyboard: false });
