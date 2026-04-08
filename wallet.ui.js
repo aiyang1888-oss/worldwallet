@@ -1586,13 +1586,6 @@ async function broadcastRealTransfer() {
 var transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
 
 var WW_RECENT_ADDR_KEY = 'ww_transfer_recent_addrs';
-function getRecentTransferAddrs() {
-  try {
-    const raw = localStorage.getItem(WW_RECENT_ADDR_KEY);
-    const a = raw ? JSON.parse(raw) : [];
-    return Array.isArray(a) ? a.filter(x => typeof x === 'string' && x.trim()) : [];
-  } catch(e) { return []; }
-}
 function saveRecentTransferAddr(addr) {
   const t = (addr || '').trim();
   if(!t) return;
@@ -2306,96 +2299,6 @@ var hbType = 'normal';
 var BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
 
 
-function submitClaim() {
-  var box = document.getElementById('claimInputBox');
-  var inp = document.getElementById('claimInput');
-  var kw = inp ? String(inp.value).trim() : '';
-  if (!kw) {
-    if (box) box.style.borderColor = 'var(--red)';
-    return;
-  }
-  if (box) box.style.borderColor = '';
-
-  var allHb = {};
-  try {
-    allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}');
-  } catch (e) {
-    allHb = {};
-  }
-  var hb = allHb[kw];
-  if (!hb) {
-    showToast('❌ 未找到此口令，请检查是否输入正确', 'error');
-    return;
-  }
-
-  // 新格式：{ amount, message, from, created, claimed: boolean }
-  if (!Array.isArray(hb.claimed) && hb.amount != null) {
-    if (hb.claimed === true) {
-      showToast('礼物已被领取', 'warning');
-      return;
-    }
-    if (!REAL_WALLET || !REAL_WALLET.trxAddress) {
-      showToast('⚠️ 请先创建或导入钱包', 'warning');
-      return;
-    }
-    var myAddr = REAL_WALLET.trxAddress;
-    if (hb.from && hb.from === myAddr) {
-      showToast('不能领取自己发出的礼物', 'info');
-      return;
-    }
-    hb.claimed = true;
-    hb.claimedAt = Date.now();
-    hb.claimedBy = myAddr;
-    allHb[kw] = hb;
-    try {
-      localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
-    } catch (e2) {}
-    showToast('✅ 领取成功 · ' + String(hb.amount) + ' USDT', 'success');
-    if (inp) inp.value = '';
-    goTo('page-home');
-    return;
-  }
-
-  // 旧格式：多份口令礼物
-  if (hb.expireAt && Date.now() > hb.expireAt) {
-    showToast('⏰ 此礼物已过期', 'warning');
-    return;
-  }
-  if (!hb.claimed || !Array.isArray(hb.claimed)) {
-    showToast('❌ 礼物数据异常', 'error');
-    return;
-  }
-  if (hb.count != null && hb.claimed.length >= hb.count) {
-    showToast('😢 礼物已被领完啦', 'warning');
-    return;
-  }
-  if (!REAL_WALLET) {
-    showToast('⚠️ 请先创建或导入钱包', 'warning');
-    return;
-  }
-  var myAddr2 = REAL_WALLET.trxAddress;
-  if (hb.claimed.find(function (x) { return x.addr === myAddr2; })) {
-    showToast('ℹ️ 你已经领取过这个礼物了', 'info');
-    return;
-  }
-
-  var amt;
-  if (hb.type === 'lucky') {
-    var remaining = hb.totalAmount - hb.claimed.reduce(function (s, x) { return s + parseFloat(x.amount); }, 0);
-    var leftCount = hb.count - hb.claimed.length;
-    amt = leftCount === 1 ? remaining.toFixed(2) : (Math.random() * remaining * 2 / leftCount).toFixed(2);
-  } else {
-    amt = hb.perPerson;
-  }
-
-  hb.claimed.push({ addr: myAddr2, amount: amt, time: Date.now() });
-  allHb[kw] = hb;
-  localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
-
-  showToast('✅ 领取成功 · ' + amt + ' USDT', 'success');
-  if (inp) inp.value = '';
-  goTo('page-home');
-}
 
 var hbCount = 5;
 
