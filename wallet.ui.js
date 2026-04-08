@@ -2305,15 +2305,6 @@ var hbType = 'normal';
 
 var BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
 
-function copyKw() {
-  navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
-  const btn = document.getElementById('copyKwBtn');
-  if (!btn) return;
-  const last = btn.querySelector('div:last-child');
-  if (!last) return;
-  last.textContent = '✅ 已复制';
-  setTimeout(()=>{ last.textContent = '复制口令'; }, 2000);
-}
 
 function submitClaim() {
   var box = document.getElementById('claimInputBox');
