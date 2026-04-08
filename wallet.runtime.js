@@ -4256,16 +4256,26 @@ function confirmTransfer() {
   }, 200);
 }
 
-function shareSuccess() {
+function shareSuccess(ev) {
   const amt = _safeEl('successAmount').textContent;
   const coin = _safeEl('successCoin').textContent;
   const from = _safeEl('successFromPart1').textContent+' '+_safeEl('successFromPart2').textContent;
-  navigator.clipboard?.writeText('我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.cc').catch(()=>{});
-  const txEl = _safeEl('successTxHash');
-  const txText = txEl ? txEl.textContent : '转账记录';
-  navigator.clipboard?.writeText(txText).catch(()=>{});
-  const btn2 = event?.target?.closest('div');
-  if(btn2) { const old2 = btn2.querySelector('div:last-child')?.textContent || ''; if(btn2.querySelector('div:last-child')) { btn2.querySelector('div:last-child').textContent='✅ 已复制'; setTimeout(()=>btn2.querySelector('div:last-child').textContent=old2,1500); } }
+  const txRaw = String(_safeEl('successTxHash').textContent || '').trim();
+  let shareBlock = '我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.cc';
+  if (txRaw) shareBlock += '\n'+txRaw;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(shareBlock).catch(function(){});
+  }
+  const clickEl = (ev && ev.target) || (typeof window !== 'undefined' && window.event && window.event.target) || (typeof document !== 'undefined' && document.activeElement);
+  const btn2 = clickEl && clickEl.closest ? clickEl.closest('div') : null;
+  if (btn2) {
+    const lc = btn2.querySelector('div:last-child');
+    const old2 = lc ? lc.textContent : '';
+    if (lc) {
+      lc.textContent='✅ 已复制';
+      setTimeout(function(){ if (lc) lc.textContent=old2; },1500);
+    }
+  }
 }
 
 // ══ 多文化礼金系统 ══
