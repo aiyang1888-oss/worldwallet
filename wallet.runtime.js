@@ -4390,12 +4390,25 @@ function createHongbao() {
     claimed: [],  // {addr, amount, time}
     creator: REAL_WALLET.trxAddress
   };
-  const allHb = JSON.parse(localStorage.getItem('ww_hongbaos')||'{}');
+  let allHb = {};
+  try {
+    allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}') || {};
+  } catch (_e) {
+    allHb = {};
+  }
+  if (typeof allHb !== 'object' || allHb === null) allHb = {};
   allHb[currentKeyword] = hbData;
   localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
 
+  const _kwRoot = document.getElementById('kwKeyword');
+  if (!_kwRoot) {
+    if (typeof showToast === 'function') showToast('🎁 礼物已创建（精简界面无口令详情页）', 'success');
+    goTo('page-hongbao');
+    return;
+  }
+
   // 更新UI
-  document.getElementById('kwKeyword').textContent = currentKeyword;
+  _kwRoot.textContent = currentKeyword;
   document.getElementById('kwBlessingText').textContent = blessing;
   document.getElementById('kwAmtText').textContent = amount + ' USDT';
   document.getElementById('kwCntText').textContent = '共' + count + '份礼物';
@@ -4412,8 +4425,11 @@ function createHongbao() {
 function copyKw() {
   navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
   const btn = document.getElementById('copyKwBtn');
-  btn.querySelector('div:last-child').textContent = '✅ 已复制';
-  setTimeout(()=>{ btn.querySelector('div:last-child').textContent = '复制口令'; }, 2000);
+  if (!btn) return;
+  const last = btn.querySelector('div:last-child');
+  if (!last) return;
+  last.textContent = '✅ 已复制';
+  setTimeout(()=>{ last.textContent = '复制口令'; }, 2000);
 }
 
 function shareKw() {
@@ -4440,10 +4456,12 @@ function showHbQR() {
 }
 
 function copyShareText() {
-  const txt = document.getElementById('kwShareText').textContent;
+  const el = document.getElementById('kwShareText');
+  if (!el) return;
+  const txt = el.textContent;
   navigator.clipboard?.writeText(txt).catch(()=>{});
-  document.getElementById('kwShareText').style.opacity = '0.6';
-  setTimeout(()=>document.getElementById('kwShareText').style.opacity='1', 800);
+  el.style.opacity = '0.6';
+  setTimeout(()=>{ el.style.opacity = '1'; }, 800);
 }
 
 function onClaimInput() {
