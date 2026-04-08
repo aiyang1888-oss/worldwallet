@@ -1,11 +1,23 @@
 // wallet.ui.js — UI：导航/Toast/页面/设置/PIN/红包
 // 包含全局变量和初始化代码
 
-/*! WorldToken wallet.ui.js — split from wallet.html; refactor incrementally. */
-/* Service Worker / Cache 清理见 wallet.runtime.js 开头，避免重复执行 */
+/*! WorldToken wallet.runtime.js — split from wallet.html; refactor incrementally. */
+
+// 强制清除旧 Service Worker 和缓存
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+if (typeof caches !== 'undefined' && caches.keys) {
+  caches.keys().then(keys => {
+    keys.forEach(k => caches.delete(k));
+  }).catch(function () {});
+}
+
 
 document.addEventListener('click', function(ev) {
-  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeTransferBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
+  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeEditAddrBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
   if (!el) return;
   tapHaptic(12);
 }, true);
@@ -167,8 +179,7 @@ var _safeEl = (id) => document.getElementById(id) || {
   textContent: '', innerHTML: '', value: '0', style: {display:'',cssText:'',color:'',background:'',opacity:'',width:'',transform:''},
   classList: {add:()=>{},remove:()=>{},contains:()=>false},
   href: '', disabled: false,
-  addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{},
-  appendChild: function (n) { return n; }, removeChild: function () { return null; }
+  addEventListener: ()=>{}, focus: ()=>{}, blur: ()=>{}, remove: ()=>{}
 };
 
 var WW_APP_VERSION = '1.0.0';
@@ -280,49 +291,58 @@ var BIP39_WORDS = ['abandon','ability','able','about','above','absent','absorb',
 /** @param {number} [forcedWordCount] 若传入则按该词数生成（避免与 DOM 不同步） */
 
 
-/** 仅内存 wwGetTempWallet()：密钥页展示用，不调用 saveWallet / localStorage */
+/** 仅内存 window.TEMP_WALLET：密钥页展示用，不调用 saveWallet / localStorage */
 
 /**
  * 生成密钥页用临时钱包（不写 localStorage、不赋值 REAL_WALLET；验证通过后由流程持久化）
- * 派生逻辑统一走 core/wallet.js 的 wwCoreCreateWallet，不在此重复实现路径。
  */
-async function wwCreateWalletUI(forcedWordCount) {
-  if (typeof wwCoreCreateWallet !== 'function') {
-    throw new Error('钱包核心未加载');
+async function createWallet(forcedWordCount) {
+  if (typeof ethers === 'undefined') {
+    throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
   }
   var nWords = (typeof forcedWordCount === 'number' && [12, 15, 18, 21, 24].includes(forcedWordCount)) ? forcedWordCount : 12;
-  var base = await wwCoreCreateWallet(nWords);
+  var entropyBytes =
+    typeof getEntropyByteCountForMnemonicWords === 'function'
+      ? getEntropyByteCountForMnemonicWords(nWords)
+      : { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 }[nWords] || 16;
+  var mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
+  var wallet = ethers.Wallet.fromMnemonic(mnemonic);
+  var trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
+  var btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
+  var trxAddr = '';
+  try {
+    if (typeof loadTronWeb === 'function') await loadTronWeb();
+    if (typeof TronWeb !== 'undefined') {
+      trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
+    } else {
+      trxAddr = 'T' + trxWallet.address.slice(2, 35);
+    }
+  } catch (_e2) {
+    trxAddr = 'T' + trxWallet.address.slice(2, 35);
+  }
   return {
-    mnemonic: base.mnemonic,
-    enMnemonic: base.mnemonic,
-    words: base.mnemonic.split(/\s+/).filter(Boolean),
-    wordCount: base.wordCount,
-    eth: base.eth,
-    trx: base.trx,
-    btc: base.btc,
-    ethAddress: base.eth.address,
-    trxAddress: base.trx.address,
-    btcAddress: base.btc.address,
-    createdAt: base.createdAt,
-    addrMap: base.addrMap
+    mnemonic: mnemonic,
+    enMnemonic: mnemonic,
+    words: mnemonic.split(/\s+/).filter(Boolean),
+    wordCount: nWords,
+    eth: { address: wallet.address, privateKey: wallet.privateKey },
+    trx: { address: trxAddr, privateKey: trxWallet.privateKey },
+    btc: { address: btcWallet.address, privateKey: btcWallet.privateKey },
+    ethAddress: wallet.address,
+    trxAddress: trxAddr,
+    btcAddress: btcWallet.address,
+    privateKey: wallet.privateKey,
+    trxPrivateKey: trxWallet.privateKey,
+    createdAt: Date.now()
   };
 }
 
 async function createNewWallet() {
-  // 清空旧的 PIN 数据（新建钱包时不应沿用上一钱包的 PIN 状态）
-  try {
-    localStorage.removeItem('ww_pin');
-    localStorage.removeItem('ww_pin_confirm');
-    localStorage.removeItem('ww_pin_setup_done');
-    localStorage.removeItem('ww_pin_hash');
-    localStorage.removeItem('ww_pin_set');
-    localStorage.removeItem('ww_unlock_pin');
-  } catch (_) {}
   try { window._wwInFirstRun = true; } catch (_fr0) {}
   showWalletLoading();
   try {
-    var w = await wwCreateWalletUI(12);
-    if (typeof wwSetTempWallet === 'function') wwSetTempWallet(w);
+    var w = await createWallet(12);
+    window.TEMP_WALLET = w;
     goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
     if (typeof showToast === 'function')
@@ -686,45 +706,21 @@ function renderPinSetupUI() {
 }
 
 async function finalizeImportedWalletAfterPin(pin) {
-  var flat = typeof wwTakeImportPending === 'function' ? wwTakeImportPending() : null;
-  if (!flat) {
-    var raw = localStorage.getItem('ww_import_pending');
-    if (raw) {
-      try {
-        flat = JSON.parse(raw);
-        try { localStorage.removeItem('ww_import_pending'); } catch (_r) {}
-      } catch (e) {
-        safeLog('[JSON]', e);
-        showToast('数据损坏', 'error');
-        return;
-      }
-    }
-  }
-  if (!flat) return;
-  var pinStr = String(pin || '');
-  wwSetSessionPin(pinStr);
-  var persistImp = await saveWalletSecure(flat, pinStr);
-  if (!persistImp) {
-    persistImp = _saveWalletPlainPublicOnly({
-      ethAddress: flat.ethAddress,
-      trxAddress: flat.trxAddress,
-      btcAddress: flat.btcAddress || '',
-      createdAt: flat.createdAt,
-      backedUp: !!flat.backedUp,
-      addrMap: flat.addrMap || {
-        trx: flat.trxAddress,
-        eth: flat.ethAddress,
-        btc: flat.btcAddress || '',
-        derived_from: 'eth'
-      }
-    });
-  }
-  if (!persistImp) {
-    showToast('保存失败，请重试', 'error');
+  var raw = localStorage.getItem('ww_import_pending');
+  if (!raw) return;
+  var flat;
+  try {
+    flat = JSON.parse(raw);
+  } catch (e) {
+    console.error('[JSON]', e);
+    showToast('数据损坏', 'error');
     return;
   }
+  var pinStr = String(pin || '');
+  wwSetSessionPin(pinStr);
+  await saveWalletSecure(flat, pinStr);
   localStorage.removeItem('ww_import_pending');
-  var rwPubImp = {
+  window.REAL_WALLET = {
     mnemonic: flat.mnemonic,
     ethAddress: flat.ethAddress,
     trxAddress: flat.trxAddress,
@@ -733,22 +729,8 @@ async function finalizeImportedWalletAfterPin(pin) {
     trxPrivateKey: flat.trxPrivateKey,
     createdAt: flat.createdAt,
     hasEncrypted: true,
-    backedUp: !!flat.backedUp,
-    addrMap: flat.addrMap || {
-      trx: flat.trxAddress,
-      eth: flat.ethAddress,
-      btc: flat.btcAddress || ''
-    }
+    backedUp: !!flat.backedUp
   };
-  if (!_publishRealWalletSnapshot(rwPubImp)) {
-    showToast('钱包状态异常', 'error');
-    return;
-  }
-  try {
-    if (typeof CHAIN_ADDR !== 'undefined') {
-      CHAIN_ADDR = flat.trxAddress ? String(flat.trxAddress) : '--';
-    }
-  } catch (_ch) {}
   try { if (typeof updateAddr === 'function') updateAddr(); } catch(e) {}
   try { if (typeof loadBalances === 'function') setTimeout(loadBalances, 500); } catch(e) {}
   var tb = document.getElementById('tabBar');
@@ -791,7 +773,63 @@ function handlePinSetupKey(key) {
   finalizeImportedWalletAfterPin(val).then(function(){ closePinSetupOverlay(); }).catch(function(e){ showToast((e && e.message) || 'PIN 设置失败', 'error'); });
 }
 
-/* TOTP（offerTotpAfterPinSave / startTotpSetup / showTotpUnlockOverlay 等）由 wallet.runtime.js 提供，勿在此重复定义以免遮蔽 */
+/** 保留接口；永不自动打开 TOTP（与首次引导解耦） */
+function offerTotpAfterPinSave() {}
+
+function startTotpSetup() {
+  if (window._wwInFirstRun) return;
+  const pin = localStorage.getItem('ww_pin');
+  if (!pin) { showToast('请先设置 6 位 PIN', 'warning'); return; }
+  const secretB32 = wwGenerateTotpSecretB32();
+  window._wwTotpPendingSecret = secretB32;
+  const issuer = 'WorldToken';
+  let acc = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') || 'wallet';
+  acc = String(acc).slice(0, 48);
+  const label = encodeURIComponent(issuer + ':' + acc);
+  const otpauth = 'otpauth://totp/' + label + '?secret=' + secretB32 + '&issuer=' + encodeURIComponent(issuer);
+  const st = document.getElementById('totpSetupSecretText');
+  if (st) st.textContent = secretB32;
+  const inp = document.getElementById('totpSetupVerifyInput');
+  if (inp) inp.value = '';
+  const ov = document.getElementById('totpSetupOverlay');
+  if (ov) ov.classList.add('show');
+  const canvas = document.getElementById('totpSetupQr');
+  if (canvas && typeof loadQRCodeLib === 'function') {
+    loadQRCodeLib().then(function() {
+      if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+        return QRCode.toCanvas(canvas, otpauth, { width: 200, margin: 2, color: { dark: '#000000', light: '#ffffff' } });
+      }
+    }).catch(function() { showToast('二维码加载失败，可手动输入密钥', 'warning'); });
+  }
+}
+function closeTotpSetup() {
+  const ov = document.getElementById('totpSetupOverlay');
+  if (ov) ov.classList.remove('show');
+  window._wwTotpPendingSecret = null;
+}
+
+function showTotpUnlockOverlay() {
+  const ov = document.getElementById('totpUnlockOverlay');
+  const inp = document.getElementById('totpUnlockInput');
+  const err = document.getElementById('totpUnlockError');
+  if (inp) { inp.value = ''; try { inp.focus(); } catch (e) {} }
+  if (err) err.style.display = 'none';
+  if (ov) ov.classList.add('show');
+}
+
+function closeTotpUnlock() {
+  if(window._wwForceIdleLock) {
+    if(typeof showToast==='function') showToast('请输入两步验证码以解锁', 'warning', 2200);
+    return;
+  }
+  const ov = document.getElementById('totpUnlockOverlay');
+  if (ov) ov.classList.remove('show');
+  const pov = document.getElementById('pinUnlockOverlay');
+  const pinInp = document.getElementById('pinUnlockInput');
+  if (pinInp) pinInp.value = '';
+  if (pov) pov.classList.add('show');
+  try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
+}
 
 /** 任一条链上公开地址存在即视为已有钱包（勿仅依赖 ethAddress，否则首页底栏被隐藏、像空白页） */
 function wwWalletHasAnyChainAddress(rw) {
@@ -805,22 +843,9 @@ function wwWalletHasAnyChainAddress(rw) {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  if (pageId === 'page-welcome' && typeof wwClearSensitiveSession === 'function') {
-    try { wwClearSensitiveSession(); } catch (_g0) {}
-  }
   if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-    if (!wwWalletHasAnyChainAddress(_rwGo) && typeof loadWallet === 'function') {
-      try {
-        var _wwStUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-        if (wwWalletHasAnyChainAddress(_wwStUi)) loadWallet();
-      } catch (_e) {}
-      _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-    }
     if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
-    else if (typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
-      pageId = 'page-pin-setup';
-    }
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _pwStore = null;
@@ -847,13 +872,13 @@ function goTo(pageId, opts) {
   applySeoForPage(pageId);
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const activePage=document.getElementById(pageId);
-  if(!activePage){safeLog('[WorldToken] 页面不存在:',pageId);return;}
+  if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='flex';
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {
-      _tabBar.style.display = (typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) ? 'flex' : 'none';
+      _tabBar.style.display = wwWalletHasAnyChainAddress(REAL_WALLET) ? 'flex' : 'none';
     } else {
       _tabBar.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -869,9 +894,9 @@ function goTo(pageId, opts) {
       if (_sel) { _sel.value = '12'; _sel.selectedIndex = 0; }
       syncKeyPageLangSelect();
       showWalletLoading();
-      Promise.resolve(wwCreateWalletUI(12))
+      Promise.resolve(createWallet(12))
         .then(function (w) {
-          if (typeof wwSetTempWallet === 'function') wwSetTempWallet(w);
+          window.TEMP_WALLET = w;
           hideWalletLoading();
           syncKeyPageLangSelect();
           if (typeof renderKeyGrid === 'function') renderKeyGrid();
@@ -884,7 +909,7 @@ function goTo(pageId, opts) {
     }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} initImportGrid(); var _impErrUi = document.getElementById('importError'); if (_impErrUi) _impErrUi.style.display = 'none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
+if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
@@ -928,6 +953,7 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
   if(pageId==='page-addr') {
+    setTimeout(updateQRCode, 100);
     // 更新链地址显示
     if(REAL_WALLET) {
       const trx = REAL_WALLET.trxAddress || '--';
@@ -942,21 +968,15 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
       const ce = (_safeEl('chainEth') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* chainEth fallback */; if(ce) ce.textContent = eth;
       const cb = (_safeEl('chainBtc') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* chainBtc fallback */; if(cb) cb.textContent = btc;
     }
-    setTimeout(function () {
-      if (typeof updateQRCode === 'function') {
-        updateQRCode();
-      }
-    }, 100);
   }
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
+    if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
     if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
     if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
-    if (typeof updateQRCode === 'function' && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
-      setTimeout(updateQRCode, 250);
-    }
+    if (REAL_WALLET && REAL_WALLET.ethAddress && typeof updateQRCode === 'function') setTimeout(updateQRCode, 250);
   }
   if(pageId==='page-transfer') {
     calcTransferFee();
@@ -1015,10 +1035,20 @@ function wwUpdateScrollTopBtn() {
   btn.classList.toggle('ww-show', !!(p && p.scrollTop > 220));
 }
 function initBalancePrivacyToggle() {
-  try {
-    localStorage.removeItem('ww_balance_privacy');
-  } catch (_e) {}
-  document.documentElement.classList.remove('ww-balance-hidden');
+  var btn = document.getElementById('balanceHideToggle');
+  if (!btn) return;
+  function apply() {
+    var on = localStorage.getItem('ww_balance_privacy') === '1';
+    document.documentElement.classList.toggle('ww-balance-hidden', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = on ? '\uD83D\uDE48' : '\uD83D\uDC41';
+    btn.setAttribute('title', on ? '显示余额' : '隐藏余额');
+  }
+  apply();
+  btn.addEventListener('click', function () {
+    localStorage.setItem('ww_balance_privacy', localStorage.getItem('ww_balance_privacy') === '1' ? '0' : '1');
+    apply();
+  });
 }
 function initScrollTopBtn() {
   var btn = document.getElementById('wwScrollTopBtn');
@@ -1041,9 +1071,8 @@ function initScrollTopBtn() {
 function initTabSwipeGesture() {
   var root = document.querySelector('.pages');
   if (!root) return;
-  /* 与底栏顺序一致：资产 → 地址 → 兑换 → 礼物 → 设置 */
-  var order = ['tab-home', 'tab-addr', 'tab-swap', 'tab-hongbao', 'tab-settings'];
-  var pageToTab = { 'page-home': 'tab-home', 'page-addr': 'tab-addr', 'page-swap': 'tab-swap', 'page-hongbao': 'tab-hongbao', 'page-settings': 'tab-settings' };
+  var order = ['tab-home', 'tab-addr', 'tab-swap', 'tab-settings'];
+  var pageToTab = { 'page-home': 'tab-home', 'page-addr': 'tab-addr', 'page-swap': 'tab-swap', 'page-settings': 'tab-settings' };
   var sx = 0, sy = 0, startEl = null;
   root.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) return;
@@ -1073,7 +1102,7 @@ function renderKeyGrid() {
   let words;
   var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(keyMnemonicLang) : (keyMnemonicLang === 'en' ? 'en' : 'zh');
   const isEn = wlKey === 'en';
-  const tw = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
+  const tw = window.TEMP_WALLET;
   var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
   // TEMP_WALLET（创建中）优先；否则用已解密的真实钱包助记词（备份页 / skipKeyRegen）
   const enMnemonic =
@@ -1115,25 +1144,8 @@ function renderKeyGrid() {
   } catch (e) {}
   const grid = document.getElementById('keyWordGrid');
   if (!grid) {
-    safeLog('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
+    console.warn('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
     return;
-  }
-  var revealBar = document.getElementById('wwMnemonicRevealBar');
-  if (!revealBar) {
-    revealBar = document.createElement('div');
-    revealBar.id = 'wwMnemonicRevealBar';
-    revealBar.style.cssText = 'width:100%;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap';
-    revealBar.innerHTML = '<span style="font-size:12px;color:var(--text-muted);line-height:1.5">默认隐藏词面；确认环境安全后再显示全文</span><button type="button" class="btn-secondary" id="wwMnemonicRevealBtn" style="padding:8px 14px;font-size:13px">显示助记词</button>';
-    if (grid.parentNode) grid.parentNode.insertBefore(revealBar, grid);
-  }
-  var revealBtn = document.getElementById('wwMnemonicRevealBtn');
-  var revealed = !!window._wwKeyGridMnemonicRevealed;
-  if (revealBtn) {
-    revealBtn.textContent = revealed ? '隐藏助记词' : '显示助记词';
-    revealBtn.onclick = function () {
-      window._wwKeyGridMnemonicRevealed = !window._wwKeyGridMnemonicRevealed;
-      if (typeof renderKeyGrid === 'function') renderKeyGrid();
-    };
   }
   grid.innerHTML = '';
 
@@ -1162,7 +1174,7 @@ function renderKeyGrid() {
     idx.textContent=String(i+1).padStart(2,'0')+'.';
     const val=document.createElement('span');
     val.className='word-val';
-    val.textContent = revealed ? w : '••••••';
+    val.textContent=w;
     val.style.fontSize=isSmall?'11px':'13px';
     line.appendChild(idx);
     line.appendChild(document.createTextNode(' '));
@@ -1177,18 +1189,48 @@ function renderKeyGrid() {
   if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
 }
 
+function shortChainAddr(addr) {
+  if (!addr || addr === '--') return '—';
+  const t = String(addr).trim();
+  if (t.length <= 12) return t;
+  return t.slice(0, 5) + '…' + t.slice(-4);
+}
 function updateHomeChainStrip() {
-  /* 首页链上地址摘要（TRX/ETH/BTC 芯片）已自 HTML 移除；保留空函数供调用方 */
+  const strip = document.getElementById('homeChainStrip');
+  const trxEl = document.getElementById('homeShortTrx');
+  const ethEl = document.getElementById('homeShortEth');
+  const btcEl = document.getElementById('homeShortBtc');
+  const btcWrap = document.getElementById('homeMiniBtcWrap');
+  if (!strip || !trxEl || !ethEl) return;
+  if (!REAL_WALLET || !wwWalletHasAnyChainAddress(REAL_WALLET)) {
+    trxEl.textContent = '—';
+    ethEl.textContent = '—';
+    if (btcEl) btcEl.textContent = '—';
+    if (btcWrap) btcWrap.style.display = 'flex';
+    strip.classList.add('home-chain-strip--dim');
+    return;
+  }
+  const trx = REAL_WALLET.trxAddress || '';
+  const eth = REAL_WALLET.ethAddress || '';
+  const btc = REAL_WALLET.btcAddress || '';
+  trxEl.textContent = shortChainAddr(trx || '--');
+  ethEl.textContent = shortChainAddr(eth || '--');
+  if (btc && btc.length > 2 && btc !== '--') {
+    btcEl.textContent = shortChainAddr(btc);
+  } else {
+    btcEl.textContent = '—';
+  }
+  if (btcWrap) btcWrap.style.display = 'flex';
+  strip.classList.remove('home-chain-strip--dim');
 }
 
 /* updateHomeBackupBanner：wallet.runtime.js（避免与 runtime 重复定义） */
 
 function getMnemonicStrengthDisplay() {
   var n = 12;
-  // 密钥页以临时钱包词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
-  var _twg = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
-  if (_twg && _twg.mnemonic) {
-    var wct = _twg.mnemonic.trim().split(/\s+/).filter(Boolean).length;
+  // 密钥页以 TEMP_WALLET 词数为准（不读 REAL_WALLET、不依赖浏览器恢复的下拉框）
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    var wct = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean).length;
     if ([12, 15, 18, 21, 24].includes(wct)) n = wct;
   } else if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
     n = currentMnemonicLength;
@@ -1247,43 +1289,30 @@ function updateQRDisplay() {
 
 /** 构建收款二维码 URI（TRX / ETH） */
 function wwBuildReceiveQrPayload(chain, addr, amountRaw) {
-  var realAddr = addr;
-  var selectedChain = chain;
-  if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET) {
-    if (selectedChain === 'trx' && REAL_WALLET.trxAddress) {
-      realAddr = REAL_WALLET.trxAddress;
-    } else if (selectedChain === 'eth' && REAL_WALLET.ethAddress) {
-      realAddr = REAL_WALLET.ethAddress;
-    } else if (selectedChain === 'btc' && REAL_WALLET.btcAddress) {
-      realAddr = REAL_WALLET.btcAddress;
-    } else if (selectedChain === 'native' && REAL_WALLET.btcAddress) {
-      realAddr = REAL_WALLET.btcAddress;
-    }
-  }
   var amt = amountRaw;
   if (amt === undefined || amt === null) {
     var inp = document.getElementById('qrReceiveAmount');
     amt = inp ? inp.value : '';
   }
   var af = parseFloat(amt);
-  if (!realAddr) return '';
+  if (!addr) return '';
   if (chain === 'trx') {
     var sun = Math.floor((isFinite(af) ? af : 0) * 1e6);
-    if (sun > 0) return 'tron:' + realAddr + '?amount=' + sun;
-    return realAddr;
+    if (sun > 0) return 'tron:' + addr + '?amount=' + sun;
+    return addr;
   }
   if (chain === 'eth') {
     if (isFinite(af) && af > 0 && typeof ethers !== 'undefined' && ethers.utils && ethers.utils.parseEther) {
       try {
-        return 'ethereum:' + realAddr + '?value=' + ethers.utils.parseEther(String(af)).toString();
+        return 'ethereum:' + addr + '?value=' + ethers.utils.parseEther(String(af)).toString();
       } catch (e) {
-        return realAddr;
+        return addr;
       }
     }
-    return realAddr;
+    return addr;
   }
-  if (chain === 'btc') return realAddr;
-  return realAddr;
+  if (chain === 'btc') return addr;
+  return addr;
 }
 
 function wwGenerateQRCode(text, canvasId) {
@@ -1295,7 +1324,7 @@ function wwGenerateQRCode(text, canvasId) {
       return QRCode.toCanvas(canvas, text, { width: w, margin: 1 });
     })
     .catch(function (e) {
-      safeLog('[QR]', e);
+      console.warn('[QR]', e);
     });
 }
 
@@ -1415,7 +1444,7 @@ async function loadTrxResource() {
     if(enEl) enEl.textContent = '剩余 ' + wwFmtNum(eRem) + ' / 上限 ' + wwFmtNum(eLim);
     if(bwEl) bwEl.textContent = '可用约 ' + wwFmtNum(bwAvail) + '（免费 ' + wwFmtNum(freeBwRem) + ' + 质押 ' + wwFmtNum(stakeBwRem) + '）';
   } catch(e) {
-    safeLog('loadTrxResource', e);
+    console.log('loadTrxResource', e);
     if(card) card.style.display = 'none';
   }
 }
@@ -1454,9 +1483,6 @@ function wwTickIdleLock() {
   if(Date.now() - last < mins * 60 * 1000) return;
   window._wwUnlockPreservePage = true;
   window._wwForceIdleLock = true;
-  try {
-    if (typeof wwClearSensitiveSession === 'function') wwClearSensitiveSession();
-  } catch (_idle) {}
   var inp = document.getElementById('pinUnlockInput');
   var err = document.getElementById('pinUnlockError');
   if(pov && inp) {
@@ -1474,18 +1500,12 @@ var ETH_RPC = 'https://eth.llamarpc.com';
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
-  const addrEl = document.getElementById('transferAddr');
-  const amtEl = document.getElementById('transferAmount');
-  if (!addrEl || !amtEl) {
-    if (typeof showToast === 'function') showToast('❌ 转账表单未就绪', 'error');
-    return false;
-  }
-  const addr = addrEl.value.trim();
+  const addr = document.getElementById('transferAddr').value.trim();
   if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
     showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
     return false;
   }
-  const amt = parseFloat(amtEl.value);
+  const amt = parseFloat(document.getElementById('transferAmount').value);
   const coin = transferCoin.id;
 
   if (!addr) {
@@ -1522,13 +1542,13 @@ async function broadcastRealTransfer() {
 
     if(coin === 'usdt') {
       // USDT TRC-20 转账
-      txHash = await safeSign('usdt', { to: addr, amount: amt }, '');
+      txHash = await sendUSDT_TRC20(addr, amt);
     } else if(coin === 'trx') {
       // TRX 转账
-      txHash = await safeSign('trx', { to: addr, amount: amt }, '');
+      txHash = await sendTRX(addr, amt);
     } else if(coin === 'eth') {
       // ETH 转账
-      txHash = await safeSign('eth', { to: addr, amount: amt }, '');
+      txHash = await sendETH(addr, amt);
     } else {
       showToast('⚠️ 暂不支持 ' + transferCoin.name + ' 转账', 'warning');
       return false;
@@ -1539,6 +1559,7 @@ async function broadcastRealTransfer() {
         if (REAL_WALLET) {
           try { delete REAL_WALLET.privateKey; } catch (_k1) {}
           try { delete REAL_WALLET.trxPrivateKey; } catch (_k2) {}
+          window.REAL_WALLET = REAL_WALLET;
         }
       } catch (_clr) {}
       try { if (typeof wwRecordSpendAfterBroadcast === 'function') wwRecordSpendAfterBroadcast(amt); } catch (_rs) {}
@@ -1548,7 +1569,7 @@ async function broadcastRealTransfer() {
       return true;
     }
   } catch(e) {
-    safeLog('转账失败:', e);
+    console.error('转账失败:', e);
     showToast('❌ 转账失败: ' + (e.message || e), 'error');
   }
   return false;
@@ -2296,6 +2317,13 @@ var hbType = 'normal';
 
 var BLESSINGS = ['恭喜发财，万事如意','岁岁平安，事事顺心','吉祥如意，福气满满','财源广进，好运连连','心想事成，大吉大利'];
 
+function copyKw() {
+  navigator.clipboard?.writeText(currentKeyword).catch(()=>{});
+  const btn = document.getElementById('copyKwBtn');
+  btn.querySelector('div:last-child').textContent = '✅ 已复制';
+  setTimeout(()=>{ btn.querySelector('div:last-child').textContent = '复制口令'; }, 2000);
+}
+
 function submitClaim() {
   var box = document.getElementById('claimInputBox');
   var inp = document.getElementById('claimInput');
@@ -2340,13 +2368,9 @@ function submitClaim() {
     try {
       localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
     } catch (e2) {}
-    var _ca = document.getElementById('claimedAmount');
-    var _cm = document.getElementById('claimedMessage');
-    if (_ca) _ca.textContent = String(hb.amount) + ' USDT';
-    if (_cm) _cm.textContent = hb.message ? String(hb.message) : '礼物已入账，可在资产页查看余额。';
     showToast('✅ 领取成功 · ' + String(hb.amount) + ' USDT', 'success');
     if (inp) inp.value = '';
-    goTo('page-claimed');
+    goTo('page-home');
     return;
   }
 
@@ -2386,23 +2410,17 @@ function submitClaim() {
   allHb[kw] = hb;
   localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
 
-  var _ca2 = document.getElementById('claimedAmount');
-  var _cm2 = document.getElementById('claimedMessage');
-  if (_ca2) _ca2.textContent = String(amt) + ' USDT';
-  if (_cm2) _cm2.textContent = hb.message ? String(hb.message) : '礼物已入账，可在资产页查看余额。';
   showToast('✅ 领取成功 · ' + amt + ' USDT', 'success');
   if (inp) inp.value = '';
-  goTo('page-claimed');
+  goTo('page-home');
 }
 
 var hbCount = 5;
 
 function changeCount(delta) {
-  hbCount = Math.max(1, Math.min(100, hbCount + delta));
-  var hc = document.getElementById('hbCountVal');
-  if (hc) hc.textContent = hbCount;
-  var disp = document.getElementById('hbCountDisplay');
-  if (disp) disp.textContent = hbCount + ' 个';
+  hbCount = Math.max(1, Math.min(100, hbCount+delta));
+  document.getElementById('hbCountVal').textContent = hbCount;
+  (_safeEl('hbCountDisplay')||document.getElementById('hbCountVal')).textContent = hbCount+' 个';
   updateHbPreview();
 }
 
@@ -2462,7 +2480,8 @@ function deleteWallet() {
     try { localStorage.removeItem('ww_wallet_nickname'); } catch (_n) {}
     try { localStorage.removeItem('ww_ref_install_credited'); } catch (_r) {}
   } catch (_e) {}
-  if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
+  REAL_WALLET = null;
+  try { window.REAL_WALLET = null; } catch (_w) {}
   currentMnemonicLength = 12;
   if (typeof goTo === 'function') goTo('page-welcome');
   else {
@@ -2551,7 +2570,7 @@ async function loadSwapPrices() {
     }
     calcSwap();
   } catch (e) {
-    safeLog('价格加载失败，使用默认');
+    console.log('价格加载失败，使用默认');
   }
 }
 
@@ -2593,7 +2612,7 @@ function initImportGrid(count) {
     div.innerHTML = `
       <span style="font-size:9px;color:var(--text-muted)">${i+1}</span>
       <input id="iw_${i}" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-        style="width:100%;background:none;border:none;outline:none;font-size:16px;color:var(--text);text-align:center;font-family:inherit"
+        style="width:100%;background:none;border:none;outline:none;font-size:12px;color:var(--text);text-align:center;font-family:inherit"
         oninput="syncImportPaste()"
         onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();var _n=${Math.min(i + 1, count - 1)};document.getElementById('iw_'+_n)&&document.getElementById('iw_'+_n).focus();}">
     `;
@@ -2923,8 +2942,8 @@ async function changeMnemonicLength(n) {
   // 重新生成指定词数的钱包
   showWalletLoading();
   try {
-    var w = await wwCreateWalletUI(wordCount);
-    if (typeof wwSetTempWallet === 'function') wwSetTempWallet(w);
+    var w = await createWallet(wordCount);
+    window.TEMP_WALLET = w;
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
   } catch(e) {
     if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
@@ -2937,30 +2956,20 @@ async function changeMnemonicLength(n) {
 // ── 助记词验证 ──────────────────────────────────────────────
 var verifyAnswers = {}; // {position: correctWord}
 
-async function startVerify() {
+function startVerify() {
   // 与密钥页展示一致：renderKeyGrid 写入的 .words（英文为 BIP39；非英文为中文地名）；否则回退英文助记词
   let words = null;
-  var _twSv = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
-  if (_twSv && _twSv.mnemonic) {
-    if (_twSv.words && _twSv.words.length >= 12) {
-      words = _twSv.words.slice();
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    if (window.TEMP_WALLET.words && window.TEMP_WALLET.words.length >= 12) {
+      words = window.TEMP_WALLET.words.slice();
     } else {
-      words = _twSv.mnemonic.trim().split(/\s+/).filter(Boolean);
+      words = window.TEMP_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
     }
   }
-  if ((!words || words.length < 12) && typeof wwGetSessionMnemonic === 'function' && wwGetSessionMnemonic()) {
-    words = wwGetSessionMnemonic().trim().split(/\s+/).filter(Boolean);
+  if ((!words || words.length < 12) && REAL_WALLET && REAL_WALLET.mnemonic) {
+    words = REAL_WALLET.mnemonic.trim().split(/\s+/).filter(Boolean);
   }
   if (!words || words.length < 12) {
-    var persistedHasAddr = false;
-    try {
-      var _stVer = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      persistedHasAddr = typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(_stVer);
-    } catch (_pv) {}
-    if (persistedHasAddr) {
-      if (typeof showToast === 'function') showToast('无法加载助记词，请返回密钥页重新生成后再验证', 'error');
-      return;
-    }
     // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
     var nPick = 12;
     if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
@@ -2982,64 +2991,29 @@ async function startVerify() {
       if(!indices.includes(idx)) indices.push(idx);
     }
     words = indices.map(i => pool[i]);
-    try {
-      var _twr = (typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null) || {};
-      if (typeof wwSetTempWallet === 'function') wwSetTempWallet(_twr);
-      _twr.mnemonic = words.join(' ');
-      _twr.words = words.slice();
-    } catch (_tw) {}
+    if(!REAL_WALLET) REAL_WALLET = {};
+    REAL_WALLET.mnemonic = words.join(' ');
+    REAL_WALLET.wordCount = words.length;
+    saveWallet(REAL_WALLET);
   }
-  var _twSv2 = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
-  if (_twSv2 && _twSv2.mnemonic && (_twSv2.eth || _twSv2.ethAddress)) {
-    var tw = _twSv2;
+  // 验证开始时若存在完整 TEMP_WALLET，将链上地址与密钥写入 REAL_WALLET 并持久化（wallet.core saveWallet：有 PIN 则加密存私钥）
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic && (window.TEMP_WALLET.eth || window.TEMP_WALLET.ethAddress)) {
+    var tw = window.TEMP_WALLET;
     var nested = tw.eth && tw.eth.address;
-    var ethA = nested ? tw.eth.address : tw.ethAddress;
-    var trxA = nested ? tw.trx.address : tw.trxAddress;
-    var btcA = nested ? tw.btc.address : (tw.btcAddress || '');
-    var toSave = {
-      ethAddress: ethA,
-      trxAddress: trxA,
-      btcAddress: btcA,
+    REAL_WALLET = {
+      ethAddress: nested ? tw.eth.address : tw.ethAddress,
+      trxAddress: nested ? tw.trx.address : tw.trxAddress,
+      btcAddress: nested ? tw.btc.address : (tw.btcAddress || ''),
       createdAt: tw.createdAt != null ? tw.createdAt : Date.now(),
-      backedUp: false,
       mnemonic: tw.mnemonic,
-      addrMap: tw.addrMap || {
-        trx: trxA,
-        eth: ethA,
-        btc: btcA,
-        derived_from: 'eth'
-      }
+      wordCount: tw.wordCount || words.length,
+      privateKey: nested ? tw.eth.privateKey : tw.privateKey,
+      trxPrivateKey: nested ? tw.trx.privateKey : tw.trxPrivateKey,
+      enMnemonic: tw.mnemonic,
+      words: words.slice()
     };
-    var pinSv = '';
-    try { pinSv = (localStorage.getItem('ww_pin') || '').trim(); } catch (_ps) {}
-    var persistSv = false;
-    if (pinSv) {
-      persistSv = await saveWalletSecure(toSave, pinSv);
-      if (!persistSv) persistSv = _saveWalletPlainPublicOnly(toSave);
-    } else {
-      persistSv = _saveWalletPlainPublicOnly(toSave);
-    }
-    if (!persistSv) {
-      if (typeof showToast === 'function') showToast('无法保存钱包', 'error');
-      return;
-    }
-    var pubSv = {
-      version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
-      ethAddress: ethA,
-      trxAddress: trxA,
-      btcAddress: btcA,
-      createdAt: toSave.createdAt,
-      backedUp: false,
-      hasEncrypted: !!pinSv,
-      addrMap: toSave.addrMap
-    };
-    if (!_publishRealWalletSnapshot(pubSv)) {
-      if (typeof showToast === 'function') showToast('钱包状态异常', 'error');
-      return;
-    }
-    try {
-      if (typeof wwSetSessionMnemonic === 'function') wwSetSessionMnemonic(tw.mnemonic);
-    } catch (_sm) {}
+    window.REAL_WALLET = REAL_WALLET;
+    if (typeof saveWallet === 'function') saveWallet(REAL_WALLET);
   }
   verifyAnswers = {};
   
@@ -3062,18 +3036,10 @@ async function startVerify() {
     div.innerHTML = `
       <div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ${pos+1} 词</div>
       <input type="text" id="verify_${pos}" placeholder="请输入第 ${pos+1} 个词" autocomplete="off" autocorrect="off" autocapitalize="off"
-        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit" />
+        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit"
+        onkeydown="if(event.key==='Enter')checkVerify()">
     `;
     container.appendChild(div);
-    var _vInp = document.getElementById('verify_' + pos);
-    if (_vInp) {
-      _vInp.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          if (typeof checkVerify === 'function') checkVerify();
-        }
-      });
-    }
   });
   
   _safeEl('verifyError').style.display = 'none';
@@ -3084,9 +3050,178 @@ async function startVerify() {
   }, 300);
 }
 
-/* checkVerify、PIN 解锁链（_resumeWalletAfterUnlock / continueAfterPinCheck / submitPinUnlock / closePinUnlock）：以 wallet.runtime.js 为准，避免双份逻辑漂移 */
+function checkVerify() {
+  let allCorrect = true;
+  Object.keys(verifyAnswers).forEach(pos => {
+    const input = document.getElementById('verify_' + pos);
+    const val = input ? input.value.trim().toLowerCase() : '';
+    const correct = verifyAnswers[pos].toLowerCase();
+    if(val !== correct) {
+      allCorrect = false;
+      if(input) input.style.color = '#ff6060';
+    } else {
+      if(input) input.style.color = '#4ac84a';
+    }
+  });
+  
+  if(allCorrect) {
+    _safeEl('verifyError').style.display = 'none';
+    // 验证通过，显示成功页
+    if (typeof markBackupDone === 'function') markBackupDone();
+    updateAddr();
+    var hasPin = false;
+    try {
+      hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+    } catch (_p0) {}
+    if (hasPin) { try { window._wwInFirstRun = false; } catch (_frV) {} }
+    showToast('✅ 验证通过！钱包已安全创建', 'success'); goTo('page-home');
+    setTimeout(function() {
+      if (!hasPin && typeof openPinSettingsDialog === 'function') {
+        if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
+        openPinSettingsDialog();
+      }
+    }, 450);
+  } else {
+    _safeEl('verifyError').style.display = 'block';
+    const vroot = document.getElementById('verifyShakeRoot');
+    if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
+  }
+}
 
-/* openPinSettingsDialog：由 wallet.runtime.js 提供（savePinSecure / wwClearSessionPin，勿在此保留明文 PIN 存根） */
+
+async function _resumeWalletAfterUnlock() {
+  // 解密敏感数据并临时注入 REAL_WALLET（须在进入首页 / 拉余额前完成，避免竞态）
+  var pin = (typeof wwGetSessionPin === 'function' ? wwGetSessionPin() : '') || '';
+  try { if (!pin) pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
+  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
+    try {
+      var sensitive = await decryptSensitive(pin);
+      if (sensitive && REAL_WALLET) {
+        REAL_WALLET.privateKey = sensitive.privateKey;
+        REAL_WALLET.trxPrivateKey = sensitive.trxPrivateKey;
+        REAL_WALLET.mnemonic = sensitive.mnemonic;
+        REAL_WALLET.enMnemonic = sensitive.enMnemonic;
+        REAL_WALLET.words = sensitive.words;
+      }
+    } catch (e) {
+      console.error('[unlock decrypt]', e);
+    }
+  }
+  updateAddr();
+  const tb = document.getElementById('tabBar');
+  if(tb) tb.style.display = 'flex';
+  setTimeout(loadBalances, 500);
+  if(window._wwUnlockPreservePage) {
+    window._wwUnlockPreservePage = false;
+    window._wwForceIdleLock = false;
+    try { wwResetActivityClock(); } catch(e) {}
+    return;
+  }
+  window._wwForceIdleLock = false;
+  goTo('page-home');
+}
+function wwB64Bytes(u8) {
+  var s = '';
+  var chunk = 8192;
+  for (var i = 0; i < u8.length; i += chunk) {
+    s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + chunk, u8.length)));
+  }
+  return btoa(s);
+}
+
+function continueAfterPinCheck() {
+  if (typeof wwHasPinConfigured === 'function') {
+    if (!wwHasPinConfigured()) { void _resumeWalletAfterUnlock(); return; }
+  } else {
+    const pin = localStorage.getItem('ww_pin') || '';
+    if (!pin) { void _resumeWalletAfterUnlock(); return; }
+  }
+  const ov = document.getElementById('pinUnlockOverlay');
+  const inp = document.getElementById('pinUnlockInput');
+  const err = document.getElementById('pinUnlockError');
+  if(ov && inp) {
+    inp.value = '';
+    if(err) err.style.display = 'none';
+    ov.classList.add('show');
+    try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap) {}
+    setTimeout(() => { try { inp.focus(); } catch(e) {} }, 200);
+  } else {
+    void _resumeWalletAfterUnlock();
+  }
+}
+async function submitPageRestorePin() {
+  const inp = document.getElementById('pinRestorePageInput');
+  const err = document.getElementById('pageRestorePinError');
+  const panel = document.getElementById('pageRestorePinPanel');
+  if (typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
+    if (err) { err.textContent = '尚未在本机设置 PIN，请先创建或导入钱包并完成 PIN 设置'; err.style.display = 'block'; }
+    if (inp) inp.value = '';
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+    return;
+  }
+  const got = inp ? String(inp.value).trim() : '';
+  var ok = typeof verifyPin === 'function' ? await verifyPin(got) : false;
+  if (ok) {
+    if (typeof wwSetSessionPin === 'function') wwSetSessionPin(got);
+    if (err) { err.style.display = 'none'; err.textContent = ''; }
+    if (inp) inp.value = '';
+    if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
+      showTotpUnlockOverlay();
+    } else {
+      window._wwForceIdleLock = false;
+      await _resumeWalletAfterUnlock();
+    }
+  } else {
+    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
+    if (inp) inp.value = '';
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+  }
+}
+async function submitPinUnlock() {
+  const inp = document.getElementById('pinUnlockInput');
+  const got = inp ? String(inp.value).trim() : '';
+  const ov = document.getElementById('pinUnlockOverlay');
+  const err = document.getElementById('pinUnlockError');
+  const panel = document.getElementById('pinUnlockPanel');
+  var ok = typeof verifyPin === 'function' ? await verifyPin(got) : false;
+  if (ok) {
+    if (typeof wwSetSessionPin === 'function') wwSetSessionPin(got);
+    if (ov) ov.classList.remove('show');
+    if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
+      showTotpUnlockOverlay();
+    } else {
+      window._wwForceIdleLock = false;
+      await _resumeWalletAfterUnlock();
+    }
+  } else {
+    if (err) { err.textContent = 'PIN错误'; err.style.display = 'block'; }
+    if (panel) { panel.classList.remove('wt-shake-wrong'); void panel.offsetWidth; panel.classList.add('wt-shake-wrong'); }
+    if (inp) inp.value = '';
+  }
+}
+function closePinUnlock() {
+  if(window._wwForceIdleLock) {
+    if(typeof showToast==='function') showToast('闲置超时，请输入 PIN 解锁', 'warning', 2200);
+    return;
+  }
+  const ov = document.getElementById('pinUnlockOverlay');
+  if(ov) ov.classList.remove('show');
+}
+
+
+function openPinSettingsDialog() {
+  const cur = localStorage.getItem('ww_pin') || '';
+  const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
+  if(a === null) return;
+  const t = a.trim();
+  if(t === '') { localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
+  if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
+  localStorage.setItem('ww_pin', t);
+  try { window._wwInFirstRun = false; } catch (_frPs) {}
+  showToast('PIN 已保存', 'success');
+  if (typeof updateSettingsPage === 'function') updateSettingsPage();
+  if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
+}
 
 /* 时钟、闲置锁、活动重置、SEO/离线、余额隐私与滚动顶按钮由 wallet.runtime.js 统一初始化，避免与下文重复注册定时器与监听器 */
 
@@ -3110,42 +3245,13 @@ async function startVerify() {
   }
   /** 首次加载：hash 为空或指向不存在的 id 时，按 localStorage 钱包状态落到首页或欢迎页 */
   function wwEnsureInitialHashRoute() {
-    var claimKw = '';
-    try {
-      var _uClaim = new URL(location.href);
-      claimKw = String(_uClaim.searchParams.get('claim') || '').trim();
-    } catch (_eq) {}
-    if (claimKw) {
-      var _cinp = document.getElementById('claimInput');
-      if (_cinp) _cinp.value = claimKw.slice(0, 32);
-      try {
-        var _uStrip = new URL(location.href);
-        _uStrip.searchParams.delete('claim');
-        var _qs = _uStrip.search || '';
-        if (typeof history.replaceState === 'function') {
-          history.replaceState(null, '', _uStrip.pathname + _qs + (location.hash || ''));
-        }
-      } catch (_es) {}
-    }
     if (wwHashToPageId()) return;
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
       hasWallet = wwWalletHasAnyChainAddress(_d);
     } catch (_e) {}
-    if (hasWallet && typeof loadWallet === 'function') {
-      try { loadWallet(); } catch (_lwBoot) {}
-    }
-    try {
-      if (typeof wwWalletHasAnyChainAddress === 'function') {
-        hasWallet = wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null);
-      }
-    } catch (_hw) {}
     if (typeof goTo !== 'function') return;
-    if (claimKw) {
-      goTo('page-claim');
-      return;
-    }
     goTo(hasWallet ? 'page-home' : 'page-welcome');
   }
   window.addEventListener('hashchange', function () {
@@ -3156,6 +3262,13 @@ async function startVerify() {
     wwApplyHashRoute();
   }, 0);
 })();
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  
 
 (function(){
   function run(){
@@ -3180,7 +3293,7 @@ function renderImportGrid(wordCount) {
   var n = [12,15,18,21,24].includes(Number(wordCount)) ? Number(wordCount) : 12;
   var html = '';
   for (var i = 0; i < n; i++) {
-    html += '<input class="import-word" data-index="'+i+'" type="text" autocomplete="off" spellcheck="false" placeholder="'+(i+1)+'" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:16px;box-sizing:border-box;text-align:center" />';
+    html += '<input class="import-word" data-index="'+i+'" type="text" autocomplete="off" spellcheck="false" placeholder="'+(i+1)+'" style="width:100%;padding:10px 8px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:13px;box-sizing:border-box;text-align:center" />';
   }
   grid.innerHTML = html;
   if (badge) badge.textContent = '0/' + n;
@@ -3191,13 +3304,6 @@ function getMnemonicFromImport() {
   var raw = paste ? String(paste.value || '').trim() : '';
   if (!raw) {
     var inputs = Array.from(document.querySelectorAll('#importGrid .import-word'));
-    if (!inputs.length) {
-      inputs = Array.from(document.querySelectorAll('#importGrid input[id^="iw_"]')).sort(function (a, b) {
-        var na = parseInt(String(a.id || '').replace(/^iw_/, ''), 10);
-        var nb = parseInt(String(b.id || '').replace(/^iw_/, ''), 10);
-        return (na || 0) - (nb || 0);
-      });
-    }
     raw = inputs.map(function(el){ return String(el.value || '').trim(); }).filter(Boolean).join(' ');
   }
   raw = raw.replace(/\s+/g, ' ').trim();
@@ -3268,18 +3374,10 @@ async function doImportWallet() {
       privateKey: result.eth.privateKey,
       trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
-      backedUp: false,
-      addrMap: result.addrMap || {
-        trx: result.trx.address,
-        eth: result.eth.address,
-        btc: result.btc.address
-      }
+      backedUp: false
     };
 
-    try {
-      if (typeof wwSetImportPending === 'function') wwSetImportPending(flatForStore);
-    } catch (e) {}
-    var rwImportUi = {
+    window.REAL_WALLET = {
       mnemonic: result.mnemonic,
       ethAddress: result.eth.address,
       trxAddress: result.trx.address,
@@ -3288,17 +3386,10 @@ async function doImportWallet() {
       trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
       hasEncrypted: false,
-      backedUp: false,
-      addrMap: result.addrMap || {
-        trx: result.trx.address,
-        eth: result.eth.address,
-        btc: result.btc.address
-      }
+      backedUp: false
     };
-    if (!_publishRealWalletSnapshot(rwImportUi)) {
-      showToast('❌ 钱包状态异常', 'error');
-      return;
-    }
+
+    try { localStorage.setItem('ww_import_pending', JSON.stringify(flatForStore)); } catch (e) {}
     try { if (typeof applyReferralCredit === 'function') applyReferralCredit(); } catch (e3) {}
     try { if (typeof updateAddr === 'function') updateAddr(); } catch (e4) {}
     var tb = document.getElementById('tabBar');
@@ -3357,19 +3448,10 @@ function createGift() {
   }
 
   lastHbCreatedKeyword = keyword;
-  try { currentKeyword = keyword; } catch (_ck) {}
   var kwEl = document.getElementById('hbCreatedKeyword');
   var box = document.getElementById('hbKeywordResult');
   if (kwEl) kwEl.textContent = keyword;
   if (box) box.style.display = 'block';
-  var kwPageWord = document.getElementById('kwKeyword');
-  var kwPageShare = document.getElementById('kwShareKeyword');
-  if (kwPageWord) kwPageWord.textContent = keyword;
-  if (kwPageShare) kwPageShare.textContent = keyword;
-  var kwBless = document.getElementById('kwBlessingText');
-  if (kwBless && message) kwBless.textContent = message;
-  var kwAmt = document.getElementById('kwAmtText');
-  if (kwAmt) kwAmt.textContent = amount + ' USDT';
 
   if (amtEl) amtEl.value = '';
   if (msgEl) msgEl.value = '';
@@ -3407,8 +3489,11 @@ function shareHbCreatedKeyword() {
     showToast('请先创建礼物', 'warning');
     return;
   }
-  // 链接仅携带前 32 字符（与领取页输入上限一致）；全文口令仍在分享文案中
-  var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(keyword.substring(0, 32));
+  if(keyword && keyword.length<=64){
+    var shareUrl = 'https://worldtoken.cc/wallet.html?claim=' + encodeURIComponent(keyword.substring(0,32));
+  }else{
+    return;
+  }
   var text = 'WorldToken 礼物口令：' + keyword + ' 打开链接领取 ' + shareUrl;
   if (navigator.share) {
     navigator.share({ title: '礼物', text: text }).catch(function () {});
@@ -3420,6 +3505,91 @@ function shareHbCreatedKeyword() {
       showToast('已复制分享内容', 'success');
     }
   } catch (e) {}
+}
+
+/** dom-bind.js：物理键盘 PIN 输入与 Enter 与 keypad 流程对齐 */
+function wwOnPinSetupLen() {
+  var n = document.getElementById('pinInput');
+  if (!n) return;
+  var v = String(n.value || '').replace(/\D/g, '').slice(0, 6);
+  if (n.value !== v) n.value = v;
+  window._pinSetupValue = v;
+  renderPinSetupUI();
+}
+function wwOnPinConfirmLen() {
+  var n = document.getElementById('pinConfirmInput');
+  if (!n) return;
+  var v = String(n.value || '').replace(/\D/g, '').slice(0, 6);
+  if (n.value !== v) n.value = v;
+  window._pinSetupValue = v;
+  renderPinSetupUI();
+}
+function goToPinConfirm() {
+  var n = document.getElementById('pinInput');
+  if (!n || (window._pinSetupMode || 'create') !== 'create') return;
+  var v = String(n.value || '').replace(/\D/g, '').slice(0, 6);
+  if (v.length !== 6) return;
+  window._pinSetupFirst = v;
+  window._pinSetupValue = '';
+  window._pinSetupMode = 'confirm';
+  var c = document.getElementById('pinConfirmInput');
+  if (c) c.value = '';
+  renderPinSetupUI();
+}
+async function confirmPin() {
+  var n = document.getElementById('pinConfirmInput');
+  if (!n || (window._pinSetupMode || 'create') !== 'confirm') return;
+  var v = String(n.value || '').replace(/\D/g, '').slice(0, 6);
+  window._pinSetupValue = v;
+  renderPinSetupUI();
+  if (v.length !== 6) return;
+  if (v !== (window._pinSetupFirst || '')) {
+    showToast('两次 PIN 不一致', 'error');
+    window._pinSetupValue = '';
+    window._pinSetupFirst = '';
+    window._pinSetupMode = 'create';
+    n.value = '';
+    var p = document.getElementById('pinInput');
+    if (p) p.value = '';
+    renderPinSetupUI();
+    return;
+  }
+  try {
+    await finalizeImportedWalletAfterPin(v);
+    closePinSetupOverlay();
+  } catch (e) {
+    showToast((e && e.message) || 'PIN 设置失败', 'error');
+  }
+}
+async function pinVerifyEnterWallet() {
+  var n = document.getElementById('pinVerifyInput');
+  if (!n) return;
+  var v = String(n.value || '').replace(/\D/g, '').slice(0, 6);
+  if (v.length !== 6) return;
+  var ou = document.getElementById('pinUnlockOverlay');
+  if (ou && ou.classList.contains('show')) {
+    var ui = document.getElementById('pinUnlockInput');
+    if (ui) ui.value = v;
+    await submitPinUnlock();
+    return;
+  }
+  var ri = document.getElementById('pinRestorePageInput');
+  if (ri) {
+    ri.value = v;
+    await submitPageRestorePin();
+  }
+}
+function sendTransfer() {
+  if (typeof doTransfer === 'function') return doTransfer();
+}
+function claimGift() {
+  if (typeof submitClaim === 'function') return submitClaim();
+}
+function openSend() {
+  if (typeof goTo === 'function') goTo('page-transfer');
+}
+function openReceive() {
+  if (typeof goTab === 'function') goTab('tab-addr');
 }
 
 function wwBindDataActionNav() {
