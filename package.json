@@ -9,7 +9,9 @@
     "test:ww:e2e": "node scripts/ww-puppeteer-smoke.mjs",
     "test:ww:chrome": "node scripts/ww-chrome-deep-check.mjs",
     "test:urls": "cat LOCAL_TEST.md",
-    "telegram:cursor": "node scripts/telegram-cursor-control.mjs"
+    "telegram:cursor": "node scripts/telegram-cursor-control.mjs",
+    "telegram:launchagent:install": "bash scripts/install-telegram-launchagent.sh",
+    "telegram:launchagent:uninstall": "bash scripts/uninstall-telegram-launchagent.sh"
   },
   "dependencies": {
     "axios": "^1.14.0",
