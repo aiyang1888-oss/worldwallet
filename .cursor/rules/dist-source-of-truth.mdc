@@ -13,3 +13,4 @@ globs:
 - **官网落地页**：**`dist/official.html`** 单独维护；内链「进入钱包」指向同目录 **`wallet.html`**（勿再指向外部 github.io 演示站）。**`_sitemap.html` / `+not-found.html`** 等为 Expo 产物，不由 `wallet.html` 覆盖。
 - **`assets/`**：为 **`dist/`** 的**完整镜像**（`rsync -a --delete`；排除 `dist/.git/` 与 `dist/.env`），由 **`npm run build`** 生成；`assets` 中多余文件会被删除，不要以手改 `assets/` 为主源。
 - 修改流程：只改 **`dist/`**，再运行 **`npm run build`** 同步 `assets/`。
+- **本地测试 URL**：见仓库根目录 **`LOCAL_TEST.md`**（`npm run dev` → 端口 **8766**）；`npm run test:urls` 可打印该文件。

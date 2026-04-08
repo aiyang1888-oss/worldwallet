@@ -322,7 +322,7 @@ function showTestPlan() {
   测试方式: 手工测试 (需要浏览器)
   
   记录结果:
-    1. 打开 dist/wallet.html
+    1. npm run dev 后打开 http://127.0.0.1:8766/wallet.html（见 LOCAL_TEST.md）
     2. 按上述步骤逐一执行
     3. 记录通过/失败
     4. 完成后运行: node test-runner.js --record
@@ -410,7 +410,7 @@ if (args.includes('--help')) {
   // 默认显示测试计划
   showTestPlan();
   console.log('\n💡 提示:');
-  console.log('   1. 打开浏览器: open dist/wallet.html');
+  console.log('   1. npm run dev 后浏览器打开: http://127.0.0.1:8766/wallet.html');
   console.log('   2. 按测试计划执行每个步骤');
   console.log('   3. 记录通过/失败');
   console.log('   4. 完成后生成报告: node test-runner.js --report\n');

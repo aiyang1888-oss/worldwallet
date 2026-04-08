@@ -5,8 +5,9 @@
  * 使用 Puppeteer 自动化测试
  * 
  * 使用方法:
- *   npm install puppeteer
- *   node test-p0-auto.js
+ *   终端 1: npm run dev   （http://127.0.0.1:8766 ，根目录 dist/）
+ *   终端 2: npm install puppeteer && node test-p0-auto.js
+ *   可选: WALLET_TEST_URL=http://127.0.0.1:8766/wallet.html
  */
 
 const fs = require('fs');
@@ -23,7 +24,8 @@ class P0TestRunner {
         failed: 0
       }
     };
-    this.walletURL = 'file://' + path.join(__dirname, 'dist/wallet.html');
+    this.walletURL =
+      process.env.WALLET_TEST_URL || 'http://127.0.0.1:8766/wallet.html';
   }
 
   /**
@@ -180,8 +182,9 @@ To install Puppeteer and run automated tests:
   npm install puppeteer
   node test-p0-auto.js
 
-Or follow manual steps in P0_TESTING_LIVE.md:
-  file:///Users/daxiang/Desktop/WorldWallet/dist/wallet.html
+Or follow manual steps in P0_TESTING_LIVE.md（须先 npm run dev）:
+  http://127.0.0.1:8766/wallet.html
+  详见 LOCAL_TEST.md
 
 Console commands ready for copy-paste testing.
 

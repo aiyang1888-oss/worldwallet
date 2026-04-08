@@ -14,7 +14,7 @@
 - Real browser, real DOM, real rendering
 
 ### Option 2: Manual (Browser DevTools)
-- Open: `file:///Users/daxiang/Desktop/WorldWallet/dist/wallet.html`
+- 先 `npm run dev`，再打开: `http://127.0.0.1:8766/wallet.html`（链接表见 `LOCAL_TEST.md`）
 - Follow: `P0_TESTING_LIVE.md`
 - Execute: Console commands
 - Record: Results in template
