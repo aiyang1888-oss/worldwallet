@@ -4100,10 +4100,17 @@ function selectTransferCoin(id) {
     btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
   };
   transferCoin = COINS.find(c=>c.id===id) || map[id] || map.usdt;
-  document.getElementById('transferCoinIcon').textContent = transferCoin.icon;
-  document.getElementById('transferCoinName').textContent = transferCoin.name;
-  document.getElementById('transferBal').textContent = transferCoin.bal.toLocaleString();
+  var iconEl = document.getElementById('transferCoinIcon');
+  var nameEl = document.getElementById('transferCoinName');
+  var balEl = document.getElementById('transferBal');
+  if (iconEl) iconEl.textContent = transferCoin.icon;
+  if (nameEl) nameEl.textContent = transferCoin.name;
+  if (balEl) balEl.textContent = transferCoin.bal.toLocaleString();
   closeTransferCoinPicker();
+  // wallet.html 精简版无币种条：跳转转账页（与 wallet.ui.js 行为一致），避免对缺失节点赋值抛错
+  if (!iconEl || !nameEl) {
+    if (typeof goTo === 'function') goTo('page-transfer');
+  }
   calcTransferFee();
 }
 
