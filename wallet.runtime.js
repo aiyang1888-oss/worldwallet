@@ -3804,7 +3804,7 @@ function deleteWallet() {
   localStorage.removeItem('ww_wallet');
   localStorage.removeItem('ww_hongbaos');
   try { localStorage.removeItem('ww_ref_install_credited'); } catch (_x) {}
-  try { REAL_WALLET = null; } catch (_rw) {}
+  if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
   currentMnemonicLength = 12;
   // 跳回欢迎页
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -5117,7 +5117,7 @@ async function changeMnemonicLength(n) {
 // ── 助记词验证 ──────────────────────────────────────────────
 var verifyAnswers = {}; // {position: correctWord}
 
-function startVerify() {
+async function startVerify() {
   // 与 wallet.ui.js 一致：创建流程中词在 wwGetTempWallet()；runtime 曾仅从 REAL_WALLET.words 读取，会导致随机演示词与密钥页不一致
   let words = null;
   var _twRt = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
@@ -5170,8 +5170,6 @@ function startVerify() {
       _twrRt.mnemonic = words.join(' ');
       _twrRt.words = words.slice();
     } catch (_tw) {}
-    if (!REAL_WALLET) REAL_WALLET = {};
-    if (typeof saveWallet === 'function') saveWallet({ ethAddress: REAL_WALLET.ethAddress, trxAddress: REAL_WALLET.trxAddress, btcAddress: REAL_WALLET.btcAddress || '', createdAt: REAL_WALLET.createdAt || Date.now(), backedUp: false, addrMap: REAL_WALLET.addrMap });
   }
   var _twRt2 = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
   if (_twRt2 && _twRt2.mnemonic && (_twRt2.eth || _twRt2.ethAddress)) {
@@ -5194,19 +5192,33 @@ function startVerify() {
         derived_from: 'eth'
       }
     };
-    if (typeof saveWallet === 'function') saveWallet(toSaveR);
-    REAL_WALLET = {
+    var pinRt = '';
+    try { pinRt = (localStorage.getItem('ww_pin') || '').trim(); } catch (_pr) {}
+    var persistRt = false;
+    if (pinRt) {
+      persistRt = await saveWalletSecure(toSaveR, pinRt);
+      if (!persistRt) persistRt = _saveWalletPlainPublicOnly(toSaveR);
+    } else {
+      persistRt = _saveWalletPlainPublicOnly(toSaveR);
+    }
+    if (!persistRt) {
+      if (typeof showToast === 'function') showToast('无法保存钱包', 'error');
+      return;
+    }
+    var pubRt = {
       version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
       ethAddress: ethA,
       trxAddress: trxA,
       btcAddress: btcA,
       createdAt: toSaveR.createdAt,
       backedUp: false,
-      hasEncrypted: !!(function () {
-        try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
-      })(),
+      hasEncrypted: !!pinRt,
       addrMap: toSaveR.addrMap
     };
+    if (!_publishRealWalletSnapshot(pubRt)) {
+      if (typeof showToast === 'function') showToast('钱包状态异常', 'error');
+      return;
+    }
     try {
       if (typeof wwSetSessionMnemonic === 'function') wwSetSessionMnemonic(tw.mnemonic);
     } catch (_sm) {}
@@ -5936,9 +5948,7 @@ function deleteWalletRow() {
     localStorage.removeItem('ww_pin');
     localStorage.removeItem('ww_hongbaos');
   } catch (_ls) {}
-  try {
-    REAL_WALLET = null;
-  } catch (_rw) {}
+  if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
   if (typeof goTo === 'function') goTo('page-welcome');
   if (typeof showToast === 'function') showToast('钱包已删除', 'success');
 }

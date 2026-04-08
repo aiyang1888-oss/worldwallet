@@ -162,9 +162,7 @@
           localStorage.removeItem('ww_pin');
           localStorage.removeItem('ww_hongbaos');
         } catch (_ls) {}
-        try {
-          REAL_WALLET = null;
-        } catch (_rw) {}
+        if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
         if (typeof window.goTo === 'function') window.goTo('page-welcome');
         wwCall('showToast', '钱包已删除', 'success');
         ev.preventDefault();

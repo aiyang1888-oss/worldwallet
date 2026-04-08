@@ -6,13 +6,13 @@ let REAL_WALLET = null;
 try {
   Object.defineProperty(window, 'REAL_WALLET', {
     get: function () { return REAL_WALLET; },
-    /** 仅允许通过 window 清空；非 null 赋值走词法 REAL_WALLET 或 _publishRealWalletSnapshot */
+    /** 仅允许通过 window 清空；非 null 赋值请使用 _publishRealWalletSnapshot；清空请使用 clearPublishedWallet */
     set: function (v) {
       if (v === null || typeof v === 'undefined') {
         REAL_WALLET = null;
         return;
       }
-      try { safeLog('[REAL_WALLET] ignored direct window assignment (use lexical binding or _publishRealWalletSnapshot)'); } catch (_s) {}
+      try { safeLog('[REAL_WALLET] ignored direct window assignment (use _publishRealWalletSnapshot only)'); } catch (_s) {}
     },
     enumerable: true,
     configurable: false
@@ -46,6 +46,20 @@ function _publishRealWalletSnapshot(snapshot) {
   }
   REAL_WALLET = snapshot;
   return true;
+}
+
+/**
+ * 唯一允许的「清空」入口：优先走 window 上已定义的 setter；无 setter 时回退到词法绑定。
+ */
+function clearPublishedWallet() {
+  try {
+    var desc = Object.getOwnPropertyDescriptor(window, 'REAL_WALLET');
+    if (desc && desc.set) {
+      window.REAL_WALLET = null;
+      return;
+    }
+  } catch (_e) {}
+  try { REAL_WALLET = null; } catch (_e2) {}
 }
 
 function tapHaptic(ms) {
@@ -776,3 +790,4 @@ function getRealWalletPublic() {
   };
 }
 window.getRealWalletPublic = getRealWalletPublic;
+window.clearPublishedWallet = clearPublishedWallet;
