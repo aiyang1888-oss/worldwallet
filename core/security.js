@@ -268,6 +268,35 @@ async function hashPinPbkdf2PerUser(pin, saltBytes) {
   return Array.from(new Uint8Array(bits)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
 }
 
+/** 将 64 位十六进制摘要转为 32 字节；格式非法时返回 null */
+function wwDigestHexToBytes32(hex) {
+  var t = String(hex || '').toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(t)) return null;
+  var out = new Uint8Array(32);
+  for (var i = 0; i < 32; i++) {
+    out[i] = parseInt(t.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
+
+/** 等长字符串常量时间比较（用于迁移期明文 PIN 与任意等长 ASCII） */
+function wwTimingSafeEqualAsciiSameLen(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  var d = 0;
+  for (var i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
+/** 两条 64 字符十六进制摘要常量时间比较（PIN 哈希 / 旧版哈希） */
+function wwTimingSafeEqualDigestHex(ha, hb) {
+  var ba = wwDigestHexToBytes32(ha);
+  var bb = wwDigestHexToBytes32(hb);
+  if (!ba || !bb) return false;
+  var diff = 0;
+  for (var j = 0; j < 32; j++) diff |= ba[j] ^ bb[j];
+  return diff === 0;
+}
+
 function wwParseStoredPinHash(stored) {
   if (stored == null || stored === '') return { kind: 'empty' };
   if (typeof stored === 'object' && stored && stored.v === 2 && stored.s && stored.h) {
@@ -293,22 +322,26 @@ async function verifyPin(pin) {
     var oldPin = Store.getPin();
     if (oldPin) {
       await savePinSecure(oldPin);
-      return pin === oldPin;
+      return wwTimingSafeEqualAsciiSameLen(pin, oldPin);
     }
     return false;
   }
   if (parsed.kind === 'legacy_hex') {
     var computedLegacy = await hashPinLegacyGlobalSalt(pin);
-    return computedLegacy === parsed.h;
+    return wwTimingSafeEqualDigestHex(computedLegacy, parsed.h);
   }
   if (parsed.kind === 'v2') {
     var saltU8 = wwB64ToBytes(parsed.s);
     var h = await hashPinPbkdf2PerUser(pin, saltU8);
-    return h === parsed.h;
+    return wwTimingSafeEqualDigestHex(h, parsed.h);
   }
   return false;
 }
 
+/**
+ * 持久化 PIN：crypto.getRandomValues 生成每用户唯一盐（16 字节），
+ * PBKDF2-SHA-256（100000 次）派生摘要；与盐一并存入 ww_pin_hash（v2）。
+ */
 async function savePinSecure(pin) {
   var salt = crypto.getRandomValues(new Uint8Array(16));
   var h = await hashPinPbkdf2PerUser(pin, salt);
