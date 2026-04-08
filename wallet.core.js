@@ -6,13 +6,13 @@ let REAL_WALLET = null;
 try {
   Object.defineProperty(window, 'REAL_WALLET', {
     get: function () { return REAL_WALLET; },
-    /** 仅允许通过 window 清空；业务侧仍用词法 REAL_WALLET=…，与 core 内 _commitRealWalletSnapshot 配合 */
+    /** 仅允许通过 window 清空；非 null 赋值走词法 REAL_WALLET 或 _publishRealWalletSnapshot */
     set: function (v) {
       if (v === null || typeof v === 'undefined') {
         REAL_WALLET = null;
         return;
       }
-      try { safeLog('[REAL_WALLET] ignored direct window assignment (use lexical binding or core commit)'); } catch (_s) {}
+      try { safeLog('[REAL_WALLET] ignored direct window assignment (use lexical binding or _publishRealWalletSnapshot)'); } catch (_s) {}
     },
     enumerable: true,
     configurable: false
@@ -21,7 +21,7 @@ try {
 /** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
 var CHAIN_ADDR = '--';
 
-/** 仅在通过校验后赋给 REAL_WALLET，避免半初始化对象被全局读到 */
+/** 公开快照校验：仅经 _publishRealWalletSnapshot 发布后挂到词法 REAL_WALLET */
 function _isValidWalletPublicSnapshot(o) {
   if (!o || typeof o !== 'object') return false;
   if (typeof o.ethAddress !== 'string' || !o.ethAddress) return false;
@@ -35,10 +35,13 @@ function _isValidWalletPublicSnapshot(o) {
   return true;
 }
 
-/** 校验通过后一次性发布到 REAL_WALLET；调用方须已持久化成功（load 从盘读出的完整快照除外） */
-function _commitRealWalletSnapshot(snapshot) {
+/**
+ * 唯一在本文件内向词法 REAL_WALLET 发布公开快照的入口（与 window.REAL_WALLET getter 同源）。
+ * create/restore：须在持久化成功之后调用；load：在已从存储构造完整快照后调用（存储即已持久化）。
+ */
+function _publishRealWalletSnapshot(snapshot) {
   if (!_isValidWalletPublicSnapshot(snapshot)) {
-    safeLog('[_commitRealWalletSnapshot] invalid snapshot');
+    safeLog('[_publishRealWalletSnapshot] invalid snapshot');
     return false;
   }
   REAL_WALLET = snapshot;
@@ -124,11 +127,11 @@ function loadWalletPublic() {
           };
         })()
       };
-      if (!_commitRealWalletSnapshot(nextRw)) {
+      if (!_publishRealWalletSnapshot(nextRw)) {
         safeLog('[loadWalletPublic] invalid stored wallet snapshot');
         return;
       }
-      CHAIN_ADDR = REAL_WALLET.trxAddress ? REAL_WALLET.trxAddress : '--';
+      CHAIN_ADDR = nextRw.trxAddress ? nextRw.trxAddress : '--';
     }
   } catch (e) {
     safeLog('[loadWalletPublic] error:', e);
@@ -291,6 +294,23 @@ async function createRealWallet(forcedWordCount) {
     safeLog('[createRealWallet] persistence failed');
     throw new Error('创建失败：无法保存钱包');
   }
+  var pubCr = {
+    version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
+    ethAddress: w.ethAddress,
+    trxAddress: w.trxAddress,
+    btcAddress: w.btcAddress || '',
+    createdAt: w.createdAt,
+    backedUp: w.backedUp || false,
+    hasEncrypted: !!(function () {
+      try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
+    })(),
+    addrMap: w.addrMap
+  };
+  if (!_publishRealWalletSnapshot(pubCr)) {
+    safeLog('[createRealWallet] public snapshot validation failed');
+    throw new Error('创建失败：钱包状态异常');
+  }
+  CHAIN_ADDR = w.trxAddress || '--';
   try {
     if (typeof wwSetTempWallet === 'function') {
       wwSetTempWallet({
@@ -306,23 +326,6 @@ async function createRealWallet(forcedWordCount) {
       });
     }
   } catch (_tw) {}
-  var pubCr = {
-    version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
-    ethAddress: w.ethAddress,
-    trxAddress: w.trxAddress,
-    btcAddress: w.btcAddress || '',
-    createdAt: w.createdAt,
-    backedUp: w.backedUp || false,
-    hasEncrypted: !!(function () {
-      try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
-    })(),
-    addrMap: w.addrMap
-  };
-  if (!_commitRealWalletSnapshot(pubCr)) {
-    safeLog('[createRealWallet] public snapshot validation failed');
-    throw new Error('创建失败：钱包状态异常');
-  }
-  CHAIN_ADDR = w.trxAddress || '--';
   applyReferralCredit();
   try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
   return w;
@@ -400,8 +403,8 @@ async function restoreWallet(mnemonic) {
     showToast('❌ 无法保存钱包，请重试', 'error');
     return null;
   }
-  if (!_commitRealWalletSnapshot(pub)) {
-    safeLog('[restoreWallet] commit failed');
+  if (!_publishRealWalletSnapshot(pub)) {
+    safeLog('[restoreWallet] publish failed');
     showToast('❌ 钱包状态异常', 'error');
     return null;
   }
@@ -751,6 +754,7 @@ function markBackupDone() {
   }
   w.backedUp = true;
   localStorage.setItem('ww_wallet', JSON.stringify(w));
+  /* window.REAL_WALLET 为 getter，与词法 REAL_WALLET 同一引用；拦截的是 window 属性赋值，非 .backedUp 写入 */
   try {
     if (REAL_WALLET) REAL_WALLET.backedUp = true;
   } catch (_mbRw) {}
