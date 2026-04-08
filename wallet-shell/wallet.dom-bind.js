@@ -215,6 +215,12 @@
       });
     }
 
+    try {
+      if (typeof wwMigrateLocalStorageToIdbOnce === 'function') {
+        setTimeout(function () { wwMigrateLocalStorageToIdbOnce(); }, 0);
+      }
+    } catch (_mig) {}
+
     document.addEventListener('click', handleWwClick, false);
   }
 

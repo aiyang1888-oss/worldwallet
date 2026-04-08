@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-04-08T02:03:04.488Z",
+  "status": "success",
+  "duration": 0,
+  "scout": {
+    "bugs_found": 3
+  },
+  "score": {
+    "score": 40,
+    "high": 3,
+    "medium": 0,
+    "low": 0,
+    "totalIssues": 3
+  },
+  "trend": {
+    "direction": "stable",
+    "change": 0,
+    "trend": "No trend data"
+  },
+  "reviewer": {
+    "approved": true,
+    "bugs_found": 3,
+    "assessment": "发现 3 个有效的安全问题，建议立即修复",
+    "timestamp": "2026-04-08T02:03:04.486Z"
+  }
+}

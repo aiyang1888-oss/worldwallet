@@ -9,7 +9,7 @@ function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
 }
 
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.crossOrigin='anonymous';s.referrerPolicy='no-referrer';s.onload=r;document.head.appendChild(s);});}
 
 function loadQRCodeLib(){
   if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
@@ -18,6 +18,8 @@ function loadQRCodeLib(){
     var s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
     s.async=true;
+    s.crossOrigin='anonymous';
+    s.referrerPolicy='no-referrer';
     s.onload=function(){res();};
     s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
     document.head.appendChild(s);
@@ -57,9 +59,11 @@ async function encryptWithPin(plaintext, pin) {
 }
 
 async function decryptWithPin(bundle, pin) {
-  const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
-  const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
-  const data = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
+  var b642 = typeof wwB64StdToUint8Array === 'function' ? wwB64StdToUint8Array : null;
+  const salt = b642 ? b642(bundle.salt) : null;
+  const iv = b642 ? b642(bundle.iv) : null;
+  const data = b642 ? b642(bundle.data) : null;
+  if (!salt || !iv || !data) throw new Error('Invalid encrypted payload');
   const key = await deriveKeyFromPin(pin, salt);
   const decrypted = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv }, key, data
@@ -130,6 +134,105 @@ async function decryptSensitive(pin) {
   }
 }
 
+/** 会话级 AES 密钥（仅内存，用于加密 REAL_WALLET 内敏感字段） */
+var _wwSessionSk = null;
+
+async function wwEnsureSessionSk() {
+  if (_wwSessionSk) return _wwSessionSk;
+  _wwSessionSk = await crypto.subtle.generateKey(
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+  return _wwSessionSk;
+}
+
+/**
+ * 将助记词/私钥加密为 _wwSes，并清除明文引用（降低内存中常驻明文字符串）
+ */
+async function wwSealWalletSensitive() {
+  if (typeof REAL_WALLET === 'undefined' || !REAL_WALLET) return;
+  var w = REAL_WALLET;
+  var hasPlain =
+    !!(w && (w.privateKey || w.trxPrivateKey || w.mnemonic || w.enMnemonic ||
+      (w.words && (Array.isArray(w.words) ? w.words.length : w.words))));
+  if (!hasPlain) return;
+  try {
+    await wwEnsureSessionSk();
+    var enc = new TextEncoder();
+    var payload = JSON.stringify({
+      privateKey: w.privateKey || '',
+      trxPrivateKey: w.trxPrivateKey || '',
+      mnemonic: w.mnemonic || '',
+      enMnemonic: w.enMnemonic || '',
+      words: w.words || null
+    });
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var ct = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      _wwSessionSk,
+      enc.encode(payload)
+    );
+    w._wwSes = {
+      v: 1,
+      iv: btoa(String.fromCharCode.apply(null, Array.from(iv))),
+      d: btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(ct))))
+    };
+    w.privateKey = null;
+    w.trxPrivateKey = null;
+    w.mnemonic = null;
+    w.enMnemonic = null;
+    w.words = null;
+  } catch (e) {
+    console.error('[wwSealWalletSensitive]', e);
+  }
+}
+
+async function wwUnsealWalletSensitive() {
+  if (typeof REAL_WALLET === 'undefined' || !REAL_WALLET) return;
+  var w = REAL_WALLET;
+  if (!w._wwSes) return;
+  if (w.privateKey || w.trxPrivateKey || w.mnemonic) return;
+  try {
+    await wwEnsureSessionSk();
+    var b = w._wwSes;
+    var iv = typeof wwB64StdToUint8Array === 'function' ? wwB64StdToUint8Array(b.iv) : null;
+    var data = typeof wwB64StdToUint8Array === 'function' ? wwB64StdToUint8Array(b.d) : null;
+    if (!iv || !data) throw new Error('bad session blob');
+    var pt = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv },
+      _wwSessionSk,
+      data
+    );
+    var obj = JSON.parse(new TextDecoder().decode(pt));
+    w.privateKey = obj.privateKey || null;
+    w.trxPrivateKey = obj.trxPrivateKey || null;
+    w.mnemonic = obj.mnemonic || null;
+    w.enMnemonic = obj.enMnemonic || null;
+    w.words = obj.words || null;
+  } catch (e) {
+    console.error('[wwUnsealWalletSensitive]', e);
+  }
+}
+
+async function wwWithWalletSensitive(fn) {
+  await wwUnsealWalletSensitive();
+  try {
+    return await fn();
+  } finally {
+    await wwSealWalletSensitive();
+  }
+}
+
+function wwClearSessionSecretState() {
+  _wwSessionSk = null;
+  try {
+    if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET._wwSes) {
+      delete REAL_WALLET._wwSes;
+    }
+  } catch (e) {}
+}
+
 function _saveWalletPlainPublicOnly(w) {
   try {
     var safe = {
@@ -148,13 +251,18 @@ function saveWallet(w) {
   var pin = '';
   try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
   if (pin) {
-    saveWalletSecure(w, pin).catch(function(e) {
+    saveWalletSecure(w, pin)
+      .then(function () {
+        if (typeof wwSealWalletSensitive === 'function') return wwSealWalletSensitive();
+      })
+      .catch(function(e) {
       console.error('[saveWallet] 加密存储失败，降级明文:', e);
       _saveWalletPlainPublicOnly(w);
     });
   } else {
     // 无 PIN：只存公开信息，不存敏感数据
     _saveWalletPlainPublicOnly(w);
+    try { if (typeof wwSealWalletSensitive === 'function') void wwSealWalletSensitive(); } catch (_sw) {}
   }
 }
 

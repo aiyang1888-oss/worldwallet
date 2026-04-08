@@ -51,7 +51,7 @@ function animateHomeUsdTo(targetUsd, fmtUsdFn) {
   window._homeBalanceAnimRaf = requestAnimationFrame(tick);
 }
 
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.crossOrigin='anonymous';s.referrerPolicy='no-referrer';s.onload=r;document.head.appendChild(s);});}
 var _qrLoadPromise=null;
 function loadQRCodeLib(){
   if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
@@ -60,6 +60,8 @@ function loadQRCodeLib(){
     var s=document.createElement('script');
     s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
     s.async=true;
+    s.crossOrigin='anonymous';
+    s.referrerPolicy='no-referrer';
     s.onload=function(){res();};
     s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
     document.head.appendChild(s);
@@ -508,12 +510,14 @@ function wwClearSessionPin() {
 }
 
 function wwCleanupMemory() {
+  try { if (typeof wwClearSessionSecretState === 'function') wwClearSessionSecretState(); } catch (_cs) {}
   if (REAL_WALLET) {
     REAL_WALLET.privateKey = null;
     REAL_WALLET.trxPrivateKey = null;
     REAL_WALLET.mnemonic = null;
     REAL_WALLET.enMnemonic = null;
     REAL_WALLET.words = null;
+    try { delete REAL_WALLET._wwSes; } catch (_wx) {}
   }
   window._wwSessionPin = '';
   _pin = null;
@@ -544,10 +548,12 @@ function wwCleanupStorage() {
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     wwClearSessionPin();
+    try { if (typeof wwClearSessionSecretState === 'function') wwClearSessionSecretState(); } catch (_v1) {}
     if (REAL_WALLET) {
       REAL_WALLET.privateKey = null;
       REAL_WALLET.trxPrivateKey = null;
       REAL_WALLET.mnemonic = null;
+      try { delete REAL_WALLET._wwSes; } catch (_v2) {}
     }
   }
 });
@@ -638,9 +644,11 @@ async function encryptWithPin(plaintext, pin) {
  * @returns {Promise<string>} 解密后的明文
  */
 async function decryptWithPin(bundle, pin) {
-  const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
-  const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
-  const data = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
+  var b642 = typeof wwB64StdToUint8Array === 'function' ? wwB64StdToUint8Array : null;
+  const salt = b642 ? b642(bundle.salt) : null;
+  const iv = b642 ? b642(bundle.iv) : null;
+  const data = b642 ? b642(bundle.data) : null;
+  if (!salt || !iv || !data) throw new Error('Invalid encrypted payload');
   const key = await deriveKeyFromPin(pin, salt);
   const decrypted = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv }, key, data
@@ -670,9 +678,11 @@ async function encryptTotpSecret(sec, pin) {
 async function decryptTotpSecret(encrypted, pin) {
   try {
     const data = JSON.parse(encrypted);
-    const salt = new Uint8Array(atob(data.s).split('').map(function(c) { return c.charCodeAt(0); }));
-    const iv = new Uint8Array(atob(data.iv).split('').map(function(c) { return c.charCodeAt(0); }));
-    const ct = new Uint8Array(atob(data.c).split('').map(function(c) { return c.charCodeAt(0); }));
+    var b642 = typeof wwB64StdToUint8Array === 'function' ? wwB64StdToUint8Array : null;
+    const salt = b642 ? b642(data.s) : null;
+    const iv = b642 ? b642(data.iv) : null;
+    const ct = b642 ? b642(data.c) : null;
+    if (!salt || !iv || !ct) return null;
     const key = await deriveKeyFromPin(pin, salt);
     const plaintext = await crypto.subtle.decrypt(
       { name: 'AES-GCM', iv: iv },
@@ -744,9 +754,14 @@ async function decryptSensitive(pin) {
 function saveWallet(w) {
   var pin = _pin || '';
   if (pin) {
-    saveWalletSecure(w, pin).catch(function (e) { _saveWalletPlainPublicOnly(w); });
+    saveWalletSecure(w, pin)
+      .then(function () {
+        if (typeof wwSealWalletSensitive === 'function') return wwSealWalletSensitive();
+      })
+      .catch(function (e) { _saveWalletPlainPublicOnly(w); });
   } else {
     _saveWalletPlainPublicOnly(w);
+    try { if (typeof wwSealWalletSensitive === 'function') void wwSealWalletSensitive(); } catch (_sw) {}
   }
 }
 
@@ -1582,7 +1597,11 @@ function goTo(pageId, opts) {
     var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen;
     if (_skipKey) {
       if (typeof syncKeyPageLangSelect === 'function') syncKeyPageLangSelect();
-      if (typeof renderKeyGrid === 'function') renderKeyGrid();
+      if (typeof wwUnsealWalletSensitive === 'function') {
+        void wwUnsealWalletSensitive().then(function () {
+          if (typeof renderKeyGrid === 'function') renderKeyGrid();
+        });
+      } else if (typeof renderKeyGrid === 'function') renderKeyGrid();
     } else {
       currentMnemonicLength = 12;
       var _selK = document.getElementById('mnemonicLength');
@@ -2277,7 +2296,8 @@ function getMnemonicWordsForDisplay() {
   return words;
 }
 
-function copyMnemonicAsCardImage(btn) {
+async function copyMnemonicAsCardImage(btn) {
+  try { if (typeof wwUnsealWalletSensitive === 'function') await wwUnsealWalletSensitive(); } catch (_e) {}
   const words = getMnemonicWordsForDisplay();
   if(!words.length) { showToast('无可用助记词', 'error'); return; }
   const w = 720;
@@ -2536,6 +2556,7 @@ async function broadcastRealTransfer() {
 }
 
 async function sendUSDT_TRC20(toAddr, amount) {
+  var run = async function () {
   await loadTronWeb();
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
@@ -2556,9 +2577,13 @@ async function sendUSDT_TRC20(toAddr, amount) {
   const result = await tw.trx.sendRawTransaction(signed);
   if(result.result) return result.txid;
   throw new Error(result.message || 'USDT 广播失败');
+  };
+  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
+  return run();
 }
 
 async function sendTRX(toAddr, amount) {
+  var run = async function () {
   await loadTronWeb();
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
@@ -2574,9 +2599,13 @@ async function sendTRX(toAddr, amount) {
   const result = await tw.trx.sendRawTransaction(signed);
   if(result.result) return result.txid;
   throw new Error(result.message || 'TRX 广播失败');
+  };
+  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
+  return run();
 }
 
 async function sendETH(toAddr, amount) {
+  var run = async function () {
   const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
   if(!ethers.utils.isAddress(toAddr)){throw new Error('以太坊地址无效');}
   toAddr = ethers.utils.getAddress(toAddr);
@@ -2601,6 +2630,9 @@ async function sendETH(toAddr, amount) {
   const tx = await wallet.sendTransaction(txReq);
   await tx.wait(1);
   return tx.hash;
+  };
+  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
+  return run();
 }
 
 // ══ 转账系统 ══
@@ -4878,7 +4910,8 @@ function syncImportPaste() {
   updateImportWordCount();
 }
 
-function copyAllMnemonic(btn) {
+async function copyAllMnemonic(btn) {
+  try { if (typeof wwUnsealWalletSensitive === 'function') await wwUnsealWalletSensitive(); } catch (_e) {}
   const words = [];
   const isEn = currentLang === 'en';
   if(isEn) {
@@ -6321,7 +6354,7 @@ async function _resumeWalletAfterUnlock() {
   try {
     if (!pin) pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
   } catch (_e) {}
-  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
+  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey && !REAL_WALLET._wwSes) {
     try {
       var sensitive = await decryptSensitive(pin);
       if (sensitive && REAL_WALLET) {
@@ -6335,6 +6368,7 @@ async function _resumeWalletAfterUnlock() {
       console.error('[unlock decrypt]', e);
     }
   }
+  try { if (typeof wwSealWalletSensitive === 'function') await wwSealWalletSensitive(); } catch (_se) {}
   updateAddr();
   const tb = document.getElementById('tabBar');
   if(tb) tb.style.display = 'flex';
@@ -6413,39 +6447,44 @@ async function wwExportEncryptedCloudBackup() {
   }
 }
 async function wwExportEncryptedKeyBackup() {
-  if (!REAL_WALLET || !REAL_WALLET.enMnemonic) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
+  if (!REAL_WALLET || !REAL_WALLET.ethAddress) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
   if (!window.confirm('将导出含助记词的加密文本。若密码泄露，资产将面临风险。仅保存到可信位置，切勿与密码同存一处。确定继续？')) return;
   var pass = prompt('设置加密密码（请牢记，用于在其他设备解密此备份）');
   if (!pass) return;
   if (String(pass).length < 4) { if (typeof showToast === 'function') showToast('请输入至少 4 位密码', 'warning'); return; }
   var enc = new TextEncoder();
-  try {
-    var payload = JSON.stringify({
-      v: 1,
-      t: Date.now(),
-      kind: 'ww_key_payload',
-      enMnemonic: REAL_WALLET.enMnemonic,
-      eth: REAL_WALLET.ethAddress,
-      trx: REAL_WALLET.trxAddress || '',
-      btc: REAL_WALLET.btcAddress || '',
-      backed: !!REAL_WALLET.backedUp
-    });
-    var salt = crypto.getRandomValues(new Uint8Array(16));
-    var iv = crypto.getRandomValues(new Uint8Array(12));
-    var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
-    var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
-    var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
-    var out = { v: 1, kind: 'ww_key_backup', salt: wwB64Bytes(salt), iv: wwB64Bytes(iv), data: wwB64Bytes(new Uint8Array(ct)) };
-    var txt = JSON.stringify(out);
+  var doExport = async function () {
+    if (!REAL_WALLET.enMnemonic) { if (typeof showToast === 'function') showToast('请先创建或导入钱包', 'warning'); return; }
     try {
-      await navigator.clipboard.writeText(txt);
-      if (typeof showToast === 'function') showToast('含助记词加密备份已复制，请离线妥善保管', 'success');
+      var payload = JSON.stringify({
+        v: 1,
+        t: Date.now(),
+        kind: 'ww_key_payload',
+        enMnemonic: REAL_WALLET.enMnemonic,
+        eth: REAL_WALLET.ethAddress,
+        trx: REAL_WALLET.trxAddress || '',
+        btc: REAL_WALLET.btcAddress || '',
+        backed: !!REAL_WALLET.backedUp
+      });
+      var salt = crypto.getRandomValues(new Uint8Array(16));
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits', 'deriveKey']);
+      var key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 120000, hash: 'SHA-256' }, keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+      var ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, enc.encode(payload));
+      var out = { v: 1, kind: 'ww_key_backup', salt: wwB64Bytes(salt), iv: wwB64Bytes(iv), data: wwB64Bytes(new Uint8Array(ct)) };
+      var txt = JSON.stringify(out);
+      try {
+        await navigator.clipboard.writeText(txt);
+        if (typeof showToast === 'function') showToast('含助记词加密备份已复制，请离线妥善保管', 'success');
+      } catch (e) {
+        prompt('复制加密备份（手动全选复制）', txt);
+      }
     } catch (e) {
-      prompt('复制加密备份（手动全选复制）', txt);
+      if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
     }
-  } catch (e) {
-    if (typeof showToast === 'function') showToast('导出失败：' + (e && e.message ? e.message : String(e)), 'error');
-  }
+  };
+  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(doExport);
+  return doExport();
 }
 function renderWwChartsPlaceholder() {
   var host = document.getElementById('wwCandleBars');

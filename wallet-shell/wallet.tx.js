@@ -1,5 +1,13 @@
 // wallet.tx.js — 交易：转账/余额/价格/历史
 
+/** 转账金额：去逗号、限制上限，非法返回 NaN */
+function wwParsePositiveAmount(raw, maxAbs) {
+  var n = typeof raw === 'number' ? raw : parseFloat(String(raw == null ? '' : raw).replace(/,/g, ''));
+  if (!Number.isFinite(n) || n <= 0) return NaN;
+  if (maxAbs != null && n > maxAbs) return maxAbs;
+  return n;
+}
+
 /**
  * 通用异步重试：遇 e.status === 429 时指数退避（1s → 2s → 4s）。
  */
@@ -43,7 +51,7 @@ function confirmTransfer() {
     return;
   }
   const addrPre = document.getElementById('transferAddr') && document.getElementById('transferAddr').value.trim();
-  const amtPre = parseFloat(document.getElementById('transferAmount') && document.getElementById('transferAmount').value);
+  const amtPre = wwParsePositiveAmount(document.getElementById('transferAmount') && document.getElementById('transferAmount').value, 1e12);
   const coinPre = transferCoin.id;
   if (!addrPre) { showToast('❌ 请输入收款地址', 'error'); return; }
   if (coinPre === 'trx' || coinPre === 'usdt') {
@@ -159,6 +167,7 @@ function confirmTransfer() {
 }
 
 async function sendTRX(toAddr, amount) {
+  var run = async function () {
   await loadTronWeb();
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
@@ -168,9 +177,13 @@ async function sendTRX(toAddr, amount) {
   const result = await tw.trx.sendRawTransaction(signed);
   if(result.result) return result.txid;
   throw new Error(result.message || 'TRX 广播失败');
+  };
+  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
+  return run();
 }
 
 async function sendETH(toAddr, amount) {
+  var run = async function () {
   const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
   const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
   const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
@@ -191,9 +204,13 @@ async function sendETH(toAddr, amount) {
   const tx = await wallet.sendTransaction(txReq);
   await tx.wait(1);
   return tx.hash;
+  };
+  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
+  return run();
 }
 
 async function sendUSDT_TRC20(toAddr, amount) {
+  var run = async function () {
   await loadTronWeb();
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
@@ -212,6 +229,9 @@ async function sendUSDT_TRC20(toAddr, amount) {
   const result = await tw.trx.sendRawTransaction(signed);
   if(result.result) return result.txid;
   throw new Error(result.message || 'USDT 广播失败');
+  };
+  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
+  return run();
 }
 
 async function loadBalances() {

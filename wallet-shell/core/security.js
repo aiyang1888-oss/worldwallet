@@ -4,6 +4,23 @@
  */
 
 /**
+ * 标准 Base64 → Uint8Array；非法输入返回 null（避免 atob 抛错导致未捕获异常）
+ * @param {string} s
+ * @returns {Uint8Array|null}
+ */
+function wwB64StdToUint8Array(s) {
+  if (s == null || typeof s !== 'string') return null;
+  try {
+    var bin = atob(s);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
  * 从 PIN 派生 AES-256-GCM 密钥
  * @param {string} pin
  * @param {Uint8Array} salt - 16字节
@@ -51,9 +68,10 @@ async function encryptWithPin(plaintext, pin) {
  * @returns {Promise<string>}
  */
 async function decryptWithPin(bundle, pin) {
-  var salt = Uint8Array.from(atob(bundle.salt), function(c) { return c.charCodeAt(0); });
-  var iv = Uint8Array.from(atob(bundle.iv), function(c) { return c.charCodeAt(0); });
-  var data = Uint8Array.from(atob(bundle.data), function(c) { return c.charCodeAt(0); });
+  var salt = wwB64StdToUint8Array(bundle.salt);
+  var iv = wwB64StdToUint8Array(bundle.iv);
+  var data = wwB64StdToUint8Array(bundle.data);
+  if (!salt || !iv || !data) throw new Error('Invalid encrypted payload');
   var key = await deriveKeyFromPin(pin, salt);
   var decrypted = await crypto.subtle.decrypt(
     { name: 'AES-GCM', iv: iv }, key, data
@@ -134,9 +152,43 @@ async function decryptWalletSensitive(pin) {
  * @param {string} pin
  * @returns {Promise<string>}
  */
+/** 旧版全局固定盐（仅用于校验历史哈希并迁移） */
+function _wwLegacyPinSaltSuffix() {
+  return 'ww_salt_v1_2026';
+}
+
+/**
+ * 本机唯一 PIN 盐（16 字节 Base64），首次使用时生成并持久化
+ * @returns {string}
+ */
+function getOrCreateDevicePinSaltB64() {
+  try {
+    var existing = localStorage.getItem('ww_pin_device_salt_v1');
+    if (existing && typeof existing === 'string' && existing.length >= 8) return existing;
+    var raw = new Uint8Array(16);
+    crypto.getRandomValues(raw);
+    var b64 = btoa(String.fromCharCode.apply(null, Array.from(raw)));
+    try { localStorage.setItem('ww_pin_device_salt_v1', b64); } catch (e) {}
+    return b64;
+  } catch (e) {
+    return 'ww_fallback_salt_' + String(Date.now()).slice(-8);
+  }
+}
+
+/** 新版：PIN + 每设备随机盐 */
 async function hashPin(pin) {
   var enc = new TextEncoder();
-  var data = enc.encode(pin + 'ww_salt_v1_2026');
+  var saltB64 = getOrCreateDevicePinSaltB64();
+  var data = enc.encode('ww_pin_v2|' + String(pin) + '|' + saltB64);
+  var hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  var hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+/** 旧版固定盐 SHA-256（与历史 ww_pin_hash 兼容） */
+async function hashPinLegacy(pin) {
+  var enc = new TextEncoder();
+  var data = enc.encode(String(pin) + _wwLegacyPinSaltSuffix());
   var hashBuffer = await crypto.subtle.digest('SHA-256', data);
   var hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
@@ -161,7 +213,14 @@ async function verifyPin(pin) {
     return false;
   }
   var computed = await hashPin(pin);
-  return computed === stored;
+  if (computed === stored) return true;
+  var legacy = await hashPinLegacy(pin);
+  if (legacy === stored) {
+    await savePinSecure(pin);
+    console.log('[PIN 迁移] 已升级为每设备盐哈希');
+    return true;
+  }
+  return false;
 }
 
 /**

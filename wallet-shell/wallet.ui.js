@@ -887,7 +887,11 @@ function goTo(pageId, opts) {
     var _skipKey = opts.preserveKeyPage || opts.skipKeyRegen;
     if (_skipKey) {
       syncKeyPageLangSelect();
-      if (typeof renderKeyGrid === 'function') renderKeyGrid();
+      if (typeof wwUnsealWalletSensitive === 'function') {
+        void wwUnsealWalletSensitive().then(function () {
+          if (typeof renderKeyGrid === 'function') renderKeyGrid();
+        });
+      } else if (typeof renderKeyGrid === 'function') renderKeyGrid();
     } else {
       currentMnemonicLength = 12;
       var _sel = document.getElementById('mnemonicLength');
@@ -3093,7 +3097,7 @@ async function _resumeWalletAfterUnlock() {
   // 解密敏感数据并临时注入 REAL_WALLET（须在进入首页 / 拉余额前完成，避免竞态）
   var pin = (typeof wwGetSessionPin === 'function' ? wwGetSessionPin() : '') || '';
   try { if (!pin) pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
-  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey) {
+  if (pin && REAL_WALLET && REAL_WALLET.hasEncrypted && !REAL_WALLET.privateKey && !REAL_WALLET._wwSes) {
     try {
       var sensitive = await decryptSensitive(pin);
       if (sensitive && REAL_WALLET) {
@@ -3107,6 +3111,7 @@ async function _resumeWalletAfterUnlock() {
       console.error('[unlock decrypt]', e);
     }
   }
+  try { if (typeof wwSealWalletSensitive === 'function') await wwSealWalletSensitive(); } catch (_se) {}
   updateAddr();
   const tb = document.getElementById('tabBar');
   if(tb) tb.style.display = 'flex';
