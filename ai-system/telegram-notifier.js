@@ -195,6 +195,56 @@ class TelegramNotifier {
 
     return await this.send(message);
   }
+
+  /**
+   * 通知：安全评分更新（新增方法）
+   * 包含当前评分、风险等级、趋势变化
+   */
+  async notifySecurityScore(scoreData, trendChange) {
+    try {
+      const gradeInfo = this.getGradeInfo(scoreData.score);
+      
+      let message = `\n<b>🔒 Security Score Update</b>\n`;
+      message += `<b>━━━━━━━━━━━━━━━━━━</b>\n\n`;
+      message += `<b>Current Score:</b> ${gradeInfo.emoji} <b>${scoreData.score}/100</b> (${gradeInfo.grade})\n`;
+      message += `<b>Grade:</b> ${gradeInfo.description}\n\n`;
+      
+      message += `<b>Risk Summary:</b>\n`;
+      message += `🔴 HIGH: ${scoreData.high}\n`;
+      message += `🟡 MEDIUM: ${scoreData.medium}\n`;
+      message += `🟢 LOW: ${scoreData.low}\n\n`;
+      
+      if (trendChange && trendChange.direction !== 'stable') {
+        message += `<b>Trend:</b> ${trendChange.emoji} ${trendChange.trend}\n`;
+        message += `Previous: ${trendChange.previousScore} → Current: ${trendChange.latestScore}\n\n`;
+      }
+      
+      message += `<b>Action Required:</b>\n`;
+      if (scoreData.score < 60) {
+        message += `⚠️ <b>CRITICAL</b> - Immediate action needed\n`;
+      } else if (scoreData.score < 80) {
+        message += `⚡ <b>ACTION</b> - Handle HIGH priority issues this week\n`;
+      } else {
+        message += `✅ <b>MAINTAIN</b> - Continue regular audits\n`;
+      }
+
+      return await this.send(message);
+    } catch (error) {
+      console.warn(`[TELEGRAM] Security score notification failed: ${error.message}`);
+      return { status: 'failed', error: error.message };
+    }
+  }
+
+  /**
+   * 辅助方法：获取评分等级信息
+   */
+  getGradeInfo(score) {
+    if (score >= 90) return { grade: 'A', emoji: '🟢', description: 'Excellent' };
+    if (score >= 80) return { grade: 'B', emoji: '🟡', description: 'Good' };
+    if (score >= 70) return { grade: 'C', emoji: '🟠', description: 'Fair' };
+    if (score >= 60) return { grade: 'D', emoji: '🔴', description: 'Poor' };
+    return { grade: 'F', emoji: '⚫', description: 'Critical' };
+  }
 }
 
 module.exports = TelegramNotifier;
