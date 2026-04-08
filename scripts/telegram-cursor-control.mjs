@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Telegram：内联按钮 + 回复键盘（输入框上方常驻按钮）→ 本机 Cursor CLI
+ * Telegram：内联按钮 + 回复键盘 → 本机 Cursor CLI（New Agent：create-chat + agent -c 打开 Composer）
  *
  * 环境变量（见 .env.example）：
  *   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
@@ -145,6 +145,28 @@ function runNpmDev() {
   child.unref();
 }
 
+/**
+ * 打开 Cursor Agent 的 Composer（CLI: -c / --cloud = launch 时打开 composer picker）
+ * 与 create-chat 得到的 session 绑定：--resume <id>
+ * -f：信任工作区，避免卡在交互式 “Workspace Trust”
+ */
+function openComposerForSession(sessionId) {
+  const env = { ...process.env };
+  delete env.NO_OPEN_BROWSER;
+  delete env.CI;
+  const child = spawn(
+    CURSOR_BIN,
+    ['agent', '-c', '--resume', sessionId, '--workspace', WORKSPACE, '-f'],
+    {
+      detached: true,
+      stdio: 'ignore',
+      env,
+    }
+  );
+  child.on('error', (err) => console.error('[openComposerForSession]', err));
+  child.unref();
+}
+
 async function apiPost(method, payload) {
   const { data } = await axios.post(`${API}/${method}`, payload, { timeout: 60000 });
   if (!data.ok) throw new Error(`${method}: ${JSON.stringify(data)}`);
@@ -215,7 +237,7 @@ async function dispatchAction(chatId, action, opts = {}) {
     case 'cw_new_agent': {
       await sendChat(
         chatId,
-        `正在创建 Agent 会话…\nCLI: ${CURSOR_BIN}`,
+        `正在创建会话并尝试打开 Composer…\nCLI: ${CURSOR_BIN}`,
         withKeyboard
       );
       const agentEnv = {
@@ -237,11 +259,21 @@ async function dispatchAction(chatId, action, opts = {}) {
         const raw = [stdout, stderr].filter(Boolean).join('\n').trim();
         const firstLine = raw.split(/\r?\n/).filter(Boolean)[0] || '';
         const id = /^[0-9a-f-]{36}$/i.test(firstLine.trim()) ? firstLine.trim() : raw.split(/\s+/)[0] || '';
+        if (!id) {
+          await sendChat(
+            chatId,
+            `create-chat 未返回有效 id，原始输出:\n${raw.slice(0, 1500) || '(空)'}`,
+            withKeyboard
+          );
+          return;
+        }
+        openComposerForSession(id);
         const msg = [
-          '已创建新的 Cursor Agent 会话（空对话）',
-          id || raw ? `chat id:\n${id || raw || '(无输出)'}` : '(无输出)',
+          '已创建会话，并已请求打开 Composer（agent -c --resume …）',
+          `chat id:\n${id}`,
           '',
-          '在本机终端: cursor agent --resume <id>',
+          '若未弹出 Cursor 窗口，在本机终端执行：',
+          `${CURSOR_BIN} agent -c --resume ${id} --workspace "${WORKSPACE}" -f`,
         ].join('\n');
         await sendChat(chatId, msg.slice(0, 4000), withKeyboard);
       } catch (e) {
@@ -286,7 +318,7 @@ async function dispatchAction(chatId, action, opts = {}) {
           `• 打开工作区 ≈ cursor -r -a ${WORKSPACE}`,
           '• 打开 wallet.html ≈ cursor -g …/dist/wallet.html:1',
           '• Run ≈ 后台 npm run dev（本地预览 dist）',
-          '• New Agent ≈ cursor agent create-chat（新会话 ID）',
+          '• New Agent ≈ create-chat + agent -c --resume（打开 Composer）',
           '• 仅 TELEGRAM_CHAT_ID 可使用',
         ].join('\n'),
         withKeyboard
@@ -318,7 +350,7 @@ async function handleCallback(q) {
     if (data === 'cw_agent_status') await answerCallback(q.id, '查询中…');
     else if (data === 'cw_help') await answerCallback(q.id, '帮助');
     else if (data === 'cw_run') await answerCallback(q.id, '已启动 dev');
-    else if (data === 'cw_new_agent') await answerCallback(q.id, '创建会话…');
+    else if (data === 'cw_new_agent') await answerCallback(q.id, 'Composer…');
     else if (data.startsWith('cw_')) await answerCallback(q.id, '已执行');
 
     await dispatchAction(chatId, data, { skipReplyKeyboard: false });
