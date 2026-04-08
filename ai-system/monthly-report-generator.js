@@ -266,7 +266,13 @@ class MonthlyReportGenerator {
     // 显示摘要
     console.log(`📈 月度摘要:\n`);
     console.log(`  安全评分: ${metrics.score.current}/100 (↑ ${metrics.score.improvement})`);
-    console.log(`  修复率: ${(metrics.issues.fixed.high + metrics.issues.fixed.medium + metrics.issues.fixed.low) / (metrics.issues.found.high + metrics.issues.found.medium + metrics.issues.found.low) * 100).toFixed(1)}%`);
+    const fixedTotal =
+      metrics.issues.fixed.high + metrics.issues.fixed.medium + metrics.issues.fixed.low;
+    const foundTotal =
+      metrics.issues.found.high + metrics.issues.found.medium + metrics.issues.found.low;
+    const fixRatePct =
+      foundTotal > 0 ? ((fixedTotal / foundTotal) * 100).toFixed(1) : '0.0';
+    console.log(`  修复率: ${fixRatePct}%`);
     console.log(`  规则覆盖: ${metrics.rules.coverage_percent}% (目标: ${metrics.rules.target}%)`);
     console.log(`  性能改进: -${metrics.performance.improvement_percent}%\n`);
     

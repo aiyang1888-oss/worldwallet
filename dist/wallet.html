@@ -199,7 +199,7 @@
         <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
-        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap">
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
           <div class="home-balance-chart-head">
             <span class="home-balance-chart-title">近7日总资产（示意）</span>
           </div>
@@ -711,7 +711,7 @@
       <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
       <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
       <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
-      <button class="btn-primary u13" onclick="submitTotpUnlock()">验证并进入</button>
+      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
       <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
     </div>
   </div>
@@ -863,12 +863,15 @@
 <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript" integrity="sha384-Htz1SE4Sl5aitpvFgr2j0sfsGUIuSXI6t8hEyrlQ93zflEF3a29bH2AvkUROUw7J" crossorigin="anonymous"></script>
 <!-- globals.js disabled to fix var conflict -->
 <script src="js/api-config.js"></script>
-<script src="js/safeLog.js"></script>
+<script src="js/idb-kv.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/idb-cache.js"></script>
 <script src="core/security.js"></script>
+<script src="core/key-derivation-cache.js"></script>
 <script src="core/wallet.js"></script>
 <script src="wordlists.js"></script>
 <script src="wallet.core.js"></script>
+<script src="core/session-key-cache.js"></script>
 <script src="wallet.ui.js"></script>
 <script src="wallet.addr.js"></script>
 <script src="wallet.tx.js"></script>

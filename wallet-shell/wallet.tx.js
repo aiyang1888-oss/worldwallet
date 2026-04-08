@@ -178,6 +178,7 @@ async function sendTRX(toAddr, amount) {
   if(result.result) return result.txid;
   throw new Error(result.message || 'TRX 广播失败');
   };
+  if (typeof wwWithWalletSensitiveOptimized === 'function') return wwWithWalletSensitiveOptimized(run);
   if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
   return run();
 }
@@ -205,6 +206,7 @@ async function sendETH(toAddr, amount) {
   await tx.wait(1);
   return tx.hash;
   };
+  if (typeof wwWithWalletSensitiveOptimized === 'function') return wwWithWalletSensitiveOptimized(run);
   if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
   return run();
 }
@@ -230,6 +232,7 @@ async function sendUSDT_TRC20(toAddr, amount) {
   if(result.result) return result.txid;
   throw new Error(result.message || 'USDT 广播失败');
   };
+  if (typeof wwWithWalletSensitiveOptimized === 'function') return wwWithWalletSensitiveOptimized(run);
   if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
   return run();
 }

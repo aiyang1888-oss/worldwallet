@@ -104,23 +104,50 @@ window.wwSessionKeyCache = new SessionKeyCache(60000);  // 1 分钟 TTL
 
 /**
  * 改进的 wwWithWalletSensitive 包装函数
- * 自动使用缓存减少解密次数
+ * 缓存「解封后的敏感字段快照」，命中时写回 REAL_WALLET，再执行 fn，最后与原版一样 seal。
  */
 async function wwWithWalletSensitiveOptimized(fn, cacheTtl = 60000) {
-  const decryptFn = async () => {
-    return await wwUnsealWalletSensitive();
+  function snapshotFromWallet(w) {
+    if (!w) return null;
+    return {
+      privateKey: w.privateKey || null,
+      trxPrivateKey: w.trxPrivateKey || null,
+      mnemonic: w.mnemonic || null,
+      enMnemonic: w.enMnemonic || null,
+      words: w.words || null
+    };
+  }
+  function applySnapshot(w, s) {
+    if (!w || !s) return;
+    w.privateKey = s.privateKey;
+    w.trxPrivateKey = s.trxPrivateKey;
+    w.mnemonic = s.mnemonic;
+    w.enMnemonic = s.enMnemonic;
+    w.words = s.words;
+  }
+
+  var decryptFn = async function () {
+    if (typeof wwUnsealWalletSensitive !== 'function') return null;
+    await wwUnsealWalletSensitive();
+    if (typeof REAL_WALLET === 'undefined' || !REAL_WALLET) return null;
+    return snapshotFromWallet(REAL_WALLET);
   };
 
-  const sensitive = await window.wwSessionKeyCache.getSessionKey(
-    decryptFn,
-    cacheTtl
-  );
-
+  var sensitive = await window.wwSessionKeyCache.getSessionKey(decryptFn, cacheTtl);
   if (!sensitive) {
     throw new Error('Failed to decrypt wallet sensitive data');
   }
-
-  return await fn(sensitive);
+  if (typeof REAL_WALLET === 'undefined' || !REAL_WALLET) {
+    throw new Error('REAL_WALLET missing');
+  }
+  applySnapshot(REAL_WALLET, sensitive);
+  try {
+    return await fn();
+  } finally {
+    if (typeof wwSealWalletSensitive === 'function') {
+      await wwSealWalletSensitive();
+    }
+  }
 }
 
 // 导出给全局使用

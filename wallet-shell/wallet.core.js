@@ -28,6 +28,9 @@ function loadQRCodeLib(){
 }
 
 async function deriveKeyFromPin(pin, salt) {
+  if (typeof deriveKeyFromPinOptimized === 'function') {
+    return deriveKeyFromPinOptimized(pin, salt);
+  }
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']

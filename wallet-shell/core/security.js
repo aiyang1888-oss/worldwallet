@@ -27,6 +27,9 @@ function wwB64StdToUint8Array(s) {
  * @returns {Promise<CryptoKey>}
  */
 async function deriveKeyFromPin(pin, salt) {
+  if (typeof deriveKeyFromPinOptimized === 'function') {
+    return deriveKeyFromPinOptimized(pin, salt);
+  }
   var enc = new TextEncoder();
   var material = await crypto.subtle.importKey(
     'raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']
@@ -220,6 +223,11 @@ async function verifyPin(pin) {
     console.log('[PIN 迁移] 已升级为每设备盐哈希');
     return true;
   }
+  try {
+    if (window.wwKeyDerivationCache && typeof window.wwKeyDerivationCache.clearPin === 'function') {
+      window.wwKeyDerivationCache.clearPin(String(pin));
+    }
+  } catch (e) {}
   return false;
 }
 
@@ -234,6 +242,14 @@ async function savePinSecure(pin) {
   // 清理旧的明文 PIN
   Store.remove('ww_pin');
   Store.remove('ww_unlock_pin');
+  try {
+    if (window.wwKeyDerivationCache && typeof window.wwKeyDerivationCache.clear === 'function') {
+      window.wwKeyDerivationCache.clear();
+    }
+    if (window.wwSessionKeyCache && typeof window.wwSessionKeyCache.clear === 'function') {
+      window.wwSessionKeyCache.clear();
+    }
+  } catch (e) {}
 }
 
 // ── 会话私钥管理（闭包保护）──
