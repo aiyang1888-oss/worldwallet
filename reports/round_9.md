@@ -1,23 +1,21 @@
-# Round 9 修复报告 - 2026-04-08 08:33
+# Round 9 修复报告 - 2026-04-08 09:57
 
 ## 发现的问题
-- [P1] `wallet.runtime.js` 中 `setAmt`、`randomBlessing` 及 `createHongbao` 对 `#hbAmount` / `#hbMessage` 直接链式访问，在节点不存在时会抛错（承接 round_8「剩余问题」）。
+- [P3] `wallet.runtime.js` 在 `wallet.ui.js` 之后加载，重复定义并覆盖全局 `goTo`、`deleteWallet`、`getTransferContacts`，导致运行时实际执行的是 runtime 版本（与 UI 在页面显隐、导入页 `_wwInFirstRun`、删除钱包后状态等细节上不一致），与 round_8「单一来源」目标冲突。
 
 ## 修复内容
-- 文件：`wallet.runtime.js`
-- 函数：`setAmt`、`randomBlessing`、`createHongbao`
-- 修改：对礼物金额与留言输入框先 `getElementById` 再判空后再读写，避免极端或精简 DOM 下崩溃。
+- 文件：wallet.ui.js
+- 函数：`wwDeferRestoreNavAfterRuntime`（IIFE）
+- 修改：在脚本末尾用 `setTimeout(0)` 于 runtime 执行完毕后，将 UI 中的 `goTo`、`deleteWallet`、`getTransferContacts` 重新赋回 `window`，保证全局调用与产品设计一致。
 
 ## 修改文件
-- `wallet.runtime.js`
+- wallet.ui.js
 
 ## 剩余问题
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 仍存在大量同名函数，后加载文件覆盖前者（架构债，本轮未改）。
-- [P3] TOTP 解锁弹窗内按钮仍存在重复 `class`（`btn-primary` 与 `u13`），可后续合并为单一 `class` 列表。
+- [P3] `goTab` 等其它函数仍可能在 runtime 与 UI 间重复定义；若需完全收敛可继续按同样模式或删除 runtime 侧副本。
+- [P3] HTML 仍无独立节点：`page-transfer-success`、`page-swoosh`、`page-hb-keyword` 等；`goTo` 已对缺失页做降级。
 
 ## 测试结果
-- TEST-A: PASS — `data-ww-fn="selectTransferCoin"` 在合并后的 `wallet.ui.js` + `wallet.runtime.js` 中有对应全局绑定。
-- TEST-B: PASS — 无 `data-ww-go`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均有非空函数体。
-
-Git：`96d2049` — `fix: guard hbAmount and hbMessage DOM access in gift helpers (setAmt, randomBlessing, createHongbao)`
+- TEST-A: PASS — `data-ww-fn` 仅 `selectTransferCoin`；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将 `window.selectTransferCoin` 指向实现。
+- TEST-B: PASS — `wallet.html` 中无 `data-ww-go`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空实现；导航类函数经延迟恢复后以 UI 为单一来源。

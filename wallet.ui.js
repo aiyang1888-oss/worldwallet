@@ -3497,3 +3497,16 @@ if (document.readyState === 'loading') {
 } else {
   wwBindDataActionNav();
 }
+
+// Round 9: runtime.js 后加载会覆盖 goTo/deleteWallet/getTransferContacts；下一微任务恢复为 UI 单一实现
+(function wwDeferRestoreNavAfterRuntime() {
+  var _goTo = goTo;
+  var _deleteWallet = deleteWallet;
+  var _getTransferContacts = getTransferContacts;
+  setTimeout(function () {
+    window.goTo = _goTo;
+    window.deleteWallet = _deleteWallet;
+    window.getTransferContacts = _getTransferContacts;
+  }, 0);
+})();
+
