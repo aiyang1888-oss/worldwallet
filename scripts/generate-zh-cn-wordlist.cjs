@@ -2,11 +2,12 @@
 /**
  * 从 scripts/pcas-code.json（modood/Administrative-divisions-of-China）生成
  * 2048 个唯一中文地名：省级 → 地级 → 县级；县级重名时用「地级市简称+县名」区分。
+ * 输出 dist/wordlists/zh-cn.json（与 BIP39 英文词按索引 0..2047 对齐，供 inject-zh-wordlist.cjs 写入 wordlists.js）。
  */
 const fs = require('fs');
 const path = require('path');
 
-const OUT = path.join(__dirname, '..', 'wallet-shell', 'wordlists', 'zh-cn.json');
+const OUT = path.join(__dirname, '..', 'dist', 'wordlists', 'zh-cn.json');
 const PCAS = path.join(__dirname, 'pcas-code.json');
 
 function ensurePcas() {
@@ -158,6 +159,7 @@ function main() {
     process.exit(1);
   }
 
+  fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(final2048, null, 2) + '\n', 'utf8');
   console.log('[generate-zh-cn-wordlist] OK', OUT, 'n=', final2048.length);
 }

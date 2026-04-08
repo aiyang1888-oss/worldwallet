@@ -153,7 +153,10 @@
         return;
       }
       if (fn === 'swapHistoryToast' || fn === 'wwSwapRecordsToast') {
-        if (typeof window.showToast === 'function') window.showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info');
+        if (typeof window.wwGoHomeScrollToTxSection === 'function') window.wwGoHomeScrollToTxSection();
+        else if (typeof window.showToast === 'function') {
+          window.showToast('应用内兑换与「给他人」占位在首页「最近交易」；链上成交后可点刷新', 'info', 4200);
+        }
         ev.preventDefault();
         return;
       }
@@ -201,11 +204,10 @@
     bindChange('hideZeroTokens', 'onHideZeroTokensChange');
 
     bindInput('txHistoryFilter', 'applyTxHistoryFilter', false);
-    bindInput('qrReceiveAmount', 'updateQRCode', false);
     bindInput('transferAddr', 'detectAddrType', false);
     bindInput('transferAmount', 'calcTransferFee', false);
     bindInput('swapAmountIn', 'calcSwap', false);
-    bindInput('importPaste', 'syncImportGrid', true);
+    bindInput('claimInput', 'onClaimInput', false);
 
     var importGrid = document.getElementById('importGrid');
     if (importGrid) {

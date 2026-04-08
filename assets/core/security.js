@@ -20,6 +20,18 @@ function wwB64StdToUint8Array(s) {
   }
 }
 
+/** Uint8Array → 标准 Base64；分块避免 String.fromCharCode.apply 在超大数组上爆栈 */
+function wwUint8ArrayToBase64Std(u8) {
+  if (!u8 || !(u8 instanceof Uint8Array)) return '';
+  var CHUNK = 0x8000;
+  var str = '';
+  for (var i = 0; i < u8.length; i += CHUNK) {
+    var sub = u8.subarray(i, Math.min(i + CHUNK, u8.length));
+    str += String.fromCharCode.apply(null, sub);
+  }
+  return btoa(str);
+}
+
 /**
  * 从 PIN 派生 AES-256-GCM 密钥
  * @param {string} pin
@@ -58,9 +70,9 @@ async function encryptWithPin(plaintext, pin) {
     { name: 'AES-GCM', iv: iv }, key, enc.encode(plaintext)
   );
   return {
-    salt: btoa(String.fromCharCode.apply(null, salt)),
-    iv: btoa(String.fromCharCode.apply(null, iv)),
-    data: btoa(String.fromCharCode.apply(null, new Uint8Array(encrypted)))
+    salt: wwUint8ArrayToBase64Std(salt),
+    iv: wwUint8ArrayToBase64Std(iv),
+    data: wwUint8ArrayToBase64Std(new Uint8Array(encrypted))
   };
 }
 
@@ -76,10 +88,14 @@ async function decryptWithPin(bundle, pin) {
   var data = wwB64StdToUint8Array(bundle.data);
   if (!salt || !iv || !data) throw new Error('Invalid encrypted payload');
   var key = await deriveKeyFromPin(pin, salt);
-  var decrypted = await crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: iv }, key, data
-  );
-  return new TextDecoder().decode(decrypted);
+  try {
+    var decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv }, key, data
+    );
+    return new TextDecoder().decode(decrypted);
+  } catch (_e) {
+    throw new Error('解密失败：PIN 不正确或数据已损坏');
+  }
 }
 
 /**
@@ -298,3 +314,17 @@ function clearSessionKeys() {
 function isSessionUnlocked() {
   return _sessionPrivateKeys !== null;
 }
+
+/** 页面关闭或离开时立即清除会话私钥（不依赖 5 分钟定时器） */
+(function wwRegisterSessionKeyPageLifecycle() {
+  if (typeof window === 'undefined') return;
+  function wipe() {
+    try {
+      clearSessionKeys();
+    } catch (_e) {}
+  }
+  window.addEventListener('pagehide', wipe);
+  try {
+    window.addEventListener('beforeunload', wipe);
+  } catch (_e2) {}
+})();

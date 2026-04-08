@@ -30,7 +30,7 @@ function cacheDOM() {
     'totalBalanceDisplay', 'totalBalanceSub',
     'balUsdt',
     'valUsdt',
-    'txHistoryList', 'importPaste', 'importError'
+    'txHistoryList', 'importError'
   ];
   ids.forEach(function(id) {
     DOM[id] = document.getElementById(id);

@@ -12,6 +12,7 @@ function wwParsePositiveAmount(raw, maxAbs) {
  * 通用异步重试：遇 e.status === 429 时指数退避（1s → 2s → 4s）。
  */
 async function callWithRetry(fn, maxRetries, initialDelay) {
+  if (typeof fn !== 'function') throw new TypeError('callWithRetry: fn must be a function');
   maxRetries = maxRetries === undefined ? 3 : maxRetries;
   initialDelay = initialDelay === undefined ? 1000 : initialDelay;
   for (var i = 0; i < maxRetries; i++) {
@@ -45,396 +46,661 @@ async function wwFetch429Retry(input, init) {
   });
 }
 
-function confirmTransfer() {
-  if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
-    showToast('📡 当前无网络，无法完成转账', 'warning');
-    return;
-  }
-  const addrPre = document.getElementById('transferAddr') && document.getElementById('transferAddr').value.trim();
-  const amtPre = wwParsePositiveAmount(document.getElementById('transferAmount') && document.getElementById('transferAmount').value, 1e12);
-  const coinPre = transferCoin.id;
-  if (!addrPre) { showToast('❌ 请输入收款地址', 'error'); return; }
-  if (coinPre === 'trx' || coinPre === 'usdt') {
-    if (addrPre[0] !== 'T') { showToast('❌ TRX / USDT-TRC20 收款地址须以 T 开头', 'error'); return; }
-  } else if (coinPre === 'eth') {
-    if (!addrPre.startsWith('0x') || addrPre.length < 10) { showToast('❌ ETH 收款地址须为 0x 开头的有效地址', 'error'); return; }
-  }
-  if (!isFinite(amtPre) || amtPre <= 0) { showToast('❌ 请输入有效转账金额', 'error'); return; }
-  var balPre = 0;
-  if (typeof COINS !== 'undefined' && COINS.length) {
-    var cf = COINS.filter(function (c) { return c.id === coinPre; })[0];
-    if (cf) balPre = Number(cf.bal) || 0;
-  }
-  if (balPre < amtPre) { showToast('❌ 余额不足', 'error'); return; }
 
-  closeTransferConfirm();
-  // 填充成功页数据
-  const amt = document.getElementById('transferAmount').value;
-  const addr = document.getElementById('transferAddr').value.trim();
-  saveRecentTransferAddr(addr);
-  const amtF = parseFloat(amt)||0;
-  const fee = (amtF*0.003).toFixed(2);
-  const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
-  const isEn = currentLang==='en';
-  const info = LANG_INFO[currentLang]||{flag:'🇨🇳',name:'中文'};
-  const g = getGiftCulture ? getGiftCulture() : {icon:'🌍'};
-
-  // 发件人（我的地址）
-  _safeEl('successAmount').textContent = amt;
-  _safeEl('successCoin').textContent = transferCoin.name;
-  (_safeEl('successCultureIcon') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successCultureIcon fallback */.textContent = g.icon;
-  // 发件人 = 我自己的地址
-  if(isEn) {
-    _safeEl('successFromPart1').textContent = 'My Wallet';
-    _safeEl('successFromPart2').textContent = '';
-    document.getElementById('successFromPart3').textContent = '';
-    _safeEl('successFromLang').textContent = info.flag+' English · BIP39';
-  } else {
-    const parts = a.main.split(' · ');
-    _safeEl('successFromPart1').textContent = parts[0]||'龙凤虎';
-    _safeEl('successFromPart2').textContent = parts[1]||'举头望明月';
-    document.getElementById('successFromPart3').textContent = a.num||'3829461';
-    const fromAddr = getNativeAddr(); _safeEl('successFromLang').textContent = fromAddr.substring(0,12)+'...';
-  }
-
-  // 收件人 = 输入的对方地址（不同！）
-  // 万语：旧式「·」分隔，或规范 8数字-10汉字-8数字（连字符）
-  const isWW = addr.includes('·') || /^\d{8}-[\u4e00-\u9fff]{10}-\d{8}$/.test(addr.trim());
-  if(isWW) {
-    _safeEl('successToIcon').textContent = '🌍';
-    if (addr.includes('·')) {
-      const parts2 = addr.split('·').map(s=>s.trim());
-      _safeEl('successToName').textContent = parts2[0]||addr;
-      _safeEl('successToAddr').textContent = (parts2[1]||'')+' · '+(parts2[2]||'') + ' · WorldToken';
-    } else {
-      const p = addr.trim().split('-');
-      _safeEl('successToName').textContent = (p[0]||'') + '…' + (p[2]||'');
-      _safeEl('successToAddr').textContent = (p[1]||'') + ' · WorldToken';
-    }
-  } else {
-    // 公链地址
-    const chainIcon = addr.startsWith('T')?'🔴':addr.startsWith('0x')?'🔷':addr.startsWith('bc')?'🟠':'⛓️';
-    _safeEl('successToIcon').textContent = chainIcon;
-    _safeEl('successToName').textContent = addr.slice(0,18)+'...'+addr.slice(-6);
-    _safeEl('successToAddr').textContent = transferCoin.chain;
-  }
-
-  // 详情
-  _safeEl('successFee') && ((_safeEl('successFee') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successFee fallback */.textContent = fee+' '+transferCoin.name);
-  const sfi=(_safeEl('successFeeInline') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successFeeInline fallback */; if(sfi) sfi.textContent='手续费 '+fee+' '+transferCoin.name+' · '+transferCoin.chain;
-  _safeEl('successChain').textContent = transferCoin.chain;
-  const nt = new Date();
-  const ts = nt.getFullYear()+'.'+String(nt.getMonth()+1).padStart(2,'0')+'.'+String(nt.getDate()).padStart(2,'0')+' '+String(nt.getHours()).padStart(2,'0')+':'+String(nt.getMinutes()).padStart(2,'0');
-  const st=_safeEl('successTime2'); if(st) st.textContent=ts;
-
-  // 先填充动画页数据
-  const sw1=_safeEl('swooshToName'); if(sw1) sw1.textContent=_safeEl('successToName')?.textContent||'';
-  const sw2=_safeEl('swooshToAddr'); if(sw2) sw2.textContent=_safeEl('successToAddr')?.textContent||'';
-  const sw3=_safeEl('swooshAmtVal'); if(sw3) sw3.textContent=amt;
-  const sw4=_safeEl('swooshCoinName'); if(sw4) sw4.textContent=transferCoin.name;
-  const sf1=_safeEl('swooshFromPart1'); if(sf1) sf1.textContent=_safeEl('successFromPart1')?.textContent||'';
-  const sf2=_safeEl('swooshFromPart2'); if(sf2) sf2.textContent=_safeEl('successFromPart2')?.textContent||'';
-  const sfl=_safeEl('swooshFromLang'); if(sfl) sfl.textContent=_safeEl('successFromLang')?.textContent||'';
-
-  // 尝试真实广播
-  const sendBtn = document.getElementById('confirmSendBtn');
-  if(sendBtn) { sendBtn.disabled=true; sendBtn.textContent='⏳ 广播中...'; }
-
-  broadcastRealTransfer().then(ok => {
-    if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
-    if(ok) {
-      goTo('page-swoosh'); // 广播成功，显示成功动画
-    } else {
-      showToast('⚠️ 转账广播失败，请检查余额和网络', 'warning');
-    }
-  }).catch(err => {
-    if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
-    showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
-  });
-
-  // 启动嗖动画
-  setTimeout(() => {
-    const coin = document.getElementById('swooshCoin');
-    const trail = document.getElementById('swooshTrail');
-    const receiver = document.getElementById('swooshReceiver');
-    const check = document.getElementById('swooshCheck');
-    if(coin) coin.classList.add('swoosh-coin');
-    if(trail) trail.classList.add('swoosh-trail');
-    setTimeout(()=>{ if(receiver) receiver.classList.add('receiver-glow'); if(check) { check.textContent='✓'; check.style.color='#4ac84a'; check.style.fontSize='20px'; } }, 900);
-    // 动画结束后跳成功页
-    setTimeout(()=>{ goTo('page-transfer-success'); setTimeout(loadBalances, 2000); }, 1800);
-  }, 200);
-}
-
-async function sendTRX(toAddr, amount) {
-  var run = async function () {
-  await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6);
-  const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
-  const signed = await tw.trx.sign(tx);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'TRX 广播失败');
-  };
-  if (typeof wwWithWalletSensitiveOptimized === 'function') return wwWithWalletSensitiveOptimized(run);
-  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
-  return run();
-}
-
-async function sendETH(toAddr, amount) {
-  var run = async function () {
-  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
-  const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
-  const sp = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
-  const mult = sp === 'slow' ? 0.88 : sp === 'fast' ? 1.24 : 1;
-  const fd = await provider.getFeeData();
-  const txReq = {
-    to: toAddr,
-    value: ethers.utils.parseEther(amount.toString()),
-    gasLimit: 21000
-  };
-  const m = Math.round(mult * 100);
-  if(fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
-    txReq.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);
-    txReq.maxPriorityFeePerGas = fd.maxPriorityFeePerGas.mul(m).div(100);
-  } else if(fd.gasPrice) {
-    txReq.gasPrice = fd.gasPrice.mul(m).div(100);
-  }
-  const tx = await wallet.sendTransaction(txReq);
-  await tx.wait(1);
-  return tx.hash;
-  };
-  if (typeof wwWithWalletSensitiveOptimized === 'function') return wwWithWalletSensitiveOptimized(run);
-  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
-  return run();
-}
-
-async function sendUSDT_TRC20(toAddr, amount) {
-  var run = async function () {
-  await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
-  tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  const amtSun = Math.floor(amount * 1e6); // USDT 6位小数
-  const tx = await tw.transactionBuilder.triggerSmartContract(
-    USDT_TRC20,
-    'transfer(address,uint256)',
-    { feeLimit: (typeof getTronFeeLimitUsdt==='function' ? getTronFeeLimitUsdt() : 20000000) },
-    [
-      { type: 'address', value: toAddr },
-      { type: 'uint256', value: amtSun }
-    ],
-    REAL_WALLET.trxAddress // Base58格式，TronWeb自动处理
-  );
-  const signed = await tw.trx.sign(tx.transaction);
-  const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
-  throw new Error(result.message || 'USDT 广播失败');
-  };
-  if (typeof wwWithWalletSensitiveOptimized === 'function') return wwWithWalletSensitiveOptimized(run);
-  if (typeof wwWithWalletSensitive === 'function') return wwWithWalletSensitive(run);
-  return run();
-}
-
-async function loadBalances() {
-  if (!REAL_WALLET || (!REAL_WALLET.ethAddress && !REAL_WALLET.trxAddress && !REAL_WALLET.btcAddress)) return;
-  const tbd = document.getElementById('totalBalanceDisplay');
-  const tbs = document.getElementById('totalBalanceSub');
-  if(tbd) tbd.classList.add('home-balance--loading');
-  if(tbs) tbs.textContent = '同步中…';
-  
-  const btn = _safeEl('balRefreshBtn');
-  if(btn) btn.textContent = '查询中...';
-  
-  // 更新标签为加载中
-  ['balUsdt'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.textContent = '...';
-  });
-
+/** 首页 CNY 副标题：优先币安 P2P 出售 USDT 广告列表第 3 档单价（CNY/USDT），失败则用 USD→CNY 参考汇率 */
+async function wwResolveCnyPerUsdtForHome() {
   try {
-    const [bal, prices] = await Promise.all([
-      typeof getBalance === 'function'
-        ? getBalance({
-            eth: REAL_WALLET.ethAddress || '',
-            trx: REAL_WALLET.trxAddress || ''
-          })
-        : Promise.resolve({ eth: 0, trx: 0, usdt: 0, btc: 0, totalUsd: 0 }),
-      getPrices()
-    ]);
-
-    const usdtBal = bal.usdt;
-    const trxBal = bal.trx;
-    const ethBal = bal.eth;
-
-    let btcBal = 0;
-    try {
-      if (REAL_WALLET.btcAddress) {
-        const btcRes = await callWithRetry(async function () {
-          var r = await fetch('https://mempool.space/api/address/' + REAL_WALLET.btcAddress);
-          if (r.status === 429) {
-            var e = new Error('Too Many Requests');
-            e.status = 429;
-            throw e;
-          }
-          return r;
-        });
-        const btcData = await btcRes.json();
-        btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
-      }
-    } catch(e) { console.log('BTC query skipped'); }
-
-    const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
-    const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
-
-    const usdtUsd = usdtBal * prices.usdt;
-    const trxUsd = trxBal * prices.trx;
-    const ethUsd = ethBal * prices.eth;
-    const btcUsd = btcBal * (prices.btc || 60000);
-    const total = usdtUsd;
-
-    const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
-    set('balUsdt', fmt(usdtBal));
-    set('valUsdt', fmtUsd(usdtUsd));
-    // 更新涨跌幅（从 CoinGecko 获取）
-    try {
-      const cgChgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true';
-      const r2 = await wwFetch429Retry(cgChgUrl, { method: 'GET' });
-      if (!r2.ok) throw new Error('cg ' + r2.status);
-      const d2 = await r2.json();
-      const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
-      if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
-    } catch(e) {}
-    if(tbd) tbd.classList.remove('home-balance--loading');
-    animateHomeUsdTo(total, fmtUsd);
-    window._lastTotalUsd = total;
-    if (typeof drawHomeBalanceChart === 'function') drawHomeBalanceChart(total);
-    if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
-    if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
-    // 动态汇率（从价格接口获取，fallback 7.2）
-  const cnyRate = window._cnyRate || 7.2;
-  set('totalBalanceSub', '≈ ' + (total * cnyRate).toFixed(0) + ' CNY · 实时价格');
-  // 尝试获取实时汇率
-  if(!window._cnyRate) {
-    callWithRetry(function () {
-      return fetch('https://api.exchangerate-api.com/v4/latest/USD').then(function (r) {
-        if (r.status === 429) {
-          var err = new Error('Too Many Requests');
-          err.status = 429;
-          throw err;
-        }
-        return r.json();
-      });
-    }).then(function (d) { window._cnyRate = d.rates && d.rates.CNY || 7.2; }).catch(function () {});
-  }
-
-    // ── 同步 COINS 余额（兑换页使用）──
-    COINS.forEach(coin => {
-      if(coin.id === 'usdt') { coin.bal = usdtBal; coin.price = prices.usdt || 1; }
-      else if(coin.id === 'trx') { coin.bal = trxBal; coin.price = prices.trx || 0.12; }
-      else if(coin.id === 'eth') { coin.bal = ethBal; coin.price = prices.eth || 2500; }
-      else if(coin.id === 'btc') { coin.bal = btcBal; coin.price = prices.btc || 60000; }
-    });
-    renderSwapUI(); calcSwap();
-    
-    if(btn) btn.textContent = '刷新';
-    if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
-    if(typeof loadTrxResource==='function') loadTrxResource();
-  } catch(e) {
-    console.error('Balance load error:', e);
-    if(tbd) tbd.classList.remove('home-balance--loading');
-    if(btn) btn.textContent = '刷新';
-  }
-}
-
-async function getPrices() {
-  if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
-  try {
-    const cgUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd';
-    const res = await wwFetch429Retry(cgUrl, { method: 'GET' });
-    if (!res.ok) throw new Error('cg ' + res.status);
-    const data = await res.json();
-    priceCache = {
-      usdt: data.tether?.usd || 1,
-      trx: data.tron?.usd || 0.12,
-      eth: data.ethereum?.usd || 3200,
-      btc: data.bitcoin?.usd || 60000,
+    var binanceBody = {
+      asset: 'USDT',
+      fiat: 'CNY',
+      tradeType: 'SELL',
+      page: 1,
+      rows: 20,
+      payTypes: [],
+      publisherType: null,
+      merchantCheck: false
     };
-    priceCacheTime = Date.now();
-    return priceCache;
-  } catch(e) {
-    if (priceCache) return priceCache;
-    return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
+    var res =
+      typeof wwFetchDnsRetry === 'function'
+        ? await wwFetchDnsRetry('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(binanceBody)
+          })
+        : await fetch('https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(binanceBody)
+          });
+    if (res.ok) {
+      var j = await res.json();
+      var row = j.data && j.data[2];
+      var raw = row && row.adv && row.adv.price;
+      var p = raw != null ? parseFloat(String(raw), 10) : NaN;
+      if (isFinite(p) && p > 5 && p < 50) {
+        return { rate: p, label: '币安U价第三档' };
+      }
+    }
+  } catch (_e) {}
+  var fx = window._cnyRate;
+  if (fx == null || !isFinite(fx) || Number(fx) <= 0) {
+    try {
+      var r2 = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+      var d2 = await r2.json();
+      var rawCny = d2.rates && d2.rates.CNY;
+      fx = rawCny != null && isFinite(Number(rawCny)) && Number(rawCny) > 0 ? Number(rawCny) : 7.2;
+      window._cnyRate = fx;
+    } catch (_e2) {
+      fx = 7.2;
+    }
+  }
+  fx = Number(fx);
+  if (!isFinite(fx) || fx <= 0) fx = 7.2;
+  return { rate: fx, label: '实时汇率' };
+}
+
+/** 与链上查询并行复用同一请求，避免快照与 loadBalances 各打一次 */
+var _wwHomeCnyInflight = null;
+function wwGetHomeCnyInfo() {
+  if (!_wwHomeCnyInflight) {
+    _wwHomeCnyInflight = wwResolveCnyPerUsdtForHome().finally(function () {
+      _wwHomeCnyInflight = null;
+    });
+  }
+  return _wwHomeCnyInflight;
+}
+
+
+var WW_TX_HISTORY_SNAP_KEY = 'ww_tx_history_snap_v1';
+
+/** 与 wwWalletSnapIdForCache 一致，但在 REAL_WALLET 尚未挂载时从 ww_wallet 读取（避免快照/历史永远不匹配） */
+function wwGetTxHistoryWid() {
+  try {
+    if (typeof wwWalletSnapIdForCache === 'function') {
+      var w = wwWalletSnapIdForCache();
+      if (w) return w;
+    }
+  } catch (_e) {}
+  try {
+    var raw = localStorage.getItem('ww_wallet');
+    if (!raw) return '';
+    var p = JSON.parse(raw);
+    return String((p && p.trxAddress) || '') + '|' + String((p && p.ethAddress) || '');
+  } catch (_e2) {
+    return '';
+  }
+}
+
+function wwEnsureWalletPublicLoaded() {
+  try {
+    if (typeof loadWalletPublic === 'function') loadWalletPublic();
+    else if (typeof loadWallet === 'function') loadWallet();
+  } catch (_e) {}
+}
+
+/** 优先 REAL_WALLET，否则读 localStorage（避免 loadTxHistory 早退导致永远不请求链上） */
+function wwResolveTrxAddressForHistory() {
+  try {
+    if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress) {
+      var a = String(REAL_WALLET.trxAddress).trim();
+      if (a.charAt(0) === 'T' && a.length >= 34) return a;
+    }
+  } catch (_e) {}
+  try {
+    var raw = localStorage.getItem('ww_wallet');
+    if (!raw) return '';
+    var p = JSON.parse(raw);
+    var b = p && p.trxAddress ? String(p.trxAddress).trim() : '';
+    if (b.charAt(0) === 'T' && b.length >= 34) return b;
+  } catch (_e2) {}
+  return '';
+}
+
+function wwTryRestoreCachedTxHistory() {
+  wwEnsureWalletPublicLoaded();
+  if (typeof renderTxHistoryFromCache !== 'function') return false;
+  try {
+    var raw = localStorage.getItem(WW_TX_HISTORY_SNAP_KEY);
+    if (!raw) return false;
+    var o = JSON.parse(raw);
+    var wid = wwGetTxHistoryWid();
+    if (!o || !wid || o.wid !== wid || !Array.isArray(o.txs)) return false;
+    window._wwTxHistoryCache = o.txs;
+    renderTxHistoryFromCache();
+    return true;
+  } catch (_e) {
+    return false;
+  }
+}
+
+function wwPersistTxHistorySnap(txs) {
+  try {
+    var wid = wwGetTxHistoryWid();
+    if (!wid) return;
+    localStorage.setItem(WW_TX_HISTORY_SNAP_KEY, JSON.stringify({ wid: wid, txs: txs || [] }));
+  } catch (_e) {}
+}
+
+
+/** Tron 协议里的地址字段（hex 或已是 Base58）→ Base58，便于与 REAL_WALLET.trxAddress 比较 */
+function wwTronProtoAddrToBase58(a) {
+  if (a == null || a === '') return '';
+  var s = String(a).trim();
+  if (s.charAt(0) === 'T' && s.length >= 34) return s;
+  var h = s.replace(/^0x/i, '');
+  if (!/^[0-9a-fA-F]+$/.test(h)) return s;
+  if (h.length === 40) h = '41' + h;
+  try {
+    if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
+      return TronWeb.address.fromHex(h);
+    }
+  } catch (_e) {}
+  return s;
+}
+
+var WW_TX_LOCAL_LOG_KEY = 'ww_tx_local_activity_v1';
+
+/** 广播成功后写入本机，链上索引失败时首页仍能显示最近转出 */
+function wwAppendLocalTxLog(entry) {
+  try {
+    if (!entry || !entry.hash) return;
+    var wid = typeof wwGetTxHistoryWid === 'function' ? wwGetTxHistoryWid() : '';
+    var trxa = typeof wwResolveTrxAddressForHistory === 'function' ? wwResolveTrxAddressForHistory() : '';
+    var raw = localStorage.getItem(WW_TX_LOCAL_LOG_KEY);
+    var ar = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(ar)) ar = [];
+    var row = Object.assign(
+      {
+        wid: wid,
+        savedAt: Date.now(),
+        trx: trxa
+      },
+      entry
+    );
+    ar = ar.filter(function (x) {
+      return !(x && x.hash === row.hash && x.wid === row.wid);
+    });
+    ar.unshift(row);
+    if (ar.length > 100) ar = ar.slice(0, 100);
+    localStorage.setItem(WW_TX_LOCAL_LOG_KEY, JSON.stringify(ar));
+  } catch (_e) {}
+}
+
+function wwReadLocalTxRowsForWallet() {
+  try {
+    var wid = typeof wwGetTxHistoryWid === 'function' ? wwGetTxHistoryWid() : '';
+    var tr =
+      typeof wwResolveTrxAddressForHistory === 'function'
+        ? wwResolveTrxAddressForHistory()
+        : typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress
+          ? String(REAL_WALLET.trxAddress)
+          : '';
+    var raw = localStorage.getItem(WW_TX_LOCAL_LOG_KEY);
+    var ar = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(ar)) return [];
+    return ar.filter(function (x) {
+      if (!x || !x.hash) return false;
+      if (wid && x.wid === wid) return true;
+      if (tr && x.trx && String(x.trx) === tr) return true;
+      return false;
+    });
+  } catch (_e) {
+    return [];
+  }
+}
+
+/** 本机活动行 → 列表展示对象（链上转出 或 应用内兑换） */
+function wwLocalActivityRowToDisplay(L) {
+  if (!L) return null;
+  var h = String(L.hash || '');
+  if (!h) return null;
+  var ts = Number(L.ts || L.savedAt) || Date.now();
+  if (L.kind === 'swap' && L.fromId && L.toId) {
+    var fn = { usdt: 'USDT', trx: 'TRX', eth: 'ETH', btc: 'BTC' };
+    var fromName = fn[L.fromId] || String(L.fromId || '').toUpperCase();
+    var toName = fn[L.toId] || String(L.toId || '').toUpperCase();
+    var ai = Number(L.amountIn) || 0;
+    var ao = Number(L.amountOut) || 0;
+    var outStr = L.toId === 'trx' ? ao.toFixed(2) : ao > 1 ? ao.toFixed(4) : ao.toFixed(8);
+    return {
+      icon: '🔄',
+      type: '兑换',
+      coin: fromName + ' → ' + toName,
+      amount: '-' + ai + ' / +' + outStr,
+      addr: '应用内兑换',
+      time: new Date(ts).toLocaleDateString('zh-CN'),
+      hash: h,
+      color: '#C8A84B',
+      _ts: ts
+    };
+  }
+  if (L.kind === 'swap_sunswap_other') {
+    var amtO = Number(L.amountIn) || 0;
+    var rec = String(L.recipientTrx || '').trim();
+    return {
+      icon: '🔗',
+      type: '兑换',
+      coin: 'USDT → TRX · 给他人',
+      amount: '-' + amtO + ' USDT（SunSwap）',
+      addr: rec ? rec + ' · 外链待确认' : 'SunSwap',
+      time: new Date(ts).toLocaleDateString('zh-CN'),
+      hash: h,
+      color: '#C8A84B',
+      _ts: ts
+    };
+  }
+  return {
+    icon: '📤',
+    type: '转出',
+    coin: L.coin || '—',
+    amount: String(L.amount || '').indexOf('-') === 0 ? L.amount : '-' + String(L.amount || ''),
+    addr: L.addr || '',
+    time: new Date(ts).toLocaleDateString('zh-CN'),
+    hash: h,
+    color: '#e05c5c',
+    _ts: ts
+  };
+}
+
+function wwMergeLocalTxActivity(pushTx) {
+  wwReadLocalTxRowsForWallet().forEach(function (L) {
+    var row = wwLocalActivityRowToDisplay(L);
+    if (row) pushTx(row);
+  });
+}
+
+/**
+ * 应用内兑换成功后：写入本机日志（刷新后仍出现）并立即更新首页列表
+ */
+function wwRecordInappSwapTxActivity(fromId, toId, amtIn, amtOut) {
+  try {
+    if (!fromId || !toId || !isFinite(amtIn) || !isFinite(amtOut)) return;
+    var wid = typeof wwGetTxHistoryWid === 'function' ? wwGetTxHistoryWid() : '';
+    var h = 'inapp-swap-' + (wid || 'w') + '-' + Date.now() + '-' + Math.floor(Math.random() * 1e9);
+    wwAppendLocalTxLog({
+      hash: h,
+      kind: 'swap',
+      fromId: fromId,
+      toId: toId,
+      amountIn: amtIn,
+      amountOut: amtOut,
+      ts: Date.now()
+    });
+    var display = wwLocalActivityRowToDisplay({
+      hash: h,
+      kind: 'swap',
+      fromId: fromId,
+      toId: toId,
+      amountIn: amtIn,
+      amountOut: amtOut,
+      ts: Date.now()
+    });
+    if (!display || typeof renderTxHistoryFromCache !== 'function') return;
+    var forUiRow = {};
+    for (var k in display) {
+      if (k !== '_ts') forUiRow[k] = display[k];
+    }
+    var cur = window._wwTxHistoryCache && Array.isArray(window._wwTxHistoryCache) ? window._wwTxHistoryCache.slice() : [];
+    cur = cur.filter(function (r) {
+      return r && r.hash !== h;
+    });
+    cur.unshift(forUiRow);
+    window._wwTxHistoryCache = cur;
+    renderTxHistoryFromCache();
+    if (typeof wwPersistTxHistorySnap === 'function') wwPersistTxHistorySnap(cur);
+  } catch (_e) {}
+}
+
+/**
+ * 「给他人」跳转 SunSwap：记一条本机占位（链上成交后可在 SunSwap/刷新后对照）
+ */
+function wwRecordSunSwapOtherPlaceholder(amountIn, recipientTrx) {
+  try {
+    var amt = Number(amountIn);
+    var rec = String(recipientTrx || '').trim();
+    if (!isFinite(amt) || amt <= 0 || !rec) return;
+    var wid = typeof wwGetTxHistoryWid === 'function' ? wwGetTxHistoryWid() : '';
+    var h = 'sunswap-other-' + (wid || 'w') + '-' + Date.now() + '-' + Math.floor(Math.random() * 1e9);
+    wwAppendLocalTxLog({
+      hash: h,
+      kind: 'swap_sunswap_other',
+      fromId: 'usdt',
+      toId: 'trx',
+      amountIn: amt,
+      recipientTrx: rec,
+      ts: Date.now()
+    });
+    var display = wwLocalActivityRowToDisplay({
+      hash: h,
+      kind: 'swap_sunswap_other',
+      amountIn: amt,
+      recipientTrx: rec,
+      ts: Date.now()
+    });
+    if (!display || typeof renderTxHistoryFromCache !== 'function') return;
+    var forUiRow = {};
+    for (var k in display) {
+      if (k !== '_ts') forUiRow[k] = display[k];
+    }
+    var cur = window._wwTxHistoryCache && Array.isArray(window._wwTxHistoryCache) ? window._wwTxHistoryCache.slice() : [];
+    cur = cur.filter(function (r) {
+      return r && r.hash !== h;
+    });
+    cur.unshift(forUiRow);
+    window._wwTxHistoryCache = cur;
+    renderTxHistoryFromCache();
+    if (typeof wwPersistTxHistorySnap === 'function') wwPersistTxHistorySnap(cur);
+  } catch (_e) {}
+}
+
+async function wwFetchJsonAny(url) {
+  try {
+    var res = await fetch(String(url), { method: 'GET', mode: 'cors', credentials: 'omit' });
+    if (!res || !res.ok) return null;
+    return await res.json();
+  } catch (_e) {
+    return null;
+  }
+}
+
+async function wwFetchJsonAnyMirrors(urls) {
+  for (var i = 0; i < urls.length; i++) {
+    var j = await wwFetchJsonAny(urls[i]);
+    if (j) return j;
+  }
+  return null;
+}
+
+/**
+ * TronGrid 在浏览器中易被限流或返回空；用 TronScan 开放列表作备用（字段做兼容解析）。
+ */
+async function wwLoadTronscanHistoryFallback(trxAddr, pushTx, seenHash) {
+  if (!trxAddr || trxAddr.indexOf('T') !== 0) return;
+  var USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+  var bases = ['https://apilist.tronscan.org', 'https://apilist.tronscanapi.com'];
+  var u20a =
+    '/api/token_trc20/transfers?sort=-timestamp&limit=25&start=0&relatedAddress=' +
+    encodeURIComponent(trxAddr) +
+    '&contract_address=' +
+    encodeURIComponent(USDT_CONTRACT);
+  var uTrxa =
+    '/api/transfer?sort=-timestamp&count=true&limit=30&start=0&token=_&address=' +
+    encodeURIComponent(trxAddr);
+
+  var j20 = await wwFetchJsonAnyMirrors(bases.map(function (b) { return b + u20a; }));
+  var list20 = (j20 && (j20.token_transfers || j20.data)) || [];
+  if (!Array.isArray(list20)) list20 = [];
+  for (var i = 0; i < list20.length && i < 20; i++) {
+    var row = list20[i];
+    var hash = row.transaction_id || row.hash || row.transaction_hash || row.trx_tx_id || '';
+    var from = row.from_address || row.from || '';
+    var to = row.to_address || row.to || '';
+    var q = row.quant != null ? row.quant : row.amount_str != null ? row.amount_str : row.value;
+    var tsMs = row.block_ts || row.block_timestamp || row.timestamp || 0;
+    var amt = (parseInt(String(q || '0'), 10) / 1e6).toFixed(2);
+    if (!hash) continue;
+    var isOut = from === trxAddr;
+    pushTx({
+      icon: isOut ? '📤' : '📥',
+      type: isOut ? '转出' : '转入',
+      coin: 'USDT',
+      amount: (isOut ? '-' : '+') + amt,
+      addr: isOut ? to : from,
+      time: new Date(tsMs || Date.now()).toLocaleDateString('zh-CN'),
+      hash: hash,
+      color: isOut ? '#e05c5c' : '#26a17b',
+      _ts: tsMs || 0
+    });
+  }
+
+  var jt = await wwFetchJsonAnyMirrors(bases.map(function (b) { return b + uTrxa; }));
+  var listT = (jt && (jt.data || jt.transfers)) || [];
+  if (!Array.isArray(listT)) listT = [];
+  var added = 0;
+  for (var j = 0; j < listT.length && added < 18; j++) {
+    var t = listT[j];
+    var th = t.transaction_hash || t.hash || t.transactionHash || t.txID || '';
+    var fromA = t.transferFromAddress || t.from_address || t.from || '';
+    var toA = t.transferToAddress || t.to_address || t.to || '';
+    var sun = t.amount != null ? t.amount : t.quant != null ? t.quant : 0;
+    var ts2 = t.timestamp || t.block_ts || t.block_timestamp || 0;
+    if (!th) continue;
+    var isO = fromA === trxAddr;
+    var amtT = (parseInt(String(sun || '0'), 10) / 1e6).toFixed(2);
+    pushTx({
+      icon: isO ? '📤' : '📥',
+      type: isO ? '转出' : '转入',
+      coin: 'TRX',
+      amount: (isO ? '-' : '+') + amtT,
+      addr: isO ? toA : fromA,
+      time: new Date(ts2 || Date.now()).toLocaleDateString('zh-CN'),
+      hash: th,
+      color: isO ? '#e05c5c' : '#e84142',
+      _ts: ts2 || 0
+    });
+    added++;
+  }
+}
+
+/** Tron 全节点 HTTP：gettransactionfromthis / gettransactiontothis（与 v1 REST 互补） */
+async function wwLoadTronGridWalletPostHistory(trxAddr, pushTx) {
+  if (!trxAddr || trxAddr.indexOf('T') !== 0) return;
+  var base = typeof wwTronGridBase === 'function' ? wwTronGridBase() : 'https://api.trongrid.io';
+  var paths = ['/wallet/gettransactionfromthis', '/wallet/gettransactiontothis'];
+  var postBody = JSON.stringify({ account: { address: trxAddr }, offset: 0, limit: 35 });
+  var hdr =
+    typeof wwMergeHeaders === 'function'
+      ? wwMergeHeaders(
+          { 'Content-Type': 'application/json' },
+          typeof wwTronHeaders === 'function' ? wwTronHeaders() : {}
+        )
+      : { 'Content-Type': 'application/json' };
+
+  for (var pi = 0; pi < paths.length; pi++) {
+    var url = base + paths[pi];
+    try {
+      var res =
+        typeof wwFetchRetry === 'function'
+          ? await wwFetchRetry(url, { method: 'POST', headers: hdr, body: postBody })
+          : await fetch(url, { method: 'POST', headers: hdr, body: postBody });
+      if (!res || !res.ok) continue;
+      var d = await res.json();
+      var list = (d && (d.transaction || d.transactions)) || [];
+      if (!Array.isArray(list)) continue;
+      var seen = 0;
+      for (var i = 0; i < list.length && seen < 22; i++) {
+        var raw = list[i];
+        var ntx = raw && (raw.transaction || raw.tx || raw);
+        if (!ntx) continue;
+        var contract = ntx.raw_data && ntx.raw_data.contract && ntx.raw_data.contract[0];
+        if (!contract || contract.type !== 'TransferContract') continue;
+        var val = contract.parameter && contract.parameter.value;
+        if (!val) continue;
+        var ownerB58 = wwTronProtoAddrToBase58(val.owner_address);
+        var toB58 = wwTronProtoAddrToBase58(val.to_address);
+        var isOut = ownerB58 === trxAddr;
+        var amtN = ((val.amount || 0) / 1e6).toFixed(2);
+        var tsMs2 =
+          ntx.block_timestamp ||
+          raw.block_timestamp ||
+          (ntx.raw_data && ntx.raw_data.timestamp) ||
+          0;
+        var tid = ntx.txID || ntx.txId || ntx.transaction_id || '';
+        if (!tid) continue;
+        pushTx({
+          icon: isOut ? '📤' : '📥',
+          type: isOut ? '转出' : '转入',
+          coin: 'TRX',
+          amount: (isOut ? '-' : '+') + amtN,
+          addr: isOut ? toB58 : ownerB58,
+          time: new Date(tsMs2 || Date.now()).toLocaleDateString('zh-CN'),
+          hash: tid,
+          color: isOut ? '#e05c5c' : '#e84142',
+          _ts: tsMs2 || 0
+        });
+        seen++;
+      }
+    } catch (_pe) {}
   }
 }
 
 async function loadTxHistory() {
-  if(!REAL_WALLET) return;
+  wwEnsureWalletPublicLoaded();
+  try {
+    if (typeof loadWallet === 'function') loadWallet();
+  } catch (_lw) {}
+
   const el = document.getElementById('txHistoryList');
-  if(!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:12px">⏳ 加载中...</div>';
+  if (!el) return;
+
+  var trxAddr = wwResolveTrxAddressForHistory();
+  if (!trxAddr) {
+    if (typeof txHistoryFriendlyHtml === 'function') {
+      el.innerHTML = txHistoryFriendlyHtml(
+        '🔑',
+        '未读取到 TRON 地址',
+        '请确认已创建或导入钱包。若刚打开页面，请稍后重试或刷新后再点「刷新」。'
+      );
+    }
+    return;
+  }
+
+  try {
+    var _tf = document.getElementById('txHistoryFilter');
+    if (_tf) _tf.value = '';
+  } catch (_tf0) {}
+  var hadTxSnap = typeof wwTryRestoreCachedTxHistory === 'function' && wwTryRestoreCachedTxHistory();
+  /* 无本机快照时勿先画「暂无记录」（与静态 HTML 同文案易被误认为未加载）；先显示加载中 */
+  if (!hadTxSnap) {
+    el.innerHTML =
+      '<div class="tx-empty-friendly"><div class="tx-empty-icon" aria-hidden="true">⏳</div><div class="tx-empty-title" style="font-size:14px">正在加载链上记录…</div><div class="tx-empty-hint" style="font-size:11px;margin-top:8px">正在连接 TronGrid / TronScan，请稍候。若超时请点「刷新」。</div></div>';
+  }
 
   try {
     const txs = [];
+    var seenHash = {};
+    function pushTx(row) {
+      var h = String(row.hash || '');
+      if (h && seenHash[h]) return;
+      if (h) seenHash[h] = 1;
+      txs.push(row);
+    }
 
-    // TRX 转账记录
-    const trxAddr = REAL_WALLET.trxAddress;
-    if(trxAddr && trxAddr.startsWith('T')) {
-      const u1 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions/trc20?limit=10&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+    if (trxAddr) {
+      if (typeof loadTronWeb === 'function') await loadTronWeb();
+
+      var _tgBase =
+        typeof wwTronGridBase === 'function'
+          ? wwTronGridBase()
+          : String(typeof TRON_GRID !== 'undefined' && TRON_GRID ? TRON_GRID : '').replace(/\/$/, '') || 'https://api.trongrid.io';
+
+      // USDT TRC20
+      const u1 =
+        _tgBase +
+        '/v1/accounts/' +
+        encodeURIComponent(trxAddr) +
+        '/transactions/trc20?limit=30&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
       const r1 = await wwFetch429Retry(u1, { method: 'GET' });
       const d1 = r1.ok ? await r1.json() : {};
-      if(d1.data) {
-        for(const tx of d1.data.slice(0,5)) {
-          const isOut = tx.from === trxAddr;
-          const amt = (parseInt(tx.value) / 1e6).toFixed(2);
-          txs.push({
+      if (d1.data && d1.data.length) {
+        for (var ti = 0; ti < d1.data.length && ti < 12; ti++) {
+          var tx = d1.data[ti];
+          var isOut = tx.from === trxAddr;
+          var amt = (parseInt(tx.value, 10) / 1e6).toFixed(2);
+          var tsMs = tx.block_timestamp || 0;
+          pushTx({
             icon: isOut ? '📤' : '📥',
             type: isOut ? '转出' : '转入',
             coin: 'USDT',
-            amount: (isOut?'-':'+') + amt,
+            amount: (isOut ? '-' : '+') + amt,
             addr: isOut ? tx.to : tx.from,
-            time: new Date(tx.block_timestamp).toLocaleDateString('zh-CN'),
+            time: new Date(tsMs || Date.now()).toLocaleDateString('zh-CN'),
             hash: tx.transaction_id,
-            color: isOut ? '#e05c5c' : '#26a17b'
+            color: isOut ? '#e05c5c' : '#26a17b',
+            _ts: tsMs || 0
           });
         }
       }
 
-      // TRX 原生交易
-      const u2 = TRON_GRID + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions?limit=5&only_confirmed=true';
+      // TRX 原生（多扫几条，避免前几笔全是投票/合约导致空白）
+      const u2 =
+        _tgBase + '/v1/accounts/' + encodeURIComponent(trxAddr) + '/transactions?limit=50&only_confirmed=true';
       const r2 = await wwFetch429Retry(u2, { method: 'GET' });
       const d2 = r2.ok ? await r2.json() : {};
-      if(d2.data) {
-        for(const tx of d2.data.slice(0,3)) {
-          const contract = tx.raw_data?.contract?.[0];
-          if(contract?.type !== 'TransferContract') continue;
-          const val = contract.parameter?.value;
-          if(!val) continue;
-          const isOut = val.owner_address && TronWeb?.address?.fromHex(val.owner_address) === trxAddr;
-          const amt = ((val.amount||0) / 1e6).toFixed(2);
-          txs.push({
+      if (d2.data && d2.data.length) {
+        var addedNative = 0;
+        for (var ni = 0; ni < d2.data.length && addedNative < 18; ni++) {
+          var ntx = d2.data[ni];
+          var contract = ntx.raw_data && ntx.raw_data.contract && ntx.raw_data.contract[0];
+          if (!contract || contract.type !== 'TransferContract') continue;
+          var val = contract.parameter && contract.parameter.value;
+          if (!val) continue;
+          var ownerB58 = wwTronProtoAddrToBase58(val.owner_address);
+          var toB58 = wwTronProtoAddrToBase58(val.to_address);
+          var isOut = ownerB58 === trxAddr;
+          var amtN = ((val.amount || 0) / 1e6).toFixed(2);
+          var tsMs2 = ntx.block_timestamp || (ntx.raw_data && ntx.raw_data.timestamp) || 0;
+          pushTx({
             icon: isOut ? '📤' : '📥',
             type: isOut ? '转出' : '转入',
             coin: 'TRX',
-            amount: (isOut?'-':'+') + amt,
-            addr: val.to_address ? (typeof TronWeb!=='undefined'?TronWeb.address.fromHex(val.to_address):val.to_address) : '',
-            time: new Date(tx.raw_data.timestamp).toLocaleDateString('zh-CN'),
-            hash: tx.txID,
-            color: isOut ? '#e05c5c' : '#e84142'
+            amount: (isOut ? '-' : '+') + amtN,
+            addr: isOut ? toB58 : ownerB58,
+            time: new Date(tsMs2 || Date.now()).toLocaleDateString('zh-CN'),
+            hash: ntx.txID,
+            color: isOut ? '#e05c5c' : '#e84142',
+            _ts: tsMs2 || 0
           });
+          addedNative++;
         }
       }
     }
 
+    if (trxAddr && trxAddr.indexOf('T') === 0) {
+      try {
+        await wwLoadTronscanHistoryFallback(trxAddr, pushTx, seenHash);
+      } catch (_tsf) {}
+      try {
+        await wwLoadTronGridWalletPostHistory(trxAddr, pushTx);
+      } catch (_wph) {}
+    }
+    try {
+      wwMergeLocalTxActivity(pushTx);
+    } catch (_ml) {}
+
+    txs.sort(function (a, b) {
+      return (b._ts || 0) - (a._ts || 0);
+    });
+
     if(txs.length === 0) {
       try { window._wwTxHistoryCache = []; } catch (_c) {}
-      el.innerHTML = txHistoryEmptyHtml();
+      var sa = trxAddr.length > 14 ? trxAddr.slice(0, 6) + '…' + trxAddr.slice(-4) : trxAddr;
+      if (typeof txHistoryFriendlyHtml === 'function') {
+        el.innerHTML = txHistoryFriendlyHtml(
+          '📬',
+          '暂无交易记录',
+          '已向波场网络查询地址 ' +
+            sa +
+            '。若该地址从未发生 TRX/USDT 转账，或节点暂时未返回数据，这里会为空；你可稍后再点「刷新」。'
+        );
+      } else if (typeof txHistoryEmptyHtml === 'function') {
+        el.innerHTML = txHistoryEmptyHtml();
+      }
+      wwPersistTxHistorySnap([]);
       return;
     }
-    try { window._wwTxHistoryCache = txs; } catch (_c2) {}
-    try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(txs); } catch (_wh) {}
+
+    var forUi = txs.map(function (r) {
+      var o = {};
+      for (var k in r) {
+        if (k !== '_ts') o[k] = r[k];
+      }
+      return o;
+    });
+    try { window._wwTxHistoryCache = forUi; } catch (_c2) {}
+    try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(forUi); } catch (_wh) {}
     renderTxHistoryFromCache();
+    wwPersistTxHistorySnap(forUi);
 
   } catch(e) {
     console.error('加载交易记录失败:', e);
@@ -447,219 +713,70 @@ async function loadTxHistory() {
   }
 }
 
-function updateTransferAddrBook() {
-  const box = document.getElementById('transferAddrBook');
-  const ta = document.getElementById('transferAddr');
-  if(!box || !ta) return;
-  const q = ta.value.trim().toLowerCase();
-  if(!q.length) {
-    box.innerHTML = '';
-    box.style.display = 'none';
-    return;
-  }
-  const contacts = getTransferContacts();
-  const recent = getRecentTransferAddrs();
-  const contactSet = new Set(contacts.map(c => c.addr.trim().toLowerCase()));
-  const matchedContacts = contacts.filter(c => {
-    const al = c.addr.toLowerCase();
-    const nl = (c.nick || '').toLowerCase();
-    return al.includes(q) || nl.includes(q);
-  });
-  const matchedRecent = recent.filter(a => {
-    const al = a.toLowerCase();
-    return !contactSet.has(al) && al.includes(q);
-  });
-  if(!matchedContacts.length && !matchedRecent.length) {
-    box.innerHTML = '';
-    const empty = document.createElement('div');
-    empty.className = 'transfer-addr-dd-empty';
-    empty.textContent = (contacts.length || recent.length) ? '暂无匹配地址' : '暂无历史地址与联系人';
-    box.appendChild(empty);
-    box.style.display = 'block';
-    return;
-  }
-  box.innerHTML = '';
-  const appendHdr = function(lbl) {
-    const h = document.createElement('div');
-    h.className = 'transfer-addr-dd-hdr';
-    h.textContent = lbl;
-    box.appendChild(h);
-  };
-  const addContactItems = function(list) {
-    list.forEach(function(item) {
-      const div = document.createElement('div');
-      div.className = 'transfer-addr-dd-item';
-      const span = document.createElement('span');
-      span.className = 'contact-nick-mark';
-      span.textContent = item.nick + ' · ';
-      div.appendChild(span);
-      div.appendChild(document.createTextNode(addrBookShort(item.addr)));
-      div.title = item.addr;
-      div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(item.addr); };
-      box.appendChild(div);
-    });
-  };
-  const addRecentItems = function(list) {
-    list.forEach(function(addr) {
-      const div = document.createElement('div');
-      div.className = 'transfer-addr-dd-item recent-item';
-      const ico = document.createElement('span');
-      ico.className = 'recent-ico';
-      ico.textContent = '\u231b ';
-      div.appendChild(ico);
-      div.appendChild(document.createTextNode(addr));
-      div.title = '\u6700\u8fd1\u8f6c\u8d26: ' + addr;
-      div.onmousedown = function(e) { e.preventDefault(); pickTransferAddrFromBookRaw(addr); };
-      box.appendChild(div);
-    });
-  };
-  if(matchedContacts.length) {
-    appendHdr('\u8054\u7cfb\u4eba');
-    addContactItems(matchedContacts.slice(0, 12));
-  }
-  if(matchedRecent.length) {
-    appendHdr('\u6700\u8fd1\u8f6c\u8d26');
-    addRecentItems(matchedRecent.slice(0, 12));
-  }
-  box.style.display = 'block';
-}
-
-function parseUsdFromBalanceTxt(txt) {
-  if (!txt) return 0;
-  var n = parseFloat(String(txt).replace(/[$,\s]/g, ''));
-  return isFinite(n) ? n : 0;
-}
-
-function cancelHomeBalanceAnim() {
-  if (window._homeBalanceAnimRaf) {
-    cancelAnimationFrame(window._homeBalanceAnimRaf);
-    window._homeBalanceAnimRaf = 0;
-  }
-}
-
-function animateHomeUsdTo(targetUsd, fmtUsdFn) {
-  cancelHomeBalanceAnim();
-  var el = document.getElementById('totalBalanceDisplay');
-  var from = parseUsdFromBalanceTxt(el ? el.textContent : '');
-  if (!isFinite(from)) from = 0;
-  var dur = 560;
-  var t0 = null;
-  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-  function tick(now) {
-    if (!t0) t0 = now;
-    var p = Math.min(1, (now - t0) / dur);
-    var v = from + (targetUsd - from) * easeOutCubic(p);
-    if (el) el.textContent = fmtUsdFn(p < 1 ? v : targetUsd);
-    if (p < 1) window._homeBalanceAnimRaf = requestAnimationFrame(tick);
-    else window._homeBalanceAnimRaf = 0;
-  }
-  window._homeBalanceAnimRaf = requestAnimationFrame(tick);
-}
-
-function getTransferFeeSpeed() {
-  try {
-    const s = localStorage.getItem('ww_transfer_fee_speed');
-    if(s === 'slow' || s === 'normal' || s === 'fast') return s;
-  } catch(e) {}
-  return 'normal';
-}
 
 /** 防止交易列表 innerHTML 注入 */
-function wwEscapeHtml(s) {
-  return String(s == null ? '' : s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
+
 function wwTxSanitizeColor(c) {
   var s = String(c || '').trim();
   if (/^#[0-9A-Fa-f]{3,8}$/.test(s)) return s;
   return 'inherit';
 }
 function wwTxHistoryRowOnClick(ev) {
+  if (ev.target && ev.target.closest && ev.target.closest('[data-ww-copy]')) return;
   var t = ev.target;
   var row = t && t.closest ? t.closest('.ww-tx-history-row') : null;
   if (!row) return;
   var coin = String(row.getAttribute('data-coin') || '').toLowerCase();
   var hash = String(row.getAttribute('data-hash') || '');
   if (!hash) return;
+  if (hash.indexOf('inapp-swap-') === 0) {
+    try {
+      if (typeof showToast === 'function') showToast('此为应用内兑换记录，无独立链上交易哈希', 'info', 3200);
+    } catch (_e) {}
+    return;
+  }
+  if (hash.indexOf('sunswap-other-') === 0) {
+    try {
+      if (typeof showToast === 'function') {
+        showToast('此为跳转 SunSwap「给他人」的占位记录；实际哈希请在 SunSwap / TronScan 查看，完成后可点「刷新」同步链上', 'info', 4200);
+      }
+    } catch (_e2) {}
+    return;
+  }
   var base = coin === 'eth' ? 'https://etherscan.io/tx/' : 'https://tronscan.org/#/transaction/';
   try {
     window.open(base + encodeURIComponent(hash), '_blank', 'noopener,noreferrer');
   } catch (e) {}
 }
 
-function txHistoryEmptyHtml() {
-  const L = (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'zh';
-  const M = {
-    en: { title: "No transactions yet", hint: "After you send or receive once, your latest activity will appear here. On-chain confirmations usually take just a few seconds — tap Refresh above if you just sent something." },
-    zh: { title: '暂无交易记录', hint: '这里会列出你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认通常只要几秒——若刚发出，点上方「刷新」或稍后再看即可。' },
-    'zh-TW': { title: '尚無交易紀錄', hint: '轉帳或收款後，最新活動會顯示在這裡。鏈上確認有時需要幾秒鐘，若剛送出請點上方「重新整理」或稍後再查看。' },
-    ja: { title: 'まだ取引履歴がありません', hint: '送金や受取を一度行うと、直近のアクティビティがここに表示されます。オンチェーンの確定に数秒かかることがあります。送った直後は「更新」をタップしてください。' },
-    ko: { title: '아직 거래 내역이 없어요', hint: '보내기·받기를 한 번 하면 최근 활동이 여기에 표시됩니다. 온체인 확인에 몇 초 걸릴 수 있어요. 방금 보냈다면 위의 새로고침을 눌러 보세요.' },
-    es: { title: 'Aún no hay transacciones', hint: 'Cuando envíes o recibas, verás aquí tu actividad reciente. La confirmación en cadena puede tardar unos segundos; pulsa Actualizar arriba si acabas de enviar.' },
-    fr: { title: 'Pas encore de transactions', hint: 'Après un envoi ou une réception, votre activité récente apparaîtra ici. La confirmation on-chain peut prendre quelques secondes — touchez Actualiser ci-dessus.' },
-    ar: { title: 'لا توجد معاملات بعد', hint: 'بعد أول إرسال أو استلام، ستظهر أنشطتك هنا. قد تستغرق التأكيدات على السلسلة ثوانٍ — اضغط «تحديث» أعلاه إذا أرسلت للتو.' },
-    hi: { title: 'अभी कोई लेनदेन नहीं', hint: 'भेजने या प्राप्त करने के बाद आपकी हाल की गतिविधि यहाँ दिखेगी। ऑन-चेन पुष्टि में कुछ सेकंड लग सकते हैं — अभी भेजा है तो ऊपर ताज़ा करें दबाएँ।' },
-    pt: { title: 'Ainda não há transações', hint: 'Depois de enviar ou receber, sua atividade recente aparece aqui. A confirmação na rede pode levar alguns segundos — toque em Atualizar acima se acabou de enviar.' },
-    ru: { title: 'Пока нет транзакций', hint: 'После отправки или получения здесь появится активность. Подтверждение в сети может занять несколько секунд — нажмите «Обновить» выше, если только что отправили.' },
-    de: { title: 'Noch keine Transaktionen', hint: 'Nach dem ersten Senden oder Empfangen erscheint Ihre Aktivität hier. Die On-Chain-Bestätigung kann einige Sekunden dauern — tippen Sie oben auf Aktualisieren.' },
-  };
-  const pack = M[L] || M.zh;
-  return txHistoryFriendlyHtml('📬', pack.title, pack.hint);
-}
 
-function txHistoryRowHtml(tx) {
-  const esc = function (s) {
-    const d = document.createElement('div');
-    d.textContent = String(s || '');
-    return d.innerHTML;
-  };
-  var addr = String(tx.addr || '');
-  var addrLine = addr.length > 8 ? (addr.slice(0, 8) + '...' + addr.slice(-6)) : addr;
-  var coin = String(tx.coin || '');
-  var hash = String(tx.hash || '');
-  const addrEscaped = esc(addrLine);
-  const amountEscaped = esc(tx.amount);
-  const typeEscaped = esc(tx.type);
-  const coinEscaped = esc(tx.coin);
-  const iconEscaped = esc(tx.icon);
-  const timeEscaped = esc(tx.time);
-  const hashAttr = esc(tx.hash);
-  const coinAttr = esc(tx.coin);
-  var col = wwTxSanitizeColor(tx.color);
-  return (
-    '<div class="ww-tx-history-row" role="button" tabindex="0" data-coin="' + coinAttr + '" data-hash="' + hashAttr + '"' +
-    ' style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:opacity 0.2s">' +
-    '<div style="width:36px;height:36px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">' + iconEscaped + '</div>' +
-    '<div style="flex:1;min-width:0">' +
-    '<div style="font-size:13px;font-weight:600;color:var(--text)">' + typeEscaped + ' ' + coinEscaped + '</div>' +
-    '<div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + addrEscaped + '</div>' +
-    '</div>' +
-    '<div style="text-align:right;flex-shrink:0">' +
-    '<div style="font-size:14px;font-weight:700;color:' + col + '">' + amountEscaped + '</div>' +
-    '<div style="font-size:10px;color:var(--text-muted)">' + timeEscaped + '</div>' +
-    '</div>' +
-    '</div>'
-  );
-}
+(function wwEarlyApplyTxSnapFromStorage() {
+  try {
+    if (typeof wwEnsureWalletPublicLoaded === 'function') wwEnsureWalletPublicLoaded();
+    if (typeof renderTxHistoryFromCache !== 'function') return;
+    var wid = typeof wwGetTxHistoryWid === 'function' ? wwGetTxHistoryWid() : '';
+    if (!wid) return;
+    var raw = localStorage.getItem(WW_TX_HISTORY_SNAP_KEY);
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    if (!o || o.wid !== wid || !Array.isArray(o.txs)) return;
+    window._wwTxHistoryCache = o.txs;
+    renderTxHistoryFromCache();
+  } catch (_e) {}
+})();
 
-function txHistoryFriendlyHtml(icon, title, hint) {
-  return '<div class="tx-empty-friendly"><div class="tx-empty-icon" aria-hidden="true">' + icon + '</div><div class="tx-empty-title">' + title + '</div><div class="tx-empty-hint">' + hint + '</div></div>';
-}
-
-function formatTimeAgo(ts) {
-  const diff = Date.now() - ts;
-  const m = Math.floor(diff / 60000);
-  const h = Math.floor(diff / 3600000);
-  const d = Math.floor(diff / 86400000);
-  if(d > 0) return d + '天前';
-  if(h > 0) return h + '小时前';
-  if(m > 0) return m + '分钟前';
-  return '刚刚';
-}
-
-function applyTxHistoryFilter() {
-  renderTxHistoryFromCache();
-}
+/** 首页与 hash 路由竞态时 goTo 可能早于钱包就绪：在 load 后再拉 1～2 次交易列表 */
+(function wwScheduleTxHistoryOnLoad() {
+  if (typeof window === 'undefined') return;
+  function tick() {
+    try {
+      if (typeof loadTxHistory !== 'function' || typeof wwResolveTrxAddressForHistory !== 'function') return;
+      if (!wwResolveTrxAddressForHistory()) return;
+      void loadTxHistory();
+    } catch (_e) {}
+  }
+  window.addEventListener('load', function () {
+    setTimeout(tick, 400);
+    setTimeout(tick, 2200);
+  });
+})();

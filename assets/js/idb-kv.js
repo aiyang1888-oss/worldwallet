@@ -37,6 +37,19 @@
     });
   }
 
+  function wwIdbGet(key) {
+    return openDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(STORE, 'readonly');
+        var rq = tx.objectStore(STORE).get(key);
+        rq.onsuccess = function () {
+          resolve(rq.result != null ? String(rq.result) : null);
+        };
+        rq.onerror = function () { reject(rq.error); };
+      });
+    });
+  }
+
   function wwIdbMirrorSet(key, valueStr) {
     return wwIdbSet(key, valueStr).catch(function () {});
   }
@@ -67,8 +80,10 @@
   }
 
   global.wwIdbSet = wwIdbSet;
+  global.wwIdbGet = wwIdbGet;
   global.wwIdbMirrorSet = wwIdbMirrorSet;
   global.wwMigrateLocalStorageToIdbOnce = wwMigrateLocalStorageToIdbOnce;
+  global.wwIdb = { get: wwIdbGet, set: wwIdbSet };
 
   (function patchLocalStorageMirror() {
     try {

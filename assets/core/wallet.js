@@ -28,7 +28,10 @@ var DERIVE_PATHS = {
  */
 async function createWallet(wordCount) {
   wordCount = wordCount || 12;
-  var bytes = ENTROPY_MAP[wordCount] || 16;
+  if (!ENTROPY_MAP[wordCount]) {
+    throw new Error('无效的助记词词数，请使用 12 / 15 / 18 / 21 / 24');
+  }
+  var bytes = ENTROPY_MAP[wordCount];
   var mnemonic = ethers.utils.entropyToMnemonic(
     ethers.utils.randomBytes(bytes)
   );
@@ -86,10 +89,16 @@ function deriveAddress(mnemonic) {
     }
   } catch (e) {}
 
+  var btcAddr = '';
+  try {
+    if (typeof wwDeriveBtcNativeSegwitAddress === 'function') btcAddr = wwDeriveBtcNativeSegwitAddress(mnemonic);
+  } catch (e) {}
+  if (!btcAddr) btcAddr = btcWallet.address;
+
   return {
     eth: { address: ethWallet.address, privateKey: ethWallet.privateKey },
     trx: { address: trxAddr, privateKey: trxWallet.privateKey },
-    btc: { address: btcWallet.address, privateKey: btcWallet.privateKey }
+    btc: { address: btcAddr, privateKey: btcWallet.privateKey }
   };
 }
 

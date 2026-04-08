@@ -45,7 +45,9 @@ class IDBCache {
         }
       });
 
-      console.log('[IDBCache] Initialized with', this._cache.size, 'keys');
+      if (typeof window !== 'undefined' && window.WW_DEBUG) {
+        console.log('[IDBCache] Initialized with', this._cache.size, 'keys');
+      }
       return true;
     } catch (e) {
       console.error('[IDBCache] Init failed:', e.message);
@@ -151,7 +153,9 @@ class IDBCache {
    * 从 IndexedDB 读取（存根 - 实现见 idb-kv.js）
    */
   async _getFromIDB(key) {
-    // 使用全局 IDB 实例（定义在 idb-kv.js）
+    if (typeof wwIdbGet === 'function') {
+      return await wwIdbGet(key);
+    }
     if (window.wwIdb && typeof window.wwIdb.get === 'function') {
       return await window.wwIdb.get(key);
     }
@@ -162,6 +166,10 @@ class IDBCache {
    * 写入 IndexedDB（存根 - 实现见 idb-kv.js）
    */
   async _setInIDB(key, value) {
+    if (typeof wwIdbSet === 'function') {
+      await wwIdbSet(key, value);
+      return;
+    }
     if (window.wwIdb && typeof window.wwIdb.set === 'function') {
       await window.wwIdb.set(key, value);
     }
@@ -194,7 +202,7 @@ window.wwIdbCache = new IDBCache();
 
 // 等待 IDB 初始化完成
 window.wwIdbCache._idbReady.then(ready => {
-  if (ready) {
+  if (ready && typeof window !== 'undefined' && window.WW_DEBUG) {
     console.log('[IDBCache] Ready');
   }
 });
