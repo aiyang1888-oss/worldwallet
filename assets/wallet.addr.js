@@ -219,8 +219,8 @@ function ensureNativeAddrInitialized() {
   initAddrWords();
 }
 
-// 万语地址中段：10 个随机汉字（每字独立抽取）；不使用 WW_WORDS_EXTRA 等地名词库
-// SINGLE_CHARS.zh 在 wallet.ui.js 中定义，此处仅作脚本解析顺序兜底
+// 万语地址中段：10 个随机字符（每字独立抽取），语言与当前界面语言一致（中文=随机汉字）；不使用 WW_WORDS_EXTRA 等地名词库
+// SINGLE_CHARS.* 在 wallet.ui.js 中定义，此处仅作脚本解析顺序兜底
 var WW_ZH_ADDR_CHAR_FALLBACK =
   '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪天地人和日月星斗甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥东南西北' +
   '等的个多咕咚得到来更中一二三四五六七八九十百千万千大小国人心正开平安乐吉祥如意';
@@ -230,6 +230,28 @@ function randWanYuZhChar() {
     ? SINGLE_CHARS.zh
     : WW_ZH_ADDR_CHAR_FALLBACK;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/** 当前 UI 语言 → 万语中段字符集键（英语界面仍生成万语备份数据时用简体汉字池） */
+function _wanYuMidLangKey() {
+  var l = (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'zh';
+  if (l === 'en') return 'zh';
+  return l;
+}
+
+/** 万语中段单字：按语言从 SINGLE_CHARS 各抽 1 个；无独立词表时拉丁语族用 a–z，乌尔都语近似用阿拉伯字母池 */
+function randWanYuMidCharForLang(langKey) {
+  var key = langKey || 'zh';
+  if (key === 'zh') return randWanYuZhChar();
+  if (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS[key] && SINGLE_CHARS[key].length)
+    return SINGLE_CHARS[key][Math.floor(Math.random() * SINGLE_CHARS[key].length)];
+  if (key === 'id' || key === 'ms' || key === 'sw') {
+    var lat = (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.nl) ? SINGLE_CHARS.nl : 'abcdefghijklmnopqrstuvwxyz';
+    return lat[Math.floor(Math.random() * lat.length)];
+  }
+  if (key === 'ur' && typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.ar && SINGLE_CHARS.ar.length)
+    return SINGLE_CHARS.ar[Math.floor(Math.random() * SINGLE_CHARS.ar.length)];
+  return randWanYuZhChar();
 }
 
 function randWord(lang) {
@@ -351,8 +373,9 @@ function initAddrWords() {
       return;
     }
     ADDR_WORDS.length = 0;
+    var midLang = _wanYuMidLangKey();
     for (let i = 0; i < 10; i++) {
-      ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
+      ADDR_WORDS.push({ word: randWanYuMidCharForLang(midLang), lang: midLang, custom: false });
     }
     var preEl = document.getElementById('addrPrefix');
     var sufEl = document.getElementById('addrSuffix');
@@ -439,7 +462,7 @@ function openWordEditor(idx) {
   if (input === null) return;
   var trimmed = String(input).trim();
   if (trimmed.length === 0) {
-    ADDR_WORDS[idx] = { word: randWanYuZhChar(), lang: w.lang, custom: false };
+    ADDR_WORDS[idx] = { word: randWanYuMidCharForLang(w.lang || 'zh'), lang: w.lang || 'zh', custom: false };
     renderAddrWords();
     persistWanYuAddrToStorage();
     try { if (typeof updateAddr === 'function') updateAddr(); } catch (_e) {}
@@ -447,10 +470,6 @@ function openWordEditor(idx) {
   }
   if (trimmed.length > 4) {
     alert('max 4');
-    return;
-  }
-  if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af]+$/.test(trimmed)) {
-    alert('chars only');
     return;
   }
   ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
@@ -503,9 +522,9 @@ function copyHomeAddr() {
   }
 }
 
-function editHomeAddr() {
+function openHomeTransfer() {
   tapHaptic(12);
-  if (typeof goTab === 'function') goTab('tab-addr');
+  if (typeof goTo === 'function') goTo('page-transfer');
 }
 
 function getNativeAddr() {
