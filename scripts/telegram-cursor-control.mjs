@@ -34,6 +34,7 @@ const API = `https://api.telegram.org/bot${TOKEN}`;
 const BTN = {
   workspace: '📂 打开工作区',
   walletHtml: '📄 wallet.html',
+  run: '▶ Run',
   agentStatus: 'ℹ️ Agent 状态',
   help: '❓ 帮助',
   panel: '⌨️ 显示按钮',
@@ -43,6 +44,7 @@ const BTN = {
 const TEXT_TO_ACTION = {
   [BTN.workspace]: 'cw_workspace',
   [BTN.walletHtml]: 'cw_wallet_html',
+  [BTN.run]: 'cw_run',
   [BTN.agentStatus]: 'cw_agent_status',
   [BTN.help]: 'cw_help',
   [BTN.panel]: 'cw_panel',
@@ -63,8 +65,8 @@ const GOTO_TARGET = path.join(WORKSPACE, 'dist', 'wallet.html');
 const REPLY_KEYBOARD = {
   keyboard: [
     [{ text: BTN.workspace }, { text: BTN.walletHtml }],
-    [{ text: BTN.agentStatus }, { text: BTN.help }],
-    [{ text: BTN.panel }],
+    [{ text: BTN.run }, { text: BTN.agentStatus }],
+    [{ text: BTN.help }, { text: BTN.panel }],
   ],
   resize_keyboard: true,
   one_time_keyboard: false,
@@ -79,9 +81,10 @@ const INLINE_KEYBOARD = {
       { text: BTN.walletHtml, callback_data: 'cw_wallet_html' },
     ],
     [
+      { text: BTN.run, callback_data: 'cw_run' },
       { text: BTN.agentStatus, callback_data: 'cw_agent_status' },
-      { text: BTN.help, callback_data: 'cw_help' },
     ],
+    [{ text: BTN.help, callback_data: 'cw_help' }],
   ],
 };
 
@@ -91,6 +94,18 @@ function runCursor(args) {
     detached: true,
     stdio: 'ignore',
     env: { ...process.env },
+  });
+  child.unref();
+}
+
+/** 后台启动 npm run dev（静态站，默认端口见 package.json） */
+function runNpmDev() {
+  const child = spawn('npm', ['run', 'dev'], {
+    cwd: WORKSPACE,
+    detached: true,
+    stdio: 'ignore',
+    env: { ...process.env },
+    shell: false,
   });
   child.unref();
 }
@@ -149,6 +164,19 @@ async function dispatchAction(chatId, action, opts = {}) {
       await sendChat(chatId, `已触发：cursor goto\n${g}`, withKeyboard);
       return;
     }
+    case 'cw_run':
+      runNpmDev();
+      await sendChat(
+        chatId,
+        [
+          '已后台启动: npm run dev',
+          `目录: ${WORKSPACE}`,
+          '默认: http://127.0.0.1:8766/wallet.html',
+          '若端口被占用，请先结束本机已占用的 http.server。',
+        ].join('\n'),
+        withKeyboard
+      );
+      return;
     case 'cw_agent_status': {
       const { execFile } = await import('child_process');
       await new Promise((resolve) => {
@@ -179,6 +207,7 @@ async function dispatchAction(chatId, action, opts = {}) {
           '• 本机需已安装 cursor 并完成 cursor agent login',
           `• 打开工作区 ≈ cursor -r -a ${WORKSPACE}`,
           '• 打开 wallet.html ≈ cursor -g …/dist/wallet.html:1',
+          '• Run ≈ 后台 npm run dev（本地预览 dist）',
           '• 仅 TELEGRAM_CHAT_ID 可使用',
         ].join('\n'),
         withKeyboard
@@ -209,6 +238,7 @@ async function handleCallback(q) {
   try {
     if (data === 'cw_agent_status') await answerCallback(q.id, '查询中…');
     else if (data === 'cw_help') await answerCallback(q.id, '帮助');
+    else if (data === 'cw_run') await answerCallback(q.id, '已启动 dev');
     else if (data.startsWith('cw_')) await answerCallback(q.id, '已执行');
 
     await dispatchAction(chatId, data, { skipReplyKeyboard: false });
