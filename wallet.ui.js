@@ -870,9 +870,16 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) {}
   applySeoForPage(pageId);
+  var activePage=document.getElementById(pageId);
+  if(!activePage){
+    console.warn('[WorldToken] 页面不存在:',pageId);
+    if(pageId!=='page-home'){
+      var _wwGoFallback=document.getElementById('page-home');
+      if(_wwGoFallback)return goTo('page-home',opts);
+    }
+    return;
+  }
   document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
-  const activePage=document.getElementById(pageId);
-  if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
   activePage.classList.add('active');
   activePage.style.display='flex';
   var _tabBar = document.getElementById('tabBar');
