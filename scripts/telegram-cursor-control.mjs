@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Telegram 内联按钮 → 本机 Cursor CLI（需与 Bot 同一台机器长期运行本脚本）
+ * Telegram：内联按钮 + 回复键盘（输入框上方常驻按钮）→ 本机 Cursor CLI
  *
  * 环境变量（见 .env.example）：
  *   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
@@ -30,6 +30,24 @@ const ENABLED = process.env.TELEGRAM_CONTROL_ENABLED === '1';
 
 const API = `https://api.telegram.org/bot${TOKEN}`;
 
+/** 回复键盘按钮文案（须与下方 MAP 一致） */
+const BTN = {
+  workspace: '📂 打开工作区',
+  walletHtml: '📄 wallet.html',
+  agentStatus: 'ℹ️ Agent 状态',
+  help: '❓ 帮助',
+  panel: '⌨️ 显示按钮',
+};
+
+/** 与回复键盘第一列文案对齐，用于识别用户点击 */
+const TEXT_TO_ACTION = {
+  [BTN.workspace]: 'cw_workspace',
+  [BTN.walletHtml]: 'cw_wallet_html',
+  [BTN.agentStatus]: 'cw_agent_status',
+  [BTN.help]: 'cw_help',
+  [BTN.panel]: 'cw_panel',
+};
+
 function deny(reason) {
   console.error(`[telegram-cursor-control] ${reason}`);
   process.exit(1);
@@ -41,7 +59,33 @@ if (!fs.existsSync(WORKSPACE)) deny(`工作区不存在: ${WORKSPACE}`);
 
 const GOTO_TARGET = path.join(WORKSPACE, 'dist', 'wallet.html');
 
-/** @param {string} cmd @param {string[]} args */
+/** 输入框上方的常驻自定义键盘（ReplyKeyboardMarkup） */
+const REPLY_KEYBOARD = {
+  keyboard: [
+    [{ text: BTN.workspace }, { text: BTN.walletHtml }],
+    [{ text: BTN.agentStatus }, { text: BTN.help }],
+    [{ text: BTN.panel }],
+  ],
+  resize_keyboard: true,
+  one_time_keyboard: false,
+  is_persistent: true,
+  input_field_placeholder: '点下方按钮或发 /start',
+};
+
+const INLINE_KEYBOARD = {
+  inline_keyboard: [
+    [
+      { text: BTN.workspace, callback_data: 'cw_workspace' },
+      { text: BTN.walletHtml, callback_data: 'cw_wallet_html' },
+    ],
+    [
+      { text: BTN.agentStatus, callback_data: 'cw_agent_status' },
+      { text: BTN.help, callback_data: 'cw_help' },
+    ],
+  ],
+};
+
+/** @param {string[]} args */
 function runCursor(args) {
   const child = spawn('cursor', args, {
     detached: true,
@@ -50,19 +94,6 @@ function runCursor(args) {
   });
   child.unref();
 }
-
-const KEYBOARD = {
-  inline_keyboard: [
-    [
-      { text: '📂 打开工作区', callback_data: 'cw_workspace' },
-      { text: '📄 打开 wallet.html', callback_data: 'cw_wallet_html' },
-    ],
-    [
-      { text: 'ℹ️ Agent 状态', callback_data: 'cw_agent_status' },
-      { text: '❓ 帮助', callback_data: 'cw_help' },
-    ],
-  ],
-};
 
 async function apiPost(method, payload) {
   const { data } = await axios.post(`${API}/${method}`, payload, { timeout: 60000 });
@@ -97,6 +128,74 @@ function isAllowed(chatId) {
   return String(chatId) === ALLOWED_CHAT;
 }
 
+/**
+ * @param {string|number} chatId
+ * @param {string} action
+ * @param {{ skipReplyKeyboard?: boolean }} [opts]
+ */
+async function dispatchAction(chatId, action, opts = {}) {
+  const withKeyboard = opts.skipReplyKeyboard
+    ? {}
+    : { reply_markup: REPLY_KEYBOARD };
+
+  switch (action) {
+    case 'cw_workspace':
+      runCursor(['-r', '-a', WORKSPACE]);
+      await sendChat(chatId, `已触发：cursor 打开工作区\n${WORKSPACE}`, withKeyboard);
+      return;
+    case 'cw_wallet_html': {
+      const g = `${GOTO_TARGET}:1`.replace(/\\/g, '/');
+      runCursor(['-r', '-g', g]);
+      await sendChat(chatId, `已触发：cursor goto\n${g}`, withKeyboard);
+      return;
+    }
+    case 'cw_agent_status': {
+      const { execFile } = await import('child_process');
+      await new Promise((resolve) => {
+        execFile(
+          'cursor',
+          ['agent', 'status'],
+          { cwd: WORKSPACE, timeout: 20000, maxBuffer: 1024 * 512 },
+          async (err, stdout, stderr) => {
+            const out = [stdout, stderr].filter(Boolean).join('\n').trim() || String(err?.message || '');
+            try {
+              await sendChat(chatId, `Agent status:\n${out.slice(0, 3500)}`, withKeyboard);
+            } catch (e) {
+              console.error(e);
+            }
+            resolve();
+          }
+        );
+      });
+      return;
+    }
+    case 'cw_help':
+      await sendChat(
+        chatId,
+        [
+          'Cursor 遥控说明',
+          '',
+          '• 下方键盘可常驻；若消失可点「显示按钮」或发 /start',
+          '• 本机需已安装 cursor 并完成 cursor agent login',
+          `• 打开工作区 ≈ cursor -r -a ${WORKSPACE}`,
+          '• 打开 wallet.html ≈ cursor -g …/dist/wallet.html:1',
+          '• 仅 TELEGRAM_CHAT_ID 可使用',
+        ].join('\n'),
+        withKeyboard
+      );
+      return;
+    case 'cw_panel':
+      await sendChat(
+        chatId,
+        '已刷新下方自定义键盘。若仍看不到：Telegram 设置 → 把键盘展开，或重启 Telegram。',
+        { reply_markup: REPLY_KEYBOARD }
+      );
+      return;
+    default:
+      await sendChat(chatId, '未知操作', withKeyboard);
+  }
+}
+
 async function handleCallback(q) {
   const chatId = q.message?.chat?.id;
   const uid = q.from?.id;
@@ -108,56 +207,15 @@ async function handleCallback(q) {
   const data = q.data || '';
 
   try {
-    switch (data) {
-      case 'cw_workspace':
-        runCursor(['-r', '-a', WORKSPACE]);
-        await answerCallback(q.id, '已请求打开工作区');
-        await sendChat(chatId, `已触发：cursor 打开工作区\n${WORKSPACE}`);
-        break;
-      case 'cw_wallet_html': {
-        const g = `${GOTO_TARGET}:1`.replace(/\\/g, '/');
-        runCursor(['-r', '-g', g]);
-        await answerCallback(q.id, '已请求打开文件');
-        await sendChat(chatId, `已触发：cursor goto\n${g}`);
-        break;
-      }
-      case 'cw_agent_status': {
-        await answerCallback(q.id, '查询中…');
-        const { execFile } = await import('child_process');
-        execFile(
-          'cursor',
-          ['agent', 'status'],
-          { cwd: WORKSPACE, timeout: 20000, maxBuffer: 1024 * 512 },
-          async (err, stdout, stderr) => {
-            const out = [stdout, stderr].filter(Boolean).join('\n').trim() || String(err?.message || '');
-            await sendChat(chatId, `Agent status:\n${out.slice(0, 3500)}`);
-          }
-        );
-        break;
-      }
-      case 'cw_help':
-        await answerCallback(q.id, '帮助');
-        await sendChat(
-          chatId,
-          [
-            'Cursor 遥控说明',
-            '',
-            '• 本机需已安装 cursor 并完成 cursor agent login',
-            `• 「打开工作区」≈ cursor -r -a ${WORKSPACE}`,
-            `• 「打开 wallet.html」≈ cursor -g …/dist/wallet.html:1`,
-            '• 仅 TELEGRAM_CHAT_ID 可使用',
-            '',
-            '保持运行: npm run telegram:cursor（可用 tmux / pm2）',
-          ].join('\n')
-        );
-        break;
-      default:
-        await answerCallback(q.id, '未知操作');
-    }
+    if (data === 'cw_agent_status') await answerCallback(q.id, '查询中…');
+    else if (data === 'cw_help') await answerCallback(q.id, '帮助');
+    else if (data.startsWith('cw_')) await answerCallback(q.id, '已执行');
+
+    await dispatchAction(chatId, data, { skipReplyKeyboard: false });
   } catch (e) {
     console.error(e);
     await answerCallback(q.id, '执行失败');
-    await sendChat(chatId, `错误: ${e.message}`);
+    await sendChat(chatId, `错误: ${e.message}`, { reply_markup: REPLY_KEYBOARD });
   }
 }
 
@@ -168,13 +226,29 @@ async function handleMessage(msg) {
     return;
   }
   const t = (msg.text || '').trim();
+
   if (t === '/start' || t === '/cursor') {
-    await sendChat(chatId, '选择操作（本机 Cursor）：', { reply_markup: KEYBOARD });
+    await sendChat(chatId, '下方为自定义键盘（在输入框上面）；再下一条消息带内联按钮。', {
+      reply_markup: REPLY_KEYBOARD,
+    });
+    await sendChat(chatId, '或使用内联按钮：', { reply_markup: INLINE_KEYBOARD });
     return;
   }
-  if (t === '/help') {
-    await sendChat(chatId, '发送 /start 显示按钮面板。', { reply_markup: KEYBOARD });
+
+  if (t === '/help' || t === '/keyboard') {
+    await sendChat(chatId, '已重新显示自定义键盘。', { reply_markup: REPLY_KEYBOARD });
+    return;
   }
+
+  const action = TEXT_TO_ACTION[t];
+  if (action) {
+    await dispatchAction(chatId, action);
+    return;
+  }
+
+  await sendChat(chatId, '未知指令。发 /start 显示按钮，或点输入框上方键盘。', {
+    reply_markup: REPLY_KEYBOARD,
+  });
 }
 
 let offset = 0;
@@ -195,7 +269,9 @@ async function poll() {
 async function main() {
   const me = await apiGet('getMe');
   console.log(`[telegram-cursor-control] Bot @${me.username} 轮询中… 工作区: ${WORKSPACE}`);
-  await sendChat(ALLOWED_CHAT, `Cursor 遥控已启动（工作区: ${WORKSPACE}）\n发送 /start 显示按钮。`).catch(() => {});
+  await sendChat(ALLOWED_CHAT, `Cursor 遥控已启动（工作区: ${WORKSPACE}）\n发 /start 显示输入框上方按钮。`, {
+    reply_markup: REPLY_KEYBOARD,
+  }).catch(() => {});
 
   for (;;) {
     try {
