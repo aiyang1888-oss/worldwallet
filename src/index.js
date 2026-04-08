@@ -13,6 +13,9 @@ class DemoWallet {
    * Add balance (有意的 bug：没有验证金额 > 0)
    */
   addBalance(amount) {
+    if (amount <= 0) {
+      throw new Error('Amount must be > 0');
+    }
     this.balance = this.balance + amount;  // BUG: 应该验证 amount > 0
     this.transactions.push({
       type: 'add',
