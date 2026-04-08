@@ -810,8 +810,25 @@ body {
 .chain-badge.eth { background: rgba(100,100,255,0.12); border: 1px solid rgba(100,100,255,0.25); color: #aaaaff; }
 .chain-badge.btc { background: rgba(255,165,0,0.12); border: 1px solid rgba(255,165,0,0.25); color: #ffb84d; }
 .chain-hash { font-family: monospace; font-size: 11px; color: var(--text-muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chain-copy-btn { font-size: 13px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; padding: 4px; }
-.chain-copy-btn:hover { color: var(--gold); }
+.chain-copy-btn {
+  flex-shrink: 0;
+  min-width: 44px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  line-height: 1.2;
+  color: var(--text-dim);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+.chain-copy-btn:hover {
+  color: var(--gold-light);
+  border-color: rgba(200,168,75,0.35);
+  background: rgba(200,168,75,0.08);
+}
 
 /* 一键复制两个地址 */
 .copy-both-btn {
