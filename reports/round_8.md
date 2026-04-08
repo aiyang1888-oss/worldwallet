@@ -1,23 +1,24 @@
-# Round 8 修复报告 - 2026-04-08 08:10
+# Round 8 修复报告 - 2026-04-08 08:30
 
 ## 发现的问题
-- [P1] `wallet.runtime.js` 中 `submitClaim` 在领取成功后对 `#claimedKeyword`、`#claimedRank` 写入 `textContent`，当前 `wallet.html` 的 `page-claimed` 仅有 `#claimedAmount` 与 `#claimedMessage`，导致 `null` 属性访问并中断流程；同时对 `ww_hongbaos` 的 `JSON.parse` 无防护，数据损坏时会抛错。
+- [P3] `#homeBalanceChartWrap` 存在重复 `class` 属性（`home-balance-chart-wrap` 与 `u5`），属无效 HTML；若简单合并为同一 `class` 列表，`.u5{display:none}` 会隐藏近 7 日资产图（与底栏注释「勿加 .u5」一致）。承接 round_7「剩余问题」。
 
 ## 修复内容
-- 文件：`wallet.runtime.js`
-- 函数：`submitClaim`
-- 修改：对 `claimInput`/`claimInputBox` 安全取值；`JSON.parse` 包在 try-catch 并归一化对象；成功页更新时对 `#claimedAmount`/`#claimedKeyword`/`#claimedRank` 判空，缺失时用 `#claimedMessage` 展示口令与名次摘要。
+- 文件：`wallet.html`
+- 元素：`#homeBalanceChartWrap`
+- 修改：保留单一 `class="home-balance-chart-wrap"`，去掉误加的第二个 `class="u5"`，既消除重复属性又避免图表被隐藏。
 
 ## 修改文件
-- `wallet.runtime.js`
+- `wallet.html`
 
 ## 剩余问题
-- `page-home` 上 `#homeBalanceChartWrap` 仍存在重复 `class` 属性（HTML 小问题，不影响脚本）。
-- `markBackupDone` 等处对 `localStorage` 的 `JSON.parse` 仍可按需加固（低优先级）。
+- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名函数，后加载文件覆盖前者（架构债，本轮未改）。
+- [P3] TOTP 解锁弹窗内按钮仍存在重复 `class`（`btn-primary` 与 `u13`），可后续合并为单一 `class` 列表。
+- [P1/P2] `wallet.runtime.js` 中 `setAmt`、`randomBlessing` 等对 `#hbAmount`/`#hbMessage` 仍假定节点存在，极端精简 DOM 时可加固。
 
 ## 测试结果
-- TEST-A: PASS — `wallet.html` 中仅 `data-ww-fn="selectTransferCoin"`；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将 `selectTransferCoin` 挂到 `window`。
-- TEST-B: PASS — `wallet.html` 中无 `data-ww-go` 属性。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空实现（含对其他函数的实质调用或业务逻辑）。
+- TEST-A: PASS — 仅 `data-ww-fn="selectTransferCoin"`；`wallet.ui.js` 与 `wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 均保证 `window.selectTransferCoin` 可用。
+- TEST-B: PASS — 无 `data-ww-go`。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空函数体或实质逻辑。
 
-验证：在浏览器打开 `wallet.html`，创建/导入钱包后进入礼物 → 领取页，输入有效口令领取，应进入「领取成功」页且无控制台报错；`localStorage` 中 `ww_hongbaos` 为非法 JSON 时不应导致未捕获异常。
+Git：`56ba685` — `fix: remove duplicate class on home balance chart wrap (valid HTML, keep chart visible)`
