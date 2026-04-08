@@ -4214,7 +4214,14 @@ function confirmTransfer() {
   broadcastRealTransfer().then(ok => {
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
     if(ok) {
-      goTo('page-swoosh'); // 广播成功，显示成功动画
+      // wallet.html 精简版无 page-swoosh：直接回首页并刷新余额
+      if (document.getElementById('swooshCoin')) {
+        goTo('page-swoosh');
+      } else {
+        if (typeof showToast === 'function') showToast('✅ 转账已提交', 'success');
+        goTo('page-home');
+        setTimeout(function () { if (typeof loadBalances === 'function') loadBalances(); }, 2000);
+      }
     } else {
       showToast('⚠️ 转账广播失败，请检查余额和网络', 'warning');
     }
@@ -4223,17 +4230,22 @@ function confirmTransfer() {
     showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
   });
 
-  // 启动嗖动画
+  // 启动嗖动画（仅当完整版 DOM 存在；否则由上方 then 分支已回首页）
   setTimeout(() => {
     const coin = document.getElementById('swooshCoin');
+    if (!coin) return;
     const trail = document.getElementById('swooshTrail');
     const receiver = document.getElementById('swooshReceiver');
     const check = document.getElementById('swooshCheck');
     if(coin) coin.classList.add('swoosh-coin');
     if(trail) trail.classList.add('swoosh-trail');
     setTimeout(()=>{ if(receiver) receiver.classList.add('receiver-glow'); if(check) { check.textContent='✓'; check.style.color='#4ac84a'; check.style.fontSize='20px'; } }, 900);
-    // 动画结束后跳成功页
-    setTimeout(()=>{ goTo('page-transfer-success'); setTimeout(loadBalances, 2000); }, 1800);
+    setTimeout(()=>{
+      if (document.getElementById('page-transfer-success')) {
+        goTo('page-transfer-success');
+        setTimeout(loadBalances, 2000);
+      }
+    }, 1800);
   }, 200);
 }
 
