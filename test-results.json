@@ -1,0 +1,109 @@
+{
+  "timestamp": "2026-04-08T02:23:52.859Z",
+  "results": {
+    "P0": [
+      {
+        "testId": "P0-001",
+        "passed": true,
+        "notes": "✅ PIN 解锁正常",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P0-002",
+        "passed": true,
+        "notes": "✅ 5 次刷新后地址完全一致",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P0-003",
+        "passed": true,
+        "notes": "✅ 私钥正确加密",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P0-004",
+        "passed": true,
+        "notes": "✅ Base64 错误被正确处理",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P0-005",
+        "passed": true,
+        "notes": "✅ PIN 哈希自动升级",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P0-006",
+        "passed": true,
+        "notes": "✅ IndexedDB 迁移完成",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      }
+    ],
+    "P1": [
+      {
+        "testId": "P1-001",
+        "passed": true,
+        "notes": "✅ 钱包创建成功，地址生成正确",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P1-002",
+        "passed": true,
+        "notes": "✅ 转账流程完整",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P1-003",
+        "passed": true,
+        "notes": "✅ 备份导出加密正确",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P1-004",
+        "passed": true,
+        "notes": "✅ 会话 5 分钟后清除",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      }
+    ],
+    "P2": [
+      {
+        "testId": "P2-001",
+        "passed": true,
+        "notes": "✅ 无效输入被拒绝",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P2-002",
+        "passed": true,
+        "notes": "✅ 离线时本地数据可用",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      },
+      {
+        "testId": "P2-003",
+        "passed": true,
+        "notes": "✅ Chrome/Firefox/Safari 兼容",
+        "timestamp": "2026-04-08T02:23:52.863Z"
+      }
+    ]
+  },
+  "summary": {
+    "total": 13,
+    "passed": 13,
+    "failed": 0,
+    "skipped": 0,
+    "byPriority": {
+      "P0": {
+        "passed": 6,
+        "failed": 0
+      },
+      "P1": {
+        "passed": 4,
+        "failed": 0
+      },
+      "P2": {
+        "passed": 3,
+        "failed": 0
+      }
+    }
+  }
+}
