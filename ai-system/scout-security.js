@@ -1,6 +1,6 @@
 /**
  * Scout Rules for WorldWallet Security Module
- * 扫描 wallet-shell/core/security.js 找出安全问题
+ * 扫描 dist/core/security.js 找出安全问题
  */
 
 const fs = require('fs');
@@ -9,7 +9,7 @@ const path = require('path');
 class SecurityScout {
   constructor(projectRoot) {
     this.projectRoot = projectRoot;
-    this.securityFile = path.join(projectRoot, 'wallet-shell/core/security.js');
+    this.securityFile = path.join(projectRoot, 'dist/core/security.js');
   }
 
   /**
@@ -39,7 +39,7 @@ class SecurityScout {
             issues.push({
               id: 'SECURITY-001',
               severity: 'high',
-              file: 'wallet-shell/core/security.js',
+              file: 'dist/core/security.js',
               line: item.line,
               description: 'Direct comparison (===) used for sensitive data - vulnerable to timing attack',
               code_snippet: item.content.trim(),
@@ -65,7 +65,7 @@ class SecurityScout {
             issues.push({
               id: 'SECURITY-002',
               severity: 'high',
-              file: 'wallet-shell/core/security.js',
+              file: 'dist/core/security.js',
               line: item.line,
               description: 'atob() call without try-catch - can throw on invalid base64',
               code_snippet: item.content.trim(),
@@ -88,7 +88,7 @@ class SecurityScout {
           issues.push({
             id: 'SECURITY-003',
             severity: 'medium',
-            file: 'wallet-shell/core/security.js',
+            file: 'dist/core/security.js',
             line: item.line,
             description: 'Hardcoded salt value - all users share same salt, vulnerable to precomputed hash tables',
             code_snippet: item.content.trim(),

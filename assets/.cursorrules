@@ -1,0 +1,18 @@
+# WorldWallet 修复任务
+
+严格按照 EXECUTE_FIX.md 中的指令执行以下修复：
+
+## 优先级 P0 任务
+1. 在 wallet.html 中添加完整的 page-password-restore 页面（包含 HTML 和 CSS）
+2. 在 wallet.ui.js 中添加 PIN 解锁的 JavaScript 逻辑
+3. 修复 page-home 的空白问题（添加 REAL_WALLET 检查）
+
+## 要求
+- 保持代码风格与现有代码一致
+- 不要删除或修改无关代码
+- 完成后自动 git commit 和 push
+- 确保所有修改都经过测试
+
+## 参考文件
+详细说明：EXECUTE_FIX.md
+紧急任务：CURSOR_FIX_NOW.md

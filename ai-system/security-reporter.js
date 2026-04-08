@@ -25,7 +25,7 @@ class SecurityReporter {
     let markdown = `# WorldWallet Security Audit Report
 
 **生成时间**: ${timestamp}  
-**扫描模块**: wallet-shell/core/security.js  
+**扫描模块**: dist/core/security.js  
 **扫描工具**: AI Security Scout  
 **报告版本**: 1.0
 
@@ -172,7 +172,7 @@ test('should handle invalid base64 in salt', () => {
       metadata: {
         timestamp: new Date().toISOString(),
         project: 'WorldWallet',
-        target_module: 'wallet-shell/core/security.js',
+        target_module: 'dist/core/security.js',
         tool: 'AI Security Scout v1.0',
         report_version: '1.0'
       },

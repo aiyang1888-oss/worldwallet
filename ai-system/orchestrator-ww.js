@@ -361,7 +361,7 @@ function constantTimeEqual(a, b) {
     const execution = {
       timestamp: new Date().toISOString(),
       project: 'WorldWallet',
-      target_module: 'wallet-shell/core/security.js',
+      target_module: 'dist/core/security.js',
       total_duration: totalDuration,
       phases: {
         scout: scout,

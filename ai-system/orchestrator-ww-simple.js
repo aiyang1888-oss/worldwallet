@@ -101,7 +101,7 @@ class SecurityAuditDemo {
       const execution = {
         timestamp: new Date().toISOString(),
         project: 'WorldWallet',
-        target_module: 'wallet-shell/core/security.js',
+        target_module: 'dist/core/security.js',
         phase: 'Scout + Reviewer Demo',
         total_duration: totalTime,
         scout: scoutResult,

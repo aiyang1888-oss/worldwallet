@@ -1,4 +1,4 @@
-// wallet.dom-bind.js — CSP：wallet.html 内联事件由同源脚本绑定（配合 data-ww-*）
+// wallet.dom-bind.js — CSP：表单/输入/遮罩由本文件绑定；wallet.html 勿再写重复的 onsubmit/oninput/onchange/onkeydown 或遮罩 onclick（否则会执行两次）
 (function () {
   function wwCall(name) {
     try {
@@ -134,14 +134,19 @@
       var fn = el.getAttribute('data-ww-fn');
       if (fn === 'deleteWalletRow' || fn === 'wwDeleteLocalWallet') {
         if (!confirm('确定删除本机钱包？此操作会清空本地数据。')) return;
-        try {
-          localStorage.removeItem('ww_wallet');
-          localStorage.removeItem('ww_pin');
-          localStorage.removeItem('ww_hongbaos');
-        } catch (_ls) {}
-        try {
-          window.REAL_WALLET = null;
-        } catch (_rw) {}
+        if (typeof window.wwPurgeLocalWalletStorage === 'function') window.wwPurgeLocalWalletStorage();
+        else {
+          try {
+            localStorage.removeItem('ww_wallet');
+            localStorage.removeItem('ww_pin');
+            localStorage.removeItem('ww_pin_hash');
+            localStorage.removeItem('ww_pin_device_salt_v1');
+            localStorage.removeItem('ww_hongbaos');
+          } catch (_ls) {}
+          try {
+            window.REAL_WALLET = null;
+          } catch (_rw) {}
+        }
         if (typeof window.goTo === 'function') window.goTo('page-welcome');
         wwCall('showToast', '钱包已删除', 'success');
         ev.preventDefault();
@@ -169,7 +174,21 @@
     }
   }
 
+  function initNavBackKeyboard() {
+    document.querySelectorAll('.nav-back,.pin-setup-cancel').forEach(function (el) {
+      if (el.getAttribute('tabindex') == null) el.setAttribute('tabindex', '0');
+      if (!el.getAttribute('role')) el.setAttribute('role', 'button');
+      if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', el.classList.contains('pin-setup-cancel') ? '取消' : '返回');
+      el.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Enter' && ev.key !== ' ') return;
+        ev.preventDefault();
+        el.click();
+      });
+    });
+  }
+
   function run() {
+    initNavBackKeyboard();
     bindFormSubmit('pageRestorePinForm', 'submitPageRestorePin');
     bindFormSubmit('pinUnlockForm', 'submitPinUnlock');
 

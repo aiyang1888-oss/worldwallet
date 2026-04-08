@@ -16,7 +16,7 @@
       "created_at": "2026-04-08T02:03:11.801Z",
       "issue": {
         "description": "atob() call without try-catch - can throw on invalid base64",
-        "file": "wallet-shell/core/security.js",
+        "file": "dist/core/security.js",
         "line": 54,
         "code_snippet": "var salt = Uint8Array.from(atob(bundle.salt), function(c) { return c.charCodeAt(0); });"
       },
@@ -48,7 +48,7 @@
       "created_at": "2026-04-08T02:03:11.802Z",
       "issue": {
         "description": "atob() call without try-catch - can throw on invalid base64",
-        "file": "wallet-shell/core/security.js",
+        "file": "dist/core/security.js",
         "line": 55,
         "code_snippet": "var iv = Uint8Array.from(atob(bundle.iv), function(c) { return c.charCodeAt(0); });"
       },
@@ -80,7 +80,7 @@
       "created_at": "2026-04-08T02:03:11.802Z",
       "issue": {
         "description": "atob() call without try-catch - can throw on invalid base64",
-        "file": "wallet-shell/core/security.js",
+        "file": "dist/core/security.js",
         "line": 56,
         "code_snippet": "var data = Uint8Array.from(atob(bundle.data), function(c) { return c.charCodeAt(0); });"
       },

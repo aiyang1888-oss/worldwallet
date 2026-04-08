@@ -322,7 +322,7 @@ function showTestPlan() {
   测试方式: 手工测试 (需要浏览器)
   
   记录结果:
-    1. 打开 dist/wallet.html 或 wallet-shell/index.html
+    1. 打开 dist/wallet.html
     2. 按上述步骤逐一执行
     3. 记录通过/失败
     4. 完成后运行: node test-runner.js --record

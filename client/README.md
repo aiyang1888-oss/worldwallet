@@ -1,6 +1,6 @@
 # WorldWallet React Native client (optional)
 
-This folder is a small React Native UI layer. The production wallet is the web app under **`../wallet-shell/`**.
+This folder is a small React Native UI layer. The production wallet is the web app under **`../dist/`** (static `wallet.html` and assets).
 
 ## Setup
 

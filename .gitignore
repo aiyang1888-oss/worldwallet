@@ -7,6 +7,8 @@ node_modules/
 .expo/
 dist/*
 !dist/.gitkeep
+# 勿在 dist/ 内嵌套独立 Git 仓库（误操作会产生 dist/.git）
+dist/.git/
 web-build/
 # Generated from dist/assets by scripts/sync-public-wallet.js
 public/wallet.html

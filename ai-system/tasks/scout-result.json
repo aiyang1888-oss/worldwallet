@@ -3,7 +3,7 @@
     {
       "id": "SECURITY-002",
       "severity": "high",
-      "file": "wallet-shell/core/security.js",
+      "file": "dist/core/security.js",
       "line": 54,
       "description": "atob() call without try-catch - can throw on invalid base64",
       "code_snippet": "var salt = Uint8Array.from(atob(bundle.salt), function(c) { return c.charCodeAt(0); });",
@@ -13,7 +13,7 @@
     {
       "id": "SECURITY-002",
       "severity": "high",
-      "file": "wallet-shell/core/security.js",
+      "file": "dist/core/security.js",
       "line": 55,
       "description": "atob() call without try-catch - can throw on invalid base64",
       "code_snippet": "var iv = Uint8Array.from(atob(bundle.iv), function(c) { return c.charCodeAt(0); });",
@@ -23,7 +23,7 @@
     {
       "id": "SECURITY-002",
       "severity": "high",
-      "file": "wallet-shell/core/security.js",
+      "file": "dist/core/security.js",
       "line": 56,
       "description": "atob() call without try-catch - can throw on invalid base64",
       "code_snippet": "var data = Uint8Array.from(atob(bundle.data), function(c) { return c.charCodeAt(0); });",

@@ -182,7 +182,7 @@ ai-system/
       "issue_id": "1",
       "bug_id": "SECURITY-002",
       "severity": "high",
-      "file": "wallet-shell/core/security.js",
+      "file": "dist/core/security.js",
       "line": 54,
       "description": "...",
       "code_snippet": "...",

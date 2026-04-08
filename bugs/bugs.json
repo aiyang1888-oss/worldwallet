@@ -1,6 +1,6 @@
 [
   {
-    "file": "wallet-shell/core/security.js",
+    "file": "dist/core/security.js",
     "line": 133,
     "severity": "high",
     "type": "logic",
@@ -8,7 +8,7 @@
     "fix_suggestion": "Generate unique random salt per user, store alongside hash using PBKDF2, or switch to bcrypt/argon2 with per-user salt"
   },
   {
-    "file": "wallet-shell/core/security.js",
+    "file": "dist/core/security.js",
     "line": 51,
     "severity": "high",
     "type": "runtime",
@@ -16,7 +16,7 @@
     "fix_suggestion": "Wrap atob calls in try-catch block and return null or throw descriptive error for invalid encrypted bundles"
   },
   {
-    "file": "wallet-shell/core/security.js",
+    "file": "dist/core/security.js",
     "line": 57,
     "severity": "high",
     "type": "runtime",
@@ -24,7 +24,7 @@
     "fix_suggestion": "Wrap crypto.subtle.decrypt in try-catch to gracefully handle decryption failures and wrong PIN attempts"
   },
   {
-    "file": "wallet-shell/core/security.js",
+    "file": "dist/core/security.js",
     "line": 37,
     "severity": "high",
     "type": "performance",
@@ -32,7 +32,7 @@
     "fix_suggestion": "Use Array.from(uint8array).map(b=>String.fromCharCode(b)).join('') or use TextEncoder/btoa properly for large data"
   },
   {
-    "file": "wallet-shell/core/security.js",
+    "file": "dist/core/security.js",
     "line": 172,
     "severity": "medium",
     "type": "logic",
@@ -40,7 +40,7 @@
     "fix_suggestion": "Listen to beforeunload/visibilitychange events to immediately clear keys on page close, or use SharedWorker for better cleanup"
   },
   {
-    "file": "wallet-shell/core/security.js",
+    "file": "dist/core/security.js",
     "line": 147,
     "severity": "medium",
     "type": "logic",
@@ -48,7 +48,7 @@
     "fix_suggestion": "Remove backward compatibility fallback after migration period, enforce all PINs are hashed"
   },
   {
-    "file": "wallet-shell/core/security.js",
+    "file": "dist/core/security.js",
     "line": 44,
     "severity": "medium",
     "type": "runtime",
@@ -56,7 +56,7 @@
     "fix_suggestion": "Use proper binary-to-base64 encoding: implement custom function or use btoa(String.fromCharCode(...array.slice(0,N)...)) in chunks"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 135,
     "severity": "high",
     "type": "runtime",
@@ -64,7 +64,7 @@
     "fix_suggestion": "Add guard check: if (!REAL_WALLET || !REAL_WALLET.trxPrivateKey) before using, or require session validation first"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 147,
     "severity": "high",
     "type": "runtime",
@@ -72,7 +72,7 @@
     "fix_suggestion": "Validate privateKey format before passing to ethers.Wallet(), or wrap in try-catch with user-friendly error message"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 187,
     "severity": "medium",
     "type": "logic",
@@ -80,7 +80,7 @@
     "fix_suggestion": "Store USDT contract address in configuration with comment, add validation against known address, consider env variable"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 202,
     "severity": "high",
     "type": "logic",
@@ -88,7 +88,7 @@
     "fix_suggestion": "Add address format validation (TRX=T+33chars, ETH=0x+40hex) before making API calls"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 246,
     "severity": "medium",
     "type": "runtime",
@@ -96,7 +96,7 @@
     "fix_suggestion": "Add timeout and proper error handling for BTC API, use callWithRetry wrapper consistently"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 351,
     "severity": "medium",
     "type": "logic",
@@ -104,7 +104,7 @@
     "fix_suggestion": "Declare var priceCache = null; var priceCacheTime = 0; at file top to avoid global scope pollution"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 73,
     "severity": "medium",
     "type": "logic",
@@ -112,7 +112,7 @@
     "fix_suggestion": "Add guard: if (!transferCoin || !transferCoin.id) before using it"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 104,
     "severity": "medium",
     "type": "logic",
@@ -120,7 +120,7 @@
     "fix_suggestion": "Add check: if (typeof COINS !== 'undefined' && Array.isArray(COINS)) before filtering/looping"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 113,
     "severity": "low",
     "type": "lint",
@@ -128,7 +128,7 @@
     "fix_suggestion": "Create utility function: _safeElWithFallback(id, defaultText) to avoid repetition and improve readability"
   },
   {
-    "file": "wallet-shell/wallet.core.js",
+    "file": "dist/wallet.core.js",
     "line": 103,
     "severity": "high",
     "type": "logic",
@@ -136,7 +136,7 @@
     "fix_suggestion": "Use Object.defineProperty(window, 'REAL_WALLET', {configurable:false, writable:false}) or wrap in IIFE to hide"
   },
   {
-    "file": "wallet-shell/wallet.runtime.js",
+    "file": "dist/wallet.runtime.js",
     "line": 490,
     "severity": "high",
     "type": "logic",
@@ -144,7 +144,7 @@
     "fix_suggestion": "Hide in IIFE closure, do not export getSessionPin, only allow PIN verification internally"
   },
   {
-    "file": "wallet-shell/index.html",
+    "file": "dist/wallet.html",
     "line": 13,
     "severity": "medium",
     "type": "logic",
@@ -152,7 +152,7 @@
     "fix_suggestion": "Remove 'unsafe-inline', use nonce or hash-based CSP for inline scripts, require explicit script locations"
   },
   {
-    "file": "wallet-shell/wallet.addr.js",
+    "file": "dist/wallet.addr.js",
     "line": 29,
     "severity": "medium",
     "type": "logic",
@@ -160,7 +160,7 @@
     "fix_suggestion": "Add address format validation (must be 42 chars ETH or 34 chars TRX format) before assignment"
   },
   {
-    "file": "wallet-shell/js/api-config.js",
+    "file": "dist/js/api-config.js",
     "line": 10,
     "severity": "medium",
     "type": "logic",
@@ -168,7 +168,7 @@
     "fix_suggestion": "Add validation for API key format, fallback to default key, log warnings if key is invalid"
   },
   {
-    "file": "wallet-shell/js/storage.js",
+    "file": "dist/js/storage.js",
     "line": 1,
     "severity": "high",
     "type": "runtime",
@@ -176,7 +176,7 @@
     "fix_suggestion": "Add runtime check: if (!window.Store || typeof Store.setWallet !== 'function') throw error with setup instructions"
   },
   {
-    "file": "wallet-shell/wallet.runtime.js",
+    "file": "dist/wallet.runtime.js",
     "line": 1731,
     "severity": "medium",
     "type": "logic",
@@ -184,7 +184,7 @@
     "fix_suggestion": "Add multiple RPC endpoints with fallback logic, or load from config, check provider health before use"
   },
   {
-    "file": "wallet-shell/wallet.core.js",
+    "file": "dist/wallet.core.js",
     "line": 240,
     "severity": "high",
     "type": "logic",
@@ -192,7 +192,7 @@
     "fix_suggestion": "Use atomic update pattern: create full object first, then single assignment, or use Object.freeze() after creation"
   },
   {
-    "file": "wallet-shell/wallet.runtime.js",
+    "file": "dist/wallet.runtime.js",
     "line": 2460,
     "severity": "low",
     "type": "logic",
@@ -200,7 +200,7 @@
     "fix_suggestion": "Move RPC endpoints to configuration file or load from environment variables"
   },
   {
-    "file": "wallet-shell/client/src/components/TransactionHistory.js",
+    "file": "client/src/components/TransactionHistory.js",
     "line": 8,
     "severity": "low",
     "type": "logic",
@@ -208,7 +208,7 @@
     "fix_suggestion": "Ensure item.id is always present, or use transaction hash/signature as key, add warning if key not unique"
   },
   {
-    "file": "wallet-shell/client/src/components/CurrencySelector.js",
+    "file": "client/src/components/CurrencySelector.js",
     "line": 32,
     "severity": "medium",
     "type": "logic",
@@ -216,7 +216,7 @@
     "fix_suggestion": "Use useCallback to memoize onValueChange, or remove from dependency array if side effect is safe"
   },
   {
-    "file": "wallet-shell/wallet.tx.js",
+    "file": "dist/wallet.tx.js",
     "line": 160,
     "severity": "medium",
     "type": "runtime",
@@ -224,7 +224,7 @@
     "fix_suggestion": "Add check: if (typeof fn !== 'function') throw new Error('fn must be a function')"
   },
   {
-    "file": "wallet-shell/wallet.runtime.js",
+    "file": "dist/wallet.runtime.js",
     "line": 4976,
     "severity": "medium",
     "type": "logic",
@@ -232,7 +232,7 @@
     "fix_suggestion": "Switch to local QR generation (already have qrcode.min.js), remove external API dependency"
   },
   {
-    "file": "wallet-shell/wallet.runtime.js",
+    "file": "dist/wallet.runtime.js",
     "line": 6125,
     "severity": "medium",
     "type": "logic",
@@ -240,7 +240,7 @@
     "fix_suggestion": "Use CORS-enabled API directly, or implement backend proxy to avoid data leakage through third-party service"
   },
   {
-    "file": "wallet-shell/core/wallet.js",
+    "file": "dist/core/wallet.js",
     "line": 29,
     "severity": "medium",
     "type": "runtime",
@@ -248,7 +248,7 @@
     "fix_suggestion": "Add validation: if (![12,15,18,21,24].includes(wordCount)) throw Error('Invalid mnemonic word count')"
   },
   {
-    "file": "wallet-shell/wallet.runtime.js",
+    "file": "dist/wallet.runtime.js",
     "line": 1009,
     "severity": "medium",
     "type": "logic",

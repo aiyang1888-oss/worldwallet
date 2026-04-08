@@ -1,10 +1,13 @@
 {
+  "name": "worldwallet",
+  "description": "Web 钱包：唯一源码目录为 dist/；npm run build 用 rsync 将 dist/ 全量镜像到 assets/（--delete；排除 .git、.env）",
   "scripts": {
     "sync-dist": "bash scripts/sync-dist.sh",
     "build": "npm run sync-dist",
-    "dev": "npm run sync-dist && python3 -m http.server 8766 --directory dist",
+    "dev": "python3 -m http.server 8766 --directory dist",
     "test:ww": "node scripts/ww-deep-check.mjs",
-    "test:ww:e2e": "node scripts/ww-puppeteer-smoke.mjs"
+    "test:ww:e2e": "node scripts/ww-puppeteer-smoke.mjs",
+    "test:ww:chrome": "node scripts/ww-chrome-deep-check.mjs"
   },
   "dependencies": {
     "axios": "^1.14.0",

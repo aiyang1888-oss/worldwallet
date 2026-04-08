@@ -21,7 +21,7 @@
 **截止日期**: 2026-04-11
 **工作量**: 1h (Low)
 
-**文件**: `wallet-shell/core/security.js`
+**文件**: `dist/core/security.js`
 **行号**: 54
 
 **问题**:
@@ -51,7 +51,7 @@ Wrap atob() in try-catch block to handle invalid base64 input
 **截止日期**: 2026-04-11
 **工作量**: 1h (Low)
 
-**文件**: `wallet-shell/core/security.js`
+**文件**: `dist/core/security.js`
 **行号**: 55
 
 **问题**:
@@ -81,7 +81,7 @@ Wrap atob() in try-catch block to handle invalid base64 input
 **截止日期**: 2026-04-11
 **工作量**: 1h (Low)
 
-**文件**: `wallet-shell/core/security.js`
+**文件**: `dist/core/security.js`
 **行号**: 56
 
 **问题**:
@@ -116,7 +116,7 @@ Wrap atob() in try-catch block to handle invalid base64 input
 **优先级**: P0
 
 **问题**:\n
-文件: `wallet-shell/core/security.js`
+文件: `dist/core/security.js`
 
 行号: 54
 

@@ -3,7 +3,6 @@ name: Security Audit
 on:
   pull_request:
     paths:
-      - 'wallet-shell/**'
       - 'dist/**'
       - 'ai-system/**'
   push:
@@ -125,13 +124,13 @@ jobs:
         continue-on-error: true
         run: |
           echo "Checking performance optimizations..."
-          if [ -f wallet-shell/js/idb-cache.js ]; then
+          if [ -f dist/js/idb-cache.js ]; then
             echo "✅ IDB cache deployed"
           fi
-          if [ -f wallet-shell/core/session-key-cache.js ]; then
+          if [ -f dist/core/session-key-cache.js ]; then
             echo "✅ Session key cache deployed"
           fi
-          if [ -f wallet-shell/core/key-derivation-cache.js ]; then
+          if [ -f dist/core/key-derivation-cache.js ]; then
             echo "✅ Key derivation cache deployed"
           fi
 
