@@ -1,23 +1,32 @@
-# Round 7 修复报告 - 2026-04-08 08:04
+# Round 7 修复报告 - 2026-04-08 08:27
 
 ## 发现的问题
-- [P1] `wallet.runtime.js` 中 `selectTransferCoin` 对 `#transferCoinIcon`、`#transferCoinName` 直接赋值，而当前 `wallet.html` 转账页为精简版无上述节点；用户从首页资产卡片（`data-ww-fn="selectTransferCoin"`）进入时会触发对 `null` 的属性访问并抛错，转账入口不可用。
+- [P1] `wallet.runtime.js` 中 `switchHbType`、`selectHbType` 在精简 DOM 下对 `btnNormal`/`btnLucky`、`hbTypeNormal`/`hbTypeLucky` 无判空即访问 `.style`，会抛 `TypeError`（承接 round_6「剩余问题」）。
+- [P1] `changeCount` 对 `hbCountVal` / 展示节点无判空，节点缺失时同样可能抛错。
+- [P3] `wallet.html` 中 `#homeBalanceChartWrap` 仍重复 `class` 属性；`wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名函数，后加载覆盖前者（架构债务）。
+
+## 扫描摘要（STEP 1）
+- `data-ww-fn`：`selectTransferCoin`（`#assetRowUsdt`）。
+- `id="page-*"`：`page-welcome`、`page-password-restore`、`page-create`、`page-key`、`page-key-verify`、`page-home`、`page-addr`、`page-transfer`、`page-settings`、`page-swap`、`page-import`、`page-hongbao`、`page-claim`、`page-claimed`、`page-hb-records`、`page-faq`。
+- `data-ww-go`：无。
+- `wallet.css` 花括号：`{` 326 / `}` 326，平衡。
 
 ## 修复内容
 - 文件：`wallet.runtime.js`
-- 函数：`selectTransferCoin`
-- 修改：在更新币种展示前判空；若无完整币种条 DOM，则 `goTo('page-transfer')` 并继续 `calcTransferFee()`，与 `wallet.ui.js` 行为对齐。
+- 函数：`switchHbType`、`selectHbType`、`changeCount`
+- 修改：在更新样式或文案前校验 `getElementById` 结果；缺失时仅更新 `hbType` 并调用 `updateHbPreview()` 后返回，避免空引用崩溃。
 
 ## 修改文件
 - `wallet.runtime.js`
 
 ## 剩余问题
-- `wallet.runtime.js` 中 `submitClaim` 等对 `localStorage` 的 `JSON.parse` 在数据损坏时仍可能抛错（低概率）；可作后续加固。
-- `#homeBalanceChartWrap` 存在重复 `class` 属性（HTML 小问题，不影响脚本）。
+- [P3] `#homeBalanceChartWrap` 重复 `class` 属性未合并为单一 `class` 列表。
+- [P3] 双文件同名函数覆盖问题未在本轮处理。
+- [P2/P3] `setAmt` / `randomBlessing` 等仍假定部分礼物页节点存在，入口较少时可后续加固。
 
 ## 测试结果
-- TEST-A: PASS — `wallet.html` 仅 `data-ww-fn="selectTransferCoin"`；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将 `selectTransferCoin` 挂到 `window`。
-- TEST-B: PASS — `wallet.html` 中无 `data-ww-go` 属性，无需校验页面 ID 映射。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空实现（runtime 中礼物/成功页相关函数含实质逻辑）。
+- TEST-A: PASS — `data-ww-fn` 仅 `selectTransferCoin`；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将其挂到 `window`。
+- TEST-B: PASS — `wallet.html` 中无 `data-ww-go` 属性。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空函数体。
 
-验证：在浏览器打开 `wallet.html`，解锁进入首页后点击 USDT 资产行，应进入转账页且无控制台报错；完整版若存在 `#transferCoinIcon` / `#transferCoinName` 时行为与修复前一致。
+Git：`e89b298` — `fix: guard gift type UI helpers when DOM nodes are missing`
