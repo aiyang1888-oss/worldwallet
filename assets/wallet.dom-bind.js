@@ -194,6 +194,8 @@
 
     bindSelect('keyPageLang', 'switchLang');
     bindSelect('mnemonicLength', 'changeMnemonicLength');
+    bindSelect('importPageLang', 'switchLang');
+    bindSelect('importMnemonicLength', 'changeImportMnemonicLength');
     bindSelect('qrChainSelect', 'updateQRCode');
 
     bindChange('hideZeroTokens', 'onHideZeroTokensChange');

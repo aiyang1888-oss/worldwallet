@@ -541,17 +541,28 @@ function switchLang(lang) {
   try {
     var kl = document.getElementById('keyPageLang');
     if (kl) kl.value = lang;
+    var il = document.getElementById('importPageLang');
+    if (il) il.value = lang;
   } catch (e) {}
-  if (typeof renderKeyGrid === 'function') renderKeyGrid();
+  try {
+    var pk = document.getElementById('page-key');
+    if (pk && pk.classList.contains('active') && typeof renderKeyGrid === 'function') renderKeyGrid();
+  } catch (e1) {}
 }
 
 function syncKeyPageLangSelect() {
   try {
-    var kl = document.getElementById('keyPageLang');
-    if (!kl) return;
     var v = WW_KEY_PAGE_LANGS.indexOf(keyMnemonicLang) >= 0 ? keyMnemonicLang : 'zh';
-    kl.value = v;
-    if (kl.value !== v) kl.value = 'zh';
+    var kl = document.getElementById('keyPageLang');
+    if (kl) {
+      kl.value = v;
+      if (kl.value !== v) kl.value = 'zh';
+    }
+    var il = document.getElementById('importPageLang');
+    if (il) {
+      il.value = v;
+      if (il.value !== v) il.value = 'zh';
+    }
   } catch (e2) {}
 }
 
@@ -1006,7 +1017,7 @@ function goTo(pageId, opts) {
     }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
+if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} try { importGridWordCount = 12; var _iml=document.getElementById('importMnemonicLength'); if(_iml){ _iml.value='12'; _iml.selectedIndex=0; } if(typeof syncKeyPageLangSelect==='function') syncKeyPageLangSelect(); } catch(_impSync){} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
@@ -3053,6 +3064,25 @@ async function changeMnemonicLength(n) {
   }
 }
 
+/** 导入页词数：仅重建格子并清空，不生成新钱包 */
+function changeImportMnemonicLength(n) {
+  const wordCount = parseInt(n, 10) || 12;
+  if (![12, 15, 18, 21, 24].includes(wordCount)) return;
+  importGridWordCount = wordCount;
+  const sel = document.getElementById('importMnemonicLength');
+  if (sel) {
+    sel.value = String(wordCount);
+    const idx = [12, 15, 18, 21, 24].indexOf(wordCount);
+    if (idx >= 0) sel.selectedIndex = idx;
+  }
+  if (typeof initImportGrid === 'function') initImportGrid(wordCount);
+  const paste = document.getElementById('importPaste');
+  if (paste) paste.value = '';
+  const errEl = document.getElementById('importError');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  updateImportWordCount();
+}
+
 
 // ── 助记词验证 ──────────────────────────────────────────────
 var verifyAnswers = {}; // {position: correctWord}
@@ -3465,7 +3495,7 @@ async function doImportWallet() {
   }
   showWalletLoading();
   try {
-    var result = typeof importWalletFlexible === 'function' ? importWalletFlexible(mnemonicRaw) : (typeof importWallet === 'function' ? importWallet(mnemonicRaw) : null);
+    var result = typeof importWalletFlexible === 'function' ? importWalletFlexible(mnemonicRaw, keyMnemonicLang) : (typeof importWallet === 'function' ? importWallet(mnemonicRaw) : null);
     if (!result) {
       if (errEl) { errEl.style.display = 'block'; errEl.textContent = '助记词无效，请检查后重试'; }
       showToast('❌ 助记词无效，请检查后重试', 'error');

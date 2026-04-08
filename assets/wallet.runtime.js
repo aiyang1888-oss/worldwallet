@@ -1250,7 +1250,7 @@ function goTo(pageId, opts) {
     }
   }
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
-if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
+if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} try { importGridWordCount = 12; var _iml=document.getElementById('importMnemonicLength'); if(_iml){ _iml.value='12'; _iml.selectedIndex=0; } if(typeof syncKeyPageLangSelect==='function') syncKeyPageLangSelect(); } catch(_impSync){} initImportGrid(); document.getElementById('importError').style.display='none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
@@ -4330,13 +4330,14 @@ function initImportGrid(count) {
   grid.innerHTML = '';
   for(let i = 0; i < count; i++) {
     const div = document.createElement('div');
+    const nextFocus = Math.min(i + 1, count - 1);
     div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:8px;display:flex;flex-direction:column;align-items:center;gap:3px';
     div.innerHTML = `
       <span style="font-size:9px;color:var(--text-muted)">${i+1}</span>
       <input id="iw_${i}" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
         style="width:100%;background:none;border:none;outline:none;font-size:12px;color:var(--text);text-align:center;font-family:inherit"
         oninput="syncImportPaste()"
-        onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();document.getElementById('iw_${Math.min(i+1,11)}')&&document.getElementById('iw_${Math.min(i+1,11)}').focus();}">
+        onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault();var _n=${nextFocus};document.getElementById('iw_'+_n)&&document.getElementById('iw_'+_n).focus();}">
     `;
     grid.appendChild(div);
   }
@@ -4348,6 +4349,13 @@ function syncImportGrid(text) {
   // 自动调整格子数
   const targetLen = validLengths.find(l => l >= words.length) || 12;
   initImportGrid(targetLen);
+  try {
+    var sel = document.getElementById('importMnemonicLength');
+    if (sel && validLengths.indexOf(targetLen) >= 0) {
+      sel.value = String(targetLen);
+      sel.selectedIndex = validLengths.indexOf(targetLen);
+    }
+  } catch (_sel) {}
   for(let i = 0; i < targetLen; i++) {
     const inp = document.getElementById('iw_' + i);
     if(inp) {

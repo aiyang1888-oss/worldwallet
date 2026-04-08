@@ -370,7 +370,7 @@ async function restoreWallet(mnemonic) {
     showToast('❌ 钱包核心未加载', 'error');
     return null;
   }
-  var result = importWalletFlexible(raw);
+  var result = importWalletFlexible(raw, typeof keyMnemonicLang === 'string' ? keyMnemonicLang : undefined);
   if (!result) {
     showToast('❌ 助记词无效，请检查后重试', 'error');
     return null;
@@ -457,16 +457,31 @@ function getMnemonicWordlistLang(uiLang) {
 }
 
 /**
- * 导入：先按标准英文 BIP39 解析；失败则按中文地名词库转为英文再解析（与「非英文界面展示中文地名」一致）。
+ * 导入：先按标准英文 BIP39 解析；失败则按所选助记词语言词表转为英文再解析（与密钥页语言一致）；仍失败时再试中文词表（兼容旧数据）。
  */
-function importWalletFlexible(raw) {
+function importWalletFlexible(raw, preferredLang) {
   var norm = String(raw || '').trim().replace(/\s+/g, ' ');
   if (!norm) return null;
   var r = importWallet(norm);
   if (r) return r;
-  if (typeof mnemonicFromLang !== 'function' || !WT_WORDLISTS || !WT_WORDLISTS.zh) return null;
-  var en = mnemonicFromLang(norm, 'zh');
-  return importWallet(en);
+  if (typeof mnemonicFromLang !== 'function' || !WT_WORDLISTS) return null;
+  var pl = preferredLang;
+  if (pl === undefined || pl === null) {
+    try {
+      if (typeof keyMnemonicLang === 'string') pl = keyMnemonicLang;
+    } catch (_e) {}
+  }
+  function tryLang(lg) {
+    if (!lg || lg === 'en' || !WT_WORDLISTS[lg]) return null;
+    return importWallet(mnemonicFromLang(norm, lg));
+  }
+  r = tryLang(pl);
+  if (r) return r;
+  if (pl !== 'zh') {
+    r = tryLang('zh');
+    if (r) return r;
+  }
+  return null;
 }
 
 function generateLocalMnemonic() {
