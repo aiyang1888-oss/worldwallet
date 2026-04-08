@@ -21,9 +21,9 @@ describe('DemoWallet', () => {
     expect(wallet1.getBalance()).toBe(100);
   });
 
-  test('should NOT allow negative balance (currently fails - BUG)', () => {
-    wallet1.addBalance(-50);
-    expect(wallet1.getBalance()).toBe(0);  // 这个测试会失败，因为代码有 bug
+  test('should NOT allow negative balance', () => {
+    expect(() => wallet1.addBalance(-50)).toThrow('Amount must be > 0');
+    expect(wallet1.getBalance()).toBe(0);  // Balance should remain unchanged
   });
 
   test('should transfer between wallets', () => {

@@ -1,0 +1,6 @@
+{
+  "task_id": "TASK-001",
+  "passed": false,
+  "error": "Command failed: cd /Users/daxiang/demo-wallet && npm run test 2>&1",
+  "summary": "Tests failed - rollback required"
+}

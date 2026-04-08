@@ -1,0 +1,20 @@
+{
+  "approved": true,
+  "tasks": [
+    {
+      "task_id": "TASK-001",
+      "bug_id": "BUG-001",
+      "priority": "P1",
+      "description": "Fix addBalance() to validate amount > 0",
+      "files_to_change": [
+        "src/index.js"
+      ],
+      "test_requirements": [
+        "test should NOT allow negative balance must pass"
+      ],
+      "max_retries": 3,
+      "estimated_time": "5 minutes"
+    }
+  ],
+  "reasons": "Bug is valid, fix is straightforward, test coverage exists"
+}
