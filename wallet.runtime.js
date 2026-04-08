@@ -4379,7 +4379,8 @@ function switchHbType(type) {
 }
 
 function setAmt(v) {
-  document.getElementById('hbAmount').value = v;
+  const _hbAmtEl = document.getElementById('hbAmount');
+  if (_hbAmtEl) _hbAmtEl.value = v;
   updateHbPreview();
 }
 
@@ -4396,14 +4397,17 @@ function setExpiry(h) {
 
 function randomBlessing() {
   const b = BLESSINGS[Math.floor(Math.random()*BLESSINGS.length)];
-  document.getElementById('hbMessage').value = b;
+  const _hbMsgEl = document.getElementById('hbMessage');
+  if (_hbMsgEl) _hbMsgEl.value = b;
 }
 
 function createHongbao() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return; }
   currentKeyword = genKeyword();
-  const amount = parseFloat(document.getElementById('hbAmount').value) || 100;
-  const blessing = document.getElementById('hbMessage').value;
+  const _hbAmtEl2 = document.getElementById('hbAmount');
+  const _hbMsgEl2 = document.getElementById('hbMessage');
+  const amount = parseFloat(_hbAmtEl2 && _hbAmtEl2.value) || 100;
+  const blessing = _hbMsgEl2 ? _hbMsgEl2.value : '';
   const count = hbCount;
   const perPerson = hbType==='normal' ? (amount/count).toFixed(2) : null;
   const expireAt = Date.now() + hbExpiry * 3600 * 1000;
