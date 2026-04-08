@@ -50,3 +50,10 @@ scripts/pcas-code.json
 # generated native folders
 /ios
 /android
+
+# 本地一次性导出 / 会话草稿（非源码）
+DEEP_INSPECTION_CHROME_REPORT.md
+DEEP_INSPECTION_REPORT.md
+SEND_TO_CURSOR.txt
+TO_CURSOR_FINAL_TASK.md
+memory/
