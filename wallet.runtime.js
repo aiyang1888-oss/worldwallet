@@ -4483,11 +4483,22 @@ function fillKeyword(kw) {
 }
 
 function submitClaim() {
-  const kw = document.getElementById('claimInput').value.trim();
-  if(!kw) { document.getElementById('claimInputBox').style.borderColor='var(--red)'; return; }
+  const claimInp = document.getElementById('claimInput');
+  const kw = claimInp ? String(claimInp.value).trim() : '';
+  const claimBox = document.getElementById('claimInputBox');
+  if (!kw) {
+    if (claimBox) claimBox.style.borderColor = 'var(--red)';
+    return;
+  }
 
-  // 查找礼物
-  const allHb = JSON.parse(localStorage.getItem('ww_hongbaos')||'{}');
+  // 查找礼物（损坏数据不抛错，与 wallet.ui.js 一致）
+  let allHb = {};
+  try {
+    allHb = JSON.parse(localStorage.getItem('ww_hongbaos') || '{}') || {};
+  } catch (_e) {
+    allHb = {};
+  }
+  if (typeof allHb !== 'object' || allHb === null) allHb = {};
   const hb = allHb[kw];
 
   if(!hb) {
@@ -4528,9 +4539,19 @@ function submitClaim() {
   localStorage.setItem('ww_hongbaos', JSON.stringify(allHb));
 
   const rank = hb.claimed.length;
-  document.getElementById('claimedAmount').textContent = amt;
-  document.getElementById('claimedKeyword').textContent = kw;
-  document.getElementById('claimedRank').textContent = '第 '+rank+' 个领取 · 共'+hb.count+'份礼物';
+  const elAmt = document.getElementById('claimedAmount');
+  if (elAmt) elAmt.textContent = amt;
+  const elKw = document.getElementById('claimedKeyword');
+  if (elKw) elKw.textContent = kw;
+  const elRank = document.getElementById('claimedRank');
+  if (elRank) elRank.textContent = '第 ' + rank + ' 个领取 · 共' + hb.count + '份礼物';
+  const elMsg = document.getElementById('claimedMessage');
+  if (elMsg && (!elKw || !elRank)) {
+    const parts = [];
+    if (!elKw) parts.push('口令：' + kw);
+    if (!elRank) parts.push('第 ' + rank + ' 个领取 · 共 ' + hb.count + ' 份礼物');
+    elMsg.textContent = parts.join(' · ');
+  }
   goTo('page-claimed');
 }
 

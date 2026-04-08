@@ -1,29 +1,23 @@
-# Round 7 修复报告 - 2026-04-08 06:43
+# Round 7 修复报告 - 2026-04-08 08:04
 
 ## 发现的问题
-- [P3] `wallet.ui.js` 与 `wallet.runtime.js` 存在大量同名全局函数，后加载的 `wallet.runtime.js` 覆盖前者；属既有架构，与 Round 6 一致，本轮未作为需代码修复项。
-- 经 STEP 3 抽样（`getElementById` 链式使用、`JSON.parse`、`async`/`await`、`REAL_WALLET`+`saveWalletSecure`、未挂 `window` 的处理器）与 STEP 4 自动化核对，未发现新的 P0（绑定/导航缺失）、P1（明显崩溃路径）或 P2（TEST-C 核心函数空实现）。
+- [P1] `wallet.runtime.js` 中 `selectTransferCoin` 对 `#transferCoinIcon`、`#transferCoinName` 直接赋值，而当前 `wallet.html` 转账页为精简版无上述节点；用户从首页资产卡片（`data-ww-fn="selectTransferCoin"`）进入时会触发对 `null` 的属性访问并抛错，转账入口不可用。
 
 ## 修复内容
-- 本轮无需修改业务代码：TEST-A / TEST-B / TEST-C 全部通过；仅新增本报告。
+- 文件：`wallet.runtime.js`
+- 函数：`selectTransferCoin`
+- 修改：在更新币种展示前判空；若无完整币种条 DOM，则 `goTo('page-transfer')` 并继续 `calcTransferFee()`，与 `wallet.ui.js` 行为对齐。
 
 ## 修改文件
-- `reports/round_7.md`（本报告）
+- `wallet.runtime.js`
 
 ## 剩余问题
-- 无
+- `wallet.runtime.js` 中 `submitClaim` 等对 `localStorage` 的 `JSON.parse` 在数据损坏时仍可能抛错（低概率）；可作后续加固。
+- `#homeBalanceChartWrap` 存在重复 `class` 属性（HTML 小问题，不影响脚本）。
 
 ## 测试结果
-- TEST-A: PASS — 41 个 `data-ww-fn` 均在已扫描的 JS（含 `wallet.runtime.js` 中 `function`/`async function` 定义）中出现；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将核心处理函数挂到 `window`，与内联捕获脚本 `window[fnName]` 一致。
-- TEST-B: PASS — 12 个 `data-ww-go` 目标均在 `wallet.html` 中存在对应 `id="page-…"`。
-- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 均具非空实现（别名 `sendTransfer`/`claimGift`/`openSend`/`openReceive` 在 `wallet.runtime.js` 约 5956–5968 行）。
+- TEST-A: PASS — `wallet.html` 仅 `data-ww-fn="selectTransferCoin"`；`wallet.runtime.js` 末尾 `wwExposeDataWwFnHandlers` 将 `selectTransferCoin` 挂到 `window`。
+- TEST-B: PASS — `wallet.html` 中无 `data-ww-go` 属性，无需校验页面 ID 映射。
+- TEST-C: PASS — `goToPinConfirm`、`confirmPin`、`pinVerifyEnterWallet`、`shareSuccess`、`copyKw`、`shareKw`、`showHbQR`、`copyShareText`、`sendTransfer`、`createGift`、`claimGift`、`openSend`、`openReceive` 在 `wallet.ui.js` / `wallet.runtime.js` 中均有非空实现（runtime 中礼物/成功页相关函数含实质逻辑）。
 
-## STEP 1 摘要
-- **data-ww-fn（41）**：`checkVerify`, `closePinSetupOverlay`, `closePinUnlock`, `closeTotpSetup`, `closeTotpUnlock`, `closeTransferConfirm`, `confirmPin`, `confirmTotpSetup`, `confirmTransfer`, `copyHbCreatedKeyword`, `copyHomeAddr`, `copyKw`, `copyNative`, `copyShareText`, `createGift`, `createNewWallet`, `deleteWalletRow`, `doImportWallet`, `doSwap`, `doTransfer`, `goHomeTransfer`, `goToPinConfirm`, `hideQR`, `loadTxHistory`, `openCustomizeAddr`, `openPinSettingsDialog`, `pinUnlockBackspace`, `pinUnlockClear`, `pinVerifyEnterWallet`, `promptWalletNotifications`, `setSwapMax`, `shareHbCreatedKeyword`, `shareKw`, `shareSuccess`, `showHbQR`, `startVerify`, `submitClaim`, `submitTotpUnlock`, `wwHideHbSuccessOverlay`, `wwOpenBackupFromSettings`, `wwSwapRecordsToast`。
-- **id="page-*"（22）**：`page-welcome`, `page-password-restore`, `page-create`, `page-key`, `page-key-verify`, `page-pin-setup`, `page-pin-confirm`, `page-pin-verify`, `page-home`, `page-addr`, `page-transfer`, `page-swoosh`, `page-transfer-success`, `page-settings`, `page-swap`, `page-import`, `page-hongbao`, `page-hb-keyword`, `page-claim`, `page-claimed`, `page-hb-records`, `page-faq`。
-- **data-ww-go（12）**：均对应上表中的 `page-*`。
-- **wallet.css**：`{` 与 `}` 各 330，平衡。
-
-## STEP 2 摘要
-- **脚本顺序**：`js/storage.js` → `core/*` → `wallet.core.js` → `wallet.ui.js` → `wallet.addr.js` → `wallet.tx.js` → `wallet.runtime.js` → `wallet.dom-bind.js`，与依赖一致。
-- **全局覆盖**：`goTo`、`goTab`、`doTransfer` 等由 `wallet.runtime.js` 最终定义；与 Round 6 描述一致。
+验证：在浏览器打开 `wallet.html`，解锁进入首页后点击 USDT 资产行，应进入转账页且无控制台报错；完整版若存在 `#transferCoinIcon` / `#transferCoinName` 时行为与修复前一致。
