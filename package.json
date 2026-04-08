@@ -1,6 +1,6 @@
 {
   "name": "worldwallet",
-  "description": "Web 钱包：唯一源码目录为 dist/；npm run build 用 rsync 将 dist/ 全量镜像到 assets/（--delete；排除 .git、.env）",
+  "description": "Web 钱包：真源 dist/；build 时 index.html 与 wallet.html 对齐，再 rsync dist/ → assets/",
   "scripts": {
     "sync-dist": "bash scripts/sync-dist.sh",
     "build": "npm run sync-dist",

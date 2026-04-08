@@ -9,5 +9,6 @@ globs:
 # WorldWallet：以 `dist/` 为准
 
 - **唯一真源**：所有钱包 Web 逻辑、HTML、CSS、JS 的编辑与审查以 **`dist/`** 下文件为准。
+- **HTML 入口**：只维护 **`dist/wallet.html`**；**`dist/index.html`** 由 `npm run build` 从 `wallet.html` 复制覆盖（与 `wallet.html` 始终一致，供默认打开 `/` 的静态服务器使用）。
 - **`assets/`**：为 **`dist/`** 的**完整镜像**（`rsync -a --delete`；排除 `dist/.git/` 与 `dist/.env`），由 **`npm run build`** 生成；`assets` 中多余文件会被删除，不要以手改 `assets/` 为主源。
 - 修改流程：只改 **`dist/`**，再运行 **`npm run build`** 同步 `assets/`。

@@ -25,6 +25,10 @@ if [ ! -d "$DIST_DIR/wordlists" ]; then
 fi
 echo "✅ dist/ 完整"
 
+# 统一 HTML 入口：根目录仅保留 wallet.html 为编辑真源；index.html 由同内容覆盖，避免 / 与 /wallet.html 两套页面分叉
+echo "📄 统一入口：dist/index.html ← dist/wallet.html"
+cp -f "$DIST_DIR/wallet.html" "$DIST_DIR/index.html"
+
 echo "🔗 rsync：dist/ → assets/（全量镜像，--delete 删除 assets 中多余文件）…"
 mkdir -p "$ASSETS_DIR"
 # 尾斜杠：同步目录「内容」到目标，使 assets/ 与 dist/ 结构一致
