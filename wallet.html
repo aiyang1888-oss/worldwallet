@@ -479,7 +479,7 @@
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="if(confirm('确定删除本机钱包？此操作会清空本地数据。')){ localStorage.removeItem('ww_wallet'); localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_hongbaos'); REAL_WALLET=null; goTo('page-welcome'); showToast('钱包已删除', 'success'); }">
+          <div class="settings-row" onclick="deleteWallet()">
             <span class="settings-icon">🗑️</span>
             <span class="settings-label" style="color:var(--red)">删除钱包</span>
             <span class="settings-value" style="color:var(--red)">清空本机</span>

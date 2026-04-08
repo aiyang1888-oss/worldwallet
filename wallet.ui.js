@@ -2492,6 +2492,7 @@ function deleteWallet() {
   } catch (_e) {}
   REAL_WALLET = null;
   try { window.REAL_WALLET = null; } catch (_w) {}
+  if (typeof wwCleanupMemory === 'function') wwCleanupMemory();
   currentMnemonicLength = 12;
   if (typeof goTo === 'function') goTo('page-welcome');
   else {
