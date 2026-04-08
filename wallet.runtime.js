@@ -6314,11 +6314,26 @@ function checkVerify() {
   
   if(allCorrect) {
     _safeEl('verifyError').style.display = 'none';
-    // 验证通过，显示成功页
     if (typeof markBackupDone === 'function') markBackupDone();
     updateAddr();
-    goTo('page-verify-success');
-    // 用户手动点按钮进入首页（已移除自动跳转）
+    // wallet.html 精简版无 page-verify-success；完整版（如 app.html）可保留独立成功页
+    if (document.getElementById('page-verify-success')) {
+      goTo('page-verify-success');
+    } else {
+      var hasPin = false;
+      try {
+        hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+      } catch (_p0) {}
+      if (hasPin) { try { window._wwInFirstRun = false; } catch (_frV) {} }
+      showToast('✅ 验证通过！钱包已安全创建', 'success');
+      goTo('page-home');
+      setTimeout(function() {
+        if (!hasPin && typeof openPinSettingsDialog === 'function') {
+          if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
+          openPinSettingsDialog();
+        }
+      }, 450);
+    }
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
