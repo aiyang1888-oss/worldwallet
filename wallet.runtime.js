@@ -4360,6 +4360,10 @@ function switchHbType(type) {
   hbType = type;
   const n = document.getElementById('btnNormal');
   const l = document.getElementById('btnLucky');
+  if (!n || !l) {
+    updateHbPreview();
+    return;
+  }
   if(type === 'normal') {
     n.style.background = 'linear-gradient(135deg,#b8982a,#e8c850)';
     n.style.color = '#0a0a05';
@@ -4590,14 +4594,22 @@ function submitClaim() {
 let hbCount = 5;
 function selectHbType(type) {
   hbType = type;
-  document.getElementById('hbTypeNormal').style.borderColor = type==='normal'?'var(--gold)':'var(--border)';
-  document.getElementById('hbTypeLucky').style.borderColor = type==='lucky'?'var(--gold)':'var(--border)';
+  const elN = document.getElementById('hbTypeNormal');
+  const elL = document.getElementById('hbTypeLucky');
+  if (!elN || !elL) {
+    updateHbPreview();
+    return;
+  }
+  elN.style.borderColor = type==='normal'?'var(--gold)':'var(--border)';
+  elL.style.borderColor = type==='lucky'?'var(--gold)':'var(--border)';
   updateHbPreview();
 }
 function changeCount(delta) {
   hbCount = Math.max(1, Math.min(100, hbCount+delta));
-  document.getElementById('hbCountVal').textContent = hbCount;
-  (_safeEl('hbCountDisplay')||document.getElementById('hbCountVal')).textContent = hbCount+' 个';
+  const hcv = document.getElementById('hbCountVal');
+  if (hcv) hcv.textContent = hbCount;
+  const disp = _safeEl('hbCountDisplay') || document.getElementById('hbCountVal');
+  if (disp) disp.textContent = hbCount+' 个';
   updateHbPreview();
 }
 
