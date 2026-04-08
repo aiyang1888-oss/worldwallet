@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 
-/** 仅以 dist 为真源；assets/wallet.html 由 scripts/sync-dist.sh 从 dist 覆盖生成 */
+/** 仅以 dist 为真源；assets/ 由 npm run build（scripts/sync-assets.sh）从 dist 镜像 */
 const HTML_PATHS = ['dist/wallet.html'];
 const JS_GLOB = [
   'dist/wallet.core.js',

@@ -3,7 +3,7 @@ description: WorldWallet — dist/ is the only web app source of truth
 globs:
   - dist/**/*
   - assets/**/*
-  - scripts/sync-dist.sh
+  - scripts/sync-assets.sh
 ---
 
 # WorldWallet：以 `dist/` 为准

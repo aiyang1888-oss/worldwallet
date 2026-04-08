@@ -1,9 +1,8 @@
 {
   "name": "worldwallet",
-  "description": "Web 钱包：真源 dist/wallet.html；build 时同步 index.html、app.html，再 rsync → assets/",
+  "description": "Web 钱包：真源 dist/；build 将 wallet.html 复制为 index/app 并 rsync → assets/",
   "scripts": {
-    "sync-dist": "bash scripts/sync-dist.sh",
-    "build": "npm run sync-dist",
+    "build": "bash scripts/sync-assets.sh",
     "dev": "python3 -m http.server 8766 --directory dist",
     "dev:ping": "curl -sf -o /dev/null http://127.0.0.1:8766/wallet.html && echo OK || (echo 'FAIL: 请在仓库根执行 npm run dev，或检查 8766 被其它 http.server 占用' && exit 1)",
     "test:ww": "node scripts/ww-deep-check.mjs",
