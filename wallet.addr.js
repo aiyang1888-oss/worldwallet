@@ -1,7 +1,5 @@
 // wallet.addr.js — 地址系统：多语言/渲染/复制
 
-var ADDR_WORDS = [];
-
 var __wanYuInitLock = false;
 
 /** 万语地址初始化调试：initAddrWords 调用次数（仅日志） */
@@ -29,26 +27,13 @@ function _wanYuP8FromDomOrStorage(el, key, fallback8) {
 }
 
 function updateRealAddr() {
-  var hasAny =
-    REAL_WALLET &&
-    (typeof wwWalletHasAnyChainAddress === 'function'
-      ? wwWalletHasAnyChainAddress(REAL_WALLET)
-      : !!(REAL_WALLET.ethAddress || REAL_WALLET.trxAddress || REAL_WALLET.btcAddress));
-  if (hasAny) {
+  // 英语模式下更新地址显示为公链地址
+  if(REAL_WALLET && REAL_WALLET.ethAddress) {
     if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
     const sa = document.getElementById('settingsAddr');
-    if (sa) {
-      if (typeof currentLang !== 'undefined' && currentLang === 'en') {
-        sa.textContent =
-          (REAL_WALLET.trxAddress || REAL_WALLET.ethAddress || REAL_WALLET.btcAddress || '--');
-      } else if (typeof getNativeAddr === 'function') {
-        sa.textContent = getNativeAddr();
-      } else {
-        sa.textContent = REAL_WALLET.ethAddress || REAL_WALLET.trxAddress || REAL_WALLET.btcAddress || '--';
-      }
-    }
+    if(sa) sa.textContent = REAL_WALLET.ethAddress;
   }
-  if (typeof updateHomeChainStrip === 'function') updateHomeChainStrip();
+  if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
 }
 
 function updateAddr() {
@@ -92,7 +77,7 @@ function updateAddr() {
   const langTag = document.getElementById('qrLangTag');
   const info = LANG_INFO[currentLang]||{flag:'🌍',name:'Mother'};
   if(langTag) langTag.textContent = (info.flag || '🌍') + ' ' + (currentLang === 'en' ? 'BIP39' : '万语地址');
-  // 更新二维码显示内容（链上收款 URI：buildReceiveQrPayload 在 wallet.runtime.js，使用 REAL_WALLET 公链地址）
+  // 更新二维码显示内容
   updateQRDisplay();
   // 同步礼金UI
   if(typeof updateGiftUI==='function') updateGiftUI();
@@ -110,11 +95,8 @@ function persistWanYuAddrToStorage() {
   try {
     var slots = ADDR_WORDS.map(w => ({ word: w.word, lang: w.lang || 'zh', custom: !!w.custom }));
     localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
-    if (typeof getNativeAddr === 'function') {
-      localStorage.setItem('wallet_native_addr', getNativeAddr());
-    }
   } catch (e) {
-    safeLog('[WanYuAddr]', e);
+    console.error('[WanYuAddr]', e);
   }
 }
 
@@ -125,6 +107,12 @@ function tryLoadWanYuAddrFromStorage() {
     var suffix = localStorage.getItem('wallet_suffix');
     var wj = localStorage.getItem('wallet_addr_words');
     var rawFull = localStorage.getItem('wallet_native_addr');
+    console.log('[WanYuAddr] 从 localStorage 读取地址:', {
+      prefix: prefix,
+      suffix: suffix,
+      words: wj,
+      wallet_native_addr: rawFull
+    });
     if ((!prefix || !suffix) && rawFull && String(rawFull).indexOf('-') >= 0) {
       var parts = String(rawFull).split('-');
       if (parts.length === 3) {
@@ -140,7 +128,7 @@ function tryLoadWanYuAddrFromStorage() {
       try {
         parsed = JSON.parse(wj);
       } catch (parseErr) {
-        safeLog('[WanYuAddr] wallet_addr_words JSON.parse 失败:', parseErr);
+        console.warn('[WanYuAddr] wallet_addr_words JSON.parse 失败:', parseErr);
       }
     }
     if (!parsed || !Array.isArray(parsed) || parsed.length !== 10) {
@@ -158,13 +146,7 @@ function tryLoadWanYuAddrFromStorage() {
             var sufEl2 = document.getElementById('addrSuffix');
             if (preEl2) preEl2.textContent = prefix;
             if (sufEl2) sufEl2.textContent = suffix;
-            if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress && typeof deriveAddrWordsFromChain === 'function') {
-              var midGot = ADDR_WORDS.map(function (w) { return w.word; }).join('');
-              if (midGot !== deriveAddrWordsFromChain(REAL_WALLET.ethAddress)) {
-                ADDR_WORDS.length = 0;
-                return false;
-              }
-            }
+            console.log('[WanYuAddr] 已从 wallet_native_addr 中段恢复 10 字');
             return true;
           }
         }
@@ -187,16 +169,9 @@ function tryLoadWanYuAddrFromStorage() {
     var sufEl = document.getElementById('addrSuffix');
     if (preEl) preEl.textContent = prefix;
     if (sufEl) sufEl.textContent = suffix;
-    if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress && typeof deriveAddrWordsFromChain === 'function') {
-      var midCheck = ADDR_WORDS.map(function (w) { return w.word; }).join('');
-      if (midCheck !== deriveAddrWordsFromChain(REAL_WALLET.ethAddress)) {
-        ADDR_WORDS.length = 0;
-        return false;
-      }
-    }
     return true;
   } catch (e) {
-    safeLog('[WanYuAddr] tryLoadWanYuAddrFromStorage 异常:', e);
+    console.warn('[WanYuAddr] tryLoadWanYuAddrFromStorage 异常:', e);
     return false;
   }
 }
@@ -249,47 +224,6 @@ function ensureNativeAddrInitialized() {
 var WW_ZH_ADDR_CHAR_FALLBACK =
   '龙凤虎鹤福寿禄喜财春夏秋冬金木水火土山川云月星日风雨雪天地人和日月星斗甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥东南西北' +
   '等的个多咕咚得到来更中一二三四五六七八九十百千万千大小国人心正开平安乐吉祥如意';
-
-/**
- * 从公链地址确定性派生 10 个万语字（与 ADDR_WORDS_LIB / randWanYuZhChar 同一字池：SINGLE_CHARS.zh）。
- * 使用 UTF-8 地址字符串的 SHA-256，每 2 个十六进制位映射一字。
- */
-function deriveAddrWordsFromChain(chainAddress) {
-  var pool = (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.zh && SINGLE_CHARS.zh.length)
-    ? SINGLE_CHARS.zh
-    : WW_ZH_ADDR_CHAR_FALLBACK;
-  var norm = String(chainAddress || '').trim();
-  if (!norm || norm.length < 10) {
-    var fallback = '';
-    for (var f = 0; f < 10; f++) {
-      fallback += pool[Math.floor(Math.random() * pool.length)];
-    }
-    return fallback;
-  }
-  norm = norm.toLowerCase();
-  var hashHex = '';
-  try {
-    if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.sha256 && ethers.utils.toUtf8Bytes) {
-      hashHex = ethers.utils.sha256(ethers.utils.toUtf8Bytes(norm)).replace(/^0x/i, '');
-    }
-  } catch (e0) {
-    hashHex = '';
-  }
-  if (!hashHex || hashHex.length < 20) {
-    var fb = '';
-    for (var g = 0; g < 10; g++) {
-      fb += pool[Math.floor(Math.random() * pool.length)];
-    }
-    return fb;
-  }
-  var out = '';
-  for (var i = 0; i < 10; i++) {
-    var idx = parseInt(hashHex.substring(i * 2, i * 2 + 2), 16) % pool.length;
-    out += pool[idx];
-  }
-  return out;
-}
-window.deriveAddrWordsFromChain = deriveAddrWordsFromChain;
 
 function randWanYuZhChar() {
   const pool = (typeof SINGLE_CHARS !== 'undefined' && SINGLE_CHARS.zh && SINGLE_CHARS.zh.length)
@@ -401,6 +335,10 @@ function initAddrWords() {
   _lock = true;
   try {
     __wanYuInitAddrWordsCallCount++;
+    console.log('[WanYuAddr] initAddrWords 调用次数:', __wanYuInitAddrWordsCallCount, {
+      addrWordsLen: typeof ADDR_WORDS !== 'undefined' ? ADDR_WORDS.length : -1,
+      alreadyInit: __wanYuAddrInitialized
+    });
     if (__wanYuAddrInitialized && ADDR_WORDS.length === 10) {
       renderAddrWords();
       return;
@@ -413,17 +351,8 @@ function initAddrWords() {
       return;
     }
     ADDR_WORDS.length = 0;
-    var ethForDerive = (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : '';
-    if (ethForDerive) {
-      var midDerived = deriveAddrWordsFromChain(ethForDerive);
-      var midArr = Array.from(midDerived);
-      for (var wi = 0; wi < 10; wi++) {
-        ADDR_WORDS.push({ word: midArr[wi] || randWanYuZhChar(), lang: 'zh', custom: false });
-      }
-    } else {
-      for (let i = 0; i < 10; i++) {
-        ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
-      }
+    for (let i = 0; i < 10; i++) {
+      ADDR_WORDS.push({ word: randWanYuZhChar(), lang: 'zh', custom: false });
     }
     var preEl = document.getElementById('addrPrefix');
     var sufEl = document.getElementById('addrSuffix');
@@ -490,17 +419,13 @@ function renderAddrWords() {
 }
 
 function openCustomizeAddr() {
-  try {
-    if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
-  } catch (_e) {}
   openWordEditor(0);
 }
 
 function openWordEditor(idx) {
   var slot = typeof idx === 'number' ? idx : parseInt(String(idx), 10);
   if (slot !== slot || slot < 0 || slot > 9 || !ADDR_WORDS || ADDR_WORDS.length !== 10 || !ADDR_WORDS[slot]) {
-    safeLog('[WanYuAddr] openWordEditor: invalid index', idx);
-    if (typeof showToast === 'function') showToast('地址词库未就绪，请稍后再试', 'warning');
+    console.warn('[WanYuAddr] openWordEditor: invalid index', idx);
     return;
   }
   idx = slot;
@@ -583,13 +508,6 @@ function editHomeAddr() {
   if (typeof goTab === 'function') goTab('tab-addr');
 }
 
-function goHomeTransfer() {
-  tapHaptic(12);
-  if (typeof selectTransferCoin === 'function') selectTransferCoin('usdt');
-  else if (typeof window !== 'undefined' && typeof window.selectTransferCoin === 'function') window.selectTransferCoin('usdt');
-  else if (typeof goTo === 'function') goTo('page-transfer');
-}
-
 function getNativeAddr() {
   if(currentLang === 'en') return CHAIN_ADDR;
   try {
@@ -616,7 +534,7 @@ function copyNative() {
   navigator.clipboard?.writeText(getNativeAddr()).catch(()=>{});
   const btn=document.getElementById('copyNativeBtn');
   if(btn){btn.textContent='✅ 已复制'; btn.classList.add('copied');}
-  setTimeout(()=>{ if(btn){ btn.textContent='📋 复制'; btn.classList.remove('copied'); } },2000);
+  setTimeout(()=>{btn.textContent='📋 复制';if(btn) btn.classList.remove('copied');},2000);
 }
 
 function copyBoth() {
@@ -635,27 +553,17 @@ function copyBoth() {
   setTimeout(()=>{btn.innerHTML='📋 一键复制两个地址（母语 + 公链）';btn.style.borderColor='';btn.style.color='';},2500);
 }
 
-function wwGetMnemonicForDisplayCopy() {
-  var _twx = typeof wwGetTempWallet === 'function' ? wwGetTempWallet() : null;
-  if (_twx && _twx.mnemonic) return String(_twx.mnemonic);
-  if (typeof wwGetSessionMnemonic === 'function') {
-    var sm = wwGetSessionMnemonic();
-    if (sm) return String(sm);
-  }
-  return '';
-}
-
 function copyAllMnemonic(btn) {
   const words = [];
   var mnLang = (typeof keyMnemonicLang !== 'undefined' && keyMnemonicLang) ? keyMnemonicLang : 'zh';
   var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(mnLang) : (mnLang === 'en' ? 'en' : 'zh');
   const isEn = wlKey === 'en';
-  var rawMn = wwGetMnemonicForDisplayCopy();
   if(isEn) {
-    if(rawMn) rawMn.split(' ').forEach(w => words.push(w));
+    const mn = REAL_WALLET && REAL_WALLET.enMnemonic;
+    if(mn) mn.split(' ').forEach(w => words.push(w));
   } else {
     const wl = WT_WORDLISTS[wlKey];
-    const enMn = rawMn;
+    const enMn = REAL_WALLET && REAL_WALLET.enMnemonic;
     if(wl && enMn) {
       enMn.split(' ').forEach(enW => {
         const enIdx = WT_WORDLISTS.en.indexOf(enW);

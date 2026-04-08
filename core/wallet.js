@@ -7,7 +7,7 @@
  *   importWallet(mnemonic)    → 导入钱包
  *   deriveAddress(mnemonic)   → 派生地址
  *   getBalance(addresses)     → 查询余额
- *   sendTx → 已废弃私钥路径，请使用 wallet.tx.js 的 safeSign
+ *   sendTx(chain, to, amount, privateKey) → 发送交易
  */
 
 // ── 配置（TRON_GRID / ETH_RPC 由 js/api-config.js 注入，缺省时兜底）──
@@ -15,20 +15,18 @@ if (typeof TRON_GRID === 'undefined') var TRON_GRID = 'https://api.trongrid.io';
 if (typeof ETH_RPC === 'undefined') var ETH_RPC = 'https://rpc.ankr.com/eth';
 var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 var ENTROPY_MAP = { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 };
-var DERIVE_PATHS = (typeof WW_DERIVE_PATHS !== 'undefined')
-  ? WW_DERIVE_PATHS
-  : {
-    eth: "m/44'/60'/0'/0/0",
-    trx: "m/44'/195'/0'/0/0",
-    btc: "m/44'/0'/0'/0/0"
-  };
+var DERIVE_PATHS = {
+  eth: "m/44'/60'/0'/0/0",
+  trx: "m/44'/195'/0'/0/0",
+  btc: "m/44'/0'/0'/0/0"
+};
 
 /**
  * 生成新钱包
  * @param {number} wordCount - 助记词词数 (12/15/18/21/24)
  * @returns {Promise<{mnemonic:string, eth:object, trx:object, btc:object}>}
  */
-async function wwCoreCreateWallet(wordCount) {
+async function createWallet(wordCount) {
   wordCount = wordCount || 12;
   var bytes = ENTROPY_MAP[wordCount] || 16;
   var mnemonic = ethers.utils.entropyToMnemonic(
@@ -41,18 +39,8 @@ async function wwCoreCreateWallet(wordCount) {
     eth: addresses.eth,
     trx: addresses.trx,
     btc: addresses.btc,
-    createdAt: Date.now(),
-    addrMap: {
-      trx: addresses.trx.address,
-      eth: addresses.eth.address,
-      btc: addresses.btc.address,
-      derived_from: 'eth'
-    }
+    createdAt: Date.now()
   };
-}
-
-async function createWallet(wordCount) {
-  return wwCoreCreateWallet(wordCount);
 }
 
 /**
@@ -72,16 +60,10 @@ function importWallet(mnemonic) {
       eth: addresses.eth,
       trx: addresses.trx,
       btc: addresses.btc,
-      createdAt: Date.now(),
-      addrMap: {
-        trx: addresses.trx.address,
-        eth: addresses.eth.address,
-        btc: addresses.btc.address,
-        derived_from: 'eth'
-      }
+      createdAt: Date.now()
     };
   } catch (e) {
-    safeLog('[importWallet]', e.message);
+    console.error('[importWallet]', e.message);
     return null;
   }
 }
@@ -108,15 +90,6 @@ function deriveAddress(mnemonic) {
     eth: { address: ethWallet.address, privateKey: ethWallet.privateKey },
     trx: { address: trxAddr, privateKey: trxWallet.privateKey },
     btc: { address: btcWallet.address, privateKey: btcWallet.privateKey }
-  };
-}
-
-function derivePrivateKeysFromMnemonic(mnemonic) {
-  var d = deriveAddress(mnemonic);
-  return {
-    ethPrivateKey: d.eth.privateKey,
-    trxPrivateKey: d.trx.privateKey,
-    btcPrivateKey: d.btc.privateKey
   };
 }
 
@@ -174,7 +147,7 @@ async function getBalance(addresses) {
       result.btc * (prices.btc || 60000);
 
   } catch (e) {
-    safeLog('[getBalance]', e.message);
+    console.error('[getBalance]', e.message);
   }
   return result;
 }
@@ -188,11 +161,18 @@ async function getBalance(addresses) {
  * @returns {Promise<{txHash:string}|{error:string}>}
  */
 async function sendTx(chain, to, amount, privateKey) {
-  void chain;
-  void to;
-  void amount;
-  void privateKey;
-  return { error: 'WW_USE_SAFESIGN' };
+  try {
+    if (chain === 'trx') {
+      return await _sendTRX(to, amount, privateKey);
+    } else if (chain === 'eth') {
+      return await _sendETH(to, amount, privateKey);
+    } else if (chain === 'usdt_trc20') {
+      return await _sendUSDT(to, amount, privateKey);
+    }
+    return { error: '不支持的链: ' + chain };
+  } catch (e) {
+    return { error: e.message || '转账失败' };
+  }
 }
 
 // ── 内部转账实现 ──

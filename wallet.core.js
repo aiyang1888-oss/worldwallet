@@ -1,79 +1,22 @@
 // wallet.core.js — 钱包核心：创建/加密/存储/派生
-// SECURITY: 加密与 KDF 见 core/security.js（scrypt + AES-GCM）；本文件不再重复实现 deriveKeyFromPin。
 
 /** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明 */
-let REAL_WALLET = null;
-try {
-  Object.defineProperty(window, 'REAL_WALLET', {
-    get: function () { return REAL_WALLET; },
-    /** 仅允许通过 window 清空；非 null 赋值请使用 _publishRealWalletSnapshot；清空请使用 clearPublishedWallet */
-    set: function (v) {
-      if (v === null || typeof v === 'undefined') {
-        REAL_WALLET = null;
-        return;
-      }
-      try { safeLog('[REAL_WALLET] ignored direct window assignment (use _publishRealWalletSnapshot only)'); } catch (_s) {}
-    },
-    enumerable: true,
-    configurable: false
-  });
-} catch (_wwRw) {}
+var REAL_WALLET = null;
 /** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
 var CHAIN_ADDR = '--';
-
-/** 公开快照校验：仅经 _publishRealWalletSnapshot 发布后挂到词法 REAL_WALLET */
-function _isValidWalletPublicSnapshot(o) {
-  if (!o || typeof o !== 'object') return false;
-  if (typeof o.ethAddress !== 'string' || !o.ethAddress) return false;
-  if (typeof o.trxAddress !== 'string' || !o.trxAddress) return false;
-  if (o.btcAddress != null && typeof o.btcAddress !== 'string') return false;
-  var am = o.addrMap;
-  if (!am || typeof am !== 'object') return false;
-  if (typeof am.eth !== 'string' || !am.eth) return false;
-  if (typeof am.trx !== 'string' || !am.trx) return false;
-  if (am.btc != null && typeof am.btc !== 'string') return false;
-  return true;
-}
-
-/**
- * 唯一在本文件内向词法 REAL_WALLET 发布公开快照的入口（与 window.REAL_WALLET getter 同源）。
- * create/restore：须在持久化成功之后调用；load：在已从存储构造完整快照后调用（存储即已持久化）。
- */
-function _publishRealWalletSnapshot(snapshot) {
-  if (!_isValidWalletPublicSnapshot(snapshot)) {
-    safeLog('[_publishRealWalletSnapshot] invalid snapshot');
-    return false;
-  }
-  REAL_WALLET = snapshot;
-  return true;
-}
-
-/**
- * 唯一允许的「清空」入口：优先走 window 上已定义的 setter；无 setter 时回退到词法绑定。
- */
-function clearPublishedWallet() {
-  try {
-    var desc = Object.getOwnPropertyDescriptor(window, 'REAL_WALLET');
-    if (desc && desc.set) {
-      window.REAL_WALLET = null;
-      return;
-    }
-  } catch (_e) {}
-  try { REAL_WALLET = null; } catch (_e2) {}
-}
 
 function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
 }
 
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='assets/lib/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
 
 function loadQRCodeLib(){
   if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
   if(_qrLoadPromise)return _qrLoadPromise;
   _qrLoadPromise=new Promise(function(res,rej){
     var s=document.createElement('script');
-    s.src='assets/lib/qrcode.min.js';
+    s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
     s.async=true;
     s.onload=function(){res();};
     s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
@@ -82,38 +25,72 @@ function loadQRCodeLib(){
   return _qrLoadPromise;
 }
 
-/** encryptWithPin / decryptWithPin 由 core/security.js 提供（scrypt + AES-GCM；旧包 PBKDF2 解密） */
+async function deriveKeyFromPin(pin, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(pin), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptWithPin(plaintext, pin) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKeyFromPin(pin, salt);
+  const enc = new TextEncoder();
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(plaintext)
+  );
+  return {
+    salt: btoa(String.fromCharCode(...salt)),
+    iv: btoa(String.fromCharCode(...iv)),
+    data: btoa(String.fromCharCode(...new Uint8Array(encrypted)))
+  };
+}
+
+async function decryptWithPin(bundle, pin) {
+  const salt = Uint8Array.from(atob(bundle.salt), c => c.charCodeAt(0));
+  const iv = Uint8Array.from(atob(bundle.iv), c => c.charCodeAt(0));
+  const data = Uint8Array.from(atob(bundle.data), c => c.charCodeAt(0));
+  const key = await deriveKeyFromPin(pin, salt);
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv }, key, data
+  );
+  return new TextDecoder().decode(decrypted);
+}
 
 async function saveWalletSecure(w, pin) {
   try {
+    // 公开信息（始终明文存储）
     var safe = {
-      version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
       ethAddress: w.ethAddress,
       trxAddress: w.trxAddress,
       btcAddress: w.btcAddress || '',
       createdAt: w.createdAt,
-      backedUp: w.backedUp || false,
-      hasEncrypted: !!pin,
-      addrMap: (function () {
-        var am = w.addrMap || {};
-        return {
-          trx: am.trx != null ? am.trx : w.trxAddress,
-          eth: am.eth != null ? am.eth : w.ethAddress,
-          btc: am.btc != null ? am.btc : (w.btcAddress || ''),
-          derived_from: am.derived_from != null ? am.derived_from : 'eth'
-        };
-      })()
+      backedUp: w.backedUp || false
     };
-    if (pin && w.mnemonic) {
-      var normMn = String(w.mnemonic).trim().replace(/\s+/g, ' ');
-      var sensitive = JSON.stringify({ mnemonic: normMn });
+    // 有 PIN → 加密敏感数据
+    if (pin) {
+      var sensitive = JSON.stringify({
+        mnemonic: w.mnemonic,
+        enMnemonic: w.enMnemonic || w.mnemonic,
+        words: w.words,
+        privateKey: w.privateKey,
+        trxPrivateKey: w.trxPrivateKey
+      });
       safe.encrypted = await encryptWithPin(sensitive, pin);
     }
     localStorage.setItem('ww_wallet', JSON.stringify(safe));
-    return true;
   } catch (e) {
-    safeLog('[saveWalletSecure] error');
-    return false;
+    console.error('[saveWalletSecure] error:', e);
   }
 }
 
@@ -123,32 +100,19 @@ function loadWalletPublic() {
     if (d) {
       var parsed = JSON.parse(d);
       // 只加载公开信息，不加载敏感数据
-      var nextRw = {
-        version: parsed.version || 1,
+      window.REAL_WALLET = {
         ethAddress: parsed.ethAddress,
         trxAddress: parsed.trxAddress,
         btcAddress: parsed.btcAddress || '',
         createdAt: parsed.createdAt,
         backedUp: parsed.backedUp || false,
-        hasEncrypted: !!parsed.encrypted,
-        addrMap: (function () {
-          var am = parsed.addrMap || {};
-          return {
-            trx: am.trx != null ? am.trx : parsed.trxAddress,
-            eth: am.eth != null ? am.eth : parsed.ethAddress,
-            btc: am.btc != null ? am.btc : (parsed.btcAddress || ''),
-            derived_from: am.derived_from != null ? am.derived_from : 'eth'
-          };
-        })()
+        hasEncrypted: !!parsed.encrypted
       };
-      if (!_publishRealWalletSnapshot(nextRw)) {
-        safeLog('[loadWalletPublic] invalid stored wallet snapshot');
-        return;
-      }
-      CHAIN_ADDR = nextRw.trxAddress ? nextRw.trxAddress : '--';
+      REAL_WALLET = window.REAL_WALLET;
+      CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
     }
   } catch (e) {
-    safeLog('[loadWalletPublic] error:', e);
+    console.error('[loadWalletPublic] error:', e);
   }
 }
 
@@ -159,12 +123,9 @@ async function decryptSensitive(pin) {
     var parsed = JSON.parse(d);
     if (!parsed.encrypted) return null;
     var plaintext = await decryptWithPin(parsed.encrypted, pin);
-    var obj = JSON.parse(plaintext);
-    if (typeof wwNormalizeDecryptedSensitive === 'function') {
-      return wwNormalizeDecryptedSensitive(obj);
-    }
-    return { mnemonic: (obj && (obj.mnemonic || obj.enMnemonic)) ? String(obj.mnemonic || obj.enMnemonic).trim().replace(/\s+/g, ' ') : '' };
+    return JSON.parse(plaintext);
   } catch (e) {
+    console.error('[decryptSensitive] error:', e);
     return null;
   }
 }
@@ -176,32 +137,23 @@ function _saveWalletPlainPublicOnly(w) {
       trxAddress: w.trxAddress,
       btcAddress: w.btcAddress || '',
       createdAt: w.createdAt,
-      backedUp: w.backedUp || false,
-      addrMap: (function () {
-        var am = w.addrMap || {};
-        return {
-          trx: am.trx != null ? am.trx : w.trxAddress,
-          eth: am.eth != null ? am.eth : w.ethAddress,
-          btc: am.btc != null ? am.btc : (w.btcAddress || ''),
-          derived_from: am.derived_from != null ? am.derived_from : 'eth'
-        };
-      })()
+      backedUp: w.backedUp || false
     };
     localStorage.setItem('ww_wallet', JSON.stringify(safe));
-    return true;
-  } catch(e) {
-    return false;
-  }
+  } catch(e) {}
 }
 
 function saveWallet(w) {
+  // 如果有 PIN，使用加密存储；否则只存公开信息
   var pin = '';
-  try { pin = localStorage.getItem('ww_pin') || ''; } catch (e) {}
+  try { pin = localStorage.getItem('ww_pin') || ''; } catch(e) {}
   if (pin) {
-    saveWalletSecure(w, pin).catch(function () {
+    saveWalletSecure(w, pin).catch(function(e) {
+      console.error('[saveWallet] 加密存储失败，降级明文:', e);
       _saveWalletPlainPublicOnly(w);
     });
   } else {
+    // 无 PIN：只存公开信息，不存敏感数据
     _saveWalletPlainPublicOnly(w);
   }
 }
@@ -232,14 +184,13 @@ function loadWallet() {
   }
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
   try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
-  try { if (typeof hideWalletLoading === 'function') hideWalletLoading(); } catch (_hl) {}
 }
 
 async function createRealWallet(forcedWordCount) {
   if (typeof ethers === 'undefined') {
     throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
   }
-  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(1);
+  if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
   let mnemonic, wallet, trxWallet, btcWallet, trxAddr;
   try {
@@ -248,21 +199,18 @@ async function createRealWallet(forcedWordCount) {
       : getTargetMnemonicWordCount();
     const entropyBytes = getEntropyByteCountForMnemonicWords(nWords);
     mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
-    var ethPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.eth) ? DERIVE_PATHS.eth : "m/44'/60'/0'/0/0";
-    wallet = ethers.Wallet.fromMnemonic(mnemonic, ethPath);
+    wallet = ethers.Wallet.fromMnemonic(mnemonic);
   } catch (e) {
-    safeLog('[WorldToken] 钱包创建失败:', e);
+    console.error('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
   }
-  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(2);
+  if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
   try {
-    var trxPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.trx) ? DERIVE_PATHS.trx : "m/44'/195'/0'/0/0";
-    var btcPath = (typeof DERIVE_PATHS !== 'undefined' && DERIVE_PATHS.btc) ? DERIVE_PATHS.btc : "m/44'/0'/0'/0/0";
-    trxWallet = ethers.Wallet.fromMnemonic(mnemonic, trxPath);
-    btcWallet = ethers.Wallet.fromMnemonic(mnemonic, btcPath);
+    trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
+    btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
   } catch (e) {
-    safeLog('[WorldToken] 钱包创建失败:', e);
+    console.error('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
   }
   trxAddr = '';
@@ -276,7 +224,7 @@ async function createRealWallet(forcedWordCount) {
   } catch (e2) {
     trxAddr = 'T' + trxWallet.address.slice(2, 35);
   }
-  if (typeof setWalletCreateStep === 'function') setWalletCreateStep(3);
+  if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
   const w = {
     mnemonic: mnemonic,
@@ -287,59 +235,12 @@ async function createRealWallet(forcedWordCount) {
     btcAddress: btcWallet.address,
     privateKey: wallet.privateKey,
     trxPrivateKey: trxWallet.privateKey,
-    createdAt: Date.now(),
-    addrMap: {
-      trx: trxAddr,
-      eth: wallet.address,
-      btc: btcWallet.address,
-      derived_from: 'eth'
-    }
+    createdAt: Date.now()
   };
-  var pinPersist = '';
-  try { pinPersist = (localStorage.getItem('ww_pin') || '').trim(); } catch (_pp) {}
-  var persistOk = false;
-  if (pinPersist) {
-    persistOk = await saveWalletSecure(w, pinPersist);
-    if (!persistOk) persistOk = _saveWalletPlainPublicOnly(w);
-  } else {
-    persistOk = _saveWalletPlainPublicOnly(w);
-  }
-  if (!persistOk) {
-    safeLog('[createRealWallet] persistence failed');
-    throw new Error('创建失败：无法保存钱包');
-  }
-  var pubCr = {
-    version: typeof WW_ENCRYPT_PAYLOAD_VERSION !== 'undefined' ? WW_ENCRYPT_PAYLOAD_VERSION : 2,
-    ethAddress: w.ethAddress,
-    trxAddress: w.trxAddress,
-    btcAddress: w.btcAddress || '',
-    createdAt: w.createdAt,
-    backedUp: w.backedUp || false,
-    hasEncrypted: !!(function () {
-      try { return (localStorage.getItem('ww_pin') || '').trim(); } catch (_e) { return ''; }
-    })(),
-    addrMap: w.addrMap
-  };
-  if (!_publishRealWalletSnapshot(pubCr)) {
-    safeLog('[createRealWallet] public snapshot validation failed');
-    throw new Error('创建失败：钱包状态异常');
-  }
+  window.REAL_WALLET = w;
+  REAL_WALLET = w;
   CHAIN_ADDR = w.trxAddress || '--';
-  try {
-    if (typeof wwSetTempWallet === 'function') {
-      wwSetTempWallet({
-        mnemonic: w.mnemonic,
-        enMnemonic: w.enMnemonic,
-        words: w.words,
-        wordCount: w.words ? w.words.length : 12,
-        ethAddress: w.ethAddress,
-        trxAddress: w.trxAddress,
-        btcAddress: w.btcAddress,
-        addrMap: w.addrMap,
-        createdAt: w.createdAt
-      });
-    }
-  } catch (_tw) {}
+  saveWallet(w);
   applyReferralCredit();
   try { if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized(); } catch (_na) {}
   return w;
@@ -365,64 +266,40 @@ async function restoreWallet(mnemonic) {
   }
   var pin = '';
   try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
-  var addrMapRestore = (function () {
-    var am = result.addrMap || {};
-    return {
-      trx: am.trx != null ? am.trx : result.trx.address,
-      eth: am.eth != null ? am.eth : result.eth.address,
-      btc: am.btc != null ? am.btc : result.btc.address,
-      derived_from: am.derived_from != null ? am.derived_from : 'eth'
-    };
-  })();
   var pub = {
     ethAddress: result.eth.address,
     trxAddress: result.trx.address,
     btcAddress: result.btc.address,
     createdAt: result.createdAt,
     hasEncrypted: !!pin,
-    backedUp: false,
-    addrMap: addrMapRestore
+    backedUp: false
   };
-  if (!_isValidWalletPublicSnapshot(pub)) {
-    safeLog('[restoreWallet] public snapshot validation failed');
-    showToast('❌ 钱包状态异常', 'error');
-    return null;
-  }
-  var plainPub = {
-    ethAddress: result.eth.address,
-    trxAddress: result.trx.address,
-    btcAddress: result.btc.address,
-    createdAt: result.createdAt,
-    backedUp: false,
-    addrMap: addrMapRestore
-  };
-  var persistOk = false;
+  REAL_WALLET = pub;
+  window.REAL_WALLET = pub;
+  CHAIN_ADDR = (pub && pub.trxAddress) ? pub.trxAddress : '--';
   if (pin) {
     var flatForStore = {
       mnemonic: result.mnemonic,
+      enMnemonic: result.mnemonic,
+      words: result.mnemonic.trim().split(/\s+/).filter(Boolean),
+      ethAddress: result.eth.address,
+      trxAddress: result.trx.address,
+      btcAddress: result.btc.address,
+      privateKey: result.eth.privateKey,
+      trxPrivateKey: result.trx.privateKey,
+      createdAt: result.createdAt,
+      backedUp: false
+    };
+    await saveWalletSecure(flatForStore, pin);
+  } else {
+    _saveWalletPlainPublicOnly({
       ethAddress: result.eth.address,
       trxAddress: result.trx.address,
       btcAddress: result.btc.address,
       createdAt: result.createdAt,
-      backedUp: false,
-      addrMap: addrMapRestore
-    };
-    persistOk = await saveWalletSecure(flatForStore, pin);
-    if (!persistOk) persistOk = _saveWalletPlainPublicOnly(plainPub);
-  } else {
-    persistOk = _saveWalletPlainPublicOnly(plainPub);
+      backedUp: false
+    });
   }
-  if (!persistOk) {
-    safeLog('[restoreWallet] persistence failed');
-    showToast('❌ 无法保存钱包，请重试', 'error');
-    return null;
-  }
-  if (!_publishRealWalletSnapshot(pub)) {
-    safeLog('[restoreWallet] publish failed');
-    showToast('❌ 钱包状态异常', 'error');
-    return null;
-  }
-  CHAIN_ADDR = pub.trxAddress ? pub.trxAddress : '--';
   try { applyReferralCredit(); } catch (e2) {}
   try { if (typeof updateAddr === 'function') updateAddr(); } catch (e3) {}
   return pub;
@@ -482,12 +359,11 @@ function importWalletFlexible(raw) {
 }
 
 function generateLocalMnemonic() {
-  if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.entropyToMnemonic) {
-    try {
-      return ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(16));
-    } catch (_e) {}
+  const words = [];
+  for(let i = 0; i < 12; i++) {
+    words.push(BIP39_WORDS[Math.floor(Math.random() * BIP39_WORDS.length)]);
   }
-  return 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+  return words.join(' ');
 }
 
 function formatWalletCreateError(e) {
@@ -730,7 +606,7 @@ async function confirmTotpSetup() {
       localStorage.setItem('ww_totp_secret', sec);
     }
   } catch (e) {
-    safeLog('[TOTP]', e);
+    console.error('[TOTP]', e);
     showToast('保存失败', 'error');
     return;
   }
@@ -759,35 +635,13 @@ async function wwVerifyTotpCode(secretB32, input) {
 }
 
 function markBackupDone() {
-  var w = {};
-  try {
-    w = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-    if (!w || typeof w !== 'object') w = {};
-  } catch (_mb) {
-    w = {};
-  }
+  const w = JSON.parse(localStorage.getItem('ww_wallet')||'{}');
   w.backedUp = true;
   localStorage.setItem('ww_wallet', JSON.stringify(w));
-  /* window.REAL_WALLET 为 getter，与词法 REAL_WALLET 同一引用；拦截的是 window 属性赋值，非 .backedUp 写入 */
-  try {
-    if (REAL_WALLET) REAL_WALLET.backedUp = true;
-  } catch (_mbRw) {}
+  if(REAL_WALLET) REAL_WALLET.backedUp = true;
   const el = document.getElementById('backupStatus');
   if(el) { el.textContent='已备份 ✓'; el.style.color='var(--green,#26a17b)'; }
   if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner();
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
   if (typeof wwPopulatePriceAlertForm === 'function') wwPopulatePriceAlertForm();
 }
-
-function getRealWalletPublic() {
-  if (!REAL_WALLET) return null;
-  return {
-    ethAddress: REAL_WALLET.ethAddress,
-    trxAddress: REAL_WALLET.trxAddress,
-    btcAddress: REAL_WALLET.btcAddress,
-    createdAt: REAL_WALLET.createdAt,
-    backedUp: REAL_WALLET.backedUp
-  };
-}
-window.getRealWalletPublic = getRealWalletPublic;
-window.clearPublishedWallet = clearPublishedWallet;

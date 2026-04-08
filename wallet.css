@@ -111,11 +111,6 @@ body {
     left: 0 !important;
   }
   .status-bar { display: none !important; }
-  /* 真机无模拟状态栏时，勿再预留 50px，避免顶部大块空白；刘海/灵动岛区勿贴顶被裁切 */
-  .page {
-    top: 0 !important;
-    padding-top: env(safe-area-inset-top, 0px);
-  }
 }
 
 /* iOS：输入框字号小于 16px 时聚焦会强制缩放页面，关键表单区统一 16px */
@@ -124,15 +119,7 @@ body {
   #page-import input[type="text"],
   #verifyQuestions input[type="text"],
   #page-transfer textarea,
-  #page-hongbao input#hbMessage,
-  #page-hongbao input#hbAmount,
-  #page-password-restore input[type="password"],
-  #pinUnlockInput,
-  #totpUnlockInput,
-  #totpSetupVerifyInput,
-  #page-home #txHistoryFilter.home-tx-filter,
-  #page-key #keyPageLang,
-  #page-key #mnemonicLength {
+  #page-hongbao input#hbBlessing {
     font-size: 16px !important;
   }
 }
@@ -160,15 +147,15 @@ body {
   font-size: 12px;
   color: var(--text-dim);
   flex-shrink: 0;
-  z-index: 1001;
+  z-index: 10;
 }
 .status-time { font-weight: 600; color: var(--text); font-size: 14px; }
 
 /* flex:1 1 0 + min-height:0：避免子项全为 absolute 时中间区高度塌陷，导致 .phone 缩成一条、底栏被 body 居中到视口中央 */
 .pages { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; }
 
-/* 隐藏 pages 容器内游离元素（不属于任何 .page）；#qrOverlay 由 .qr-overlay / .show 控制显隐，勿强制 display:none!important 否则弹层无法打开 */
-.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg):not(#qrOverlay) { display: none !important; }
+/* 隐藏 pages 容器内游离元素（不属于任何 .page） */
+.pages > :not(.page):not(#tabBar):not(#walletLoadingOverlay):not(#toastMsg) { display: none !important; }
 .page {
   position: absolute;
   top: 50px; left: 0; right: 0; bottom: 0;
@@ -220,7 +207,7 @@ body {
 }
 
 .status-bar {
-  background: var(--bg) !important;
+  background: rgba(6, 6, 15, 0.82) !important;
   backdrop-filter: saturate(1.15) blur(16px);
   -webkit-backdrop-filter: saturate(1.15) blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -249,45 +236,11 @@ body {
   font-weight: 600;
 }
 
-/* 欢迎页：fixed + 100vw/100vh 铺满视口（含模拟状态栏区域），与 var(--bg) 统一深色底；状态栏 z-index 高于本层 */
-.page#page-welcome {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
-  align-items: center !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  text-align: center !important;
-  background: var(--bg) !important;
-  padding-top: 0 !important;
-  z-index: 1000 !important;
-}
-@media (min-width: 769px) {
-  .page#page-welcome {
-    top: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 80px !important;
-    padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
-    padding-right: max(20px, env(safe-area-inset-right, 0px)) !important;
-  }
-}
-@media (max-width: 768px) {
-  .page#page-welcome {
-    top: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: max(80px, env(safe-area-inset-bottom, 0px)) !important;
-    padding-left: max(20px, env(safe-area-inset-left, 0px)) !important;
-    padding-right: max(20px, env(safe-area-inset-right, 0px)) !important;
-  }
+#page-welcome {
+  background:
+    radial-gradient(ellipse 95% 75% at 50% -28%, rgba(228, 197, 108, 0.22) 0%, transparent 58%),
+    radial-gradient(ellipse 55% 50% at 95% 85%, rgba(100, 80, 200, 0.09) 0%, transparent 52%),
+    var(--bg) !important;
 }
 
 .home-header {
@@ -324,7 +277,14 @@ body {
   background: linear-gradient(180deg, #ffffff 0%, rgba(248, 248, 252, 0.95) 100%) !important;
 }
 
-/* ── 欢迎页（主样式见上方 .page#page-welcome） ── */
+/* ── 欢迎页 ── */
+#page-welcome {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(200,168,75,0.15) 0%, transparent 60%), var(--bg);
+  align-items: center;
+  padding: 16px 24px 14px;
+  text-align: center;
+  overflow: hidden;
+}
 #welcomeLangGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -540,13 +500,6 @@ body {
   border-radius: 8px; padding: 5px 10px;
   display: inline-block; margin-bottom: 12px;
 }
-.home-addr-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  width: 100%;
-  flex-wrap: wrap;
-}
 .home-chain-strip {
   display: flex;
   flex-wrap: wrap;
@@ -603,6 +556,11 @@ body {
 .home-balance.home-balance--loading { animation: homeBalPulse 0.85s ease-in-out infinite; }
 @keyframes homeBalPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
 .home-balance-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.home-balance-chart-wrap { margin: 14px 0 6px; padding: 0 2px; }
+.home-balance-chart-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.home-balance-chart-title { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; }
+.home-balance-chart-svg { width: 100%; height: 88px; display: block; }
+.home-balance-chart-foot { display: flex; justify-content: space-between; font-size: 9px; color: rgba(255,255,255,0.38); margin-top: 4px; padding: 0 2px; }
 /* —— balance hide / scroll-top / tab swipe (patch) —— */
 .ww-balance-privacy-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-right: 2px; box-sizing: border-box; }
 .ww-balance-hide-btn {
@@ -614,6 +572,7 @@ body {
 .ww-balance-hide-btn[aria-pressed="true"] { border-color: rgba(200,168,75,0.5); color: var(--gold-light); background: rgba(200,168,75,0.1); }
 .ww-balance-hidden #totalBalanceDisplay,
 .ww-balance-hidden #totalBalanceSub,
+.ww-balance-hidden #homeBalanceChartWrap,
 .ww-balance-hidden #portfolioPieCanvas,
 .ww-balance-hidden #portfolioPieLegend,
 .ww-balance-hidden #page-home .asset-amount,
@@ -1074,10 +1033,9 @@ body {
   background: rgba(0,0,0,0.72);
   display: none; flex-direction: column;
   align-items: center; justify-content: center;
-  z-index: 1100;
-  pointer-events: none;
+  z-index: 200;
 }
-.wallet-loading-overlay.show { display: flex; pointer-events: auto; }
+.wallet-loading-overlay.show { display: flex; }
 .wallet-loading-spinner {
   width: 44px; height: 44px;
   border: 3px solid rgba(200,168,75,0.2);
@@ -1166,7 +1124,7 @@ body {
   color: #1a1408;
   background: linear-gradient(135deg, #e8a010, #f0c040);
   flex-shrink: 0;
-  z-index: 1002;
+  z-index: 50;
 }
 .offline-banner.show { display: flex; }
 
@@ -1204,27 +1162,3 @@ body {
 
 .ww-tx-history-row { transition: opacity 0.2s; }
 .ww-tx-history-row:hover { opacity: 0.8; }
-
-/* Force status bar to match welcome page surface (#1a1a2e); overrides nested/earlier rules */
-.status-bar {
-  background-color: #1a1a2e !important;
-  background-image: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-
-#page-home .home-addr-stack {
-  margin: 0 !important;
-  padding: 0 !important;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-  border-top: none !important;
-}
-#page-home [class*="home"] > .home-addr-stack {
-  margin-top: 0 !important;
-}
-
-.home-addr-stack {
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-}
