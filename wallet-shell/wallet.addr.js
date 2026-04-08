@@ -1,5 +1,7 @@
 // wallet.addr.js — 地址系统：多语言/渲染/复制
 
+var __wanYuInitLock = false;
+
 /** 万语地址初始化调试：initAddrWords 调用次数（仅日志） */
 var __wanYuInitAddrWordsCallCount = 0;
 /** 防止重复生成：已成功载入或生成 10 字 + 前后缀后设为 true */
@@ -91,14 +93,8 @@ function randDigits(n) {
 /** 万语地址持久化：刷新/切页后必须与首次生成一致 */
 function persistWanYuAddrToStorage() {
   try {
-    var slots = ADDR_WORDS.map(function (w) {
-      return { word: w.word, lang: w.lang || 'zh', custom: !!w.custom };
-    });
-    try {
-      localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
-    } catch (e) {
-      console.error(e);
-    }
+    var slots = ADDR_WORDS.map(w => ({ word: w.word, lang: w.lang || 'zh', custom: !!w.custom }));
+    localStorage.setItem('wallet_addr_words', JSON.stringify(slots));
   } catch (e) {
     console.error('[WanYuAddr]', e);
   }

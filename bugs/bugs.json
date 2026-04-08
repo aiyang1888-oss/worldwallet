@@ -1,0 +1,258 @@
+[
+  {
+    "file": "wallet-shell/core/security.js",
+    "line": 133,
+    "severity": "high",
+    "type": "logic",
+    "description": "PIN hash uses hardcoded salt 'ww_salt_v1_2026', all users share same salt - vulnerable to rainbow table attacks and precomputed hash tables",
+    "fix_suggestion": "Generate unique random salt per user, store alongside hash using PBKDF2, or switch to bcrypt/argon2 with per-user salt"
+  },
+  {
+    "file": "wallet-shell/core/security.js",
+    "line": 51,
+    "severity": "high",
+    "type": "runtime",
+    "description": "atob() can throw on invalid base64, no try-catch around atob calls at lines 51-53 in decryptWithPin - will crash on corrupted encrypted data",
+    "fix_suggestion": "Wrap atob calls in try-catch block and return null or throw descriptive error for invalid encrypted bundles"
+  },
+  {
+    "file": "wallet-shell/core/security.js",
+    "line": 57,
+    "severity": "high",
+    "type": "runtime",
+    "description": "crypto.subtle.decrypt() can throw on authentication failure or wrong PIN, not caught - unhandled promise rejection",
+    "fix_suggestion": "Wrap crypto.subtle.decrypt in try-catch to gracefully handle decryption failures and wrong PIN attempts"
+  },
+  {
+    "file": "wallet-shell/core/security.js",
+    "line": 37,
+    "severity": "high",
+    "type": "performance",
+    "description": "String.fromCharCode.apply(null, uint8array) fails for arrays larger than 65536 bytes (RangeError: Maximum call stack size exceeded)",
+    "fix_suggestion": "Use Array.from(uint8array).map(b=>String.fromCharCode(b)).join('') or use TextEncoder/btoa properly for large data"
+  },
+  {
+    "file": "wallet-shell/core/security.js",
+    "line": 172,
+    "severity": "medium",
+    "type": "logic",
+    "description": "5-minute auto-clear timeout continues even if browser tab closed - private keys remain in RAM until timeout fires",
+    "fix_suggestion": "Listen to beforeunload/visibilitychange events to immediately clear keys on page close, or use SharedWorker for better cleanup"
+  },
+  {
+    "file": "wallet-shell/core/security.js",
+    "line": 147,
+    "severity": "medium",
+    "type": "logic",
+    "description": "verifyPin fallback to oldPin comparison is unsafe - if old PIN stored in cleartext, credentials are exposed",
+    "fix_suggestion": "Remove backward compatibility fallback after migration period, enforce all PINs are hashed"
+  },
+  {
+    "file": "wallet-shell/core/security.js",
+    "line": 44,
+    "severity": "medium",
+    "type": "runtime",
+    "description": "String.fromCharCode(0-255) + btoa encoding may lose data or produce invalid base64 for binary data with high bytes",
+    "fix_suggestion": "Use proper binary-to-base64 encoding: implement custom function or use btoa(String.fromCharCode(...array.slice(0,N)...)) in chunks"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 135,
+    "severity": "high",
+    "type": "runtime",
+    "description": "REAL_WALLET.trxPrivateKey and REAL_WALLET.privateKey accessed without null check - can throw if session not unlocked",
+    "fix_suggestion": "Add guard check: if (!REAL_WALLET || !REAL_WALLET.trxPrivateKey) before using, or require session validation first"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 147,
+    "severity": "high",
+    "type": "runtime",
+    "description": "ethers.Wallet(REAL_WALLET.privateKey) will throw if privateKey is undefined/null or invalid hex format",
+    "fix_suggestion": "Validate privateKey format before passing to ethers.Wallet(), or wrap in try-catch with user-friendly error message"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 187,
+    "severity": "medium",
+    "type": "logic",
+    "description": "triggerSmartContract USDT address 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t' is hardcoded - no validation that it's correct contract",
+    "fix_suggestion": "Store USDT contract address in configuration with comment, add validation against known address, consider env variable"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 202,
+    "severity": "high",
+    "type": "logic",
+    "description": "getBalance() call doesn't validate REAL_WALLET addresses - if invalid format passed, API may fail silently",
+    "fix_suggestion": "Add address format validation (TRX=T+33chars, ETH=0x+40hex) before making API calls"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 246,
+    "severity": "medium",
+    "type": "runtime",
+    "description": "mempool.space API call not wrapped in proper error handling - BTC balance fetch can hang or timeout without recovery",
+    "fix_suggestion": "Add timeout and proper error handling for BTC API, use callWithRetry wrapper consistently"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 351,
+    "severity": "medium",
+    "type": "logic",
+    "description": "priceCache and priceCacheTime are not defined/declared - undefined variable reference, will create global leak",
+    "fix_suggestion": "Declare var priceCache = null; var priceCacheTime = 0; at file top to avoid global scope pollution"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 73,
+    "severity": "medium",
+    "type": "logic",
+    "description": "transferCoin.id used without null check - if transferCoin undefined, will throw and break transfer flow",
+    "fix_suggestion": "Add guard: if (!transferCoin || !transferCoin.id) before using it"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 104,
+    "severity": "medium",
+    "type": "logic",
+    "description": "COINS array accessed globally without null/array check - line 73-75 assumes COINS exists",
+    "fix_suggestion": "Add check: if (typeof COINS !== 'undefined' && Array.isArray(COINS)) before filtering/looping"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 113,
+    "severity": "low",
+    "type": "lint",
+    "description": "Multiple fallback DOM element access patterns using _safeEl || {...fallback...} are verbose and brittle - repeated pattern",
+    "fix_suggestion": "Create utility function: _safeElWithFallback(id, defaultText) to avoid repetition and improve readability"
+  },
+  {
+    "file": "wallet-shell/wallet.core.js",
+    "line": 103,
+    "severity": "high",
+    "type": "logic",
+    "description": "window.REAL_WALLET directly assigned, not protected from external script override - global object mutation vulnerability",
+    "fix_suggestion": "Use Object.defineProperty(window, 'REAL_WALLET', {configurable:false, writable:false}) or wrap in IIFE to hide"
+  },
+  {
+    "file": "wallet-shell/wallet.runtime.js",
+    "line": 490,
+    "severity": "high",
+    "type": "logic",
+    "description": "wwGetSessionPin() and wwSetSessionPin() expose session PIN as global functions - attackers can read/modify PIN in memory",
+    "fix_suggestion": "Hide in IIFE closure, do not export getSessionPin, only allow PIN verification internally"
+  },
+  {
+    "file": "wallet-shell/index.html",
+    "line": 13,
+    "severity": "medium",
+    "type": "logic",
+    "description": "CSP allows 'unsafe-inline' for script-src - violates strict CSP, enables inline script injection attacks",
+    "fix_suggestion": "Remove 'unsafe-inline', use nonce or hash-based CSP for inline scripts, require explicit script locations"
+  },
+  {
+    "file": "wallet-shell/wallet.addr.js",
+    "line": 29,
+    "severity": "medium",
+    "type": "logic",
+    "description": "updateRealAddr() function updates REAL_WALLET.address without validation - can set invalid address format",
+    "fix_suggestion": "Add address format validation (must be 42 chars ETH or 34 chars TRX format) before assignment"
+  },
+  {
+    "file": "wallet-shell/js/api-config.js",
+    "line": 10,
+    "severity": "medium",
+    "type": "logic",
+    "description": "wwReadTronApiKey() reads from localStorage without validation - empty/invalid API key silently fails",
+    "fix_suggestion": "Add validation for API key format, fallback to default key, log warnings if key is invalid"
+  },
+  {
+    "file": "wallet-shell/js/storage.js",
+    "line": 1,
+    "severity": "high",
+    "type": "runtime",
+    "description": "Storage.set/get/remove functions not checked for existence - code assumes Store object exists globally",
+    "fix_suggestion": "Add runtime check: if (!window.Store || typeof Store.setWallet !== 'function') throw error with setup instructions"
+  },
+  {
+    "file": "wallet-shell/wallet.runtime.js",
+    "line": 1731,
+    "severity": "medium",
+    "type": "logic",
+    "description": "ethers.providers.JsonRpcProvider('https://eth.llamarpc.com') hardcoded - single RPC provider, no fallback if endpoint down",
+    "fix_suggestion": "Add multiple RPC endpoints with fallback logic, or load from config, check provider health before use"
+  },
+  {
+    "file": "wallet-shell/wallet.core.js",
+    "line": 240,
+    "severity": "high",
+    "type": "logic",
+    "description": "window.REAL_WALLET assignment during wallet creation - no transaction semantics, partially-created wallet visible to other scripts",
+    "fix_suggestion": "Use atomic update pattern: create full object first, then single assignment, or use Object.freeze() after creation"
+  },
+  {
+    "file": "wallet-shell/wallet.runtime.js",
+    "line": 2460,
+    "severity": "low",
+    "type": "logic",
+    "description": "TRON_GRID and ETH_RPC hardcoded in code - should be in config, difficult to change without code edit",
+    "fix_suggestion": "Move RPC endpoints to configuration file or load from environment variables"
+  },
+  {
+    "file": "wallet-shell/client/src/components/TransactionHistory.js",
+    "line": 8,
+    "severity": "low",
+    "type": "logic",
+    "description": "keyExtractor fallback using index + date + amount - non-deterministic if transactions change order",
+    "fix_suggestion": "Ensure item.id is always present, or use transaction hash/signature as key, add warning if key not unique"
+  },
+  {
+    "file": "wallet-shell/client/src/components/CurrencySelector.js",
+    "line": 32,
+    "severity": "medium",
+    "type": "logic",
+    "description": "useEffect dependency includes onValueChange callback - if callback changes, effect re-runs unnecessarily",
+    "fix_suggestion": "Use useCallback to memoize onValueChange, or remove from dependency array if side effect is safe"
+  },
+  {
+    "file": "wallet-shell/wallet.tx.js",
+    "line": 160,
+    "severity": "medium",
+    "type": "runtime",
+    "description": "callWithRetry does not validate fn argument - will throw if fn is not callable",
+    "fix_suggestion": "Add check: if (typeof fn !== 'function') throw new Error('fn must be a function')"
+  },
+  {
+    "file": "wallet-shell/wallet.runtime.js",
+    "line": 4976,
+    "severity": "medium",
+    "type": "logic",
+    "description": "QR code uses Google Charts API 'https://chart.googleapis.com/...' - external dependency, no HTTPS validation",
+    "fix_suggestion": "Switch to local QR generation (already have qrcode.min.js), remove external API dependency"
+  },
+  {
+    "file": "wallet-shell/wallet.runtime.js",
+    "line": 6125,
+    "severity": "medium",
+    "type": "logic",
+    "description": "Uses allorigins.win proxy for news feed - CORS workaround indicates insecure setup, leaks data through third party",
+    "fix_suggestion": "Use CORS-enabled API directly, or implement backend proxy to avoid data leakage through third-party service"
+  },
+  {
+    "file": "wallet-shell/core/wallet.js",
+    "line": 29,
+    "severity": "medium",
+    "type": "runtime",
+    "description": "createWallet does not validate wordCount - can generate wallet with 0 words or invalid count",
+    "fix_suggestion": "Add validation: if (![12,15,18,21,24].includes(wordCount)) throw Error('Invalid mnemonic word count')"
+  },
+  {
+    "file": "wallet-shell/wallet.runtime.js",
+    "line": 1009,
+    "severity": "medium",
+    "type": "logic",
+    "description": "restoreWallet accepts raw mnemonic without BIP39 validation - invalid mnemonic will create broken wallet",
+    "fix_suggestion": "Validate mnemonic against BIP39 word list before deriving addresses, reject invalid mnemonic"
+  }
+]

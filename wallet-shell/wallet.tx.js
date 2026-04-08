@@ -215,7 +215,7 @@ async function sendUSDT_TRC20(toAddr, amount) {
 }
 
 async function loadBalances() {
-  if (!REAL_WALLET || (!REAL_WALLET.ethAddress && !REAL_WALLET.trxAddress)) return;
+  if (!REAL_WALLET || (!REAL_WALLET.ethAddress && !REAL_WALLET.trxAddress && !REAL_WALLET.btcAddress)) return;
   const tbd = document.getElementById('totalBalanceDisplay');
   const tbs = document.getElementById('totalBalanceSub');
   if(tbd) tbd.classList.add('home-balance--loading');
