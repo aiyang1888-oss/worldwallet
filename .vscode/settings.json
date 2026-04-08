@@ -3,5 +3,8 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  }
+  },
+  "cursor.general.enableYoloMode": true,
+  "cursor.agent.autoRunTerminal": true,
+  "cursor.agent.allowedCommands": ["*"]
 }

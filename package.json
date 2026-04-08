@@ -5,6 +5,8 @@
     "build": "bash scripts/sync-assets.sh",
     "dev": "python3 -m http.server 8766 --directory dist",
     "dev:ping": "curl -sf -o /dev/null http://127.0.0.1:8766/wallet.html && echo OK || (echo 'FAIL: 请在仓库根执行 npm run dev，或检查 8766 被其它 http.server 占用' && exit 1)",
+    "dup-fn": "node scripts/ww-duplicate-functions.mjs",
+    "dup-fn:ui-rt": "node scripts/ww-duplicate-functions.mjs --ui-runtime-only",
     "test:ww": "node scripts/ww-deep-check.mjs",
     "test:ww:e2e": "node scripts/ww-puppeteer-smoke.mjs",
     "test:ww:chrome": "node scripts/ww-chrome-deep-check.mjs",

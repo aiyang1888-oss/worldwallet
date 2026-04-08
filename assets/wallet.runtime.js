@@ -146,212 +146,8 @@ function detectDeviceLang() {
   return 'zh';
 }
 
-// ── 补充缺失函数定义 ──────────────────────────────────────────
-function updateRealAddr() {
-  // 英语模式下更新地址显示为公链地址
-  if(REAL_WALLET && REAL_WALLET.ethAddress) {
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) chip.textContent = REAL_WALLET.trxAddress || REAL_WALLET.ethAddress;
-    const sa = document.getElementById('settingsAddr');
-    if(sa) sa.textContent = REAL_WALLET.ethAddress;
-  }
-  if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
-}
-
-// ── 万语地址系统 ──────────────────────────────────────────
-const ADDR_WORDS = []; // 10个字槽，每个 {word, lang, custom}
-
-function randDigits(n) {
-  let s = '';
-  for(let i=0;i<n;i++) s += Math.floor(Math.random()*10);
-  return s;
-}
-
-function randWord(lang) {
-  // 先查 SINGLE_CHARS（单字），再查 WW_WORDS_EXTRA（词库），再fallback到zh
-  const chars = SINGLE_CHARS[lang];
-  if(chars && chars.length > 0) return chars[Math.floor(Math.random()*chars.length)];
-  const extra = WW_WORDS_EXTRA[lang];
-  if(extra && extra.length > 0) {
-    const w = extra[Math.floor(Math.random()*extra.length)];
-    return w.substring(0, 4); // 词库取前4字作为地址词
-  }
-  return SINGLE_CHARS.zh[Math.floor(Math.random()*SINGLE_CHARS.zh.length)];
-}
-
-function randLang() {
-  // 使用所有支持的语言（LANG_INFO + WW_WORDS_EXTRA）
-  const allLangs = [...new Set([
-    ...Object.keys(SAMPLE_KEYS),
-    ...Object.keys(WW_WORDS_EXTRA)
-  ])].filter(l => l !== 'en' && l !== 'zh-TW' && l !== 'zh-HK');
-  return allLangs[Math.floor(Math.random()*allLangs.length)];
-}
-
-function initAddrWords() {
-  ADDR_WORDS.length = 0;
-  for(let i=0;i<10;i++) {
-    const lang = randLang();
-    ADDR_WORDS.push({word: randWord(lang), lang, custom: false});
-  }
-  // 随机前后缀
-  document.getElementById('addrPrefix').textContent = randDigits(8);
-  document.getElementById('addrSuffix').textContent = randDigits(8);
-  renderAddrWords();
-  // 同步所有地方的地址显示（统一单行）
-  setTimeout(() => {
-    const addr = getNativeAddr();
-    // 统一样式：单行 + 居中
-    const ADDR_STYLE = 'font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;display:block';
-    // 首页芯片
-    const chip = document.getElementById('homeAddrChip');
-    if(chip) {
-      const pre = addr.substring(0, 8);
-      const mid = addr.substring(8, 18);
-      const suf = addr.substring(18);
-      chip.innerHTML = '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + pre + '</span>' +
-        '<span style="color:#f0d070;font-weight:700;font-size:13px;letter-spacing:1px">' + mid + '</span>' +
-        '<span style="color:rgba(255,255,255,0.35);font-size:10px">' + suf + '</span>';
-      chip.style.cssText += ';text-align:center;display:block';
-    }
-    // QR大字（居中 + 高亮）
-    const qp1 = document.getElementById('qrPart1');
-    const qp2 = document.getElementById('qrPart2');
-    if(qp1) {
-      const prefix = document.getElementById('addrPrefix')?.textContent || '';
-      const suffix = document.getElementById('addrSuffix')?.textContent || '';
-      let html = `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${prefix}</span>`;
-      ADDR_WORDS.forEach(w => {
-        if(w.custom) {
-          html += `<span style="color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)">${w.word}</span>`;
-        } else {
-          html += `<span style="color:#8888bb;font-size:13px">${w.word}</span>`;
-        }
-      });
-      html += `<span style="color:var(--text-muted);font-family:monospace;font-size:11px">${suffix}</span>`;
-      qp1.innerHTML = html;
-    }
-    if(qp2) qp2.style.display = 'none';
-    // QR弹窗
-    const qm = document.getElementById('qrAddrMain');
-    if(qm) { qm.textContent = addr; qm.style.cssText = 'font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#1a1a1a;text-align:center;display:block;margin-bottom:4px'; }
-    // 设置页
-    const sa = document.getElementById('settingsAddr');
-    if(sa) { sa.textContent = addr; sa.style.cssText = 'font-size:10px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    // swoosh（单行居中）
-    const sfp1 = _safeEl('swooshFromPart1');
-    const sfp2 = _safeEl('swooshFromPart2');
-    if(sfp1) { sfp1.textContent = addr; sfp1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(sfp2) sfp2.style.display = 'none';
-    // 成功页（单行居中）
-    const suc1 = _safeEl('successFromPart1');
-    const suc2 = _safeEl('successFromPart2');
-    if(suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
-    if(suc2) suc2.style.display = 'none';
-  }, 50);
-}
-
-function renderAddrWords() {
-  const container = document.getElementById('addrWords');
-  if(!container) return;
-  // 确保 suffix/prefix 只含8位数字
-  const pre = document.getElementById('addrPrefix');
-  const suf = document.getElementById('addrSuffix');
-  if(pre) pre.textContent = (pre.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
-  if(suf) suf.textContent = (suf.textContent || '').replace(/\D/g,'').substring(0,8).padStart(8,'0');
-  // 每个字符等宽盒子，定制字金色高亮，随机字淡紫（DOM + textContent，避免 innerHTML XSS）
-  container.innerHTML = '';
-  ADDR_WORDS.forEach(w => {
-    const span = document.createElement('span');
-    span.textContent = w.word;
-    span.style.cssText = w.custom
-      ? 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#f0d070;font-size:17px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)'
-      : 'display:inline-flex;align-items:center;justify-content:center;width:18px;color:#8888bb;font-size:16px';
-    container.appendChild(span);
-  });
-  // 同步 addrMain
-  const m = (_safeEl('addrMain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrMain fallback */;
-  if(m) m.textContent = ADDR_WORDS.map(w=>w.word).join('');
-  // 同步 QR 高亮
-  const qp1 = document.getElementById('qrPart1');
-  if(qp1 && ADDR_WORDS.length) {
-    qp1.innerHTML = '';
-    const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-
-    const preSpan = document.createElement('span');
-    preSpan.textContent = prefix;
-    preSpan.style.cssText = 'color:var(--text-muted);font-family:monospace;font-size:11px';
-    qp1.appendChild(preSpan);
-
-    const dashSpan = document.createElement('span');
-    dashSpan.textContent = '-';
-    dashSpan.style.cssText = 'color:var(--text-muted);font-size:11px';
-    qp1.appendChild(dashSpan);
-
-    ADDR_WORDS.forEach(w => {
-      const span = document.createElement('span');
-      span.textContent = w.word;
-      span.style.cssText = w.custom
-        ? 'color:#f0d070;font-size:14px;font-weight:700;text-shadow:0 0 6px rgba(240,208,112,0.5)'
-        : 'color:#8888bb;font-size:13px';
-      qp1.appendChild(span);
-    });
-
-    const dashSpan2 = document.createElement('span');
-    dashSpan2.textContent = '-';
-    dashSpan2.style.cssText = 'color:var(--text-muted);font-size:11px';
-    qp1.appendChild(dashSpan2);
-
-    const sufSpan = document.createElement('span');
-    sufSpan.textContent = suffix;
-    sufSpan.style.cssText = 'color:var(--text-muted);font-family:monospace;font-size:11px';
-    qp1.appendChild(sufSpan);
-  }
-}
-
-function openCustomizeAddr() {
-  openWordEditor(0);
-}
-
-function openWordEditor(idx) {
-  const w = ADDR_WORDS[idx];
-  const info = LANG_INFO[w.lang] || {flag:'🌍', name:'?'};
-
-  // 弹出简单的 prompt 式选择
-  const langList = Object.keys(SAMPLE_KEYS).filter(l=>l!=='en').map(l=>{
-    const i = LANG_INFO[l]||{flag:'🌍',name:l};
-    return `${i.flag} ${i.name} (${l})`;
-  }).join('\n');
-
-  const input = window.prompt(
-    `第 ${idx+1} 个字（当前：${info.flag} "${w.word}"）\n\n输入新词（直接输入），或留空随机\n\n可用语言：${Object.entries(LANG_INFO).filter(([l])=>l!=='en').map(([l,i])=>i.flag+l).join(' ')}`,
-    w.custom ? w.word : ''
-  );
-
-  if(input === null) return; // 取消
-
-  const trimmed = input.trim();
-  if(trimmed === '') {
-    // 随机
-    const lang = randLang();
-    ADDR_WORDS[idx] = {word: randWord(lang), lang, custom: false};
-  } else {
-    if (trimmed.length > 4) {
-      alert('词长度必须在 1-4 个字符之间');
-      return;
-    }
-    if (!/^[\u4e00-\u9fff\u3040-\u309f\uac00-\ud7af\u0600-\u06ff\u0400-\u04ff\u0900-\u097f\u0e00-\u0e7f\u1ea0-\u1ef9\u0100-\u017f\u0370-\u03ff\u0600-\u06ff]+$/.test(trimmed)) {
-      alert('仅允许输入字符');
-      return;
-    }
-    ADDR_WORDS[idx] = {word: trimmed, lang: w.lang, custom: true};
-  }
-  renderAddrWords();
-}
-
-// getNativeAddr 已统一到下方定义
-
+// ── 万语地址：仅声明 ADDR_WORDS；updateRealAddr / initAddrWords / renderAddrWords / openWordEditor / updateAddr / getNativeAddr / copy* 见先加载的 wallet.addr.js。勿在此重复 function，否则会覆盖 addr 实现。──
+const ADDR_WORDS = []; // 10 个字槽，每个 {word, lang, custom}
 
 
 // ── 真实钱包存储 ──────────────────────────────────────────────
@@ -1738,129 +1534,6 @@ function setTransferQuickAmount(amt) {
   if (typeof calcTransferFee === 'function') calcTransferFee();
 }
 
-function updateAddr() {
-  const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
-  const isEn = currentLang==='en';
-  // 初始化万语地址（如果还没初始化）
-  if(ADDR_WORDS.length === 0) initAddrWords();
-  else renderAddrWords();
-  // 获取完整万语地址
-  const nativeAddr = getNativeAddr();
-  const shortAddr = nativeAddr.length > 16 ? nativeAddr.substring(0,8)+'...'+nativeAddr.slice(-4) : nativeAddr;
-  // 首页芯片
-  const chip = document.getElementById('homeAddrChip');
-  if(chip) chip.textContent = isEn ? CHAIN_ADDR : nativeAddr;
-  // QR 二维码区大字显示
-  const qp1 = document.getElementById('qrPart1');
-  const qp2 = document.getElementById('qrPart2');
-  if(qp1 && !isEn) { qp1.textContent = nativeAddr.substring(0,10); qp1.style.fontSize='14px'; qp1.style.letterSpacing='1px'; }
-  if(qp2 && !isEn) { qp2.textContent = nativeAddr.substring(10); qp2.style.fontSize='12px'; }
-  // swoosh 转账动画
-  const sfp1 = _safeEl('swooshFromPart1');
-  const sfp2 = _safeEl('swooshFromPart2');
-  if(sfp1 && !isEn) { sfp1.textContent = nativeAddr.substring(0,8); sfp1.style.fontSize='12px'; sfp1.style.letterSpacing='1px'; }
-  if(sfp2 && !isEn) sfp2.textContent = nativeAddr.substring(8,18)+'...';
-  // 转账成功页
-  const suc1 = _safeEl('successFromPart1');
-  const suc2 = _safeEl('successFromPart2');
-  if(suc1 && !isEn) { suc1.textContent = nativeAddr.substring(0,8); suc1.style.fontSize='12px'; }
-  if(suc2 && !isEn) suc2.textContent = nativeAddr.substring(8,18)+'...';
-  // 地址页
-  const m=_safeEl('addrMain');
-  const n=(_safeEl('addrNum') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* addrNum fallback */;
-  if(m) m.textContent = isEn ? CHAIN_ADDR : a.main;
-  if(n) n.style.display = isEn?'none':'block';
-  if(n&&!isEn) n.textContent = a.num;
-  // QR弹窗同步
-  const qm=document.getElementById('qrAddrMain');
-  if(qm) qm.textContent = isEn ? CHAIN_ADDR : nativeAddr;
-  // 二维码区语言标签（与系统语言 currentLang 一致）
-  const langTag = document.getElementById('qrLangTag');
-  const info = LANG_INFO[currentLang]||{flag:'🌍',name:'Mother'};
-  if(langTag) langTag.textContent = (info.flag || '🌍') + ' ' + (currentLang === 'en' ? 'BIP39' : '万语地址');
-  // 更新二维码显示内容
-  updateQRDisplay();
-  // 同步礼金UI
-  if(typeof updateGiftUI==='function') updateGiftUI();
-  updateHomeChainStrip();
-}
-
-function getNativeAddr() {
-  if(currentLang === 'en') return CHAIN_ADDR;
-  const prefix = (document.getElementById('addrPrefix')?.textContent || '38294651').replace(/\D/g,'').substring(0,8);
-  const suffix = (document.getElementById('addrSuffix')?.textContent || '92847361').replace(/\D/g,'').substring(0,8);
-  const words = ADDR_WORDS.length ? ADDR_WORDS.map(w=>w.word).join('') : '';
-  return prefix + '-' + words + '-' + suffix;
-}
-
-function copyHomeAddr() {
-  const addr = getNativeAddr();
-  const btn = document.getElementById('homeCopyAddrBtn');
-  const done = () => {
-    if(btn) {
-      btn.textContent = '✅ 已复制';
-      btn.style.background = 'rgba(74,200,74,0.2)';
-      btn.style.color = 'var(--green)';
-      setTimeout(() => {
-        btn.textContent = '复制地址';
-        btn.style.background = '';
-        btn.style.color = '';
-      }, 1800);
-    }
-    showToast('✅ 万语地址已复制到剪贴板', 'success', 2200);
-  };
-  if(navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(addr).then(done).catch(() => {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = addr;
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        done();
-      } catch(e) { showToast('复制失败，请长按地址手动复制', 'error'); }
-    });
-  } else {
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = addr;
-      ta.style.position = 'fixed';
-      ta.style.left = '-9999px';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      done();
-    } catch(e) { showToast('复制失败，请长按地址手动复制', 'error'); }
-  }
-}
-
-function copyNative() {
-  navigator.clipboard?.writeText(getNativeAddr()).catch(()=>{});
-  const btn=document.getElementById('copyNativeBtn');
-  if(btn){btn.textContent='✅ 已复制'; btn.classList.add('copied');}
-  setTimeout(()=>{btn.textContent='📋 复制';if(btn) btn.classList.remove('copied');},2000);
-}
-
-function copyBoth() {
-  const native = getNativeAddr();
-  const isEn = currentLang === 'en';
-  let text;
-  if(isEn) {
-    text = `⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
-  } else {
-    text = `🌍 万语地址\n${native}\n\n⛓️ 公链地址\nTRX: ${CHAIN_ADDR}\nETH: ${getEthAddr()}\nBTC: ${getBtcAddr()}`;
-  }
-  navigator.clipboard?.writeText(text).catch(()=>{});
-  const btn=_safeEl('copyBothBtn');
-  btn.innerHTML='✅ 已复制两个地址';
-  btn.style.borderColor='var(--green)';btn.style.color='var(--green)';
-  setTimeout(()=>{btn.innerHTML='📋 一键复制两个地址（母语 + 公链）';btn.style.borderColor='';btn.style.color='';},2500);
-}
-
 function copySingle(text, el) {
   navigator.clipboard?.writeText(text).catch(()=>{});
   const orig=el.textContent; el.textContent='✅';
@@ -1915,16 +1588,6 @@ function updateQRDisplay() {
     p1.style.cssText = 'text-align:center;display:block;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
     if(p2) p2.style.display = 'none';
   }
-}
-
-function copyQRAddr() {
-  const native = getNativeAddr();
-  const text = currentLang==='en'
-    ? '⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr()
-    : '🌍 万语地址\n'+native+'\n\n⛓️ 公链地址\nTRX: '+CHAIN_ADDR+'\nETH: '+getEthAddr()+'\nBTC: '+getBtcAddr();
-  navigator.clipboard?.writeText(text).catch(()=>{});
-  const btn = _safeEl('qrCopyBtn');
-  if(btn) { btn.innerHTML='✅ 已复制'; setTimeout(()=>btn.innerHTML='📋 复制地址',1500); }
 }
 
 function toggleQRChain() {
@@ -2018,13 +1681,14 @@ async function runBatchTransfer() {
   if(okCount > 0) goTo('page-home');
 }
 
+/** 返回 null 表示加载中或未知，不得当作 0 用于「隐藏零余额」 */
 function parseAssetDisplayBalance(balId) {
   const el = document.getElementById(balId);
-  if(!el) return 0;
+  if(!el) return null;
   const t = (el.textContent || '').replace(/,/g,'').trim();
-  if(t === '--' || t === '...' || !t) return 0;
+  if(t === '--' || t === '...' || !t) return null;
   const n = parseFloat(t);
-  return isNaN(n) ? 0 : n;
+  return isNaN(n) ? null : n;
 }
 
 function applyHideZeroTokens() {
@@ -2039,6 +1703,7 @@ function applyHideZeroTokens() {
     const el = document.getElementById(row.id);
     if(!el) return;
     const v = parseAssetDisplayBalance(row.balId);
+    if(v === null) { el.style.display = ''; return; }
     el.style.display = (hide && v <= 1e-12) ? 'none' : '';
   });
 }
@@ -4425,8 +4090,86 @@ function promptWalletNotifications() {
       localStorage.setItem('ww_push_asked', '1');
       const msg = p === 'granted' ? '已开启通知' : ('通知权限：' + p);
       if (typeof showToast === 'function') showToast(msg, 'info', 2500);
+      try { if (typeof renderSystemNotificationsPanel === 'function') renderSystemNotificationsPanel(); } catch (_r) {}
     });
   } catch (e) {}
+}
+
+function wwGetSystemNotificationEntries() {
+  try {
+    var raw = localStorage.getItem('ww_system_notifs_v1');
+    if (!raw) return [];
+    var a = JSON.parse(raw);
+    return Array.isArray(a) ? a : [];
+  } catch (e2) { return []; }
+}
+
+function wwEscapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderSystemNotificationsPanel() {
+  var permEl = document.getElementById('systemNotifPermissionRow');
+  var listEl = document.getElementById('systemNotifList');
+  var actEl = document.getElementById('systemNotifActions');
+  if (!permEl || !listEl || !actEl) return;
+  if (typeof Notification === 'undefined') {
+    permEl.textContent = '当前环境不支持浏览器推送，仅可查看下方应用内通知记录。';
+  } else {
+    var st = Notification.permission;
+    var label = st === 'granted' ? '浏览器推送：已开启' : (st === 'denied' ? '浏览器推送：已拒绝（请在系统或站点设置中允许）' : '浏览器推送：未授权');
+    permEl.textContent = label;
+  }
+  var entries = wwGetSystemNotificationEntries();
+  if (!entries.length) {
+    listEl.innerHTML = '<div style="font-size:13px;color:var(--text-muted);line-height:1.6;text-align:center;padding:8px 4px 4px">暂无通知记录</div><div style="font-size:11px;color:var(--text-dim);line-height:1.55;margin-top:10px;text-align:center">安全提示、转账结果等将显示在此处。可在下方开启浏览器推送以便后台提醒。</div>';
+  } else {
+    listEl.innerHTML = entries.slice(0, 50).map(function (it) {
+      var t = it && it.t ? String(it.t) : '';
+      var title = it && it.title ? String(it.title) : '通知';
+      var body = it && it.body ? String(it.body) : '';
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);text-align:left"><div style="font-size:10px;color:var(--text-dim);margin-bottom:4px">' + wwEscapeHtml(t) + '</div><div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px">' + wwEscapeHtml(title) + '</div><div style="font-size:12px;color:var(--text-muted);line-height:1.45">' + wwEscapeHtml(body) + '</div></div>';
+    }).join('');
+  }
+  actEl.innerHTML = '';
+  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-primary';
+    btn.style.cssText = 'width:100%;padding:12px';
+    btn.textContent = Notification.permission === 'denied' ? '前往系统设置开启推送' : '开启浏览器推送通知';
+    btn.onclick = function () {
+      if (Notification.permission === 'denied') {
+        if (typeof showToast === 'function') showToast('请在浏览器站点设置中允许通知', 'info', 3200);
+        else alert('请在浏览器站点设置中允许通知');
+        return;
+      }
+      promptWalletNotifications();
+    };
+    actEl.appendChild(btn);
+  }
+}
+
+function openSystemNotificationsPanel() {
+  var ov = document.getElementById('systemNotifOverlay');
+  if (!ov) return;
+  try { renderSystemNotificationsPanel(); } catch (_e) {}
+  ov.classList.add('show');
+}
+
+function closeSystemNotificationsPanel() {
+  var ov = document.getElementById('systemNotifOverlay');
+  if (ov) ov.classList.remove('show');
+}
+
+function openReceivePage() {
+  try { goTab('tab-addr'); } catch (e) { try { goTo('page-addr'); } catch (e2) {} }
+  setTimeout(function () {
+    var el = document.getElementById('receiveQrSection') || document.getElementById('qrCodeContainer');
+    if (el && el.scrollIntoView) {
+      try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e3) { el.scrollIntoView(true); }
+    }
+  }, 120);
 }
 
 
@@ -6299,6 +6042,9 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof pinUnlockBackspace === 'function') window.pinUnlockBackspace = pinUnlockBackspace;
     if (typeof pinUnlockClear === 'function') window.pinUnlockClear = pinUnlockClear;
     if (typeof promptWalletNotifications === 'function') window.promptWalletNotifications = promptWalletNotifications;
+    if (typeof openSystemNotificationsPanel === 'function') window.openSystemNotificationsPanel = openSystemNotificationsPanel;
+    if (typeof closeSystemNotificationsPanel === 'function') window.closeSystemNotificationsPanel = closeSystemNotificationsPanel;
+    if (typeof openReceivePage === 'function') window.openReceivePage = openReceivePage;
     if (typeof selectTransferCoin === 'function') window.selectTransferCoin = selectTransferCoin;
     if (typeof setSwapMax === 'function') window.setSwapMax = setSwapMax;
     if (typeof shareHbCreatedKeyword === 'function') window.shareHbCreatedKeyword = shareHbCreatedKeyword;

@@ -188,8 +188,8 @@
       <div class="home-header" style="position:relative">
         <div id="homeBackupBanner" class="home-backup-banner" role="alert" onclick="goTo('page-settings')">⚠️ 钱包尚未备份助记词，丢失设备将无法恢复资产。点此处前往设置确认备份</div>
         <div style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px">
-          <div onclick="promptWalletNotifications()" title="通知" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer;font-size:18px;line-height:1">🔔</div>
-          <div onclick="goTab('tab-addr')" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer">
+          <div onclick="openSystemNotificationsPanel()" title="系统通知" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer;font-size:18px;line-height:1">🔔</div>
+          <div onclick="openReceivePage()" title="收款" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
               <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
@@ -232,7 +232,7 @@
       
       
       <div class="assets-section">
-        <div class="assets-title home-section-head">
+        <div class="assets-title home-section-head" title="默认展示全部持仓；仅当勾选「隐藏零余额」时隐藏余额为 0 的币种">
           <span>我的资产</span>
           <div class="home-section-head-actions">
             <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;margin:0">
@@ -307,8 +307,8 @@
           </div>
         </div>
 
-        <!-- ✨ 二维码专区 -->
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:10px;text-align:center">
+        <!-- ✨ 二维码专区（首页快捷入口 scroll 锚点） -->
+        <div id="receiveQrSection" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:10px;text-align:center">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
             <span style="font-size:13px;color:var(--gold)">📱</span>
             <span style="font-size:11px;color:var(--text-muted);letter-spacing:1px">扫码收款</span>
@@ -959,6 +959,19 @@
       <div class="pin-dots" id="pinDots"></div>
       <div class="pin-keypad" id="pinKeypad"></div>
       <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+    </div>
+  </div>
+
+  <!-- 系统通知中心（首页铃铛） -->
+  <div class="overlay" id="systemNotifOverlay" onclick="if(event.target===this)closeSystemNotificationsPanel()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:340px;width:92%;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:86vh">
+      <div style="padding:16px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div style="font-size:17px;font-weight:700;color:var(--text)">系统通知</div>
+        <button type="button" onclick="closeSystemNotificationsPanel()" style="background:transparent;border:none;color:var(--text-muted);font-size:24px;line-height:1;cursor:pointer;padding:2px 10px" aria-label="关闭">×</button>
+      </div>
+      <div id="systemNotifPermissionRow" style="padding:12px 16px;background:rgba(200,168,75,0.08);border-bottom:1px solid var(--border);font-size:12px;line-height:1.55;color:var(--text-muted)"></div>
+      <div id="systemNotifList" style="padding:14px 16px 18px;overflow-y:auto;flex:1;min-height:100px"></div>
+      <div id="systemNotifActions" style="padding:0 16px 16px;display:flex;flex-direction:column;gap:8px;flex-shrink:0"></div>
     </div>
   </div>
 

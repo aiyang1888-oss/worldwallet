@@ -422,3 +422,21 @@
 ::1 - - [07/Apr/2026 16:17:10] "GET /wallet.html HTTP/1.1" 304 -
 ::1 - - [07/Apr/2026 16:17:10] "GET /wallet.css HTTP/1.1" 304 -
 ::1 - - [07/Apr/2026 16:17:10] "GET /wallet.runtime.js HTTP/1.1" 304 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:03] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:03] "GET /wallet.html HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:03] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:03] "GET /favicon.ico HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:14] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:14] "GET / HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:53] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:18:53] "GET /wallet.html HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:42] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:42] "GET /wallet.html HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:42] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:42] "HEAD /wallet.html HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:51] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:51] "GET / HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:57] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:57] "GET /wallet.html HTTP/1.1" 404 -
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:57] code 404, message File not found
+::ffff:127.0.0.1 - - [08/Apr/2026 11:19:57] "GET / HTTP/1.1" 404 -

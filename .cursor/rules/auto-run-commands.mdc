@@ -1,0 +1,33 @@
+---
+description: Auto-run terminal commands during agent work without asking for confirmation
+alwaysApply: true
+---
+
+# 自动执行终端命令
+
+在工作过程中，**遇到任何需要 run 的步骤，直接执行，不要询问用户确认**。
+
+## 规则
+
+1. **dev server 检查**：执行测试或验证前，先检查端口 8766 是否在线：
+   ```bash
+   curl -sf http://127.0.0.1:8766/wallet.html -o /dev/null && echo ok || npm run dev &
+   ```
+   若未运行则后台启动，无需等待。
+
+2. **自动执行以下命令类型**（无需确认）：
+   - `npm run dev` — 启动本地预览
+   - `npm run build` — 同步 assets/
+   - `npm run test:ww` — 运行深度检查
+   - `node --check <file>` — JS 语法验证
+   - `git add / commit / push` — 提交推送
+   - `bash scripts/telegram-notify-working.sh "..."` — Telegram 通知
+
+3. **完成代码修改后，必须按顺序自动执行**：
+   ```bash
+   node --check dist/wallet.ui.js && node --check dist/wallet.runtime.js
+   git -C dist add -A && git -C dist commit -m "<说明>" && git -C dist push
+   bash scripts/telegram-notify-working.sh "<说明>"
+   ```
+
+4. **不要在 terminal 命令前停下来等待**；直接 run，观察输出，若失败再修复。

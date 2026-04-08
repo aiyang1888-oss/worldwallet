@@ -1436,13 +1436,14 @@ function copyKeyword() {
   if(btn) { const old = btn.textContent; btn.textContent = '✅ 已复制'; setTimeout(()=>btn.textContent=old, 1500); }
 }
 
+/** 返回 null 表示加载中或未知，不得当作 0 用于「隐藏零余额」 */
 function parseAssetDisplayBalance(balId) {
   const el = document.getElementById(balId);
-  if(!el) return 0;
+  if(!el) return null;
   const t = (el.textContent || '').replace(/,/g,'').trim();
-  if(t === '--' || t === '...' || !t) return 0;
+  if(t === '--' || t === '...' || !t) return null;
   const n = parseFloat(t);
-  return isNaN(n) ? 0 : n;
+  return isNaN(n) ? null : n;
 }
 
 function applyHideZeroTokens() {
@@ -1457,6 +1458,7 @@ function applyHideZeroTokens() {
     const el = document.getElementById(row.id);
     if(!el) return;
     const v = parseAssetDisplayBalance(row.balId);
+    if(v === null) { el.style.display = ''; return; }
     el.style.display = (hide && v <= 1e-12) ? 'none' : '';
   });
 }
