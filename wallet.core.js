@@ -6,6 +6,14 @@ let REAL_WALLET = null;
 try {
   Object.defineProperty(window, 'REAL_WALLET', {
     get: function () { return REAL_WALLET; },
+    /** 仅允许通过 window 清空；业务侧仍用词法 REAL_WALLET=…，与 core 内 _commitRealWalletSnapshot 配合 */
+    set: function (v) {
+      if (v === null || typeof v === 'undefined') {
+        REAL_WALLET = null;
+        return;
+      }
+      try { safeLog('[REAL_WALLET] ignored direct window assignment (use lexical binding or core commit)'); } catch (_s) {}
+    },
     enumerable: true,
     configurable: false
   });
@@ -27,7 +35,7 @@ function _isValidWalletPublicSnapshot(o) {
   return true;
 }
 
-/** 校验通过后一次性提交到 REAL_WALLET；避免半初始化快照被读取 */
+/** 校验通过后一次性发布到 REAL_WALLET；调用方须已持久化成功（load 从盘读出的完整快照除外） */
 function _commitRealWalletSnapshot(snapshot) {
   if (!_isValidWalletPublicSnapshot(snapshot)) {
     safeLog('[_commitRealWalletSnapshot] invalid snapshot');
@@ -85,8 +93,10 @@ async function saveWalletSecure(w, pin) {
       safe.encrypted = await encryptWithPin(sensitive, pin);
     }
     localStorage.setItem('ww_wallet', JSON.stringify(safe));
+    return true;
   } catch (e) {
     safeLog('[saveWalletSecure] error');
+    return false;
   }
 }
 
@@ -161,7 +171,10 @@ function _saveWalletPlainPublicOnly(w) {
       })()
     };
     localStorage.setItem('ww_wallet', JSON.stringify(safe));
-  } catch(e) {}
+    return true;
+  } catch(e) {
+    return false;
+  }
 }
 
 function saveWallet(w) {
@@ -267,12 +280,16 @@ async function createRealWallet(forcedWordCount) {
   };
   var pinPersist = '';
   try { pinPersist = (localStorage.getItem('ww_pin') || '').trim(); } catch (_pp) {}
+  var persistOk = false;
   if (pinPersist) {
-    await saveWalletSecure(w, pinPersist).catch(function () {
-      _saveWalletPlainPublicOnly(w);
-    });
+    persistOk = await saveWalletSecure(w, pinPersist);
+    if (!persistOk) persistOk = _saveWalletPlainPublicOnly(w);
   } else {
-    _saveWalletPlainPublicOnly(w);
+    persistOk = _saveWalletPlainPublicOnly(w);
+  }
+  if (!persistOk) {
+    safeLog('[createRealWallet] persistence failed');
+    throw new Error('创建失败：无法保存钱包');
   }
   try {
     if (typeof wwSetTempWallet === 'function') {
@@ -331,6 +348,15 @@ async function restoreWallet(mnemonic) {
   }
   var pin = '';
   try { pin = (localStorage.getItem('ww_pin') || '').trim(); } catch (e) {}
+  var addrMapRestore = (function () {
+    var am = result.addrMap || {};
+    return {
+      trx: am.trx != null ? am.trx : result.trx.address,
+      eth: am.eth != null ? am.eth : result.eth.address,
+      btc: am.btc != null ? am.btc : result.btc.address,
+      derived_from: am.derived_from != null ? am.derived_from : 'eth'
+    };
+  })();
   var pub = {
     ethAddress: result.eth.address,
     trxAddress: result.trx.address,
@@ -338,21 +364,22 @@ async function restoreWallet(mnemonic) {
     createdAt: result.createdAt,
     hasEncrypted: !!pin,
     backedUp: false,
-    addrMap: (function () {
-      var am = result.addrMap || {};
-      return {
-        trx: am.trx != null ? am.trx : result.trx.address,
-        eth: am.eth != null ? am.eth : result.eth.address,
-        btc: am.btc != null ? am.btc : result.btc.address,
-        derived_from: am.derived_from != null ? am.derived_from : 'eth'
-      };
-    })()
+    addrMap: addrMapRestore
   };
   if (!_isValidWalletPublicSnapshot(pub)) {
     safeLog('[restoreWallet] public snapshot validation failed');
     showToast('❌ 钱包状态异常', 'error');
     return null;
   }
+  var plainPub = {
+    ethAddress: result.eth.address,
+    trxAddress: result.trx.address,
+    btcAddress: result.btc.address,
+    createdAt: result.createdAt,
+    backedUp: false,
+    addrMap: addrMapRestore
+  };
+  var persistOk = false;
   if (pin) {
     var flatForStore = {
       mnemonic: result.mnemonic,
@@ -361,34 +388,17 @@ async function restoreWallet(mnemonic) {
       btcAddress: result.btc.address,
       createdAt: result.createdAt,
       backedUp: false,
-      addrMap: (function () {
-        var am = result.addrMap || {};
-        return {
-          trx: am.trx != null ? am.trx : result.trx.address,
-          eth: am.eth != null ? am.eth : result.eth.address,
-          btc: am.btc != null ? am.btc : result.btc.address,
-          derived_from: am.derived_from != null ? am.derived_from : 'eth'
-        };
-      })()
+      addrMap: addrMapRestore
     };
-    await saveWalletSecure(flatForStore, pin);
+    persistOk = await saveWalletSecure(flatForStore, pin);
+    if (!persistOk) persistOk = _saveWalletPlainPublicOnly(plainPub);
   } else {
-    _saveWalletPlainPublicOnly({
-      ethAddress: result.eth.address,
-      trxAddress: result.trx.address,
-      btcAddress: result.btc.address,
-      createdAt: result.createdAt,
-      backedUp: false,
-      addrMap: (function () {
-        var am = result.addrMap || {};
-        return {
-          trx: am.trx != null ? am.trx : result.trx.address,
-          eth: am.eth != null ? am.eth : result.eth.address,
-          btc: am.btc != null ? am.btc : result.btc.address,
-          derived_from: am.derived_from != null ? am.derived_from : 'eth'
-        };
-      })()
-    });
+    persistOk = _saveWalletPlainPublicOnly(plainPub);
+  }
+  if (!persistOk) {
+    safeLog('[restoreWallet] persistence failed');
+    showToast('❌ 无法保存钱包，请重试', 'error');
+    return null;
   }
   if (!_commitRealWalletSnapshot(pub)) {
     safeLog('[restoreWallet] commit failed');
