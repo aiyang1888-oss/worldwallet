@@ -3462,8 +3462,6 @@ function calcTransferFee() {
   }
   const _spd = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
   if (chainEl) chainEl.textContent = transferCoin.chain + ' · ' + (typeof transferSpeedHint === 'function' ? transferSpeedHint(transferCoin.id, _spd) : '约30秒');
-  const bal = Number(transferCoin.bal) || 0;
-  if (amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
   try { if (typeof wwUpdateTxSimulation === 'function') wwUpdateTxSimulation(); } catch (_ws) {}
 }
@@ -5477,22 +5475,89 @@ async function getPrices() {
   }
 }
 
+var WW_HOME_BALANCE_SNAP_KEY = 'ww_home_balance_snap_v1';
+
+function wwReadHomeBalanceSnap() {
+  try {
+    var raw = localStorage.getItem(WW_HOME_BALANCE_SNAP_KEY);
+    if (!raw) return null;
+    var o = JSON.parse(raw);
+    if (!o || typeof o.wid !== 'string' || typeof wwWalletSnapIdForCache !== 'function' || o.wid !== wwWalletSnapIdForCache()) return null;
+    return o;
+  } catch (_e) {
+    return null;
+  }
+}
+
+function wwApplyHomeBalanceSnap(o) {
+  if (!o || !REAL_WALLET) return false;
+  var tbd = document.getElementById('totalBalanceDisplay');
+  var tbs = document.getElementById('totalBalanceSub');
+  if (tbd) {
+    tbd.classList.remove('home-balance--loading');
+    if (o.totalTxt != null) tbd.textContent = o.totalTxt;
+  }
+  if (tbs && o.subTxt != null) tbs.textContent = o.subTxt;
+  var btn = typeof _safeEl === 'function' ? _safeEl('balRefreshBtn') : document.getElementById('balRefreshBtn');
+  if (btn) btn.textContent = '刷新';
+  var set = function(id, val) {
+    var el = document.getElementById(id);
+    if (el && val != null) el.textContent = val;
+  };
+  set('balUsdt', o.balUsdt);
+  set('valUsdt', o.valUsdt);
+  if (o.chgUsdt != null) set('chgUsdt', o.chgUsdt);
+  if (typeof o.totalUsd === 'number' && isFinite(o.totalUsd)) {
+    window._lastTotalUsd = o.totalUsd;
+  } else if (typeof parseUsdFromBalanceTxt === 'function' && o.totalTxt) {
+    window._lastTotalUsd = parseUsdFromBalanceTxt(o.totalTxt);
+  }
+  if (typeof drawHomeBalanceChart === 'function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
+  try { if (typeof applyHideZeroTokens === 'function') applyHideZeroTokens(); } catch (_e) {}
+  return true;
+}
+
+function wwTryRestoreCachedHomeUi() {
+  if (!REAL_WALLET || typeof wwWalletSnapIdForCache !== 'function') return;
+  var snap = wwReadHomeBalanceSnap();
+  if (!snap) return;
+  wwApplyHomeBalanceSnap(snap);
+}
+
+function wwPersistHomeBalanceSnap(payload) {
+  try {
+    if (typeof wwWalletSnapIdForCache !== 'function') return;
+    payload = payload || {};
+    payload.wid = wwWalletSnapIdForCache();
+    payload.t = Date.now();
+    localStorage.setItem(WW_HOME_BALANCE_SNAP_KEY, JSON.stringify(payload));
+  } catch (_e) {}
+}
+
 async function loadBalances() {
   if (!REAL_WALLET) return;
   if (!REAL_WALLET.ethAddress && !REAL_WALLET.trxAddress && !REAL_WALLET.btcAddress) return;
   const tbd = document.getElementById('totalBalanceDisplay');
   const tbs = document.getElementById('totalBalanceSub');
-  if(tbd) tbd.classList.add('home-balance--loading');
-  if(tbs) tbs.textContent = '同步中…';
-  
+  var hadSnap = false;
+  try {
+    if (typeof wwReadHomeBalanceSnap === 'function' && typeof wwApplyHomeBalanceSnap === 'function') {
+      var _snap = wwReadHomeBalanceSnap();
+      if (_snap) hadSnap = !!wwApplyHomeBalanceSnap(_snap);
+    }
+  } catch (_s) {}
+  if (!hadSnap) {
+    if(tbd) tbd.classList.add('home-balance--loading');
+    if(tbs) tbs.textContent = '同步中…';
+    const btn0 = _safeEl('balRefreshBtn');
+    if(btn0) btn0.textContent = '查询中...';
+    ['balUsdt'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = '...';
+    });
+  }
+
   const btn = _safeEl('balRefreshBtn');
-  if(btn) btn.textContent = '查询中...';
-  
-  // 更新标签为加载中
-  ['balUsdt'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.textContent = '...';
-  });
 
   try {
     const [prices] = await Promise.all([getPrices()]);
@@ -5595,6 +5660,17 @@ async function loadBalances() {
     if(btn) btn.textContent = '刷新';
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
     if(typeof loadTrxResource==='function') loadTrxResource();
+    try {
+      var _chgSnap = document.getElementById('chgUsdt');
+      wwPersistHomeBalanceSnap({
+        totalUsd: total,
+        totalTxt: fmtUsd(total),
+        subTxt: '≈ ' + (total * cnyRate).toFixed(0) + ' CNY · 实时价格',
+        balUsdt: fmt(usdtBal),
+        valUsdt: fmtUsd(usdtUsd),
+        chgUsdt: _chgSnap ? _chgSnap.textContent : ''
+      });
+    } catch (_ps) {}
   } catch(e) {
     console.error('Balance load error:', e);
     if(tbd) tbd.classList.remove('home-balance--loading');

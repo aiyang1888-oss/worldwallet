@@ -768,7 +768,7 @@ async function finalizeImportedWalletAfterPin(pin) {
     backedUp: !!flat.backedUp
   };
   try { if (typeof updateAddr === 'function') updateAddr(); } catch(e) {}
-  try { if (typeof loadBalances === 'function') setTimeout(loadBalances, 500); } catch(e) {}
+  try { if (typeof loadBalances === 'function') setTimeout(loadBalances, 0); } catch(e) {}
   var tb = document.getElementById('tabBar');
   if (tb) tb.style.display = 'flex';
   goTo('page-home');
@@ -874,6 +874,16 @@ function wwWalletHasAnyChainAddress(rw) {
     return !!(rw.ethAddress || rw.trxAddress || rw.btcAddress);
   } catch (_e) {
     return false;
+  }
+}
+
+/** 本机首页 UI 缓存键：与当前钱包绑定（换地址则丢弃快照） */
+function wwWalletSnapIdForCache() {
+  try {
+    if (typeof REAL_WALLET === 'undefined' || !REAL_WALLET) return '';
+    return String(REAL_WALLET.trxAddress || '') + '|' + String(REAL_WALLET.ethAddress || '');
+  } catch (_e) {
+    return '';
   }
 }
 
@@ -1058,6 +1068,12 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   }
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
+    try {
+      if (REAL_WALLET && typeof wwTryRestoreCachedHomeUi === 'function') wwTryRestoreCachedHomeUi();
+    } catch (_snapH) {}
+    try {
+      if (REAL_WALLET && typeof wwTryRestoreCachedTxHistory === 'function') wwTryRestoreCachedTxHistory();
+    } catch (_snapT) {}
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
@@ -1078,8 +1094,8 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   }
   // loadBalances（runtime）以 TRX 账户查 TRC-20 USDT，须与 tx 历史一致用 trxAddress 触发；勿仅用 ethAddress，否则仅 TRX 钱包首页不拉余额
   if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
-    setTimeout(loadTxHistory, 500);
-    setTimeout(loadBalances, 500);
+    setTimeout(loadTxHistory, 0);
+    setTimeout(loadBalances, 0);
   }
   if (pageId === 'page-password-restore') {
     var _pri = document.getElementById('pinRestorePageInput');
@@ -2174,8 +2190,6 @@ function calcTransferFee() {
   }
   const _spd = (typeof getTransferFeeSpeed === 'function') ? getTransferFeeSpeed() : 'normal';
   if (chainEl) chainEl.textContent = transferCoin.chain + ' · ' + (typeof transferSpeedHint === 'function' ? transferSpeedHint(transferCoin.id, _spd) : '约30秒');
-  const bal = Number(transferCoin.bal) || 0;
-  if (amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
   try { if (typeof wwUpdateTxSimulation === 'function') wwUpdateTxSimulation(); } catch (_ws) {}
 }
@@ -3202,7 +3216,9 @@ async function _resumeWalletAfterUnlock() {
   updateAddr();
   const tb = document.getElementById('tabBar');
   if(tb) tb.style.display = 'flex';
-  setTimeout(loadBalances, 500);
+  try { if (typeof wwTryRestoreCachedHomeUi === 'function') wwTryRestoreCachedHomeUi(); } catch (_ruH) {}
+  try { if (typeof wwTryRestoreCachedTxHistory === 'function') wwTryRestoreCachedTxHistory(); } catch (_ruT) {}
+  setTimeout(loadBalances, 0);
   if(window._wwUnlockPreservePage) {
     window._wwUnlockPreservePage = false;
     window._wwForceIdleLock = false;
