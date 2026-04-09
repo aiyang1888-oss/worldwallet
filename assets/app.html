@@ -118,6 +118,9 @@ try {
       releaseWelcomeGuard();
       return;
     }
+    try {
+      document.documentElement.classList.add('ww-hide-welcome-until-ready');
+    } catch (_hw) {}
     document.documentElement.setAttribute('data-ww-boot-page', boot);
     try {
       document.documentElement.classList.add('ww-boot-route');
