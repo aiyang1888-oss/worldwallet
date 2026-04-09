@@ -14,6 +14,8 @@ input[type="number"] {
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: var(--bg, #06060f);
+  overflow-x: hidden;
 }
 
 /* 首帧路由（head 设置 data-ww-boot-page）：禁用 .page 过渡，避免欢迎页→目标页出现滑动/淡入闪屏 */
@@ -132,6 +134,8 @@ body {
   line-height: var(--line-body, 1.55);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .phone {
@@ -144,19 +148,23 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
     height: 100% !important;
-    /* iOS / 移动 Chrome：避免 100% 高度链断裂 */
     height: -webkit-fill-available !important;
+    overflow-x: hidden !important;
+    /* 与 .phone 同色，避免顶部/两侧露缝 */
+    background: var(--bg, #06060f) !important;
   }
   body {
     margin: 0 !important;
     padding: 0 !important;
-    background: var(--bg, #080810) !important;
+    background: var(--bg, #06060f) !important;
     overflow: hidden !important;
+    overflow-x: hidden !important;
     width: 100% !important;
+    max-width: 100% !important;
     min-height: 100% !important;
     min-height: -webkit-fill-available !important;
-    /* 关键：勿垂直居中 .phone，否则略高时底栏被裁到屏外 */
     align-items: stretch !important;
     justify-content: flex-start !important;
   }
@@ -164,7 +172,8 @@ body {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    /* 先 100vh 兼容旧内核，再用 svh/dvh 贴合移动浏览器可视区，避免底栏被推出屏幕 */
+    /* 勿在 .phone 上再 pad safe-area：.page 已有左右 inset，重复 pad 会出现约一指宽「多余栏」 */
+    padding: 0 !important;
     height: 100vh !important;
     height: 100svh !important;
     height: 100dvh !important;
@@ -180,19 +189,16 @@ body {
     transform: none !important;
     margin: 0 !important;
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
+    inset: 0 !important;
     box-sizing: border-box !important;
-    /* 刘海 / 灵动岛 / 横条安全区（与底栏 padding 互补：顶侧给内容留白） */
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-left: env(safe-area-inset-left, 0px);
-    padding-right: env(safe-area-inset-right, 0px);
+    overflow-x: hidden !important;
+    background: var(--bg, #06060f) !important;
   }
   .status-bar { display: none !important; }
-  /* 装饰性状态栏已隐藏：页面勿再预留 50px，否则挤压纵向空间 */
+  /* 装饰性状态栏已隐藏：顶栏安全区只在这里加一次，避免与 .phone 双重留白 */
   .page {
     top: 0 !important;
+    padding-top: env(safe-area-inset-top, 0px);
   }
 }
 
