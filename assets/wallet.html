@@ -1313,7 +1313,7 @@ try {
   <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this&&typeof closeSwapConfirm==='function')closeSwapConfirm()">
     <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:340px">
       <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px">确认兑换</div>
-      <div style="font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">将打开 SunSwap 或 Uniswap 完成交易；以下为当前页面估算。</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:12px" id="swapConfirmHint">以太坊同链对可尝试直接链上签名；TRON 对将跳转 SunSwap；以下为当前页估算。</div>
       <div style="background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:14px">
         <div><span style="color:var(--text-muted)">支付 </span><span id="swapConfirmFrom">—</span></div>
         <div style="margin-top:6px"><span style="color:var(--text-muted)">预估获得 </span><span id="swapConfirmTo">—</span></div>
@@ -1551,6 +1551,7 @@ try {
 <!-- globals.js disabled to fix var conflict -->
 <script src="js/api-config.js"></script>
 <script src="wallet.swap.js"></script>
+<script src="wallet.swap.exec.js"></script>
 <script src="js/btc-segwit.js"></script>
 <script src="js/idb-kv.js"></script>
 <script src="js/storage.js"></script>

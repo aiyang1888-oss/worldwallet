@@ -5663,6 +5663,20 @@ function doSwap() {
       var mn = (_safeEl('swapMinOut') || {}).textContent || '—';
       cm.textContent = mn;
     }
+    var hintEl = _safeEl('swapConfirmHint');
+    var goBtn = document.querySelector('#swapConfirmOverlay button.btn-primary');
+    var chainOn =
+      typeof wwSwapExecEvm !== 'undefined' &&
+      wwSwapExecEvm.canRun &&
+      wwSwapExecEvm.canRun(swapFrom, swapTo);
+    if (hintEl) {
+      hintEl.textContent = chainOn
+        ? '将在以太坊主网通过 Uniswap V3（SwapRouter）签名并广播；失败时可改用下方网页 DEX。'
+        : swapFrom.family === 'tron' && swapTo.family === 'tron'
+          ? '将跳转 SunSwap 网页完成；以下为当前页估算。'
+          : '将跳转 Uniswap 网页完成；以下为当前页估算。';
+    }
+    if (goBtn) goBtn.textContent = chainOn ? '✅ 链上兑换' : '打开 DEX';
     overlay.classList.add('show');
   } else {
     openDex();
