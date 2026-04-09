@@ -522,7 +522,7 @@ async function createNewWallet() {
     if (typeof goTo === 'function') goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
     if (typeof showToast === 'function')
-      showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
+      showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : wwFmtUserError(e, '创建失败'), 'error');
   } finally {
     hideWalletLoading();
   }
@@ -1171,7 +1171,7 @@ function handlePinSetupKey(key) {
         closePinSetupOverlay();
       })
       .catch(function (e) {
-        showToast((e && e.message) || 'PIN 设置失败', 'error');
+        showToast(wwFmtUserError(e, 'PIN 设置失败'), 'error');
       });
     return;
   }
@@ -1187,7 +1187,7 @@ function handlePinSetupKey(key) {
         closePinSetupOverlay();
       })
       .catch(function (e) {
-        if (typeof showToast === 'function') showToast((e && e.message) || '操作失败', 'error');
+        if (typeof showToast === 'function') showToast(wwFmtUserError(e, '操作失败'), 'error');
       });
     return;
   }
@@ -1204,7 +1204,7 @@ function handlePinSetupKey(key) {
       })
       .catch(function (e) {
         if (e && e.message === 'SAME_PIN') return;
-        if (typeof showToast === 'function') showToast((e && e.message) || '修改失败', 'error');
+        if (typeof showToast === 'function') showToast(wwFmtUserError(e, '修改失败'), 'error');
       });
     return;
   }
@@ -1218,7 +1218,7 @@ function handlePinSetupKey(key) {
       closePinSetupOverlay();
     })
     .catch(function (e) {
-      if (typeof showToast === 'function') showToast((e && e.message) || 'PIN 保存失败', 'error');
+      if (typeof showToast === 'function') showToast(wwFmtUserError(e, 'PIN 保存失败'), 'error');
     });
 }
 
@@ -1452,7 +1452,7 @@ function goTo(pageId, opts) {
             .catch(function (e) {
               hideWalletLoading();
               if (typeof showToast === 'function')
-                showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '生成失败', 'error');
+                showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : wwFmtUserError(e, '生成失败'), 'error');
             });
         }
       }
@@ -4201,7 +4201,7 @@ async function changeMnemonicLength(n) {
     if (typeof renderKeyGrid === 'function') renderKeyGrid();
     if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
   } catch (e) {
-    if (typeof showToast === 'function') showToast('生成失败: ' + ((e && e.message) || e), 'error');
+    if (typeof showToast === 'function') showToast('生成失败: ' + wwFmtUserError(e, '未知错误'), 'error');
   } finally {
     hideWalletLoading();
   }

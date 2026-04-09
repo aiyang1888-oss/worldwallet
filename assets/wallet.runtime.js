@@ -1528,7 +1528,7 @@ function goTo(pageId, opts) {
         .catch(function (e) {
           hideWalletLoading();
           if (typeof showToast === 'function')
-            showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '生成失败', 'error');
+            showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : wwFmtUserError(e, '生成失败'), 'error');
         });
     }
   }
@@ -2521,7 +2521,7 @@ async function broadcastRealTransfer() {
     }
   } catch(e) {
     console.error('转账失败:', e);
-    showToast('❌ 转账失败: ' + (e.message || e), 'error');
+    showToast('❌ 转账失败: ' + wwFmtUserError(e, '未知错误'), 'error');
   } finally {
     try { delete window._wwPendingTxs[txkey]; } catch (_pt) {}
   }
@@ -2583,7 +2583,7 @@ async function sendETH(toAddr, amount) {
     gasLimit: ethers.BigNumber.from('21000')
   };
   const est = await provider.estimateGas(txReq).catch(function () { return ethers.BigNumber.from('21000'); });
-  txReq.gasLimit = est.mul(120).div(100);
+  txReq.gasLimit = typeof wwBumpEvmNativeGasLimit === 'function' ? wwBumpEvmNativeGasLimit(est, ethers) : est.mul(120).div(100);
   const m = Math.round(mult * 100);
   if(fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
     txReq.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);
@@ -3116,7 +3116,9 @@ function updateCrossChainSwapCompare() {
   var pTo = (swapTo && swapTo.price) ? swapTo.price : 1;
   var feeTron = amtIn * 0.003;
   var feeEth = amtIn * 0.0028;
-  var slipEth = 0.9985;
+  var slipPct = typeof wwGetSwapSlippagePct === 'function' ? wwGetSwapSlippagePct() : 0.5;
+  if (!isFinite(slipPct) || slipPct <= 0) slipPct = 0.5;
+  var slipEth = 1 - slipPct / 100;
   var outTron = (pTo > 0) ? ((amtIn - feeTron) * pFrom / pTo) : 0;
   var outEth = (pTo > 0) ? ((amtIn - feeEth) * pFrom / pTo) * slipEth : 0;
   var ft = swapTo ? swapTo.name : '';
@@ -4319,7 +4321,7 @@ function confirmTransfer() {
     }
   }).catch(err => {
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
-    showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
+    showToast('❌ 转账失败：' + wwFmtUserError(err, '网络错误'), 'error');
   });
 
   // 启动嗖动画（仅当完整版 DOM 存在；否则由上方 then 分支已回首页）
@@ -5005,6 +5007,51 @@ function renderSwapUI() {
   const rateRaw = swapFrom.price / swapTo.price;
   const rate = t.id === 'trx' ? rateRaw.toFixed(2) : rateRaw.toFixed(t.price > 100 ? 6 : 4);
   (_safeEl('swapRate') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRate fallback */.textContent=`1 ${f.name} ≈ ${rate} ${t.name}`;
+  try {
+    var saved = localStorage.getItem('ww_swap_slippage_pct_v1');
+    var sel = document.getElementById('swapSlippagePct');
+    if (saved != null && saved !== '' && sel) {
+      var sv = parseFloat(saved);
+      if (isFinite(sv) && sv > 0 && sv <= 50) {
+        var want = String(sv);
+        for (var si = 0; si < sel.options.length; si++) {
+          if (String(sel.options[si].value) === want) {
+            sel.value = want;
+            break;
+          }
+        }
+      }
+    }
+  } catch (_rs) {}
+}
+
+/** 兑换页滑点：下拉 + localStorage，默认 0.5% */
+function wwGetSwapSlippagePct() {
+  var DEF = 0.5;
+  try {
+    var sel = document.getElementById('swapSlippagePct');
+    if (sel && sel.value != null && sel.value !== '') {
+      var n = parseFloat(sel.value);
+      if (isFinite(n) && n > 0 && n <= 50) return n;
+    }
+  } catch (_g) {}
+  try {
+    var raw = localStorage.getItem('ww_swap_slippage_pct_v1');
+    if (raw != null && raw !== '') {
+      var n2 = parseFloat(raw);
+      if (isFinite(n2) && n2 > 0 && n2 <= 50) return n2;
+    }
+  } catch (_g2) {}
+  return DEF;
+}
+
+function wwOnSwapSlippageChange() {
+  try {
+    var sel = document.getElementById('swapSlippagePct');
+    var v = sel ? parseFloat(sel.value) : NaN;
+    if (isFinite(v) && v > 0) localStorage.setItem('ww_swap_slippage_pct_v1', String(v));
+  } catch (_s) {}
+  calcSwap();
 }
 
 function calcSwap() {
@@ -5014,9 +5061,14 @@ function calcSwap() {
   const pTo = swapTo.price || 1;
   const fee = amtIn * 0.003;
   const amtOut = ((amtIn - fee) * pFrom / pTo);
+  const slipPct = typeof wwGetSwapSlippagePct === 'function' ? wwGetSwapSlippagePct() : 0.5;
+  const minOut = amtIn > 0 ? amtOut * (1 - (isFinite(slipPct) && slipPct > 0 ? slipPct : 0.5) / 100) : 0;
   const outDp = swapTo.id === 'trx' ? 2 : (amtOut > 1 ? 4 : 8);
+  const minDp = swapTo.id === 'trx' ? 2 : (minOut > 1 ? 4 : 8);
   const fmt = amtOut.toFixed(outDp);
   (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent = fmt;
+  var minEl = _safeEl('swapMinOut');
+  if (minEl) minEl.textContent = amtIn > 0 ? minOut.toFixed(minDp) : '—';
   (_safeEl('swapInUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapInUSD fallback */.textContent = '$'+(amtIn*pFrom).toFixed(2);
   (_safeEl('swapOutUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapOutUSD fallback */.textContent = '$'+((amtIn-fee)*pFrom).toFixed(2);
   (_safeEl('swapFee') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapFee fallback */.textContent = `0.30%（${fee.toFixed(4)} ${swapFrom.name}）`;

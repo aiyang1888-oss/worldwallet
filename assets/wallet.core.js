@@ -13,6 +13,80 @@ var REAL_WALLET = null;
 /** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
 var CHAIN_ADDR = '--';
 
+/**
+ * 用户可见错误文案（不直接拼接未知对象）
+ * @param {*} err
+ * @param {string} [fallbackMsg]
+ */
+function wwFmtUserError(err, fallbackMsg) {
+  var fb = fallbackMsg != null && String(fallbackMsg).trim() ? String(fallbackMsg).trim() : '操作失败';
+  try {
+    if (err == null || err === '') return fb;
+    if (typeof err === 'string') {
+      var ts = err.trim();
+      return ts || fb;
+    }
+    if (typeof err === 'number' && isFinite(err)) return String(err);
+    var eo = err;
+    var m =
+      eo &&
+      (eo.message ||
+        eo.reason ||
+        eo.shortMessage ||
+        (eo.error && eo.error.message));
+    if (m && String(m).trim()) return String(m).trim();
+  } catch (_wrap) {}
+  return fb;
+}
+
+/**
+ * 结构化日志：优先 safeLog（若已加载）；否则 console。
+ * @param {string} [level] debug|info|warn|error
+ */
+function wwLog(level) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  var tag = '[' + (level || 'log') + ']';
+  try {
+    if (typeof safeLog === 'function') {
+      safeLog.apply(null, [tag].concat(args));
+      return;
+    }
+  } catch (_sl) {}
+  try {
+    var fn = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+    if (typeof console !== 'undefined' && typeof console[fn] === 'function') {
+      console[fn].apply(console, args.length ? [tag].concat(args) : [tag]);
+    }
+  } catch (_cl) {}
+}
+
+/**
+ * 预期可忽略的 catch：默认静默；localStorage.WW_DEBUG=1 时经 wwLog 输出
+ */
+function wwQuiet(e, hint) {
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('WW_DEBUG') === '1') {
+      wwLog('debug', hint || 'catch', e);
+    }
+  } catch (_q) {}
+}
+
+/**
+ * 简单 ETH 原生转账：在 estimateGas 上加余量，降低主网波动导致的 gas 不足
+ */
+function wwBumpEvmNativeGasLimit(est, ethersLib) {
+  var E = ethersLib || (typeof ethers !== 'undefined' ? ethers : null);
+  if (!E || !E.BigNumber || !est || !est.mul) return est;
+  try {
+    return est.mul(130).div(100).add(E.BigNumber.from('28000'));
+  } catch (_b) {
+    try {
+      return est.mul(120).div(100);
+    } catch (_b2) {
+      return est;
+    }
+  }
+}
 
 function loadWalletPublic() {
   try {
