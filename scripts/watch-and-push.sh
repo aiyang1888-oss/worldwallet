@@ -2,7 +2,7 @@
 # watch-and-push.sh — 实时监控项目文件变动，2秒内自动 commit + push
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
-REPO="/Users/daxiang/Desktop/Projects/WorldWallet"
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
 COOLDOWN=4  # 防抖：文件变动后等待4秒再提交（等 Cursor 写完所有文件）
 LAST_COMMIT=0
 
@@ -11,11 +11,10 @@ do_commit_push() {
   STATUS=$(git status --porcelain 2>/dev/null)
   [ -z "$STATUS" ] && return
 
-  # 同步 dist/ → assets/
-  for f in wallet.ui.js wallet.runtime.js wallet.addr.js wallet.tx.js wallet.core.js wallet.css wallet.v2.css wallet.dom-bind.js wallet.html index.html app.html; do
-    src="dist/$f"; dst="assets/$f"
-    [ -f "$src" ] && [ -f "$dst" ] && ! cmp -s "$src" "$dst" && cp "$src" "$dst"
-  done
+  # 全量同步 dist/ → assets/（与 npm run build 一致）；AUTO_BUILD=0 可跳过
+  if [ "${AUTO_BUILD:-1}" != "0" ] && command -v npm >/dev/null 2>&1 && [ -f "$REPO/dist/wallet.runtime.js" ]; then
+    npm run build --silent 2>/dev/null || npm run build
+  fi
 
   git add -A
   STAGED=$(git diff --cached --name-only 2>/dev/null)
