@@ -1327,12 +1327,25 @@ function wwWalletSnapIdForCache() {
 function goTo(pageId, opts) {
   opts = opts || {};
   /* 首帧路由清理见 wallet.runtime.js 的 goTo（运行时覆盖本函数） */
-  if (
-    pageId === 'page-home' &&
-    !opts.forceHome &&
-    typeof wwWalletHasAnyChainAddressIncludingTemp === 'function'
-  ) {
-    if (!wwWalletHasAnyChainAddressIncludingTemp()) pageId = 'page-welcome';
+  /* 须与 runtime 的 wwUserHasAnySavedChainAddress 一致：首屏 goTo 早于 loadWallet()，仅查 IncludingTemp 会把「仅 localStorage 有地址」误判为无钱包 → head 已 boot 资产页又改道欢迎页，闪一下 */
+  if (pageId === 'page-home' && !opts.forceHome) {
+    var _wwAllowHomeUi = false;
+    try {
+      if (typeof wwWalletHasAnyChainAddressIncludingTemp === 'function' && wwWalletHasAnyChainAddressIncludingTemp()) {
+        _wwAllowHomeUi = true;
+      }
+    } catch (_ah0) { wwQuiet(_ah0); }
+    if (!_wwAllowHomeUi && typeof wwWalletHasAnyChainAddress === 'function') {
+      try {
+        var _rwUi = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+        if (wwWalletHasAnyChainAddress(_rwUi)) _wwAllowHomeUi = true;
+        else {
+          var _lsUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+          if (wwWalletHasAnyChainAddress(_lsUi)) _wwAllowHomeUi = true;
+        }
+      } catch (_ah1) { wwQuiet(_ah1); }
+    }
+    if (!_wwAllowHomeUi) pageId = 'page-welcome';
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _pwStore = null;
