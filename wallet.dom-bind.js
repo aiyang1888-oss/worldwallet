@@ -403,10 +403,11 @@
       pgWelcome.addEventListener(
         'touchend',
         function (ev) {
-          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
+          var btn = _wwWelcomeBtnFromEvent(ev);
           if (!btn) return;
           var te = ev.changedTouches && ev.changedTouches[0];
           if (te && (Math.abs(te.clientX - _wwWelTapX) > 20 || Math.abs(te.clientY - _wwWelTapY) > 24)) return;
+          /* 仅在已识别按钮后 preventDefault，避免误挡合成 click；有按钮时由本逻辑执行动作 */
           if (ev.cancelable) ev.preventDefault();
           try {
             ev.stopPropagation();
@@ -420,8 +421,16 @@
         function (ev) {
           if (!ev.isPrimary) return;
           if (ev.pointerType === 'mouse') return;
-          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
-          if (!btn) return;
+          var el = _wwWelcomeTargetEl(ev);
+          var btn = el && typeof el.closest === 'function' ? el.closest('button[data-ww-welcome-act]') : null;
+          if (!btn || !pgWelcome.contains(btn)) {
+            if (typeof document.elementFromPoint === 'function') {
+              var up = document.elementFromPoint(ev.clientX, ev.clientY);
+              if (up && up.nodeType === 3) up = up.parentElement;
+              if (up && typeof up.closest === 'function') btn = up.closest('button[data-ww-welcome-act]');
+            }
+          }
+          if (!btn || !pgWelcome.contains(btn)) return;
           if (Math.abs(ev.clientX - _wwWelTapX) > 20 || Math.abs(ev.clientY - _wwWelTapY) > 24) return;
           if (ev.cancelable) ev.preventDefault();
           try {
