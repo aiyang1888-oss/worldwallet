@@ -142,6 +142,77 @@ var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star'
 // ═══════════════════════════════════════════════════════
 // WT_WORDLISTS loaded from wordlists.js
 
+/** 词表文件中的 zh 可能含 4 字以上地名；展示侧压缩为「同索引全局唯一、尽量 3 字起前缀」，并保留 WT_ZH_ORIGINAL 供导入旧备份时解析 */
+var WT_ZH_ORIGINAL = [];
+
+function wwNormalizeZhWordlistForDisplay(origArr) {
+  var nList = origArr.length;
+  var used = {};
+  var disp = [];
+  var i, j, w, arr, n, L, cand, d, hit, guard;
+  for (i = 0; i < nList; i++) {
+    w = String(origArr[i] || '');
+    arr = Array.from(w);
+    n = arr.length;
+    if (n <= 3) {
+      used[w] = true;
+      disp.push(w);
+      continue;
+    }
+    cand = null;
+    for (L = 3; L <= n; L++) {
+      cand = arr.slice(0, L).join('');
+      if (!used[cand]) {
+        used[cand] = true;
+        disp.push(cand);
+        cand = null;
+        break;
+      }
+    }
+    if (cand !== null) disp.push(arr.join(''));
+  }
+  for (i = 0; i < nList; i++) {
+    d = disp[i];
+    arr = Array.from(String(origArr[i] || ''));
+    for (guard = 0; guard < 24; guard++) {
+      hit = false;
+      for (j = 0; j < nList; j++) {
+        if (j === i) continue;
+        if (String(origArr[j]) === d) {
+          hit = true;
+          break;
+        }
+      }
+      if (!hit) break;
+      L = Array.from(d).length + 1;
+      if (L <= arr.length) {
+        d = arr.slice(0, L).join('');
+        disp[i] = d;
+      } else break;
+    }
+  }
+  used = {};
+  for (i = 0; i < nList; i++) {
+    d = disp[i];
+    arr = Array.from(String(origArr[i] || ''));
+    guard = 0;
+    while (used[d] && guard++ < 40) {
+      L = Array.from(d).length + 1;
+      if (L <= arr.length) d = arr.slice(0, L).join('');
+      else break;
+    }
+    used[d] = true;
+    disp[i] = d;
+  }
+  return disp;
+}
+
+try {
+  if (WT_WORDLISTS && WT_WORDLISTS.zh && WT_WORDLISTS.zh.length === 2048) {
+    WT_ZH_ORIGINAL = WT_WORDLISTS.zh.slice();
+    WT_WORDLISTS.zh = wwNormalizeZhWordlistForDisplay(WT_ZH_ORIGINAL);
+  }
+} catch (_zhNorm) {}
 
 // 英文词 → 索引（BIP39标准索引）
 var EN_WORD_INDEX = {};
@@ -153,6 +224,26 @@ Object.keys(WT_WORDLISTS).forEach(lang => {
   WT_LANG_INDEX[lang] = {};
   WT_WORDLISTS[lang].forEach((w, i) => WT_LANG_INDEX[lang][w] = i);
 });
+
+/** 中文助记词 token → 索引：优先当前展示词，再回退词表文件中的原始长词（兼容旧备份） */
+function wwResolveZhWordlistIndex(tok) {
+  var t = String(tok || '').trim();
+  if (!t) return undefined;
+  try {
+    if (WT_LANG_INDEX.zh && WT_LANG_INDEX.zh[t] !== undefined) return WT_LANG_INDEX.zh[t];
+  } catch (_e0) {}
+  try {
+    if (WT_ZH_ORIGINAL && WT_ZH_ORIGINAL.length) {
+      for (var zi = 0; zi < WT_ZH_ORIGINAL.length; zi++) {
+        if (String(WT_ZH_ORIGINAL[zi]) === t) return zi;
+      }
+    }
+  } catch (_e1) {}
+  return undefined;
+}
+try {
+  window.wwResolveZhWordlistIndex = wwResolveZhWordlistIndex;
+} catch (_wRZ) {}
 
 /**
  * 英文助记词 → 目标语言助记词
