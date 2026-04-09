@@ -326,7 +326,7 @@ async function main() {
     '',
     '说明：`page-home` 与 `page-password-restore` 在无本地钱包时由 runtime 重定向至 `page-welcome`，属预期。',
     '',
-    '`page-key` 行在 `goTo` 返回后**同步**读取 active（避免无钱包时异步 `renderKeyGrid` 跳回 `page-create` 的误判）；完整生成助记词流程请用手动或长超时 E2E。',
+    '`page-key` 行在 `goTo` 返回后**同步**读取 active（避免无钱包时异步 `renderKeyGrid` 跳回 `page-welcome` 的误判）；完整生成助记词流程请用手动或长超时 E2E。',
     '',
     '## 3. 欢迎页按钮',
     '',
