@@ -1,0 +1,36 @@
+# PR / 主分支：校验 dist 可构建、语法通过，且不依赖「已提交的 assets」是否最新
+name: Build verify
+
+on:
+  pull_request:
+    paths:
+      - 'dist/**'
+      - 'scripts/**'
+      - '.github/workflows/build-verify.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dist/**'
+      - 'scripts/**'
+      - '.github/workflows/build-verify.yml'
+
+concurrency:
+  group: build-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-dry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: deploy:dry（语法检查 + sync + ?v= 注入）
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: npm run deploy:dry

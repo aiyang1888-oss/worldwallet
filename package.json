@@ -17,6 +17,7 @@
     "telegram:launchagent:uninstall": "bash scripts/uninstall-telegram-launchagent.sh",
     "deploy": "bash scripts/deploy-auto.sh",
     "deploy:dry": "DRY_RUN=1 bash scripts/deploy-auto.sh",
+    "ci": "npm run deploy:dry",
     "launchagent:auto-deploy:install": "bash scripts/install-auto-deploy-launchagent.sh"
   },
   "dependencies": {

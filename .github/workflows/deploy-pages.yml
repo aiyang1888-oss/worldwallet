@@ -28,6 +28,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 与本地 npm run deploy 一致：校验 dist、npm run build（assets 含 ?v=），DRY_RUN 不改 dist/sw.js
+      - name: Verify build (deploy:dry)
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: npm run deploy:dry
+
       - name: Prepare publish directory
         run: |
           set -e
