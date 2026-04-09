@@ -33,7 +33,6 @@ const MIME = {
 const ALL_PAGE_IDS = [
   'page-welcome',
   'page-password-restore',
-  'page-create',
   'page-key',
   'page-key-verify',
   'page-home',
