@@ -508,6 +508,17 @@ function wwCleanupStorage() {
   } catch (e) {}
 }
 
+/** 关闭页面前清理 sessionStorage：保留 ww_last_page，便于普通刷新 Cmd+R 回到当前 SPA 页；硬刷新在脚本里单独清 */
+function wwPruneSessionStorageOnUnload() {
+  try {
+    ['ww_ref_pending', 'ww_swap_pending'].forEach(function (k) {
+      try {
+        sessionStorage.removeItem(k);
+      } catch (e) {}
+    });
+  } catch (e) {}
+}
+
 document.addEventListener('visibilitychange', function() {
   if (document.hidden) {
     wwClearSessionPin();
@@ -522,8 +533,12 @@ document.addEventListener('visibilitychange', function() {
 window.addEventListener('beforeunload', function() {
   wwClearSessionPin();
   wwCleanupMemory();
-  try { wwCleanupStorage(); } catch (_wcs) {}
-  try { sessionStorage.clear(); } catch (e) {}
+  try {
+    wwCleanupStorage();
+  } catch (_wcs) {}
+  try {
+    wwPruneSessionStorageOnUnload();
+  } catch (_ss) {}
 });
 
 /** 是否已配置 PIN（hash、迁移标志，或尚未迁移的 6 位明文） */
