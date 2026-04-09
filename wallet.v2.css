@@ -240,11 +240,11 @@ body {
 #page-hongbao .gift-preview-icon {
   position: relative;
   z-index: 2;
-  font-size: 40px;
+  font-size: 34px;
   line-height: 1;
   display: inline-block;
   filter: drop-shadow(0 5px 14px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 22px rgba(255, 210, 100, 0.38));
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 #page-hongbao .gift-claim-create-row {
   display: flex;

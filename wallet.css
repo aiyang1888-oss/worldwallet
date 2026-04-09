@@ -224,9 +224,9 @@ body {
 }
 
 /* ── 礼物页 · 礼金展示区与主按钮 ── */
-/* 礼物页主内容区：减少标题框上方的空隙（覆盖内联 padding-top） */
+/* 礼物页主内容区：减少标题框上方的空隙 */
 #page-hongbao > .key-content {
-  padding-top: 6px !important;
+  padding-top: 6px;
 }
 #page-hongbao .gift-hero {
   margin-bottom: 8px;
