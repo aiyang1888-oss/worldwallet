@@ -49,11 +49,13 @@ function normProvince(name) {
 
 function normCityName(name) {
   if (!name || name === '市辖区' || name === '县') return '';
-  return String(name)
-    .replace(/市$/, '')
-    .replace(/地区$/, '')
-    .replace(/盟$/, '')
-    .replace(/州$/, '');
+  const s0 = String(name);
+  /** 必须先处理「市」：否则「沧州市」→「沧州」后再 /州$/ 会误变成「沧」 */
+  if (s0.endsWith('市')) return s0.replace(/市$/, '');
+  if (s0.endsWith('地区')) return s0.replace(/地区$/, '');
+  if (s0.endsWith('盟')) return s0.replace(/盟$/, '');
+  if (s0.endsWith('州')) return s0.replace(/州$/, '');
+  return s0;
 }
 
 /** 去掉县级名称末尾常见后缀，用于去重时的「地级市简称 + 专名」 */
