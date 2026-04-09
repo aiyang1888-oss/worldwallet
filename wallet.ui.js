@@ -3135,6 +3135,12 @@ function openPinSettingsDialog() {
   /** 首次加载：hash 为空或指向不存在的 id 时，按 localStorage 钱包状态落到首页或欢迎页 */
   function wwEnsureInitialHashRoute() {
     if (wwHashToPageId()) return;
+    try {
+      if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) {
+        if (typeof goTo === 'function') goTo('page-welcome');
+        return;
+      }
+    } catch (_hr) {}
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
