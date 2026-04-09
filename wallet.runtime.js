@@ -6273,6 +6273,7 @@ async function loadBalances() {
     if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
     console.error('Balance load error:', e);
+    window._wwHomeBalancesHydrated = false;
     if(tbd) tbd.classList.remove('home-balance--loading');
     if(btn) btn.textContent = '刷新';
   }
