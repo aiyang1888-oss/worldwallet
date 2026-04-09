@@ -5019,7 +5019,10 @@ try {
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = wwWalletHasAnyChainAddress(_d);
+      hasWallet =
+        typeof wwWalletHasValidPersistedAddress === 'function'
+          ? wwWalletHasValidPersistedAddress(_d)
+          : wwWalletHasAnyChainAddress(_d);
     } catch (_e) { wwQuiet(_e); }
     if (typeof goTo !== 'function') return;
     var _dest = hasWallet ? 'page-home' : 'page-welcome';
