@@ -347,33 +347,11 @@ try {
       </div>
     </div>
 
-    <!-- 创建页 -->
-    <div class="page" id="page-create">
-      <div class="nav-bar">
-        <div class="nav-leading">
-        <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
-        <div class="nav-title">设置钱包</div>
-        </div>
-      </div>
-      <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="createNewWallet()">
-          <div style="font-size:36px;margin-bottom:12px">✨</div>
-          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
-        </div>
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="goTo('page-import')">
-          <div style="font-size:36px;margin-bottom:12px">📥</div>
-          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">导入已有钱包</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">输入助记词恢复钱包</div>
-        </div>
-      </div>
-    </div>
-
     <!-- 密钥页 -->
     <div class="page" id="page-key">
       <div class="nav-bar">
         <div class="nav-leading">
-        <div class="nav-back" onclick="goTo(window._keyBackPage||'page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-back" onclick="goTo(window._keyBackPage||'page-welcome')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">我的密钥</div>
         </div>
         <div class="nav-right u11" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
