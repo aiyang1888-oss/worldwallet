@@ -134,6 +134,19 @@ try {
       var _oCk = _wCk ? JSON.parse(_wCk) : null;
       _wwHasAddr = !!(_oCk && (_oCk.trxAddress || _oCk.ethAddress || _oCk.btcAddress));
     } catch (_a0) {}
+    /* encrypted+PIN：底栏/资产类 hash 先 boot 解锁页（补早段仅 page-home 的缺口） */
+    try {
+      var _wPz = localStorage.getItem('ww_wallet');
+      var _oPz = _wPz ? JSON.parse(_wPz) : null;
+      if (_oPz && _oPz.encrypted && _wwHasAddr && boot && boot !== 'page-password-restore' && boot !== 'page-welcome') {
+        var _pf = { 'page-home': 1, 'page-swap': 1, 'page-addr': 1, 'page-hongbao': 1, 'page-settings': 1, 'page-transfer': 1, 'page-swoosh': 1 };
+        if (_pf[boot]) {
+          var _hasPin = !!(localStorage.getItem('ww_pin_hash') || localStorage.getItem('ww_pin_set') === '1');
+          if (!_hasPin) try { var _plz = localStorage.getItem('ww_unlock_pin') || localStorage.getItem('ww_pin') || ''; _hasPin = !!(_plz && /^\d{6}$/.test(String(_plz))); } catch (_eZ) {}
+          if (_hasPin) boot = 'page-password-restore';
+        }
+      }
+    } catch (_pzB) {}
     if (!_wwHasAddr && boot && boot !== 'page-welcome') {
       var _wwGuestHashOk = {
         'page-import': 1,

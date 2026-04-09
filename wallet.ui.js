@@ -4948,12 +4948,32 @@ try {
   /** 首次加载：hash 为空或指向不存在的 id 时，按 localStorage 钱包状态落到首页或欢迎页 */
   function wwEnsureInitialHashRoute() {
     var hid = wwHashToPageId();
+    var _wwPinBeforeMain = {
+      'page-home': 1,
+      'page-swap': 1,
+      'page-addr': 1,
+      'page-hongbao': 1,
+      'page-settings': 1,
+      'page-transfer': 1,
+      'page-swoosh': 1
+    };
     if (hid) {
       if (!wwGuestHashAllowed(hid)) {
         wwStripLocationHash();
         if (typeof goTo === 'function') goTo('page-welcome');
         return;
       }
+      try {
+        if (
+          _wwPinBeforeMain[hid] &&
+          typeof wwNeedsPinUnlockBeforeHome === 'function' &&
+          wwNeedsPinUnlockBeforeHome()
+        ) {
+          wwStripLocationHash();
+          if (typeof goTo === 'function') goTo('page-password-restore');
+          return;
+        }
+      } catch (_pinH) { wwQuiet(_pinH); }
       return;
     }
     try {
