@@ -6830,7 +6830,20 @@ async function _resumeWalletAfterUnlock() {
     try { wwResetActivityClock(); } catch(e) {}
     return;
   }
+  var _pinCont = null;
+  try {
+    _pinCont = window._wwAfterPinUnlockContinue;
+    window._wwAfterPinUnlockContinue = null;
+  } catch (_pc0) {}
   window._wwForceIdleLock = false;
+  if (typeof _pinCont === 'function') {
+    try {
+      await _pinCont();
+    } catch (_pc1) {
+      console.error('[after PIN continue]', _pc1);
+    }
+    return;
+  }
   goTo('page-home');
 }
 function wwB64Bytes(u8) {

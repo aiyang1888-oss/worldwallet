@@ -3191,8 +3191,32 @@ function updateHbPreview() {
 var CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
 var currencyIdx = 0;
 
+function wwOpenBackupMnemonicFromSettingsWithPin() {
+  function goBackup() {
+    try {
+      window._keyBackPage = 'page-settings';
+    } catch (_k) {}
+    if (typeof goTo === 'function') goTo('page-key');
+  }
+  if (typeof wwEnsurePinThenForced !== 'function') {
+    goBackup();
+    return;
+  }
+  wwEnsurePinThenForced(goBackup);
+}
+try {
+  window.wwOpenBackupMnemonicFromSettingsWithPin = wwOpenBackupMnemonicFromSettingsWithPin;
+} catch (_wOb) {}
+
 function wwGoConvertMnemonicFromSettings() {
-  if (typeof goTo === 'function') goTo('page-convert-mnemonic');
+  function goConv() {
+    if (typeof goTo === 'function') goTo('page-convert-mnemonic');
+  }
+  if (typeof wwEnsurePinThenForced !== 'function') {
+    goConv();
+    return;
+  }
+  wwEnsurePinThenForced(goConv);
 }
 try {
   window.wwGoConvertMnemonicFromSettings = wwGoConvertMnemonicFromSettings;
