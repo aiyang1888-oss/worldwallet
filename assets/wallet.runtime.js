@@ -4232,6 +4232,27 @@ function checkTransferReady() {
     btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
     return;
   }
+  if (
+    transferCoin &&
+    transferCoin.id === 'usdt' &&
+    transferCoin.usdtNet &&
+    transferCoin.usdtNet !== 'tron'
+  ) {
+    var needG = typeof window !== 'undefined' ? window._wwLastUsdtGasNative : null;
+    var haveG = typeof window !== 'undefined' ? window._wwTransferNativeBal : null;
+    if (
+      typeof needG === 'number' &&
+      typeof haveG === 'number' &&
+      isFinite(needG) &&
+      isFinite(haveG) &&
+      haveG + 1e-14 < needG
+    ) {
+      btn.disabled = true;
+      btn.style.opacity = '0.4';
+      btn.style.cursor = 'not-allowed';
+      return;
+    }
+  }
   if (addr && amt > 0 && !over) {
     btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
   } else {
@@ -4242,7 +4263,12 @@ function checkTransferReady() {
 function calcTransferFee() {
   try {
     var uc = typeof COINS !== 'undefined' && COINS.find && COINS.find(function (c) { return c && c.id === transferCoin.id; });
-    if (uc) { transferCoin.bal = uc.bal; transferCoin.price = uc.price; }
+    if (uc) {
+      if (transferCoin.id !== 'usdt' || !transferCoin.usdtNet || transferCoin.usdtNet === 'tron') {
+        transferCoin.bal = uc.bal;
+      }
+      transferCoin.price = uc.price;
+    }
   } catch (_e) {}
   const amtEl = document.getElementById('transferAmount');
   const amt = amtEl ? (parseFloat(amtEl.value) || 0) : 0;
@@ -4265,12 +4291,35 @@ function calcTransferFee() {
   const actEl = document.getElementById('transferActual');
   const usdEl = document.getElementById('transferUSD');
   const chainEl = document.getElementById('transferChain');
+  var isUsdtEvm =
+    transferCoin &&
+    transferCoin.id === 'usdt' &&
+    transferCoin.usdtNet &&
+    transferCoin.usdtNet !== 'tron';
   if (amt <= 0) {
     if (feeEl) feeEl.textContent = '—';
     if (actEl) actEl.textContent = '—';
     if (usdEl) usdEl.textContent = '$0.00';
     if (cnyEl) cnyEl.textContent = '0.00';
-    if (hintEl) hintEl.textContent = nf.line + ' · ' + nf.sub + ' · TRC-20 需能量/带宽';
+    if (hintEl) {
+      hintEl.textContent =
+        isUsdtEvm ? nf.line + ' · ' + nf.sub : nf.line + ' · ' + nf.sub + ' · TRC-20 需能量/带宽';
+    }
+  } else if (isUsdtEvm) {
+    var symE = transferCoin._usdtMeta && transferCoin._usdtMeta.nativeSymbol ? transferCoin._usdtMeta.nativeSymbol : 'ETH';
+    var gnE = typeof window !== 'undefined' ? window._wwLastUsdtGasNative : null;
+    if (feeEl) feeEl.textContent = gnE != null && isFinite(gnE) ? '~' + gnE.toFixed(6) + ' ' + symE : '… ' + symE;
+    if (actEl) actEl.textContent = amt.toFixed(6) + ' ' + transferCoin.name;
+    if (usdEl) usdEl.textContent = '$' + (amt * price).toFixed(2);
+    if (cnyEl) cnyEl.textContent = (amt * price * usdToCny).toFixed(2);
+    if (hintEl) {
+      hintEl.textContent =
+        (gnE != null && isFinite(gnE) ? '预估 Gas 约 ' + gnE.toFixed(6) + ' ' + symE + ' · ' : '') +
+        '代币转出 ' +
+        amt.toFixed(6) +
+        ' USDT · ' +
+        nf.sub;
+    }
   } else {
     const feeNum = amt * 0.003;
     const fee = feeNum.toFixed(4);
@@ -4287,6 +4336,57 @@ function calcTransferFee() {
   if (chainEl) chainEl.textContent = transferCoin.chain + ' · ' + (typeof transferSpeedHint === 'function' ? transferSpeedHint(transferCoin.id, _spd) : '约30秒');
   const bal = Number(transferCoin.bal) || 0;
   if (amt > bal + 1e-10) shakeTransferAmountTooHigh();
+  try {
+    if (
+      isUsdtEvm &&
+      typeof wwErc20EstimateTransferCost === 'function' &&
+      typeof wwEvmNativeBalanceHuman === 'function' &&
+      typeof REAL_WALLET !== 'undefined' &&
+      REAL_WALLET &&
+      REAL_WALLET.ethAddress
+    ) {
+      var metaE = transferCoin._usdtMeta || (typeof wwGetUsdtMetaByKey === 'function' ? wwGetUsdtMetaByKey(transferCoin.usdtNet) : null);
+      var taE = document.getElementById('transferAddr');
+      var toE = taE ? String(taE.value || '').trim() : '';
+      if (metaE && toE.match(/^0x[a-fA-F0-9]{40}$/) && amt > 0) {
+        wwErc20EstimateTransferCost(REAL_WALLET.ethAddress, toE, String(amt), metaE)
+          .then(function (est) {
+            window._wwLastUsdtGasNative = est.feeNativeHuman;
+            window._wwLastUsdtGasLine = '≈ ' + est.feeNativeHuman.toFixed(6) + ' ' + est.nativeSymbol + ' · Gas（预估）';
+            return wwEvmNativeBalanceHuman(REAL_WALLET.ethAddress, metaE.chainId);
+          })
+          .then(function (nb) {
+            window._wwTransferNativeBal = nb;
+          })
+          .catch(function () {
+            window._wwLastUsdtGasNative = null;
+            window._wwLastUsdtGasLine = null;
+            window._wwTransferNativeBal = null;
+          })
+          .then(function () {
+            var hintEl2 = document.getElementById('transferFeeHint');
+            var feeEl2 = document.getElementById('transferFee');
+            var actEl2 = document.getElementById('transferActual');
+            var nf3 = getNetworkFeeEstimateLines(transferCoin.id);
+            var sym2 = metaE.nativeSymbol || 'ETH';
+            var gn2 = window._wwLastUsdtGasNative;
+            if (feeEl2 && amt > 0) feeEl2.textContent = gn2 != null && isFinite(gn2) ? '~' + gn2.toFixed(6) + ' ' + sym2 : '… ' + sym2;
+            if (actEl2 && amt > 0) actEl2.textContent = amt.toFixed(6) + ' ' + transferCoin.name;
+            if (hintEl2 && amt > 0) {
+              hintEl2.textContent =
+                (gn2 != null && isFinite(gn2) ? '预估 Gas 约 ' + gn2.toFixed(6) + ' ' + sym2 + ' · ' : nf3.line + ' · ') +
+                '代币转出 ' +
+                amt.toFixed(6) +
+                ' USDT · ' +
+                nf3.sub;
+            }
+            try {
+              if (typeof checkTransferReady === 'function') checkTransferReady();
+            } catch (_cr) {}
+          });
+      }
+    }
+  } catch (_eg) {}
   checkTransferReady();
   try { if (typeof wwUpdateTxSimulation === 'function') wwUpdateTxSimulation(); } catch (_ws) {}
 }
@@ -4391,6 +4491,11 @@ function selectTransferCoin(id) {
   if (!iconEl || !nameEl) {
     if (typeof goTo === 'function') goTo('page-transfer');
   }
+  if (id === 'usdt' && typeof wwInitTransferUsdtNetworkUi === 'function') {
+    try {
+      wwInitTransferUsdtNetworkUi();
+    } catch (_wi) {}
+  }
   calcTransferFee();
 }
 
@@ -4416,8 +4521,19 @@ async function doTransfer() {
     var _g = await wwSpendGateBeforeConfirm(amtNum);
     if (_g === false) return;
   }
-  const fee = (amtNum*0.003).toFixed(2);
-  const actual = (amtNum - amtNum*0.003).toFixed(2);
+  var _usdtEvmDo =
+    transferCoin &&
+    transferCoin.id === 'usdt' &&
+    transferCoin.usdtNet &&
+    transferCoin.usdtNet !== 'tron';
+  var fee = (amtNum * 0.003).toFixed(2);
+  var actual = (amtNum - amtNum * 0.003).toFixed(2);
+  if (_usdtEvmDo) {
+    var _symD = transferCoin._usdtMeta && transferCoin._usdtMeta.nativeSymbol ? transferCoin._usdtMeta.nativeSymbol : 'ETH';
+    var _gnD = typeof window !== 'undefined' ? window._wwLastUsdtGasNative : null;
+    fee = _gnD != null && isFinite(_gnD) ? '~' + _gnD.toFixed(6) + ' ' + _symD : '… ' + _symD;
+    actual = amtNum.toFixed(6) + ' ' + transferCoin.name;
+  }
   var ca = document.getElementById('confirmAmount');
   var cr = document.getElementById('confirmRecipient');
   var cf = document.getElementById('confirmFee');
@@ -4425,8 +4541,8 @@ async function doTransfer() {
   var cch = document.getElementById('confirmChain');
   if (ca) ca.textContent = amt+' '+transferCoin.name;
   if (cr) cr.textContent = addr.length>20 ? addr.slice(0,20)+'...' : addr;
-  if (cf) cf.textContent = fee+' '+transferCoin.name;
-  if (cact) cact.textContent = actual+' '+transferCoin.name;
+  if (cf) cf.textContent = _usdtEvmDo ? fee : fee + ' ' + transferCoin.name;
+  if (cact) cact.textContent = actual + (_usdtEvmDo ? '' : ' ' + transferCoin.name);
   if (cch) cch.textContent = transferCoin.chain;
   var ov = _safeEl('transferConfirmOverlay');
   if (ov && ov.classList) ov.classList.add('show');
@@ -4447,7 +4563,17 @@ function confirmTransfer() {
   const addr = _addrEl ? String(_addrEl.value || '').trim() : '';
   saveRecentTransferAddr(addr);
   const amtF = parseFloat(amt)||0;
-  const fee = (amtF*0.003).toFixed(2);
+  var fee = (amtF*0.003).toFixed(2);
+  var _feeUsdtEvm =
+    transferCoin &&
+    transferCoin.id === 'usdt' &&
+    transferCoin.usdtNet &&
+    transferCoin.usdtNet !== 'tron';
+  if (_feeUsdtEvm) {
+    var _fs = transferCoin._usdtMeta && transferCoin._usdtMeta.nativeSymbol ? transferCoin._usdtMeta.nativeSymbol : 'ETH';
+    var _fg = typeof window !== 'undefined' ? window._wwLastUsdtGasNative : null;
+    fee = _fg != null && isFinite(_fg) ? '~' + _fg.toFixed(6) + ' ' + _fs : '… ' + _fs;
+  }
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
   const isEn = currentLang==='en';
   const info = LANG_INFO[currentLang]||{flag:'🇨🇳',name:'中文'};
@@ -4488,8 +4614,14 @@ function confirmTransfer() {
   }
 
   // 详情
-  _safeEl('successFee') && ((_safeEl('successFee') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successFee fallback */.textContent = fee+' '+transferCoin.name);
-  const sfi=(_safeEl('successFeeInline') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successFeeInline fallback */; if(sfi) sfi.textContent='手续费 '+fee+' '+transferCoin.name+' · '+transferCoin.chain;
+  _safeEl('successFee') &&
+    ((_safeEl('successFee') || { textContent: '', style: {}, classList: { add: () => {}, remove: () => {} } }) /* successFee fallback */.textContent =
+      _feeUsdtEvm ? fee : fee + ' ' + transferCoin.name);
+  const sfi = _safeEl('successFeeInline') || { textContent: '', style: {}, classList: { add: () => {}, remove: () => {} } }; /* successFeeInline fallback */
+  if (sfi)
+    sfi.textContent = _feeUsdtEvm
+      ? '网络费 ' + fee + ' · ' + transferCoin.chain
+      : '手续费 ' + fee + ' ' + transferCoin.name + ' · ' + transferCoin.chain;
   _safeEl('successChain').textContent = transferCoin.chain;
   const nt = new Date();
   const ts = nt.getFullYear()+'.'+String(nt.getMonth()+1).padStart(2,'0')+'.'+String(nt.getDate()).padStart(2,'0')+' '+String(nt.getHours()).padStart(2,'0')+':'+String(nt.getMinutes()).padStart(2,'0');
@@ -5086,7 +5218,7 @@ var WW_COIN_LOGO_URL = {
   btc: WW_COIN_LOGO_BASE + 'btc.png',
   eth: WW_COIN_LOGO_BASE + 'eth.png',
   trx: WW_COIN_LOGO_BASE + 'trx.png',
-  bnb: WW_COIN_LOGO_BASE + 'bnb.png',
+  usdc: WW_COIN_LOGO_BASE + 'usdc.png'
 };
 function wwEscAttr(s) {
   return String(s == null ? '' : s)
@@ -5120,11 +5252,12 @@ function wwSetCoinIconElement(el, coin) {
 }
 
 const COINS = [
-  {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
-  {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', logoUrl: WW_COIN_LOGO_URL.btc, bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
-  {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', logoUrl: WW_COIN_LOGO_URL.eth, bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
-  {id:'trx',  name:'TRX',  chain:'Tron', icon:'🔴', logoUrl: WW_COIN_LOGO_URL.trx, bg:'rgba(255,80,80,0.12)', bal:0, price:0.12},
-  {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', logoUrl: WW_COIN_LOGO_URL.bnb, bg:'rgba(255,215,0,0.12)', bal:0, price:312},
+  { id: 'usdt', name: 'USDT', chain: 'TRC-20 · Tron', family: 'tron', icon: '💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg: 'rgba(38,161,123,0.15)', bal: 0, price: 1 },
+  { id: 'trx', name: 'TRX', chain: 'Tron', family: 'tron', icon: '🔴', logoUrl: WW_COIN_LOGO_URL.trx, bg: 'rgba(255,80,80,0.12)', bal: 0, price: 0.12 },
+  { id: 'usdt_eth', name: 'USDT', chain: 'ERC-20 · Ethereum', family: 'evm', icon: '💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg: 'rgba(38,161,123,0.12)', bal: 0, price: 1 },
+  { id: 'usdc', name: 'USDC', chain: 'Ethereum', family: 'evm', icon: '🔵', logoUrl: WW_COIN_LOGO_URL.usdc, bg: 'rgba(39,117,202,0.14)', bal: 0, price: 1 },
+  { id: 'eth', name: 'ETH', chain: 'Ethereum', family: 'evm', icon: '🔷', logoUrl: WW_COIN_LOGO_URL.eth, bg: 'rgba(100,100,255,0.12)', bal: 0, price: 2500 },
+  { id: 'btc', name: 'BTC', chain: 'Ethereum · WBTC', family: 'evm', icon: '🟠', logoUrl: WW_COIN_LOGO_URL.btc, bg: 'rgba(255,165,0,0.12)', bal: 0, price: 60000 }
 ];
 
 function wwHomeAssetRowsMeta() {
@@ -5184,8 +5317,22 @@ let swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
 let pickerTarget = 'from';
 
 function setSwapCoin(target, coin) {
-  if(target==='from') swapFrom=coin;
-  else swapTo=coin;
+  if (!coin || !coin.family) return;
+  if (target === 'from') {
+    swapFrom = coin;
+    if (swapTo.family !== swapFrom.family) {
+      swapTo = COINS.find(function (c) {
+        return c.family === swapFrom.family && c.id !== swapFrom.id;
+      }) || swapTo;
+    }
+  } else {
+    swapTo = coin;
+    if (swapFrom.family !== swapTo.family) {
+      swapFrom = COINS.find(function (c) {
+        return c.family === swapTo.family && c.id !== swapTo.id;
+      }) || swapFrom;
+    }
+  }
   renderSwapUI();
   calcSwap();
 }
@@ -5212,43 +5359,177 @@ function renderSwapUI() {
   (_safeEl('swapRate') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRate fallback */.textContent=`1 ${f.name} ≈ ${rate} ${t.name}`;
 }
 
-function calcSwap() {
-  const amtIn = parseFloat(_safeEl('swapAmountIn').value)||0;
-  // 用实时价格（已由 loadSwapPrices 更新）
-  const pFrom = swapFrom.price || 1;
-  const pTo = swapTo.price || 1;
-  const fee = amtIn * 0.003;
-  const amtOut = ((amtIn - fee) * pFrom / pTo);
-  const outDp = swapTo.id === 'trx' ? 2 : (amtOut > 1 ? 4 : 8);
-  const fmt = amtOut.toFixed(outDp);
-  (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent = fmt;
-  (_safeEl('swapInUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapInUSD fallback */.textContent = '$'+(amtIn*pFrom).toFixed(2);
-  (_safeEl('swapOutUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapOutUSD fallback */.textContent = '$'+((amtIn-fee)*pFrom).toFixed(2);
-  (_safeEl('swapFee') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapFee fallback */.textContent = `0.30%（${fee.toFixed(4)} ${swapFrom.name}）`;
-  // 更新汇率显示
-  const rate = pFrom / pTo;
-  const rateEl = (_safeEl('swapRateInfo') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRateInfo fallback */;
-  if (rateEl) {
-    const rateStr = swapTo.id === 'trx' ? rate.toFixed(2) : (rate > 1 ? rate.toFixed(4) : rate.toFixed(8));
-    rateEl.textContent = `1 ${swapFrom.name} ≈ ${rateStr} ${swapTo.name}`;
-  }
-  try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc) {}
+var wwSwapQuoteSeq = 0;
+
+function wwGetSwapSlippagePct() {
+  var el = _safeEl('swapSlippagePct');
+  if (!el || el.value == null || el.value === '') return 0.5;
+  var n = parseFloat(el.value);
+  if (!isFinite(n)) return 0.5;
+  return Math.min(5, Math.max(0.1, n));
 }
 
-// 从 CoinGecko 拉实时价格
-const COIN_GECKO_IDS = { usdt:'tether', trx:'tron', eth:'ethereum', btc:'bitcoin', bnb:'binancecoin' };
+function _wwSwapFmtOut(amtOut, swapToId) {
+  if (!isFinite(amtOut)) return '0';
+  if (swapToId === 'trx') return amtOut.toFixed(2);
+  if (swapToId === 'usdc' || swapToId === 'usdt_eth') return amtOut.toFixed(4);
+  if (swapToId === 'eth') return amtOut > 1 ? amtOut.toFixed(5) : amtOut.toFixed(6);
+  if (swapToId === 'btc') return amtOut.toFixed(8);
+  return amtOut > 1 ? amtOut.toFixed(5) : amtOut.toFixed(8);
+}
+
+function wwApplySwapOutUi(amtOutStr, minOutStr, feeLine, rateLine, inUsd, outUsd) {
+  (_safeEl('swapAmountOut') || { textContent: '' }).textContent = amtOutStr;
+  var mn = _safeEl('swapMinOut');
+  if (mn) mn.textContent = minOutStr || '—';
+  var sf = _safeEl('swapFee');
+  if (sf) sf.textContent = feeLine || '—';
+  var ri = _safeEl('swapRateInfo');
+  if (ri) ri.textContent = rateLine || '—';
+  var si = _safeEl('swapInUSD');
+  if (si) si.textContent = inUsd != null ? '$' + inUsd : '—';
+  var so = _safeEl('swapOutUSD');
+  if (so) so.textContent = outUsd != null ? '$' + outUsd : '—';
+  try {
+    if (typeof updateCrossChainSwapCompare === 'function') updateCrossChainSwapCompare();
+  } catch (_cc) {}
+}
+
+function calcSwapSpotTron(amtIn, slipPct) {
+  var pFrom = swapFrom.price || 1;
+  var pTo = swapTo.price || 1;
+  var fee = amtIn * 0.003;
+  var amtOut = ((amtIn - fee) * pFrom) / pTo;
+  var minOut = amtOut * (1 - slipPct / 100);
+  var rate = pFrom / pTo;
+  var rateStr = swapTo.id === 'trx' ? rate.toFixed(2) : rate.toFixed(6);
+  wwApplySwapOutUi(
+    _wwSwapFmtOut(amtOut, swapTo.id),
+    _wwSwapFmtOut(minOut, swapTo.id),
+    '≈0.30% 路由（' + fee.toFixed(4) + ' ' + swapFrom.name + '）',
+    '1 ' + swapFrom.name + ' ≈ ' + rateStr + ' ' + swapTo.name + ' · SunSwap',
+    (amtIn * pFrom).toFixed(2),
+    ((amtIn - fee) * pFrom).toFixed(2)
+  );
+  var h = _safeEl('swapQuoteHint');
+  if (h) h.textContent = 'TRON：现货比价估算，成交以 SunSwap 为准';
+}
+
+function calcSwapSpotFallback(amtIn, slipPct) {
+  var pFrom = swapFrom.price || 1;
+  var pTo = swapTo.price || 1;
+  var fee = amtIn * 0.003;
+  var amtOut = ((amtIn - fee) * pFrom) / pTo;
+  var minOut = amtOut * (1 - slipPct / 100);
+  var rate = pFrom / pTo;
+  var rateStr = swapTo.id === 'trx' ? rate.toFixed(2) : rate > 1 ? rate.toFixed(4) : rate.toFixed(8);
+  wwApplySwapOutUi(
+    _wwSwapFmtOut(amtOut, swapTo.id),
+    _wwSwapFmtOut(minOut, swapTo.id),
+    '现货估算 0.30%（' + fee.toFixed(6) + ' ' + swapFrom.name + '）',
+    '1 ' + swapFrom.name + ' ≈ ' + rateStr + ' ' + swapTo.name,
+    (amtIn * pFrom).toFixed(2),
+    ((amtIn - fee) * pFrom).toFixed(2)
+  );
+}
+
+function calcSwap() {
+  clearTimeout(window._wwCalcSwapDebounce);
+  window._wwCalcSwapDebounce = setTimeout(function () {
+    calcSwapDebounced();
+  }, 140);
+}
+
+function calcSwapDebounced() {
+  var inp = _safeEl('swapAmountIn');
+  var rawAmt = inp ? String(inp.value || '').trim() : '';
+  var amtIn = parseFloat(rawAmt) || 0;
+  var slipPct = wwGetSwapSlippagePct();
+  var hint = _safeEl('swapQuoteHint');
+  if (!amtIn || amtIn <= 0) {
+    wwApplySwapOutUi('0', '—', '—', '—', '0.00', '0.00');
+    if (hint) hint.textContent = '';
+    return;
+  }
+  var isTron = swapFrom.family === 'tron' && swapTo.family === 'tron';
+  if (isTron) {
+    if (hint) hint.textContent = '';
+    calcSwapSpotTron(amtIn, slipPct);
+    return;
+  }
+  if (
+    typeof window !== 'undefined' &&
+    window.wwSwapModule &&
+    typeof window.wwSwapModule.isEvmSwapPair === 'function' &&
+    window.wwSwapModule.isEvmSwapPair(swapFrom.id, swapTo.id)
+  ) {
+    if (hint) hint.textContent = '主网询价中…';
+    wwSwapQuoteSeq++;
+    var seq = wwSwapQuoteSeq;
+    var rpc = typeof ETH_RPC !== 'undefined' && ETH_RPC ? ETH_RPC : 'https://rpc.ankr.com/eth';
+    window.wwSwapModule
+      .quoteEvmBestAmountOut(swapFrom.id, swapTo.id, rawAmt, rpc)
+      .then(function (q) {
+        if (seq !== wwSwapQuoteSeq) return;
+        if (!q || !q.amountOutHuman) {
+          if (hint) hint.textContent = '询价不可用，以下为现货估算';
+          calcSwapSpotFallback(amtIn, slipPct);
+          return;
+        }
+        var outN = parseFloat(q.amountOutHuman);
+        if (!isFinite(outN)) {
+          calcSwapSpotFallback(amtIn, slipPct);
+          return;
+        }
+        var minN = outN * (1 - slipPct / 100);
+        var pFrom = swapFrom.price || 1;
+        var pTo = swapTo.price || 1;
+        if (hint) hint.textContent = 'Uniswap V3（fee=' + (q.bestFee != null ? q.bestFee : '—') + '）';
+        wwApplySwapOutUi(
+          _wwSwapFmtOut(outN, swapTo.id),
+          _wwSwapFmtOut(minN, swapTo.id),
+          '链上询价 · 滑点 ' + slipPct + '%',
+          '1 ' + swapFrom.name + ' ≈ ' + (amtIn > 0 ? (outN / amtIn).toFixed(8) : '—') + ' ' + swapTo.name,
+          (amtIn * pFrom).toFixed(2),
+          (outN * pTo).toFixed(2)
+        );
+      })
+      .catch(function () {
+        if (seq !== wwSwapQuoteSeq) return;
+        if (hint) hint.textContent = '询价异常，以下为现货估算';
+        calcSwapSpotFallback(amtIn, slipPct);
+      });
+    return;
+  }
+  if (hint) hint.textContent = '';
+  calcSwapSpotFallback(amtIn, slipPct);
+}
+
+// 从 CoinGecko 拉实时价格（含 USDC；ERC20 USDT 与现货 USDT 同价）
 async function loadSwapPrices() {
   try {
-    const ids = ['tether','tron','ethereum','bitcoin','binancecoin'].join(',');
-    const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`);
+    const ids = ['tether', 'tron', 'ethereum', 'bitcoin', 'usd-coin'].join(',');
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd');
     const d = await r.json();
-    const priceMap = { usdt: d.tether?.usd||1, trx: d.tron?.usd||0.12, eth: d.ethereum?.usd||2500, btc: d.bitcoin?.usd||60000, bnb: d.binancecoin?.usd||400 };
-    // 更新 COINS 价格
-    COINS.forEach(coin => { if(priceMap[coin.id]) coin.price = priceMap[coin.id]; });
+    const u = d.tether && d.tether.usd ? d.tether.usd : 1;
+    const priceMap = {
+      usdt: u,
+      trx: d.tron && d.tron.usd ? d.tron.usd : 0.12,
+      eth: d.ethereum && d.ethereum.usd ? d.ethereum.usd : 2500,
+      btc: d.bitcoin && d.bitcoin.usd ? d.bitcoin.usd : 60000,
+      usdt_eth: u,
+      usdc: d['usd-coin'] && d['usd-coin'].usd ? d['usd-coin'].usd : 1
+    };
+    COINS.forEach(function (coin) {
+      if (priceMap[coin.id] != null) coin.price = priceMap[coin.id];
+    });
     calcSwap();
-    try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc2) {}
-    console.log('兑换价格已更新');
-  } catch(e) { console.log('价格加载失败，使用默认'); }
+    try {
+      if (typeof updateCrossChainSwapCompare === 'function') updateCrossChainSwapCompare();
+    } catch (_cc2) {}
+  } catch (e) {
+    console.log('价格加载失败，使用默认');
+  }
 }
 
 function swapCoins() {
@@ -5268,13 +5549,17 @@ function setSwapMax() {
 }
 
 function openCoinPicker(target) {
-  pickerTarget=target;
-  const list=document.getElementById('coinPickerList');
-  list.innerHTML='';
-  COINS.forEach(coin=>{
-    const current = target==='from'?swapFrom:swapTo;
-    const other = target==='from'?swapTo:swapFrom;
-    if(coin.id===other.id) return; // 不能选同一个
+  pickerTarget = target;
+  var list = document.getElementById('coinPickerList');
+  if (!list) return;
+  var anchor = target === 'from' ? swapTo : swapFrom;
+  var fam = anchor && anchor.family ? anchor.family : 'tron';
+  list.innerHTML = '';
+  COINS.forEach(function (coin) {
+    if (!coin.family || coin.family !== fam) return;
+    const current = target === 'from' ? swapFrom : swapTo;
+    const other = target === 'from' ? swapTo : swapFrom;
+    if (coin.id === other.id) return;
     const div=document.createElement('div');
     div.style.cssText='display:flex;align-items:center;gap:12px;background:var(--bg3);border:1.5px solid '+(coin.id===current.id?'var(--gold)':'var(--border)')+';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
     div.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:'+coin.bg+';display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">'+wwCoinIconHtml(coin)+'</div><div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">'+coin.name+'</div><div style="font-size:11px;color:var(--text-muted)">'+coin.chain+'</div></div><div class="u6"><div style="font-size:14px;color:var(--text)">'+coin.bal.toLocaleString()+'</div></div>';
@@ -5366,39 +5651,143 @@ function closeSwapConfirm() {
   try { delete window._wwSwapRecipientAddr; } catch (_c) {}
 }
 
-function openDex() {
-  const closeOverlay = document.getElementById('swapConfirmOverlay');
-  if(closeOverlay) closeOverlay.classList.remove('show');
+function confirmSwapGo() {
+  openDex();
+}
 
-  try { sessionStorage.setItem('ww_swap_pending', '1'); } catch (_s) {}
+function wwAppendSwapHistory(payload) {
+  try {
+    var key = 'ww_swap_history_v1';
+    var arr = JSON.parse(localStorage.getItem(key) || '[]');
+    if (!Array.isArray(arr)) arr = [];
+    arr.unshift(
+      Object.assign(
+        {
+          savedAt: Date.now()
+        },
+        payload || {}
+      )
+    );
+    if (arr.length > 100) arr = arr.slice(0, 100);
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch (_e) {}
+}
+
+function wwSwapShowRecords() {
+  var ov = document.getElementById('swapHistoryOverlay');
+  var body = document.getElementById('swapHistoryBody');
+  if (!ov || !body) {
+    if (typeof showToast === 'function') showToast('暂无记录面板', 'info');
+    return;
+  }
+  try {
+    var arr = JSON.parse(localStorage.getItem('ww_swap_history_v1') || '[]');
+    if (!Array.isArray(arr) || !arr.length) {
+      body.innerHTML =
+        '<div style="padding:20px;color:var(--text-muted);font-size:13px;text-align:center">暂无记录。确认跳转外链后会记下意向单（成交以链上为准）。</div>';
+    } else {
+      body.innerHTML = arr
+        .slice(0, 50)
+        .map(function (row) {
+          var t = row.savedAt ? new Date(row.savedAt).toLocaleString() : '';
+          var line =
+            String(row.amtIn || '') +
+            ' ' +
+            String(row.fromSym || '') +
+            ' → ' +
+            String(row.estOut || '') +
+            ' ' +
+            String(row.toSym || '');
+          return (
+            '<div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px;line-height:1.45">' +
+            '<div style="color:var(--text-muted)">' +
+            wwEscAttr(t) +
+            '</div><div style="color:var(--text)">' +
+            wwEscAttr(line) +
+            '</div><div style="font-size:11px;color:var(--text-muted)">滑点 ' +
+            wwEscAttr(String(row.slip != null ? row.slip : '—')) +
+            '% · ' +
+            wwEscAttr(String(row.route || '')) +
+            '</div></div>'
+          );
+        })
+        .join('');
+    }
+  } catch (_e2) {
+    body.textContent = '读取失败';
+  }
+  ov.classList.add('show');
+}
+
+function closeSwapHistory() {
+  var ov = document.getElementById('swapHistoryOverlay');
+  if (ov) ov.classList.remove('show');
+}
+
+function openDex() {
+  var closeOverlay = document.getElementById('swapConfirmOverlay');
+  if (closeOverlay) closeOverlay.classList.remove('show');
+
+  try {
+    sessionStorage.setItem('ww_swap_pending', '1');
+  } catch (_s) {}
 
   var recip = '';
-  try { recip = String(window._wwSwapRecipientAddr || '').trim(); } catch (_r) {}
-  try { delete window._wwSwapRecipientAddr; } catch (_r2) {}
+  try {
+    recip = String(window._wwSwapRecipientAddr || '').trim();
+  } catch (_r) {}
 
-  const isTron = ['trx','usdt'].includes(swapFrom.id) && ['trx','usdt'].includes(swapTo.id);
-  const COIN_ADDRS = {
-    trx: 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb', // TRX
-    usdt: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',  // USDT TRC20
-    eth: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', // ETH
+  var slip = typeof wwGetSwapSlippagePct === 'function' ? wwGetSwapSlippagePct() : 0.5;
+  var amtInStr = String((_safeEl('swapAmountIn') || {}).value || '').trim();
+  var estOutTxt = (_safeEl('swapAmountOut') || {}).textContent || '';
+  var minOutTxt = (_safeEl('swapMinOut') || {}).textContent || '';
+
+  var isTron = swapFrom.family === 'tron' && swapTo.family === 'tron';
+  var routeLabel = isTron ? 'TRON / SunSwap' : 'Ethereum / Uniswap V3';
+  wwAppendSwapHistory({
+    route: routeLabel,
+    fromSym: swapFrom.name,
+    toSym: swapTo.name,
+    fromId: swapFrom.id,
+    toId: swapTo.id,
+    amtIn: amtInStr,
+    estOut: estOutTxt,
+    minOut: minOutTxt,
+    slip: slip
+  });
+
+  var COIN_ADDRS = {
+    trx: 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb',
+    usdt: 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
   };
 
-  if(isTron) {
-    // SunSwap (Tron DEX)；recipient 由界面传入时在 URL 中携带（若前端忽略则不影响打开）
-    const fromAddr = COIN_ADDRS[swapFrom.id] || '';
-    const toAddr = COIN_ADDRS[swapTo.id] || '';
-    let url = `https://sunswap.com/#/v3?inputCurrency=${fromAddr}&outputCurrency=${toAddr}`;
+  if (isTron) {
+    var fromAddr = COIN_ADDRS[swapFrom.id] || '';
+    var toAddr = COIN_ADDRS[swapTo.id] || '';
+    var url = 'https://sunswap.com/#/v3?inputCurrency=' + encodeURIComponent(fromAddr) + '&outputCurrency=' + encodeURIComponent(toAddr);
     if (recip) url += '&recipient=' + encodeURIComponent(recip);
     window.open(url, '_blank');
   } else {
-    // Uniswap
-    const UNISWAP_TOKENS = { usdt:'0xdAC17F958D2ee523a2206206994597C13D831ec7', eth:'ETH', btc:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' };
-    const inToken = UNISWAP_TOKENS[swapFrom.id] || swapFrom.id.toUpperCase();
-    const outToken = UNISWAP_TOKENS[swapTo.id] || swapTo.id.toUpperCase();
-    let u = `https://app.uniswap.org/swap?inputCurrency=${inToken}&outputCurrency=${outToken}`;
+    var UNISWAP_TOKENS = {
+      eth: 'ETH',
+      usdt_eth: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      btc: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+    };
+    var inToken = UNISWAP_TOKENS[swapFrom.id] || String(swapFrom.id || '').toUpperCase();
+    var outToken = UNISWAP_TOKENS[swapTo.id] || String(swapTo.id || '').toUpperCase();
+    var u =
+      'https://app.uniswap.org/#/swap?chain=mainnet&inputCurrency=' +
+      encodeURIComponent(inToken) +
+      '&outputCurrency=' +
+      encodeURIComponent(outToken);
     if (recip) u += '&recipient=' + encodeURIComponent(recip);
     window.open(u, '_blank');
   }
+
+  try {
+    delete window._wwSwapRecipientAddr;
+  } catch (_r2) {}
 }
 
 (function wwSwapReturnRefresh() {
@@ -6596,7 +6985,7 @@ function drawHomeBalanceChart(totalUsd) {
 
 function wwPricesFallbackFromCache() {
   if (priceCache) return priceCache;
-  return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
+  return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000, usdc: 1, usdt_eth: 1 };
 }
 
 async function getPrices() {
@@ -6605,14 +6994,18 @@ async function getPrices() {
   try {
     /* 一次请求含 24h 涨跌，供首页同步（避免 loadBalances 再打第二遍 CoinGecko） */
     const res = await fetch(
-      'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd&include_24hr_change=true'
+      'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin,usd-coin&vs_currencies=usd&include_24hr_change=true'
     );
     const data = await res.json();
+    var ut = data.tether && data.tether.usd ? data.tether.usd : 1;
+    var uc = data['usd-coin'] && data['usd-coin'].usd ? data['usd-coin'].usd : 1;
     priceCache = {
-      usdt: data.tether?.usd || 1,
+      usdt: ut,
       trx: data.tron?.usd || 0.12,
       eth: data.ethereum?.usd || 3200,
       btc: data.bitcoin?.usd || 60000,
+      usdc: uc,
+      usdt_eth: ut,
       chgUsdt: data.tether && data.tether.usd_24h_change,
       chgTrx: data.tron && data.tron.usd_24h_change,
       chgEth: data.ethereum && data.ethereum.usd_24h_change,
@@ -6621,7 +7014,7 @@ async function getPrices() {
     priceCacheTime = Date.now();
     return priceCache;
   } catch(e) {
-    return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
+    return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000, usdc: 1, usdt_eth: 1 };
   }
 }
 
@@ -6673,6 +7066,28 @@ async function wwFetchEthBalanceForHome(ethAddr) {
     console.log('ETH query failed:', e);
   }
   return 0;
+}
+
+/** ERC-20 balanceOf(ethAddr) → human amount；用于兑换页 USDT/USDC（以太坊）余额 */
+async function wwFetchErc20BalanceHuman(ethAddr, tokenAddr, decimals) {
+  if (!ethAddr || !tokenAddr || typeof wwFetchEthJsonRpc !== 'function') return 0;
+  try {
+    var addr = String(ethAddr).replace(/^0x/i, '').toLowerCase();
+    if (addr.length !== 40) return 0;
+    var data = '0x70a08231' + addr.padStart(64, '0');
+    var ethRes = await wwFetchEthJsonRpc({
+      jsonrpc: '2.0',
+      method: 'eth_call',
+      params: [{ to: tokenAddr, data: data }, 'latest'],
+      id: 1
+    });
+    var ethData = await ethRes.json();
+    if (!ethData.result || ethData.result === '0x') return 0;
+    var wei = parseInt(ethData.result, 16);
+    return wei / Math.pow(10, decimals);
+  } catch (e) {
+    return 0;
+  }
 }
 
 async function wwFetchBtcBalanceForHome(btcAddr) {
@@ -6810,21 +7225,35 @@ async function loadBalances() {
     const btcAddr = REAL_WALLET.btcAddress || '';
 
     /* 价格 + 三链余额并行 + 单路超时；墙钟≈最慢一路，目标 <1s。能量条/次要 UI 延后，避免抢带宽 */
-    const [pricesRaw, trxRaw, ethRaw, btcRaw] = await Promise.all([
+    const [pricesRaw, trxRaw, ethRaw, btcRaw, usdtEthRaw, usdcRaw] = await Promise.all([
       wwRaceMs(getPrices(), WW_HOME_NET_MS, wwPricesFallbackFromCache()),
       wwRaceMs(wwFetchTrxAccountBalancesForHome(trxAddr), WW_HOME_NET_MS_TRX, null),
       wwRaceMs(wwFetchEthBalanceForHome(ethAddr), WW_HOME_NET_MS, null),
-      wwRaceMs(wwFetchBtcBalanceForHome(btcAddr), WW_HOME_NET_MS_BTC, null)
+      wwRaceMs(wwFetchBtcBalanceForHome(btcAddr), WW_HOME_NET_MS_BTC, null),
+      wwRaceMs(
+        wwFetchErc20BalanceHuman(ethAddr, '0xdAC17F958D2ee523a2206206994597C13D831ec7', 6),
+        WW_HOME_NET_MS,
+        null
+      ),
+      wwRaceMs(
+        wwFetchErc20BalanceHuman(ethAddr, '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', 6),
+        WW_HOME_NET_MS,
+        null
+      )
     ]);
     const prices = pricesRaw || wwPricesFallbackFromCache();
     const trxPack =
       trxRaw === null ? window._wwLastTrxPack || { trxBal: 0, usdtBal: 0 } : trxRaw;
     let ethBal = ethRaw === null ? (typeof window._wwLastKnownEthBal === 'number' ? window._wwLastKnownEthBal : 0) : ethRaw;
     let btcBal = btcRaw === null ? (typeof window._wwLastKnownBtcBal === 'number' ? window._wwLastKnownBtcBal : 0) : btcRaw;
+    let usdtEthBal = usdtEthRaw === null ? (typeof window._wwLastUsdtEthBal === 'number' ? window._wwLastUsdtEthBal : 0) : usdtEthRaw;
+    let usdcBal = usdcRaw === null ? (typeof window._wwLastUsdcBal === 'number' ? window._wwLastUsdcBal : 0) : usdcRaw;
     try {
       window._wwLastTrxPack = { trxBal: trxPack.trxBal, usdtBal: trxPack.usdtBal };
       window._wwLastKnownEthBal = ethBal;
       window._wwLastKnownBtcBal = btcBal;
+      window._wwLastUsdtEthBal = usdtEthBal;
+      window._wwLastUsdcBal = usdcBal;
     } catch (_k) {}
     if (btcRaw === null && btcAddr) {
       setTimeout(function () {
@@ -6846,9 +7275,39 @@ async function loadBalances() {
         usdt: prices.usdt,
         trx: prices.trx,
         eth: prices.eth,
-        btc: prices.btc
+        btc: prices.btc,
+        usdc: prices.usdc,
+        usdt_eth: prices.usdt_eth
       });
     } catch (_cgusd) {}
+
+    var usdtEvmBals = { eth: 0, polygon: 0, bsc: 0 };
+    if (ethAddr && typeof WW_USDT_NETWORK_META !== 'undefined' && typeof wwErc20BalanceHuman === 'function') {
+      try {
+        var mE0 = WW_USDT_NETWORK_META.eth;
+        var mP0 = WW_USDT_NETWORK_META.polygon;
+        var mB0 = WW_USDT_NETWORK_META.bsc;
+        var evRes = await Promise.all([
+          wwRaceMs(wwErc20BalanceHuman(ethAddr, mE0), 14000, 0).catch(function () {
+            return 0;
+          }),
+          wwRaceMs(wwErc20BalanceHuman(ethAddr, mP0), 14000, 0).catch(function () {
+            return 0;
+          }),
+          wwRaceMs(wwErc20BalanceHuman(ethAddr, mB0), 14000, 0).catch(function () {
+            return 0;
+          })
+        ]);
+        usdtEvmBals = {
+          eth: Number(evRes[0]) || 0,
+          polygon: Number(evRes[1]) || 0,
+          bsc: Number(evRes[2]) || 0
+        };
+      } catch (_all) {}
+    }
+    try {
+      window._wwUsdtEvmBals = usdtEvmBals;
+    } catch (_st) {}
 
     let usdtBal = trxPack.usdtBal;
     let trxBal = trxPack.trxBal;
@@ -6918,6 +7377,12 @@ async function loadBalances() {
       else if(coin.id === 'eth') { coin.bal = ethBal; coin.price = prices.eth || 2500; }
       else if(coin.id === 'btc') { coin.bal = btcBal; coin.price = prices.btc || 60000; }
     });
+    try {
+      var _selN = document.getElementById('transferUsdtNetwork');
+      if (_selN && typeof transferCoin !== 'undefined' && transferCoin && transferCoin.id === 'usdt' && typeof wwSyncTransferCoinUsdtNet === 'function') {
+        wwSyncTransferCoinUsdtNet(_selN.value || transferCoin.usdtNet || 'tron');
+      }
+    } catch (_rts) {}
     /* 饼图/行情条/兑换 UI 延后一帧，避免阻塞首屏 commit */
     var _u = usdtUsd, _t = trxUsd, _e = ethUsd, _b = btcUsd;
     requestAnimationFrame(function () {

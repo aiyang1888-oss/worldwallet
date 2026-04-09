@@ -2254,8 +2254,13 @@ function wwApplyTransferCoinForRecipientAddr(rawAddr) {
   var cls = wwClassifyTransferRecipientAddr(rawAddr);
   if (cls === 'empty' || cls === 'unknown') return;
   var targetId = null;
-  if (cls === 'erc' || cls === 'erc_partial') targetId = 'eth';
-  else if (cls === 'ww') targetId = 'usdt';
+  if (cls === 'erc' || cls === 'erc_partial') {
+    if (transferCoin && transferCoin.id === 'usdt') {
+      targetId = 'usdt';
+    } else {
+      targetId = 'eth';
+    }
+  } else if (cls === 'ww') targetId = 'usdt';
   else if (cls === 'trc') targetId = (transferCoin && transferCoin.id === 'trx') ? 'trx' : 'usdt';
   else if (cls === 'btc') targetId = 'btc';
   if (!targetId) return;
@@ -2270,9 +2275,32 @@ function wwApplyTransferCoinForRecipientAddr(rawAddr) {
     bal: Number(c.bal) || 0,
     price: c.price
   };
+  if (targetId === 'usdt' && typeof wwInitTransferUsdtNetworkUi === 'function') {
+    try {
+      if (cls === 'erc' || cls === 'erc_partial') {
+        try {
+          localStorage.setItem('ww_transfer_usdt_net', 'eth');
+        } catch (_ls) {}
+      } else if (cls === 'trc') {
+        try {
+          localStorage.setItem('ww_transfer_usdt_net', 'tron');
+        } catch (_ls2) {}
+      }
+      wwInitTransferUsdtNetworkUi();
+    } catch (_wu) {}
+  }
 }
 
-var transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'', logoUrl:'https://static.tronscan.org/production/logo/usdtlogo.png', bal:0, price:1};
+var transferCoin = {
+  id: 'usdt',
+  name: 'USDT',
+  chain: 'TRC-20 · Tron',
+  icon: '',
+  logoUrl: 'https://static.tronscan.org/production/logo/usdtlogo.png',
+  bal: 0,
+  price: 1,
+  usdtNet: 'tron'
+};
 
 function selectTransferCoin(coinId) {
   var id = coinId != null ? String(coinId).trim() : '';
@@ -2286,9 +2314,15 @@ function selectTransferCoin(coinId) {
     icon: coin.icon,
     logoUrl: coin.logoUrl,
     bal: coin.bal,
-    price: coin.price
+    price: coin.price,
+    usdtNet: id === 'usdt' ? 'tron' : undefined
   };
   if (typeof goTo === 'function') goTo('page-transfer');
+  if (id === 'usdt' && typeof wwInitTransferUsdtNetworkUi === 'function') {
+    try {
+      wwInitTransferUsdtNetworkUi();
+    } catch (_wi2) {}
+  }
   if (typeof calcTransferFee === 'function') calcTransferFee();
 }
 
