@@ -43,18 +43,49 @@ function wwWordlistFetchName(lang) {
   return lang;
 }
 
+/** 解析词库 JSON 绝对路径，兼容子目录部署与 <base href> */
+function wwWordlistAssetUrl(lang) {
+  var base = wwWordlistFetchName(lang);
+  var rel = 'wordlists/' + base + '.json';
+  try {
+    if (typeof document !== 'undefined' && document.baseURI) {
+      return new URL(rel, document.baseURI).href;
+    }
+  } catch (_e) {}
+  try {
+    if (typeof window !== 'undefined' && window.location && window.location.href) {
+      return new URL(rel, window.location.href).href;
+    }
+  } catch (_e2) {}
+  return rel;
+}
+
+function wwFetchWordlistJson(url, attempt) {
+  var n = attempt == null ? 0 : attempt;
+  var init = { cache: n === 0 ? 'force-cache' : 'no-cache', credentials: 'same-origin' };
+  return fetch(url, init).then(function (r) {
+    if (!r.ok) throw new Error('wordlist HTTP ' + r.status);
+    return r.json();
+  }).catch(function (err) {
+    if (n >= 2) throw err;
+    return new Promise(function (resolve, reject) {
+      setTimeout(function () {
+        wwFetchWordlistJson(url, n + 1).then(resolve, reject);
+      }, 320 * (n + 1));
+    });
+  });
+}
+
 function wwEnsureWordlistLoaded(lang) {
   if (!lang || lang === 'en' || lang === 'zh') return Promise.resolve();
   if (WT_WORDLISTS[lang] && WT_WORDLISTS[lang].length === 2048) return Promise.resolve();
   if (WT_WORDLIST_LOAD_PROMISES[lang]) return WT_WORDLIST_LOAD_PROMISES[lang];
-  var base = wwWordlistFetchName(lang);
-  WT_WORDLIST_LOAD_PROMISES[lang] = fetch('wordlists/' + base + '.json', { cache: 'force-cache' })
-    .then(function (r) {
-      if (!r.ok) throw new Error('wordlist fetch failed: ' + base);
-      return r.json();
-    })
+  var url = wwWordlistAssetUrl(lang);
+  WT_WORDLIST_LOAD_PROMISES[lang] = wwFetchWordlistJson(url, 0)
     .then(function (arr) {
-      if (!Array.isArray(arr) || arr.length !== 2048) throw new Error('invalid wordlist: ' + lang);
+      if (!Array.isArray(arr) || arr.length !== 2048) {
+        throw new Error('invalid wordlist length for ' + lang + ' (expect 2048)');
+      }
       WT_WORDLISTS[lang] = arr;
       wwRebuildWordlistIndexes();
     })
@@ -62,7 +93,8 @@ function wwEnsureWordlistLoaded(lang) {
       try {
         delete WT_WORDLIST_LOAD_PROMISES[lang];
       } catch (_d) {}
-      throw e;
+      var msg = e && e.message ? e.message : String(e);
+      throw new Error('词库加载失败（' + lang + '）：' + msg + '。请检查网络或与 wordlists/ 路径是否一致。');
     });
   return WT_WORDLIST_LOAD_PROMISES[lang];
 }
@@ -71,6 +103,7 @@ try {
   window.wwRebuildWordlistIndexes = wwRebuildWordlistIndexes;
   window.wwMapEnWordsToLangWords = wwMapEnWordsToLangWords;
   window.wwEnsureWordlistLoaded = wwEnsureWordlistLoaded;
+  window.wwWordlistAssetUrl = wwWordlistAssetUrl;
 } catch (_w) {}
 
 wwRebuildWordlistIndexes();

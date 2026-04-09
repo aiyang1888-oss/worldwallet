@@ -118,8 +118,8 @@
     quoteEvmBestAmountOutWei: quoteEvmBestAmountOutWei,
     isEvmSwapPair: isEvmSwapPair,
     metaByCoinId: metaByCoinId,
-    /** 报价轮询间隔（毫秒），默认 5000；runtime 的 goTo(page-swap) 会启动 */
-    quotePollIntervalMs: 5000
+    /** 报价轮询间隔（毫秒），默认 3000；runtime 的 goTo(page-swap) 会启动 */
+    quotePollIntervalMs: 3000
   };
 })();
 

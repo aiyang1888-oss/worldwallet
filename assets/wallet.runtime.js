@@ -2,15 +2,8 @@
 
 var _pin = null;
 
-// 强制清除旧 Service Worker 和缓存
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(r => r.unregister());
-  });
-  caches.keys().then(keys => {
-    keys.forEach(k => caches.delete(k));
-  });
-}
+/** 与 dist/sw.js 中 WW_APP_CACHE_NAME 一致；发版时两边同步更新 */
+var WW_APP_CACHE_NAME = 'worldtoken-static-v202604091300';
 
 function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) {}
@@ -2525,6 +2518,21 @@ async function broadcastRealTransfer() {
   } else if (coin === 'trx' && !addr.match(/^T[a-zA-Z0-9]{33}$/)) {
     showToast('TRON地址格式错误','error');return false;
   }
+  if (coin === 'usdt') {
+    var _nkChk = transferCoin && transferCoin.usdtNet ? transferCoin.usdtNet : 'tron';
+    if (_nkChk !== 'tron') {
+      try {
+        if (typeof wwValidateEvmAddressChecksum === 'function') {
+          addr = wwValidateEvmAddressChecksum(addr);
+          var _taUsdtEvm = document.getElementById('transferAddr');
+          if (_taUsdtEvm) _taUsdtEvm.value = addr;
+        }
+      } catch (eUsdt) {
+        showToast('❌ ' + (eUsdt && eUsdt.message ? eUsdt.message : 'EVM 地址校验失败'), 'error');
+        return false;
+      }
+    }
+  }
   if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
     showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
     return false;
@@ -4701,7 +4709,7 @@ async function doTransfer() {
 
 function closeTransferConfirm() { _safeEl('transferConfirmOverlay').classList.remove('show'); }
 
-function confirmTransfer() {
+async function confirmTransfer() {
   if (window._wwConfirmTransferBusy) return;
   if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
     showToast('📡 当前无网络，无法完成转账', 'warning');
@@ -4799,6 +4807,25 @@ function confirmTransfer() {
     }
   }
 
+  if (typeof wwHasPinConfigured === 'function' && wwHasPinConfigured()) {
+    var pin2 = prompt('二次验证：请输入 6 位 PIN 以确认链上广播');
+    if (pin2 === null) return;
+    if (typeof verifyPin === 'function') {
+      try {
+        if (!(await verifyPin(pin2))) {
+          if (typeof showToast === 'function') showToast('PIN 不正确', 'error');
+          return;
+        }
+      } catch (_pv) {
+        if (typeof showToast === 'function') showToast('PIN 校验失败', 'error');
+        return;
+      }
+    } else {
+      if (typeof showToast === 'function') showToast('安全模块未就绪', 'error');
+      return;
+    }
+  }
+
   // 尝试真实广播
   const sendBtn = document.getElementById('confirmSendBtn');
   window._wwConfirmTransferBusy = true;
@@ -4825,7 +4852,13 @@ function confirmTransfer() {
     if (typeof wwModalHideProgress === 'function') wwModalHideProgress();
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
     window._wwConfirmTransferBusy = false;
-    showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
+    var em =
+      typeof wwFmtUserError === 'function'
+        ? wwFmtUserError(err)
+        : err && err.message
+          ? err.message
+          : '网络错误';
+    showToast('❌ 转账失败：' + em, 'error');
   });
 
   // 启动嗖动画（仅当完整版 DOM 存在；否则由上方 then 分支已回首页）
@@ -5928,8 +5961,11 @@ function confirmSwapGo() {
         typeof wwExplorerTxUrlForChain === 'function'
           ? wwExplorerTxUrlForChain(1, hash)
           : 'https://etherscan.io/tx/' + encodeURIComponent(hash);
+      var rMasked = recipEvm ? recipEvm.slice(0, 6) + '…' + recipEvm.slice(-4) : '';
       wwAppendSwapHistory({
         route: 'Ethereum · Uniswap V3 · 链上',
+        networkLabel: 'Ethereum · chainId 1',
+        chainId: 1,
         fromSym: swapFrom.name,
         toSym: swapTo.name,
         fromId: swapFrom.id,
@@ -5940,14 +5976,20 @@ function confirmSwapGo() {
         slip: slip,
         txHash: hash,
         explorerUrl: ex,
-        status: 'confirmed'
+        status: 'confirmed',
+        recipientMasked: rMasked || undefined
       });
       if (typeof showToast === 'function') showToast('✅ 兑换已确认上链', 'success');
       if (typeof loadBalances === 'function') setTimeout(loadBalances, 2500);
     })
     .catch(function (err) {
       console.error(err);
-      var msg = err && err.message ? err.message : String(err);
+      var msg =
+        typeof wwFmtUserError === 'function'
+          ? wwFmtUserError(err)
+          : err && err.message
+            ? err.message
+            : String(err);
       if (typeof showToast === 'function') showToast('❌ ' + msg + ' · 将打开网页 DEX 备援', 'warning', 4500);
       openDex();
     })
@@ -6005,14 +6047,14 @@ function wwSwapHistoryRender(queryStr) {
     .slice(0, 100)
     .map(function (row) {
       var t = row.savedAt ? new Date(row.savedAt).toLocaleString() : '';
-      var line =
-        String(row.amtIn || '') +
-        ' ' +
-        String(row.fromSym || '') +
-        ' → ' +
-        String(row.estOut || '') +
-        ' ' +
-        String(row.toSym || '');
+      var net =
+        row.networkLabel ||
+        (row.chainId != null ? 'chainId ' + row.chainId : '') ||
+        String(row.route || '').split('·')[0].trim() ||
+        '—';
+      var amtPart = [String(row.amtIn || '').trim(), String(row.fromSym || '').trim()].filter(Boolean).join(' ');
+      var outPart = [String(row.estOut || row.minOut || '').trim(), String(row.toSym || '').trim()].filter(Boolean).join(' ');
+      var line = amtPart + ' → ' + outPart;
       var txh = String(row.txHash || '').trim();
       var exu = String(row.explorerUrl || '').trim();
       if (txh && !exu) exu = 'https://etherscan.io/tx/' + encodeURIComponent(txh);
@@ -6020,24 +6062,31 @@ function wwSwapHistoryRender(queryStr) {
         txh && exu
           ? '<div style="font-size:11px;margin-top:6px"><a href="' +
             wwEscAttr(exu) +
-            '" target="_blank" rel="noopener noreferrer" style="color:var(--gold);word-break:break-all">Tx ' +
-            wwEscAttr(txh.slice(0, 12)) +
+            '" target="_blank" rel="noopener noreferrer" style="color:var(--gold);word-break:break-all">交易 ' +
+            wwEscAttr(txh.slice(0, 10)) +
             '…</a></div>'
           : '';
       var st = String(row.status || '').trim();
+      var rec =
+        row.recipientMasked
+          ? '<div style="font-size:11px;color:var(--text-muted);margin-top:4px">收款 ' + wwEscAttr(row.recipientMasked) + '</div>'
+          : '';
       return (
         '<div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px;line-height:1.45">' +
-        '<div style="color:var(--text-muted)">' +
+        '<div style="color:var(--text-muted);font-size:11px">' +
+        wwEscAttr(net) +
+        ' · ' +
         wwEscAttr(t) +
         (st ? ' · <span style="color:var(--gold)">' + wwEscAttr(st) + '</span>' : '') +
-        '</div><div style="color:var(--text)">' +
+        '</div><div style="color:var(--text);font-weight:600;margin-top:4px">' +
         wwEscAttr(line) +
         '</div>' +
+        rec +
         txBlock +
         '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">滑点 ' +
         wwEscAttr(String(row.slip != null ? row.slip : '—')) +
         '% · ' +
-        wwEscAttr(String(row.route || '')) +
+        wwEscAttr(String(row.route || row.pairLabel || '')) +
         '</div></div>'
       );
     })
@@ -8372,8 +8421,20 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 /* hash 路由由 wallet.ui.js 统一处理（含 wwEnsureInitialHashRoute）；勿重复注册，避免双次 goTo 与行为不一致 */
 
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      window.addEventListener('load', function () {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then(function (reg) {
+            try {
+              reg.update();
+            } catch (_u) {}
+            try {
+              if (reg.waiting && navigator.serviceWorker.controller) {
+                reg.waiting.postMessage('skipWaiting');
+              }
+            } catch (_m) {}
+          })
+          .catch(function () {});
       });
     }
   
@@ -8414,13 +8475,19 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 
 (function wwClearStaleServiceWorkerCaches() {
   if (!('serviceWorker' in navigator)) return;
-  navigator.serviceWorker.getRegistrations().then(function(regs) {
-    regs.forEach(function(r) { r.update(); });
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    regs.forEach(function (r) {
+      try {
+        r.update();
+      } catch (_u) {}
+    });
   });
   if (typeof caches === 'undefined' || !caches.keys) return;
-  caches.keys().then(function(names) {
-    names.forEach(function(name) {
-      if (name !== 'worldtoken-v202604091200') caches.delete(name);
+  caches.keys().then(function (names) {
+    names.forEach(function (name) {
+      if (typeof name === 'string' && name.indexOf('worldtoken-') === 0 && name !== WW_APP_CACHE_NAME) {
+        caches.delete(name);
+      }
     });
   });
 })();
@@ -8440,8 +8507,24 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     try {
       if (tmr) clearInterval(tmr);
     } catch (_c) {}
-    tmr = setInterval(tick, 120000);
+    tmr = setInterval(tick, 45000);
   });
+})();
+
+(function wwBalanceOnVisibleRefresh() {
+  if (typeof document === 'undefined' || !document.addEventListener) return;
+  document.addEventListener(
+    'visibilitychange',
+    function () {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        var home = document.getElementById('page-home');
+        if (!home || !home.classList || !home.classList.contains('active')) return;
+        if (typeof loadBalances === 'function') setTimeout(loadBalances, 300);
+      } catch (_e) {}
+    },
+    false
+  );
 })();
 
 // 防止在控制台输出敏感数据

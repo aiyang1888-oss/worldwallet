@@ -26,7 +26,14 @@ async function callWithRetry(fn, maxRetries, initialDelay) {
     try {
       return await fn();
     } catch (e) {
-      if (e && e.status === 429 && i < maxRetries - 1) {
+      var st = e && e.status;
+      var msg = e && e.message ? String(e.message) : '';
+      var transient =
+        st === 429 ||
+        st === 503 ||
+        st === 408 ||
+        (msg && (msg.toLowerCase().indexOf('timeout') >= 0 || msg.indexOf('超时') >= 0));
+      if (e && transient && i < maxRetries - 1) {
         var delay = initialDelay * Math.pow(2, i);
         await new Promise(function (resolve) { setTimeout(resolve, delay); });
       } else {

@@ -24,7 +24,21 @@
   }
 
   function append(payload) {
-    var row = Object.assign({}, { savedAt: Date.now(), status: 'recorded' }, payload || {});
+    var p = payload || {};
+    var row = Object.assign(
+      {},
+      {
+        savedAt: Date.now(),
+        status: 'recorded',
+        schemaVersion: 2
+      },
+      p
+    );
+    if (row.chainId == null && (p.networkLabel || '').indexOf('Ethereum') >= 0) row.chainId = 1;
+    if (!row.networkLabel && row.chainId === 1) row.networkLabel = 'Ethereum';
+    if (!row.pairLabel && (row.fromSym || row.toSym)) {
+      row.pairLabel = String(row.fromSym || '') + ' → ' + String(row.toSym || '');
+    }
     var arr = _read();
     arr.unshift(row);
     _write(arr);
@@ -52,7 +66,12 @@
         row.txHash,
         row.explorerUrl,
         row.status,
-        row.note
+        row.note,
+        row.networkLabel,
+        row.pairLabel,
+        row.chainId != null ? String(row.chainId) : '',
+        row.recipientMasked,
+        row.minOut
       ]
         .filter(Boolean)
         .join(' ')

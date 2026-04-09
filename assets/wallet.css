@@ -1,5 +1,15 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* 移动端：缩短点击延迟，避免误触双击缩放 */
+.btn-primary,
+.btn-secondary,
+.tab-item,
+.quick-btn,
+.nav-back,
+.swap-card[role="button"] {
+  touch-action: manipulation;
+}
+
 /* 金额等 number 输入：隐藏浏览器步进箭头，点击后直接键盘输入 */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {

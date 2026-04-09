@@ -7,7 +7,8 @@
 
   var SWAP_ROUTER_02 = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
   var WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
-  var RPC_TIMEOUT_MS = 14000;
+  var RPC_TIMEOUT_MS = 20000;
+  var GAS_ESTIMATE_MS = 42000;
 
   function withTimeout(promise, ms, label) {
     return Promise.race([
@@ -29,10 +30,11 @@
     return new ethers.providers.JsonRpcProvider(rpc);
   }
 
+  /** 主网 L1 波动大：在估算值上再加安全余量，降低 out-of-gas */
   function bumpGasLimit(g, ethersLib) {
     var E = ethersLib || global.ethers;
     if (!g || !g.mul || !E) return g;
-    return g.mul(118).div(100).add(E.BigNumber.from('8000'));
+    return g.mul(128).div(100).add(E.BigNumber.from('48000'));
   }
 
   function recordSwapGasSample(gasUsedBn) {
@@ -169,9 +171,9 @@
         amountOutMinimum: minOutWei,
         sqrtPriceLimitX96: 0
       };
-      var glA = ethers.BigNumber.from('450000');
+      var glA = ethers.BigNumber.from('520000');
       try {
-        var estA = await withTimeout(router.estimateGas.exactInputSingle(singleA), 22000, 'Gas 估算');
+        var estA = await withTimeout(router.estimateGas.exactInputSingle(singleA), GAS_ESTIMATE_MS, 'Gas 估算');
         glA = bumpGasLimit(estA, ethers);
       } catch (_ga) {}
       var tx1 = await router.exactInputSingle(singleA, Object.assign({ gasLimit: glA }, gasOpts));
@@ -200,11 +202,11 @@
       };
       var w2 = iface.encodeFunctionData('exactInputSingle', [pEth]);
       if (onProgress) onProgress('swap');
-      var glB = ethers.BigNumber.from('550000');
+      var glB = ethers.BigNumber.from('680000');
       try {
         var estB = await withTimeout(
           router.estimateGas.multicall([w1, w2], { value: amountInWei }),
-          22000,
+          GAS_ESTIMATE_MS,
           'Gas 估算'
         );
         glB = bumpGasLimit(estB, ethers);
@@ -236,9 +238,9 @@
       var u1 = iface.encodeFunctionData('exactInputSingle', [pTok]);
       var u2 = iface.encodeFunctionData('unwrapWETH9', [minOutWei, recip]);
       if (onProgress) onProgress('swap');
-      var glC = ethers.BigNumber.from('600000');
+      var glC = ethers.BigNumber.from('720000');
       try {
-        var estC = await withTimeout(router.estimateGas.multicall([u1, u2]), 22000, 'Gas 估算');
+        var estC = await withTimeout(router.estimateGas.multicall([u1, u2]), GAS_ESTIMATE_MS, 'Gas 估算');
         glC = bumpGasLimit(estC, ethers);
       } catch (_gc) {}
       var tx3 = await router.multicall([u1, u2], Object.assign({ gasLimit: glC }, gasOpts));
