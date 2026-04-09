@@ -4221,6 +4221,12 @@ function checkTransferReady() {
 
 function calcTransferFee() {
   try {
+    var _ta0 = document.getElementById('transferAddr');
+    if (typeof wwApplyTransferCoinForRecipientAddr === 'function') {
+      wwApplyTransferCoinForRecipientAddr(_ta0 ? String(_ta0.value || '').trim() : '');
+    }
+  } catch (_e0) { wwQuiet(_e0); }
+  try {
     var uc = typeof COINS !== 'undefined' && COINS.find && COINS.find(function (c) { return c && c.id === transferCoin.id; });
     if (uc) { transferCoin.bal = uc.bal; transferCoin.price = uc.price; }
   } catch (_e) { wwQuiet(_e); }
