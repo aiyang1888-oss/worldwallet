@@ -3,13 +3,22 @@
  * 用 dist/wordlists/zh-cn.json（2048 词，与 BIP39 英文索引对齐）
  * 替换 dist/wordlists.js 中的 WT_WORDLISTS.zh 数组。
  * 使用括号深度匹配，避免正则误判字符串内的 ]。
+ * 注入前运行 verify-zh-wordlist（2～3 字、无重复），避免长地名经展示归一化后出现「锡林浩」类伪词。
  */
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
 const zhPath = path.join(root, 'dist', 'wordlists', 'zh-cn.json');
 const wlPath = path.join(root, 'dist', 'wordlists.js');
+
+const verify = spawnSync(
+  process.execPath,
+  [path.join(__dirname, 'verify-zh-wordlist.mjs')],
+  { cwd: root, stdio: 'inherit', env: { ...process.env, ZH_WL_PATH: zhPath } }
+);
+if (verify.status !== 0) process.exit(verify.status ?? 1);
 
 const zh = JSON.parse(fs.readFileSync(zhPath, 'utf8'));
 if (!Array.isArray(zh) || zh.length !== 2048) {
