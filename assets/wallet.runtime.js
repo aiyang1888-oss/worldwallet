@@ -1448,6 +1448,22 @@ function goTo(pageId, opts) {
       } catch (_lw) {}
     }
   }
+  /* 首帧 head 注入的 data-ww-boot-page 与 wallet.css 中对应规则会用 !important 固定目标页可见；
+     若不在此清理，从 #page-key 等深链进入后 goTo 其它页时旧页仍叠在最上层，表现为按钮无反应。 */
+  try {
+    var _wwBootPg = document.documentElement.getAttribute('data-ww-boot-page');
+    if (_wwBootPg && _wwBootPg !== pageId) {
+      document.documentElement.removeAttribute('data-ww-boot-page');
+      try {
+        document.documentElement.classList.remove('ww-boot-route');
+      } catch (_wb0) {}
+      try {
+        var _wwBootStEl = document.querySelector('style[data-ww-boot-route="1"]');
+        if (!_wwBootStEl) _wwBootStEl = document.querySelector('style[data-ww-boot-route]');
+        if (_wwBootStEl && _wwBootStEl.parentNode) _wwBootStEl.parentNode.removeChild(_wwBootStEl);
+      } catch (_wb1) {}
+    }
+  } catch (_wwBootClr) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
