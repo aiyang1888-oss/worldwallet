@@ -2442,7 +2442,7 @@ function wwApplyTransferCoinForRecipientAddr(rawAddr) {
   };
 }
 
-var transferCoin = {id:'usdt', name:'TRC USDT', chain:'TRC-20 · Tron', icon:'', logoUrl:'https://static.tronscan.org/production/logo/usdtlogo.png', bal:0, price:1};
+var transferCoin = {id:'usdt', name:'USDT (TRC-20)', chain:'Tron', icon:'', logoUrl:'https://static.tronscan.org/production/logo/usdtlogo.png', bal:0, price:1};
 
 function selectTransferCoin(coinId) {
   var id = coinId != null ? String(coinId).trim() : '';
