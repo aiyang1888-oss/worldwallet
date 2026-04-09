@@ -22,6 +22,7 @@ function wwRebuildWordlistIndexes() {
   });
 }
 
+/** 仅按 BIP39 索引取 WT_WORDLISTS[wlKey][idx]，不截断；中文展示异常时查 wallet.ui.js wwNormalizeZhWordlistForDisplay 与 zh-cn 注入校验。 */
 function wwMapEnWordsToLangWords(enWords, wlKey) {
   if (!wlKey || wlKey === 'en') return enWords.slice();
   var tab = WT_WORDLISTS[wlKey];
