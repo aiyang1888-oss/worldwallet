@@ -356,8 +356,18 @@
         'click',
         function (ev) {
           if (ev.button !== 0 && ev.button != null) return;
-          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
-          if (!btn || !pgWelcome.contains(btn)) return;
+          var el = _wwWelcomeTargetEl(ev);
+          var btn = el && typeof el.closest === 'function' ? el.closest('button[data-ww-welcome-act]') : null;
+          if (!btn || !pgWelcome.contains(btn)) {
+            if (typeof document.elementFromPoint === 'function' && ev.clientX != null && ev.clientY != null) {
+              var u = document.elementFromPoint(ev.clientX, ev.clientY);
+              if (u && u.nodeType === 3) u = u.parentElement;
+              if (u && typeof u.closest === 'function') {
+                btn = u.closest('button[data-ww-welcome-act]');
+              }
+            }
+            if (!btn || !pgWelcome.contains(btn)) return;
+          }
           try {
             ev.preventDefault();
           } catch (_pe) {}
