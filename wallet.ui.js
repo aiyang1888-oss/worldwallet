@@ -2389,21 +2389,6 @@ function renderAddressBookSettingsList() {
   const q = searchEl ? String(searchEl.value || '').trim().toLowerCase() : '';
   const all = getTransferContacts();
   const total = all.length;
-  const countEl = document.getElementById('addrBookListCount');
-  if (countEl) {
-    if (!total) {
-      countEl.textContent = '共 0 条';
-    } else if (q) {
-      const n = all.filter(function (c) {
-        var nick = (c.nick || '').toLowerCase();
-        var addr = (c.addr || '').toLowerCase();
-        return nick.indexOf(q) >= 0 || addr.indexOf(q) >= 0;
-      }).length;
-      countEl.textContent = '显示 ' + n + ' / ' + total + ' 条';
-    } else {
-      countEl.textContent = '共 ' + total + ' 条';
-    }
-  }
   let list = all;
   if (q) {
     list = all.filter(function (c) {
@@ -2411,6 +2396,12 @@ function renderAddressBookSettingsList() {
       var addr = (c.addr || '').toLowerCase();
       return nick.indexOf(q) >= 0 || addr.indexOf(q) >= 0;
     });
+  }
+  const countEl = document.getElementById('addrBookListCount');
+  if (countEl) {
+    if (!total) countEl.textContent = '共 0 条';
+    else if (q) countEl.textContent = '显示 ' + list.length + ' / ' + total + ' 条';
+    else countEl.textContent = '共 ' + total + ' 条';
   }
   if (!total) {
     box.innerHTML = '<div class="addr-book-settings-empty">暂无条目，请在下方「添加或编辑」中保存</div>';
