@@ -1447,31 +1447,21 @@ function closeTotpUnlock() {
 }
 
 /**
- * 是否应视为「已有钱包可进首页 / 显示底栏」：含 TEMP、已注入的 REAL，以及尚未注入时 localStorage 里的公开地址。
- * 首屏 goTo 常早于 loadWallet()，仅查 REAL 会导致底栏 display:none，需点进子页再返回才出现。
+ * 是否应视为「已有钱包可进首页 / 显示底栏」：仅当 REAL / TEMP / ww_wallet 含「格式有效」的链上地址。
+ * 勿再回退到 wwWalletHasAnyChainAddress（占位短串会误判进资产页）。
  */
 function wwUserHasAnySavedChainAddress() {
   try {
-    if (typeof wwWalletHasAnyChainAddressIncludingTemp === 'function' && wwWalletHasAnyChainAddressIncludingTemp()) {
-      return true;
-    }
-  } catch (_a) { wwQuiet(_a); }
-  try {
-    if (typeof wwWalletHasValidPersistedAddress === 'function') {
-      var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-      if (wwWalletHasValidPersistedAddress(rw)) return true;
-      var ls = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      if (wwWalletHasValidPersistedAddress(ls)) return true;
-    }
-  } catch (_b1) { wwQuiet(_b1); }
-  try {
-    if (typeof wwWalletHasAnyChainAddress === 'function') {
-      var rw2 = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-      if (wwWalletHasAnyChainAddress(rw2)) return true;
-      var ls2 = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      if (wwWalletHasAnyChainAddress(ls2)) return true;
-    }
-  } catch (_b) { wwQuiet(_b); }
+    if (typeof wwWalletHasValidPersistedAddress !== 'function') return false;
+    var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (wwWalletHasValidPersistedAddress(rw)) return true;
+    var tw = typeof window !== 'undefined' && window.TEMP_WALLET ? window.TEMP_WALLET : null;
+    if (wwWalletHasValidPersistedAddress(tw)) return true;
+    var ls = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+    if (wwWalletHasValidPersistedAddress(ls)) return true;
+  } catch (_b) {
+    wwQuiet(_b);
+  }
   return false;
 }
 
@@ -1489,14 +1479,14 @@ function goTo(pageId, opts) {
       }
     } catch (_npu) { wwQuiet(_npu); }
   }
-  if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
+  if (pageId === 'page-password-restore' && typeof wwWalletHasValidPersistedAddress === 'function') {
     var _pwStoreRt = null;
     try {
       _pwStoreRt = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
     } catch (_e) {
       _pwStoreRt = {};
     }
-    if (!wwWalletHasAnyChainAddress(_pwStoreRt)) pageId = 'page-welcome';
+    if (!wwWalletHasValidPersistedAddress(_pwStoreRt)) pageId = 'page-welcome';
     else if (typeof loadWallet === 'function') {
       try {
         loadWallet();

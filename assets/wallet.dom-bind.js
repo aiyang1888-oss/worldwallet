@@ -288,11 +288,29 @@
       );
     }
 
-    /* 欢迎页三按钮：部分移动浏览器（尤其 iOS WebKit）对内联 onclick 不合成 click；touchend 兜底并 preventDefault 避免双触发 */
+    /* 欢迎页三按钮：部分 WebKit/Chrome 对内联 onclick 不合成 click；touchend + pointerup（非 mouse）兜底 */
     var pgWelcome = document.getElementById('page-welcome');
     if (pgWelcome) {
       var _wwWelTapX = 0;
       var _wwWelTapY = 0;
+      var _wwWelLastActAt = 0;
+      function _wwRunWelcomeAct(btn) {
+        if (!btn || !pgWelcome.contains(btn) || !btn.getAttribute('data-ww-welcome-act')) return;
+        var _now = Date.now();
+        if (_now - _wwWelLastActAt < 420) return;
+        _wwWelLastActAt = _now;
+        try {
+          if (typeof tapHaptic === 'function') tapHaptic(12);
+        } catch (_th) {}
+        var act = btn.getAttribute('data-ww-welcome-act');
+        if (act === 'create') {
+          if (typeof window.createNewWallet === 'function') void window.createNewWallet();
+        } else if (act === 'pin') {
+          if (typeof window.goTo === 'function') window.goTo('page-password-restore');
+        } else if (act === 'import') {
+          if (typeof window.goTo === 'function') window.goTo('page-import');
+        }
+      }
       pgWelcome.addEventListener(
         'touchstart',
         function (ev) {
@@ -304,27 +322,43 @@
         { passive: true, capture: true }
       );
       pgWelcome.addEventListener(
+        'pointerdown',
+        function (ev) {
+          if (!ev.isPrimary) return;
+          if (ev.pointerType === 'mouse') return;
+          _wwWelTapX = ev.clientX;
+          _wwWelTapY = ev.clientY;
+        },
+        { passive: true, capture: true }
+      );
+      pgWelcome.addEventListener(
         'touchend',
         function (ev) {
           var btn = ev.target && ev.target.closest && ev.target.closest('button.btn-primary, button.btn-secondary');
-          if (!btn || !pgWelcome.contains(btn) || !btn.getAttribute('data-ww-welcome-act')) return;
+          if (!btn || !btn.getAttribute('data-ww-welcome-act')) return;
           var te = ev.changedTouches && ev.changedTouches[0];
           if (te && (Math.abs(te.clientX - _wwWelTapX) > 20 || Math.abs(te.clientY - _wwWelTapY) > 24)) return;
           if (ev.cancelable) ev.preventDefault();
           try {
             ev.stopPropagation();
           } catch (_sp) {}
+          _wwRunWelcomeAct(btn);
+        },
+        { capture: true, passive: false }
+      );
+      pgWelcome.addEventListener(
+        'pointerup',
+        function (ev) {
+          if (!ev.isPrimary) return;
+          if (ev.pointerType === 'mouse') return;
+          var btn = ev.target && ev.target.closest && ev.target.closest('button.btn-primary, button.btn-secondary');
+          if (!btn || !btn.getAttribute('data-ww-welcome-act')) return;
+          if (Math.abs(ev.clientX - _wwWelTapX) > 20 || Math.abs(ev.clientY - _wwWelTapY) > 24) return;
+          if (ev.cancelable) ev.preventDefault();
           try {
-            if (typeof tapHaptic === 'function') tapHaptic(12);
-          } catch (_th) {}
-          var act = btn.getAttribute('data-ww-welcome-act');
-          if (act === 'create') {
-            if (typeof window.createNewWallet === 'function') void window.createNewWallet();
-          } else if (act === 'pin') {
-            if (typeof window.goTo === 'function') window.goTo('page-password-restore');
-          } else if (act === 'import') {
-            if (typeof window.goTo === 'function') window.goTo('page-import');
-          }
+            ev.stopPropagation();
+          } catch (_sp2) {}
+          _wwRunWelcomeAct(btn);
         },
         { capture: true, passive: false }
       );

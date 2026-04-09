@@ -1336,10 +1336,12 @@ function wwGetChainViewWallet() {
 
 function wwWalletHasAnyChainAddressIncludingTemp() {
   try {
-    return (
-      wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null) ||
-      wwWalletHasAnyChainAddress(typeof window !== 'undefined' && window.TEMP_WALLET ? window.TEMP_WALLET : null)
-    );
+    var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    var tw = typeof window !== 'undefined' && window.TEMP_WALLET ? window.TEMP_WALLET : null;
+    if (typeof wwWalletHasValidPersistedAddress === 'function') {
+      return wwWalletHasValidPersistedAddress(rw) || wwWalletHasValidPersistedAddress(tw);
+    }
+    return wwWalletHasAnyChainAddress(rw) || wwWalletHasAnyChainAddress(tw);
   } catch (_e2) {
     return false;
   }
@@ -1401,16 +1403,6 @@ function goTo(pageId, opts) {
         _wwAllowHomeUi = true;
       }
     } catch (_ah0) { wwQuiet(_ah0); }
-    if (!_wwAllowHomeUi && typeof wwWalletHasAnyChainAddress === 'function') {
-      try {
-        var _rwUi = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-        var _lsUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-        if (typeof wwWalletHasValidPersistedAddress === 'function') {
-          if (wwWalletHasValidPersistedAddress(_rwUi) || wwWalletHasValidPersistedAddress(_lsUi)) _wwAllowHomeUi = true;
-        }
-        if (!_wwAllowHomeUi && (wwWalletHasAnyChainAddress(_rwUi) || wwWalletHasAnyChainAddress(_lsUi))) _wwAllowHomeUi = true;
-      } catch (_ah1) { wwQuiet(_ah1); }
-    }
     if (!_wwAllowHomeUi) pageId = 'page-welcome';
     else {
       try {
@@ -4934,12 +4926,36 @@ try {
   function wwGuestHasSavedAddress() {
     try {
       var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      if (typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d)) return true;
-      return typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(d);
+      return typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d);
     } catch (_g) {
       return false;
     }
   }
+  /** 无有效地址却在欢迎页时，清 head 注入的 boot 遮罩，避免 pointer-events:none 卡死三按钮 */
+  function wwFixWelcomeBootIfGuest() {
+    try {
+      var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      var has = typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d);
+      if (has) return;
+      var w = document.getElementById('page-welcome');
+      if (!w || !w.classList.contains('active')) return;
+      document.documentElement.removeAttribute('data-ww-boot-page');
+      try {
+        document.documentElement.classList.remove('ww-boot-route');
+      } catch (_e) {}
+      try {
+        document.querySelectorAll('style[data-ww-boot-route]').forEach(function (st) {
+          if (st.parentNode) st.parentNode.removeChild(st);
+        });
+      } catch (_e2) {}
+      w.style.pointerEvents = 'auto';
+    } catch (_e3) {
+      wwQuiet(_e3);
+    }
+  }
+  try {
+    window.wwFixWelcomeBootIfGuest = wwFixWelcomeBootIfGuest;
+  } catch (_ex) {}
   /** 无链上地址时仅允许导入/密钥等 hash 深链；与 wallet.html head boot 白名单一致 */
   function wwGuestHashAllowed(pid) {
     if (!pid) return true;
@@ -5071,6 +5087,24 @@ try {
       }
     } catch (_wwFp) {
       wwQuiet(_wwFp);
+    }
+    try {
+      requestAnimationFrame(function () {
+        try {
+          if (typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
+        } catch (_fix) {
+          wwQuiet(_fix);
+        }
+      });
+    } catch (_rfx) {
+      wwQuiet(_rfx);
+    }
+  });
+  window.addEventListener('pageshow', function (e) {
+    try {
+      if (e.persisted && typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
+    } catch (_ps) {
+      wwQuiet(_ps);
     }
   });
 })();
