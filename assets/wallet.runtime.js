@@ -1656,69 +1656,98 @@ function selectLang(btn) {
 
 function renderKeyGrid() {
   let words;
-  const isEn = currentLang === 'en';
-  const enMnemonic = REAL_WALLET && REAL_WALLET.enMnemonic;
+  var wlKey = wwResolveMnemonicWordlistKey();
+  const isEn = wlKey === 'en';
+  const tw = window.TEMP_WALLET;
+  var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+  const enMnemonic =
+    (tw && (tw.mnemonic || tw.enMnemonic)) ||
+    (rw && (rw.enMnemonic || rw.mnemonic));
   if (!enMnemonic) {
+    try {
+      var _wlo = document.getElementById('walletLoadingOverlay');
+      if (_wlo && _wlo.classList.contains('show')) return;
+    } catch (_wl) {}
     goTo('page-welcome');
     return;
   }
   const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
   if (isEn) {
     words = enWords;
-    if (REAL_WALLET) REAL_WALLET.words = words;
+    if (tw) tw.words = words;
+    else if (rw && (rw.enMnemonic || rw.mnemonic)) rw.words = words;
   } else {
-    words = enWordsToLangKeyTableWords(enWords, currentLang);
-    if (REAL_WALLET) {
-      REAL_WALLET.displayLang = currentLang;
-      REAL_WALLET.displayWords = words;
-      REAL_WALLET.words = words;
+    words = enWordsToLangKeyTableWords(enWords, wlKey);
+    if (tw) {
+      tw.displayLang = keyMnemonicLang;
+      tw.mnemonicWordlistKey = wlKey;
+      tw.displayWords = words;
+      tw.words = words;
+    } else if (rw && (rw.enMnemonic || rw.mnemonic)) {
+      rw.displayLang = keyMnemonicLang;
+      rw.mnemonicWordlistKey = wlKey;
+      rw.displayWords = words;
+      rw.words = words;
     }
   }
   try {
-    // 只更新警告文字，不覆盖用户选择的词数
     const wlen = words.length;
     const wce = document.getElementById('warnWordCount');
     if (wce) wce.textContent = String(wlen);
-    // 不反向覆盖 currentMnemonicLength 或下拉框
+    if ([12, 15, 18, 21, 24].includes(wlen)) {
+      currentMnemonicLength = wlen;
+      var _ml = document.getElementById('mnemonicLength');
+      if (_ml) {
+        _ml.value = String(wlen);
+        var _ix = [12, 15, 18, 21, 24].indexOf(wlen);
+        if (_ix >= 0) _ml.selectedIndex = _ix;
+      }
+    }
   } catch (e) {}
   const grid = document.getElementById('keyWordGrid');
+  if (!grid) {
+    console.warn('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
+    return;
+  }
   grid.innerHTML = '';
 
   const hint = _safeEl('keyEnHint');
-  if(isEn) {
-    if(!hint) {
+  if (isEn) {
+    if (!hint) {
       const h = document.createElement('div');
       h.id = 'keyEnHint';
-      h.style.cssText = 'background:rgba(100,150,255,0.08);border:1px solid rgba(100,150,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#8aadff;line-height:1.7';
+      h.style.cssText =
+        'background:rgba(100,150,255,0.08);border:1px solid rgba(100,150,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#8aadff;line-height:1.7';
       h.innerHTML = '⛓️ 英文使用 BIP39 标准密钥，兼容所有公链钱包';
       grid.parentNode.insertBefore(h, grid);
     }
   } else {
-    if(hint) hint.remove();
+    if (hint) hint.remove();
   }
 
-  words.forEach((w,i)=>{
-    const d=document.createElement('div');
-    d.className='key-word fade-up';
-    d.style.animationDelay=i*0.04+'s';
-    const isSmall = currentLang==='en';
-    const line=document.createElement('div');
-    line.className='key-word-line';
-    const idx=document.createElement('span');
-    idx.className='word-idx';
-    idx.textContent=String(i+1).padStart(2,'0')+'.';
-    const val=document.createElement('span');
-    val.className='word-val';
-    val.textContent=w;
-    val.style.fontSize=isSmall?'11px':'13px';
+  words.forEach(function (w, i) {
+    const d = document.createElement('div');
+    d.className = 'key-word fade-up';
+    d.style.animationDelay = i * 0.04 + 's';
+    const isSmall = wlKey === 'en';
+    const line = document.createElement('div');
+    line.className = 'key-word-line';
+    const idx = document.createElement('span');
+    idx.className = 'word-idx';
+    idx.textContent = String(i + 1).padStart(2, '0') + '.';
+    const val = document.createElement('span');
+    val.className = 'word-val';
+    val.textContent = w;
+    val.style.fontSize = isSmall ? '11px' : '13px';
     line.appendChild(idx);
     line.appendChild(document.createTextNode(' '));
     line.appendChild(val);
     d.appendChild(line);
     grid.appendChild(d);
   });
-  if (REAL_WALLET) {
-    REAL_WALLET.words = words.slice();
+  var metaWallet = tw || (rw && (rw.enMnemonic || rw.mnemonic) ? rw : null);
+  if (metaWallet) {
+    metaWallet.words = words.slice();
   }
   if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
 }
