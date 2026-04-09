@@ -1433,6 +1433,11 @@ function wwUserHasAnySavedChainAddress() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
+  try {
+    if (document.documentElement.classList.contains('ww-first-route-pending')) {
+      document.documentElement.classList.remove('ww-first-route-pending');
+    }
+  } catch (_wwFpp) {}
   /* 与 wallet.ui.js 一致：forceHome 时不改道；首屏须认 localStorage，避免 REAL 未注入时被送回欢迎页 */
   if (pageId === 'page-home' && !opts.forceHome && !wwUserHasAnySavedChainAddress()) {
     pageId = 'page-welcome';
