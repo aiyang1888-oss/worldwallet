@@ -4934,6 +4934,7 @@ try {
   function wwGuestHasSavedAddress() {
     try {
       var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      if (typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d)) return true;
       return typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(d);
     } catch (_g) {
       return false;
