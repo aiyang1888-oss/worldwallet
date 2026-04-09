@@ -1381,6 +1381,11 @@ function goTo(pageId, opts) {
       } catch (_ah1) { wwQuiet(_ah1); }
     }
     if (!_wwAllowHomeUi) pageId = 'page-welcome';
+    else {
+      try {
+        if (typeof wwNeedsPinUnlockBeforeHome === 'function' && wwNeedsPinUnlockBeforeHome()) pageId = 'page-password-restore';
+      } catch (_nu) { wwQuiet(_nu); }
+    }
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _pwStore = null;
@@ -4963,7 +4968,13 @@ try {
       hasWallet = wwWalletHasAnyChainAddress(_d);
     } catch (_e) { wwQuiet(_e); }
     if (typeof goTo !== 'function') return;
-    goTo(hasWallet ? 'page-home' : 'page-welcome');
+    var _dest = hasWallet ? 'page-home' : 'page-welcome';
+    try {
+      if (hasWallet && typeof wwNeedsPinUnlockBeforeHome === 'function' && wwNeedsPinUnlockBeforeHome()) {
+        _dest = 'page-password-restore';
+      }
+    } catch (_destE) { wwQuiet(_destE); }
+    goTo(_dest);
   }
   window.addEventListener('hashchange', function () {
     wwApplyHashRoute();

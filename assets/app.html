@@ -104,6 +104,24 @@ try {
         boot = '';
       }
     }
+    /* 已配 PIN 且本地为加密包：首屏 boot PIN 解锁页，避免先闪资产页再被 goTo 拉回（与 wallet.ui goTo 一致） */
+    if (boot === 'page-home') {
+      try {
+        var _wEnc = localStorage.getItem('ww_wallet');
+        var _oEnc = _wEnc ? JSON.parse(_wEnc) : null;
+        if (_oEnc && _oEnc.encrypted) {
+          var _pinCfg =
+            !!(localStorage.getItem('ww_pin_hash') || localStorage.getItem('ww_pin_set') === '1');
+          if (!_pinCfg) {
+            try {
+              var _pl = localStorage.getItem('ww_unlock_pin') || localStorage.getItem('ww_pin') || '';
+              _pinCfg = !!(_pl && /^\d{6}$/.test(String(_pl)));
+            } catch (_pl0) {}
+          }
+          if (_pinCfg) boot = 'page-password-restore';
+        }
+      } catch (_bootEnc) {}
+    }
     /** 开发期间：可设为某 page-id 做首屏调试；留空则按 hash / 本地钱包进入首页 */
     try {
       var WW_DEV_BOOT_PAGE = '';
