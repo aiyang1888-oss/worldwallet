@@ -11,6 +11,8 @@ on:
       - 'assets/**'
       - 'dist/**'
       - 'scripts/sync-assets.sh'
+      - 'scripts/deploy-auto.sh'
+      - 'scripts/inject-html-asset-query.mjs'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
