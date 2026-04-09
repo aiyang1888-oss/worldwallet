@@ -1327,8 +1327,8 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     var wvHome = typeof wwGetChainViewWallet === 'function' ? wwGetChainViewWallet() : null;
-    if (wvHome && wvHome.trxAddress && typeof loadTrxResource === 'function') setTimeout(loadTrxResource, 400);
-    if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
+    /* TRX 能量条由 loadBalances 内与链上余额并行拉取，此处不再重复请求 */
+    if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 0);
     if (
       wvHome &&
       typeof wwWalletHasAnyChainAddress === 'function' &&
