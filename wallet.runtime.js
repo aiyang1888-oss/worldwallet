@@ -4926,7 +4926,10 @@ function calcSwap() {
   // 更新汇率显示
   const rate = pFrom / pTo;
   const rateEl = (_safeEl('swapRateInfo') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRateInfo fallback */;
-  if(rateEl) rateEl.textContent = `1 ${swapFrom.name} ≈ ${rate > 1 ? rate.toFixed(4) : rate.toFixed(8)} ${swapTo.name}`;
+  if (rateEl) {
+    const rateStr = swapTo.id === 'trx' ? rate.toFixed(2) : (rate > 1 ? rate.toFixed(4) : rate.toFixed(8));
+    rateEl.textContent = `1 ${swapFrom.name} ≈ ${rateStr} ${swapTo.name}`;
+  }
   try { if(typeof updateCrossChainSwapCompare==='function') updateCrossChainSwapCompare(); } catch(_cc) {}
 }
 
@@ -4995,7 +4998,7 @@ function doSwap() {
     _safeEl('swapConfirmFrom').textContent = amt + ' ' + swapFrom.name;
     _safeEl('swapConfirmTo').textContent = out + ' ' + swapTo.name;
     var pr = swapTo.price ? (swapFrom.price/swapTo.price) : 0;
-    _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (isFinite(pr) ? pr.toFixed(8) : '—') + ' ' + swapTo.name;
+    _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (isFinite(pr) ? (swapTo.id === 'trx' ? pr.toFixed(2) : pr.toFixed(8)) : '—') + ' ' + swapTo.name;
     overlay.classList.add('show');
   } else {
     openDex();
