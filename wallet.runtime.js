@@ -1456,6 +1456,10 @@ function goTo(pageId, opts) {
       } catch (_lw) {}
     }
   }
+  try {
+    if (typeof wwClearHtmlBootRouteIfDestChanges === 'function') wwClearHtmlBootRouteIfDestChanges(pageId);
+  } catch (_wwBootClr) {}
+  try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   /* 已在目标页则不再 strip/.active（否则刷新时重复触发 .page 的 opacity 过渡 → 欢迎页闪一下） */
   try {
     if (!opts.force && !opts.forceRoute) {
@@ -1463,10 +1467,6 @@ function goTo(pageId, opts) {
       if (_wwSamePg && _wwSamePg.id === pageId) return;
     }
   } catch (_samePg) {}
-  try {
-    if (typeof wwClearHtmlBootRouteIfDestChanges === 'function') wwClearHtmlBootRouteIfDestChanges(pageId);
-  } catch (_wwBootClr) {}
-  try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
     var curId = curEl && curEl.id;
