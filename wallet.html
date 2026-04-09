@@ -1,0 +1,953 @@
+<!-- worldtoken.cc v20260405 -->
+<!DOCTYPE html>
+<html lang="zh" class="ww-addr-pending">
+<head>
+
+
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
+<meta name="wt-tron-api-key" content="">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>WorldToken</title>
+<meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/USDT/BTC多链">
+<meta name="keywords" content="加密钱包,多语言,WorldToken,TRX,ETH,USDT,BTC,区块链">
+<meta name="theme-color" content="#0c0c18">
+<meta property="og:title" content="WorldToken - 全球多语言钱包">
+<meta property="og:description" content="支持120+种语言的万语地址加密钱包">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://worldtoken.cc/wallet.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="WorldToken - 全球多语言加密钱包">
+<meta name="twitter:description" content="支持120+种语言万语地址，TRX / ETH / USDT / BTC 多链资产管理。">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://worldtoken.cc/wallet.html">
+<link rel="manifest" href="manifest.json">
+
+
+<!-- QR Code Generator -->
+<!-- qrcode: on-demand loadQRCodeLib() -->
+<!-- ethers.js for real BIP39 wallet generation -->
+<!-- ethers.js - 钱包派生库，约800KB -->
+
+<!-- TronWeb 懒加载，仅转账时加载 -->
+
+<link rel="stylesheet" href="wallet.css">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="WorldToken">
+</head>
+<body>
+<div class="phone">
+  <div class="wallet-loading-overlay" id="walletLoadingOverlay">
+    <div class="wallet-loading-spinner"></div>
+    <div class="wallet-loading-text" id="walletLoadingText">正在生成钱包…</div>
+    
+  </div>
+
+  <div class="status-bar">
+    <span class="status-time" id="statusTime">04:39</span>
+    <div style="display:flex;gap:5px;align-items:center;font-size:11px">
+      <span>●●●</span><span>WiFi</span><span>🔋</span>
+    </div>
+  </div>
+  <div class="offline-banner" id="offlineBanner" role="status" aria-live="polite">📡 当前无网络连接 · 链上转账等功能需联网后使用</div>
+
+  <div class="pages">
+
+    <!-- 欢迎页 page-welcome：已锁死，勿改结构/样式/三颗按钮文案与图标 -->
+    <div class="page active" id="page-welcome" style="background:radial-gradient(ellipse 80% 60% at 50% 45%,rgba(200,168,75,0.12) 0%,transparent 70%),var(--bg);overflow:hidden;flex-direction:column;align-items:center;justify-content:center;padding-bottom:80px;padding-left:20px;padding-right:20px;text-align:center">
+
+      <!-- Logo区 紧凑 -->
+      <div style="width:100px;height:100px;background:linear-gradient(135deg,#b8982a,#f0d070);border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:54px;margin-bottom:20px;box-shadow:0 8px 32px rgba(200,168,75,0.5);flex-shrink:0">🌍</div>
+      <div style="font-size:28px;font-weight:800;background:linear-gradient(135deg,#c8a84b,#f0d070);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px;margin-bottom:4px;flex-shrink:0">WorldToken</div>
+      <div style="font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:12px;flex-shrink:0">One wallet, every language.</div>
+
+
+      <!-- 按钮区 -->
+      <div style="width:100%;flex-shrink:0;margin-top:28px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
+          <button type="button" class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
+          <button type="button" class="btn-secondary" onclick="goTo('page-password-restore')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🔐 PIN 解锁钱包</button>
+          <button type="button" class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">👤 导入已有钱包</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PIN 解锁（欢迎页「PIN 解锁钱包」） ══ -->
+    <div class="page" id="page-password-restore">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">PIN 解锁</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding:24px 20px;display:flex;flex-direction:column;align-items:center;max-width:400px;margin:0 auto;box-sizing:border-box">
+        <p style="font-size:13px;color:var(--text-muted);text-align:center;line-height:1.6;margin-bottom:20px;width:100%">输入本机已设置的 6 位数字 PIN，验证通过后进入钱包。</p>
+        <form id="pageRestorePinForm" novalidate onsubmit="event.preventDefault(); void submitPageRestorePin();" style="width:100%;max-width:320px;margin:0">
+          <div id="pageRestorePinPanel" style="width:100%">
+            <input id="pinRestorePageInput" type="password" name="pin" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="6 位数字 PIN" style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px;box-sizing:border-box" />
+            <div id="pageRestorePinError" style="display:none;font-size:12px;color:var(--red);margin-bottom:10px;text-align:center"></div>
+            <button type="submit" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px">解锁</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 创建页 -->
+    <div class="page" id="page-create">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
+        <div class="nav-title">设置钱包</div>
+      </div>
+      <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="createNewWallet()">
+          <div style="font-size:36px;margin-bottom:12px">✨</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
+        </div>
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="goTo('page-import')">
+          <div style="font-size:36px;margin-bottom:12px">📥</div>
+          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">导入已有钱包</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">输入助记词恢复钱包</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 密钥页 -->
+    <div class="page" id="page-key">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo(window._keyBackPage||'page-create')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">我的密钥</div>
+        <div class="nav-right u11" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
+          <select id="keyPageLang" name="ww-key-lang" autocomplete="off" data-form-type="other" data-lpignore="true" onchange="switchLang(this.value)"
+            style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 4px;cursor:pointer;outline:none;max-width:130px"
+            title="助记词网格显示语言（英文为 BIP39 原文）">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="ar">العربية</option>
+            <option value="ru">Русский</option>
+            <option value="pt">Português</option>
+            <option value="hi">हिन्दी</option>
+          </select>
+          <select id="mnemonicLength" name="ww-mnemonic-length" autocomplete="off" data-form-type="other" data-lpignore="true" onchange="changeMnemonicLength(this.value)"
+            style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none"
+            title="词数与下方网格一致；每次进入本页默认 12 词；切换词数将生成全新随机助记词；所选词数不跨会话保存">
+            <option value="12" selected>12词</option>
+            <option value="15">15词</option>
+            <option value="18">18词</option>
+            <option value="21">21词</option>
+            <option value="24">24词</option>
+          </select>
+        </div>
+      </div>
+      <div class="key-content">
+        <div id="mnemonicStrengthRow" style="background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.28);border-radius:12px;padding:10px 12px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:12px">
+          <span style="color:var(--text-muted)">密钥强度</span>
+          <span style="color:var(--text);font-weight:600">熵 <span id="mnemonicStrengthBits">128</span> bit · <span id="mnemonicStrengthLevel" style="color:var(--gold)">标准</span></span>
+        </div>
+        <div class="key-grid" id="keyWordGrid"></div>
+        <div class="key-warning">
+          <span style="font-size:16px;flex-shrink:0">⚠️</span>
+          <span>请抄写并妥善保管这<b id="warnWordCount">12</b>个词；以上为当前钱包的<b>真实助记词</b>。12/15/18/21/24词对应不同熵与<b>不同地址</b>，在上方切换词数将重新生成钱包。任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
+        </div>
+        <button class="btn-primary" onclick="startVerify()">✅ 我已抄写，开始验证</button>
+        <div onclick="goTo(window._keyBackPage||'page-settings')" style="margin-top:8px;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer">⏭️ 暂时忽略验证</div>
+      </div>
+
+    </div>
+
+    <!-- 助记词验证（抄写确认） -->
+    <div class="page" id="page-key-verify">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-key',{preserveKeyPage:true})" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">验证助记词</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding-top:12px">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;text-align:center">请输入随机抽到的 3 个词，以确认你已抄写备份</div>
+        <div id="verifyShakeRoot">
+          <div id="verifyQuestions" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div id="verifyError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:var(--red)">词序或拼写不正确，请重试</div>
+          <button class="btn-primary" style="margin-top:18px;padding:14px 0;width:100%" onclick="checkVerify()">验证</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 首页 -->
+    <div class="page" id="page-home">
+      
+      <div class="home-header" style="position:relative">
+        <div id="homeBackupBanner" class="home-backup-banner" role="alert" onclick="goTo('page-settings')">⚠️ 钱包尚未备份助记词，丢失设备将无法恢复资产。点此处前往设置确认备份</div>
+        <div style="position:absolute;top:0;right:0;display:flex;align-items:center;gap:8px">
+          <div onclick="promptWalletNotifications()" title="通知" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer;font-size:18px;line-height:1">🔔</div>
+          <div onclick="goTab('tab-addr')" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.08);border-radius:50%;cursor:pointer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+              <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
+            </svg>
+          </div>
+        </div>
+        <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
+        <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
+        <div class="home-balance-sub" id="totalBalanceSub">加载中...</div>
+        <div id="homeBalanceChartWrap" class="home-balance-chart-wrap" class="u5">
+          <div class="home-balance-chart-head">
+            <span class="home-balance-chart-title">近7日总资产（示意）</span>
+          </div>
+          <svg id="homeBalanceChartSvg" class="home-balance-chart-svg" viewBox="0 0 320 88" preserveAspectRatio="none" aria-hidden="true"></svg>
+          <div class="home-balance-chart-foot" id="homeBalanceChartFoot"></div>
+        </div>
+        <div class="home-addr-stack" style="display:flex;flex-direction:column;align-items:center;width:100%;gap:10px;margin-top:8px">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:100%">
+          <span id="homeAddrChip" class="home-addr-chip" style="font-size:11px;letter-spacing:0.5px;color:#C8A84B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(100%,260px);text-align:center"></span>
+          <div class="home-addr-actions" style="display:flex;gap:8px;justify-content:center;width:100%;flex-wrap:wrap">
+            <button type="button" id="homeCopyAddrBtn" onclick="copyHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">复制地址</button>
+            <button type="button" id="homeEditAddrBtn" onclick="editHomeAddr()" style="flex:1;min-width:100px;max-width:168px;background:rgba(255,255,255,0.08);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);min-height:36px;transition:background 0.2s,color 0.2s">修改地址</button>
+          </div>
+        </div>
+        </div>
+        </div>
+      
+      <div id="trxResourceCard" style="display:none;margin:0 16px 10px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:10px;color:var(--text-muted);letter-spacing:1.5px">TRON 资源</span>
+          <span id="trxResourceRefresh" onclick="if(typeof loadTrxResource==='function')loadTrxResource()" style="font-size:11px;color:var(--gold);cursor:pointer">刷新</span>
+        </div>
+        <div style="display:flex;gap:14px;font-size:12px;line-height:1.45">
+          <div style="flex:1;min-width:0"><span style="color:var(--text-muted);font-size:11px">能量</span><br /><strong id="trxEnergyText" style="color:var(--text);word-break:break-all">--</strong></div>
+          <div style="flex:1;min-width:0"><span style="color:var(--text-muted);font-size:11px">带宽</span><br /><strong id="trxBandwidthText" style="color:var(--text);word-break:break-all">--</strong></div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="assets-section">
+        <div class="assets-title home-section-head">
+          <span>我的资产</span>
+          <div class="home-section-head-actions">
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);cursor:pointer;user-select:none;margin:0">
+              <input type="checkbox" id="hideZeroTokens" onchange="onHideZeroTokensChange()" style="accent-color:var(--gold);width:14px;height:14px" />
+              隐藏零余额
+            </label>
+            <span id="balRefreshBtn" class="home-refresh-link" onclick="loadBalances()">刷新</span>
+          </div>
+        </div>
+        <div class="asset-item asset-card" id="assetRowUsdt" data-coin="usdt" data-ww-fn="selectTransferCoin">
+          <div class="asset-icon" style="background:rgba(38,161,123,0.15)">💚</div>
+          <div class="asset-info"><div class="asset-name">USDT</div><div class="asset-chain">TRC-20 · Tron</div></div>
+          <div class="asset-right">
+            <div class="asset-amount" id="balUsdt">--</div>
+            <div class="asset-value" id="valUsdt">$--</div>
+            <div class="asset-change up" id="chgUsdt">+0.01%</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 交易记录区 -->
+      <div class="home-tx-section">
+        <div class="home-section-head">
+          <span class="home-tx-title">最近交易</span>
+          <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
+        </div>
+        <input type="search" id="txHistoryFilter" class="home-tx-filter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" oninput="applyTxHistoryFilter()" />
+        <div id="txHistoryList">
+          <div class="tx-empty-friendly">
+            <div class="tx-empty-icon" aria-hidden="true">📬</div>
+            <div class="tx-empty-title">暂无交易记录</div>
+            <div class="tx-empty-hint">这里会列出你最近的转账与收款。完成第一笔后，记录很快就会出现在这里。链上确认通常只要几秒——若刚发出，点上方「刷新」或稍后再看即可。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 地址页（核心升级版）-->
+    <div class="page" id="page-addr">
+      <div class="addr-content" style="padding-top:10px">
+
+
+
+        <!-- 万语地址卡 -->
+        <div class="addr-native-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="u11">
+              <span style="font-size:13px">🌍</span>
+              <span style="font-size:12px;font-weight:600;color:var(--gold)">万语地址</span>
+            </div>
+            
+          </div>
+
+          <!-- 万语地址一行展示 -->
+          <div style="width:100%;text-align:center;margin-bottom:6px;padding:10px 0">
+            <div id="addrOneLine" style="display:inline-flex;align-items:center;justify-content:center;gap:3px">
+              <span id="addrPrefix" style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0">38294651</span>
+              <span style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0" aria-hidden="true">-</span>
+              <span id="addrWords" style="display:inline-flex;align-items:center"></span>
+              <span style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0" aria-hidden="true">-</span>
+              <span id="addrSuffix" style="color:var(--text-muted);font-family:monospace;font-size:12px;flex-shrink:0">92847361</span>
+            </div>
+            
+          </div>
+
+          <div class="addr-actions">
+            <div class="addr-action-btn" id="copyNativeBtn" onclick="copyNative()">📋 复制地址</div>
+          </div>
+          <div class="addr-actions" style="margin-top:8px">
+            <div class="addr-action-btn" onclick="openCustomizeAddr()" style="width:100%;text-align:center">✏️ 修改地址</div>
+          </div>
+        </div>
+
+        <!-- ✨ 二维码专区 -->
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:10px;text-align:center">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <span style="font-size:13px;color:var(--gold)">📱</span>
+            <span style="font-size:11px;color:var(--text-muted);letter-spacing:1px">扫码收款</span>
+            <div style="flex:1;height:1px;background:var(--border)"></div>
+            <span id="qrLangTag" style="font-size:10px;color:var(--text-muted)">🌍</span>
+            <select id="qrChainSelect" onchange="updateQRCode()"
+              style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text-muted);font-size:10px;padding:2px 6px;cursor:pointer;outline:none">
+              <option value="trx">TRX</option>
+              <option value="eth">ETH</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom:14px;text-align:left">
+            <label for="qrReceiveAmount" style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px;display:block;margin-bottom:6px">收款金额（可选）</label>
+            <input id="qrReceiveAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="留空则仅编码地址" oninput="updateQRCode()" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:14px;color:var(--text);outline:none" />
+            <div style="font-size:10px;color:var(--text-muted);margin-top:6px;line-height:1.55">填写后二维码使用链上付款 URI（TRX/ETH 本位），扫码钱包可预填金额。</div>
+          </div>
+
+          <!-- 二维码居中 -->
+          <div style="display:flex;justify-content:center;margin-bottom:18px">
+            <div id="qrCodeContainer" style="width:140px;height:140px;background:#fff;border-radius:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,0,0,0.3);overflow:hidden">
+              <canvas id="qrCanvas" width="130" height="130"></canvas>
+            </div>
+          </div>
+
+          <!-- 三层地址显示 -->
+          <div style="margin-bottom:14px">
+            <!-- 第一层：自定义3字 最大最亮 -->
+            <div id="qrPart1" style="font-size:11px;font-weight:700;color:var(--gold-light);letter-spacing:1px;word-break:break-all;margin-bottom:4px"></div>
+            <!-- 第二层：诗句 中等 -->
+            <div id="qrPart2" style="font-size:11px;color:var(--text);letter-spacing:1px;word-break:break-all;margin-bottom:4px"></div>
+            <!-- 第三层：数字 最小最暗 -->
+            <div id="qrPart3" class="u5"></div>
+          </div>
+
+
+        </div>
+
+        <!-- 绑定分隔 -->
+        <div class="addr-bind-row">
+          <div class="addr-bind-line"></div>
+          <div class="addr-bind-text">🔗 绑定同一钱包 · 均可收款</div>
+          <div class="addr-bind-line"></div>
+        </div>
+
+        <!-- 公链地址卡 -->
+        <div class="addr-chain-card">
+          <div class="addr-chain-badge">⛓️ 公链地址</div>
+          <div class="chain-row">
+            <span class="chain-badge trx">TRX</span>
+            <span class="chain-hash" id="addrTrxChain">--</span>
+            <span class="chain-copy-btn" onclick="copySingle(document.getElementById('addrTrxChain').textContent, this)">📋</span>
+          </div>
+          <div class="chain-row">
+            <span class="chain-badge eth">ETH</span>
+            <span class="chain-hash" id="addrEthChain">--</span>
+            <span class="chain-copy-btn" onclick="copySingle(document.getElementById('addrEthChain').textContent, this)">📋</span>
+          </div>
+          <div class="chain-row">
+            <span class="chain-badge btc">BTC</span>
+            <span class="chain-hash" id="addrBtcChain">--</span>
+            <span class="chain-copy-btn" onclick="copySingle(document.getElementById('addrBtcChain').textContent, this)">📋</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+
+
+      <!-- QR 弹窗 -->
+      <div class="qr-overlay" id="qrOverlay" onclick="hideQR()">
+        <div class="qr-card" onclick="event.stopPropagation()">
+          <div class="qr-placeholder">📱</div>
+          <div class="qr-addr-main" id="qrAddrMain" style="font-size:11px;word-break:break-all;letter-spacing:1px">38294651龙桜서م春月БRกA92847361</div>
+          <div class="qr-addr-num" id="qrAddrNum" class="u5"></div>
+          <div class="qr-chain" id="qrChainAddr">--</div>
+          <button class="qr-close" onclick="hideQR()">关闭</button>
+        </div>
+      </div>
+
+    <!-- 转账页 -->
+    <div class="page" id="page-transfer">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:22px;color:var(--gold);cursor:pointer;width:32px">&#8249;</div>
+        <div class="nav-title">转账</div>
+        <div class="nav-right"></div>
+      </div>
+      <div style="padding:20px 18px;flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0">
+
+        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s;position:relative" id="transferAddrBox">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">收款地址</div>
+          <textarea id="transferAddr" rows="2" placeholder="TRC20 地址（以 T 开头）" oninput="detectAddrType()" autocomplete="off" style="width:100%;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
+        </div>
+
+        <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">金额（USDT · TRC-20）</div>
+          <input id="transferAmount" type="number" placeholder="0.00" oninput="calcTransferFee()" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
+          <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
+            当前余额: <span id="transferBal">0</span> USDT
+          </div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:20px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">网络费（预估）</div>
+          <div style="font-size:12px;color:var(--text);line-height:1.5" id="transferFeeHint">—</div>
+        </div>
+
+        <button class="btn-primary" id="transferBtn" onclick="doTransfer()" style="opacity:0.4;cursor:not-allowed" disabled>
+          确认转账
+        </button>
+
+      </div>
+
+      <!-- 确认弹窗 -->
+      <div class="qr-overlay" id="transferConfirmOverlay" onclick="closeTransferConfirm()">
+        <div style="background:var(--bg2);border-radius:24px;padding:28px 22px;width:300px;text-align:center" onclick="event.stopPropagation()">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">转账确认</div>
+          <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 USDT</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">→ <span id="confirmRecipient"></span></div>
+          <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:var(--text-muted);text-align:left;line-height:1.8">
+            <div class="u9"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 USDT</span></div>
+            <div class="u9"><span>到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
+            <div class="u9"><span>网络</span><span id="confirmChain">TRC-20</span></div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button style="flex:1;background:var(--bg3);color:var(--text-muted);border:1px solid var(--border);border-radius:12px;padding:13px;font-size:14px;cursor:pointer" onclick="closeTransferConfirm()">取消</button>
+            <button style="flex:1;background:linear-gradient(135deg,#b8982a,#e8c850);color:#0a0a05;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer" id="confirmSendBtn" onclick="confirmTransfer()">确认发送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+    <!-- 嗖动画页 -->
+    
+
+    <!-- 转账成功页 / 社交凭证 -->
+    
+    <!-- 设置页 -->
+    <div class="page" id="page-settings">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">设置</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px">钱包地址</div>
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.7;word-break:break-all" id="settingsAddr"></div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
+          <div class="settings-row" id="settingsPinRow" onclick="openPinSettingsDialog()">
+            <span class="settings-icon">🔐</span>
+            <span class="settings-label">PIN码</span>
+            <span class="settings-value" id="settingsPinValue">未设置</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="window._keyBackPage='page-settings';goTo('page-key')">
+            <span class="settings-icon">📋</span>
+            <span class="settings-label">备份助记词</span>
+            <span class="settings-value" id="backupStatus" style="color:var(--red)">未备份</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="deleteWallet()">
+            <span class="settings-icon">🗑️</span>
+            <span class="settings-label" style="color:var(--red)">删除钱包</span>
+            <span class="settings-value" style="color:var(--red)">清空本机</span>
+            <span class="settings-arrow">›</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-swap">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">兑换</div>
+        <div class="nav-right" onclick="if(typeof showToast==='function')showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+      </div>
+      <div class="swap-content" style="padding:16px 18px 24px">
+
+        <div class="swap-card" style="margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">从</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:22px">💚</span>
+              <div>
+                <div style="font-size:16px;font-weight:700;color:var(--text)">USDT</div>
+                <div style="font-size:11px;color:var(--text-muted)">TRC-20</div>
+              </div>
+            </div>
+            <span style="font-size:11px;color:var(--text-muted)">余额 <span id="swapFromBal" style="color:var(--text)">0</span> · <span style="color:var(--gold);cursor:pointer" onclick="setSwapMax()">全部</span></span>
+          </div>
+          <input id="swapAmountIn" class="swap-input" value="" type="number" inputmode="decimal" min="0" step="any" placeholder="0" oninput="calcSwap()" style="width:100%;box-sizing:border-box;text-align:right;font-size:26px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" />
+        </div>
+
+        <div class="swap-card" style="margin-bottom:18px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">到</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:22px">🔴</span>
+              <div>
+                <div style="font-size:16px;font-weight:700;color:var(--text)">TRX</div>
+                <div style="font-size:11px;color:var(--text-muted)">Tron</div>
+              </div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px">预估获得</div>
+              <div id="swapAmountOut" style="font-size:24px;font-weight:700;color:var(--gold)">0</div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0" onclick="doSwap()">⚡ 前往 SunSwap 兑换</button>
+      </div>
+    </div>
+
+    
+
+
+    <!-- ══ 导入钱包页 ══ -->
+    <div class="page" id="page-import">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo(window._importBackTarget||'page-welcome')" role="button" tabindex="0" aria-label="返回" style="display:flex;align-items:center;gap:2px;font-size:15px;font-weight:600;color:var(--gold);cursor:pointer;width:auto;min-width:64px;line-height:1;padding:8px 6px 8px 0;margin-left:-4px;box-sizing:border-box"><span style="font-size:30px;font-weight:900;line-height:1">‹</span><span style="letter-spacing:0.04em">返回</span></div>
+        <div class="nav-title">导入钱包</div>
+        <div class="nav-right"></div>
+      </div>
+      <div style="padding:20px 18px;flex:1;overflow-y:auto">
+
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:14px;color:var(--text-muted);line-height:1.7">输入你的助记词（12/15/18/21/24词）<br>每个词之间用空格分隔，支持12/15/18/21/24个词</div>
+        </div>
+
+        <!-- 12格助记词输入 -->
+        <div id="importGrid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px"></div>
+
+        <!-- 或者粘贴 -->
+        <div style="text-align:center;margin-bottom:12px;font-size:12px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">— 或者直接粘贴 — <span id="importWordCountBadge" style="font-size:11px;color:var(--gold)">0/12</span></div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:16px">
+          <textarea id="importPaste" rows="3" placeholder="在此粘贴全部助记词（12/15/18/21/24个词，空格分隔）..." 
+            style="width:100%;background:none;border:none;outline:none;font-size:13px;color:var(--text);resize:none;line-height:1.6;font-family:inherit"
+            oninput="syncImportGrid(this.value)"></textarea>
+        </div>
+
+        <!-- 警告 -->
+        <div style="background:rgba(255,100,100,0.06);border:1px solid rgba(255,100,100,0.15);border-radius:12px;padding:10px 14px;margin-bottom:20px;font-size:11px;color:#cc6666;line-height:1.7">
+          ⚠️ 请确保你在安全的环境下输入助记词，切勿在公共场所操作
+        </div>
+
+        <button class="btn-primary" style="padding:14px 0;font-size:15px" onclick="doImportWallet()">✅ 导入钱包</button>
+        <div id="importError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:#ff6060"></div>
+      </div>
+    </div>
+
+    <!-- ═══ 礼物主页 ═══ -->
+    <div class="page" id="page-hongbao">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTab('tab-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title" id="giftTitle">礼物</div>
+        <div class="nav-right"><span id="giftCountBadge" style="font-size:11px;color:var(--gold)"></span></div>
+      </div>
+      <div class="key-content" style="padding-top:12px">
+        <div id="giftSubtitle" style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">创建口令礼物 · 本地演示</div>
+        <div id="giftPreview" style="border-radius:16px;padding:20px;margin-bottom:14px;text-align:center"><span id="giftIcon" style="font-size:40px">🎁</span></div>
+        <input id="hbAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="金额 (USDT)"
+          style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:10px;outline:none;box-sizing:border-box" />
+        <input id="hbMessage" type="text" placeholder="留言（可选）"
+          style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;margin-bottom:14px;outline:none;box-sizing:border-box" />
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="goTo('page-claim')">领取礼物</button>
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="goTo('page-hb-records')">礼物记录</button>
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0" onclick="createGift()">创建礼物</button>
+        <div id="hbKeywordResult" style="display:none;margin-top:16px;padding:14px;border-radius:14px;background:var(--bg2);border:1px solid rgba(200,168,75,0.35)">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">口令（请发给好友）</div>
+          <div id="hbCreatedKeyword" style="font-size:22px;font-weight:800;color:var(--gold);letter-spacing:4px;margin-bottom:12px">—</div>
+          <div style="display:flex;gap:8px;justify-content:center">
+            <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="copyHbCreatedKeyword()">复制口令</button>
+            <button type="button" class="btn-secondary" style="flex:1;padding:10px" onclick="shareHbCreatedKeyword()">分享</button>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin:18px 0 8px">已发送</div>
+        <div id="hbSentList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- ═══ 领取礼物页 ═══ -->
+    <div class="page" id="page-claim">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">领取礼物</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding-top:12px">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6">输入 6 位礼物口令</div>
+        <div id="claimInputBox">
+          <input id="claimInput" type="text" maxlength="32" placeholder="口令" autocomplete="off"
+            style="width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;letter-spacing:2px;text-align:center;outline:none;box-sizing:border-box" onkeydown="if(event.key==='Enter')submitClaim()" />
+        </div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-top:16px" onclick="submitClaim()">领取</button>
+      </div>
+    </div>
+
+    <!-- ═══ 领取成功页 ═══ -->
+    <div class="page" id="page-claimed">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">领取成功</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding-top:20px;text-align:center">
+        <div style="font-size:56px;margin-bottom:12px">🎉</div>
+        <div style="font-size:22px;font-weight:800;color:var(--gold);margin-bottom:10px">礼物领取成功</div>
+        <div id="claimedAmount" style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px">0 USDT</div>
+        <div id="claimedMessage" style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:22px"></div>
+        <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px" onclick="goTo('page-home')">返回首页</button>
+        <button type="button" class="btn-secondary" style="width:100%;padding:12px 0" onclick="goTo('page-hongbao')">继续看礼物</button>
+      </div>
+    </div>
+
+    <!-- ═══ 礼物记录页 ═══ -->
+    <div class="page" id="page-hb-records">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-hongbao')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">礼物记录</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="key-content" style="padding-top:12px">
+        <div id="hbRecordsList"></div>
+      </div>
+    </div>
+
+    <!-- 常见问题 FAQ -->
+    <div class="page" id="page-faq">
+      <div class="nav-bar">
+        <div class="nav-back" onclick="goTo('page-key',{preserveKeyPage:true})" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">常见问题</div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="faq-body key-content" style="padding-top:12px">
+        <div class="faq-block">
+          <h3>助记词是什么？有多重要？</h3>
+          <p>助记词是一组按固定顺序排列的单词（常见为 12 或 24 个），由钱包在本地根据密码学规则生成，相当于您钱包的「主密钥」。<b>任何获得完整助记词的人都能转走您的资产</b>，请务必视为与银行卡密码同级甚至更高保密级别。</p>
+        </div>
+        <div class="faq-block">
+          <h3>如何安全备份助记词？</h3>
+          <p>请用纸笔手抄，存放在只有您本人可接触的安全位置；可制作多份分开放置。<b>不要截图、不要存网盘、不要发邮件或聊天软件、不要保存在可被同步的相册中。</b>数字形式一旦联网或备份到云端，被窃取的风险会显著增加。</p>
+        </div>
+        <div class="faq-block">
+          <h3>忘记助记词或丢失备份怎么办？</h3>
+          <p>去中心化钱包不托管您的密钥，<b>我们无法为您找回助记词</b>。若既无备份又无法回忆，对应地址上的资产将无法再被控制。若您仍持有助记词备份，可在本应用选择「导入已有钱包」按顺序输入单词恢复。</p>
+        </div>
+        <div class="faq-block">
+          <h3>如何恢复（导入）钱包？</h3>
+          <p>在欢迎页或创建流程中选择「导入已有钱包」，按界面提示输入您的助记词（需与创建时语言、词数一致）。验证通过后，将重新派生出与您备份时相同的链上地址。导入仅在本地进行，请确保设备环境安全。</p>
+        </div>
+        <div class="faq-block">
+          <h3>还需要注意什么？</h3>
+          <p>官方不会向您索要助记词；任何「客服」「链接领空投」索要助记词的都是诈骗。设置 PIN 与二次验证可保护应用内操作，但<b>无法替代助记词本身</b>——助记词仍是恢复钱包的最终凭据。</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- /.pages：页面区结束；以下为全屏遮罩与底栏（仍在 .phone 内） -->
+
+    <!-- 验证成功页 -->
+    
+
+  <!-- PIN 解锁（继续使用钱包） -->
+  <div class="overlay" id="pinUnlockOverlay" onclick="if(event.target===this)closePinUnlock()">
+    <div id="pinUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">输入 PIN</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">已设置 6 位数字 PIN，用于保护钱包访问</div>
+      <div id="wwAntiPhishBadge" style="display:none;font-size:13px;font-weight:700;color:var(--gold);margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:rgba(200,168,75,0.12);border:1px solid rgba(200,168,75,0.38);line-height:1.4"></div>
+      <form id="pinUnlockForm" novalidate onsubmit="event.preventDefault(); void submitPinUnlock();" style="margin:0">
+        <input id="pinUnlockInput" type="password" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" aria-label="6 位数字 PIN" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" />
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockBackspace()">⌫ 退格</button>
+          <button type="button" class="btn-secondary" style="flex:1;padding:10px 8px;font-size:13px" onclick="pinUnlockClear()">清空</button>
+        </div>
+        <div id="pinUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">PIN错误</div>
+        <button type="submit" class="btn-primary u13">解锁</button>
+        <button type="button" class="btn-secondary" style="width:100%;margin-top:8px" onclick="closePinUnlock()">取消</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOTP 二次验证（解锁钱包） -->
+  <div class="overlay" id="totpUnlockOverlay" onclick="if(event.target===this)closeTotpUnlock()">
+    <div id="totpUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">Authenticator</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px">请输入验证器中的 6 位动态码</div>
+      <input id="totpUnlockInput" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:20px;letter-spacing:8px;text-align:center;outline:none;margin-bottom:10px" onkeydown="if(event.key==='Enter')submitTotpUnlock()" />
+      <div id="totpUnlockError" style="display:none;font-size:12px;color:var(--red);margin-bottom:8px">验证码不正确</div>
+      <button class="btn-primary" class="u13" onclick="submitTotpUnlock()">验证并进入</button>
+      <button class="btn-secondary" style="width:100%;margin-top:8px" onclick="closeTotpUnlock()">返回 PIN</button>
+    </div>
+  </div>
+
+  <!-- TOTP 绑定（Google Authenticator） -->
+  <div class="overlay" id="totpSetupOverlay" onclick="if(event.target===this)closeTotpSetup()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:320px;text-align:center;padding-bottom:8px">
+      <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:6px">绑定 Google Authenticator</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:12px;line-height:1.5">使用验证器扫描下方二维码，或手动输入密钥</div>
+      <canvas id="totpSetupQr" width="200" height="200" style="display:block;margin:0 auto 10px;border-radius:12px;background:#fff"></canvas>
+      <div style="font-size:10px;color:var(--text-dim);word-break:break-all;margin-bottom:10px;padding:8px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)" id="totpSetupSecretText">—</div>
+      <input id="totpSetupVerifyInput" type="text" maxlength="6" inputmode="numeric" placeholder="输入 6 位验证码" style="width:100%;padding:11px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:16px;text-align:center;outline:none;margin-bottom:12px" onkeydown="if(event.key==='Enter')confirmTotpSetup()" />
+      <button class="btn-primary" style="width:100%;padding:12px;margin-bottom:8px" onclick="confirmTotpSetup()">确认绑定</button>
+      <button class="btn-secondary" style="width:100%" onclick="closeTotpSetup()">取消</button>
+    </div>
+  </div>
+
+
+  <!-- 底部导航（勿加 .u5：该工具类为 display:none，会压过 .tab-bar 的 flex，导致底栏不可点） -->
+  <div class="tab-bar" id="tabBar">
+    <div class="tab-item active" id="tab-home" onclick="goTab('tab-home')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
+    <div class="tab-item" id="tab-addr" onclick="goTab('tab-addr')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></span><span>地址</span></div>
+    <div class="tab-item" id="tab-swap" onclick="goTab('tab-swap')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.99 11L3 15l3.99 4v-3H17v-2H6.99v-3zM21 9l-3.99-4v3H7v2h10.01v3L21 9z"/></svg></span><span>兑换</span></div>
+    <div class="tab-item" id="tab-hongbao" onclick="goTab('tab-hongbao')"><span class="tab-icon"><span style="font-size:20px;line-height:1">🎁</span></span><span>礼物</span></div>
+    <div class="tab-item" id="tab-settings" onclick="goTab('tab-settings')"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.06-.7-1.66-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.66.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.06.7 1.66.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.66-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></span><span>设置</span></div>
+  </div>
+
+  <button type="button" id="wwScrollTopBtn" class="ww-scroll-top-btn" aria-label="回到顶部" title="回到顶部">↑</button>
+
+  <!-- PIN 设置遮罩须在 .phone 内：与 dist 一致，避免 absolute/inset:0 相对视口盖住底栏 -->
+  <div class="pin-setup-overlay" id="pinSetupOverlay" onclick="if(event.target===this) closePinSetupOverlay()">
+    <div class="pin-setup-panel" onclick="event.stopPropagation()">
+      <div class="pin-setup-title" id="pinSetupTitle">设置 PIN</div>
+      <div class="pin-setup-hint" id="pinSetupHint">请输入 6 位数字</div>
+      <div class="pin-dots" id="pinDots"></div>
+      <div class="pin-keypad" id="pinKeypad"></div>
+      <div class="pin-setup-cancel" onclick="closePinSetupOverlay()">取消</div>
+    </div>
+  </div>
+
+  <!-- 礼物发送成功弹窗 -->
+  <div class="overlay" id="hbSuccessOverlay" style="display:none;flex-direction:column;align-items:center;justify-content:center">
+    <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">🎁</div>
+      <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
+      <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
+      <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- wt-pad-0001 -->
+<!-- wt-pad-0002 -->
+<!-- wt-pad-0003 -->
+<!-- wt-pad-0004 -->
+<!-- wt-pad-0005 -->
+<!-- wt-pad-0006 -->
+<!-- wt-pad-0007 -->
+<!-- wt-pad-0008 -->
+<!-- wt-pad-0009 -->
+<!-- wt-pad-0010 -->
+<!-- wt-pad-0011 -->
+<!-- wt-pad-0012 -->
+<!-- wt-pad-0013 -->
+<!-- wt-pad-0014 -->
+<!-- wt-pad-0015 -->
+<!-- wt-pad-0016 -->
+<!-- wt-pad-0017 -->
+<!-- wt-pad-0018 -->
+<!-- wt-pad-0019 -->
+<!-- wt-pad-0020 -->
+<!-- wt-pad-0021 -->
+<!-- wt-pad-0022 -->
+<!-- wt-pad-0023 -->
+<!-- wt-pad-0024 -->
+<!-- wt-pad-0025 -->
+<!-- wt-pad-0026 -->
+<!-- wt-pad-0027 -->
+<!-- wt-pad-0028 -->
+<!-- wt-pad-0029 -->
+<!-- wt-pad-0030 -->
+<!-- wt-pad-0031 -->
+<!-- wt-pad-0032 -->
+<!-- wt-pad-0033 -->
+<!-- wt-pad-0034 -->
+<!-- wt-pad-0035 -->
+<!-- wt-pad-0036 -->
+<!-- wt-pad-0037 -->
+<!-- wt-pad-0038 -->
+<!-- wt-pad-0039 -->
+<!-- wt-pad-0040 -->
+<!-- wt-pad-0041 -->
+<!-- wt-pad-0042 -->
+<!-- wt-pad-0043 -->
+<!-- wt-pad-0044 -->
+<!-- wt-pad-0045 -->
+<!-- wt-pad-0046 -->
+<!-- wt-pad-0047 -->
+<!-- wt-pad-0048 -->
+<!-- wt-pad-0049 -->
+<!-- wt-pad-0050 -->
+<!-- wt-pad-0051 -->
+<!-- wt-pad-0052 -->
+<!-- wt-pad-0053 -->
+<!-- wt-pad-0054 -->
+<!-- wt-pad-0055 -->
+<!-- wt-pad-0056 -->
+<!-- wt-pad-0057 -->
+<!-- wt-pad-0058 -->
+<!-- wt-pad-0059 -->
+<!-- wt-pad-0060 -->
+<!-- wt-pad-0061 -->
+<!-- wt-pad-0062 -->
+<!-- wt-pad-0063 -->
+<!-- wt-pad-0064 -->
+<!-- wt-pad-0065 -->
+<!-- wt-pad-0066 -->
+<!-- wt-pad-0067 -->
+<!-- wt-pad-0068 -->
+<!-- wt-pad-0069 -->
+<!-- wt-pad-0070 -->
+<!-- wt-pad-0071 -->
+<!-- wt-pad-0072 -->
+<!-- wt-pad-0073 -->
+<!-- wt-pad-0074 -->
+<!-- wt-pad-0075 -->
+<!-- wt-pad-0076 -->
+<!-- wt-pad-0077 -->
+<!-- wt-pad-0078 -->
+<!-- wt-pad-0079 -->
+<!-- wt-pad-0080 -->
+<!-- wt-pad-0081 -->
+<!-- wt-pad-0082 -->
+<!-- wt-pad-0083 -->
+<!-- wt-pad-0084 -->
+<!-- wt-pad-0085 -->
+<!-- wt-pad-0086 -->
+<!-- wt-pad-0087 -->
+<!-- wt-pad-0088 -->
+<!-- wt-pad-0089 -->
+<!-- wt-pad-0090 -->
+<!-- wt-pad-0091 -->
+<!-- wt-pad-0092 -->
+<!-- wt-pad-0093 -->
+<!-- wt-pad-0094 -->
+<!-- wt-pad-0095 -->
+<!-- wt-pad-0096 -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js" type="application/javascript" integrity="sha384-Htz1SE4Sl5aitpvFgr2j0sfsGUIuSXI6t8hEyrlQ93zflEF3a29bH2AvkUROUw7J" crossorigin="anonymous"></script>
+<!-- globals.js disabled to fix var conflict -->
+<script src="js/api-config.js"></script>
+<script src="js/idb-kv.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/idb-cache.js"></script>
+<script src="core/security.js"></script>
+<script src="core/key-derivation-cache.js"></script>
+<script src="core/wallet.js"></script>
+<script src="wordlists.js"></script>
+<script src="wallet.core.js"></script>
+<script src="core/session-key-cache.js"></script>
+<script src="wallet.ui.js"></script>
+<script src="wallet.addr.js"></script>
+<script src="wallet.tx.js"></script>
+<script src="wallet.runtime.js"></script>
+<script src="wallet.dom-bind.js"></script>
+
+
+
+<script type="application/ld+json">
+{"@graph":[
+{"@context":"https://schema.org","@type":"WebApplication","name":"WorldToken","applicationCategory":"FinanceApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"全球多语言加密钱包：万语地址、多链资产与转账。","url":"https://worldtoken.cc/wallet.html"},
+{"@context":"https://schema.org","@type":"WebPage","name":"WorldToken","description":"全球多语言加密钱包，支持万语地址与 TRX、ETH、USDT、BTC。","url":"https://worldtoken.cc/wallet.html","isPartOf":{"@type":"WebSite","name":"WorldToken","url":"https://worldtoken.cc/"}}
+]}
+</script>
+<style media="print">
+@media print {
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .phone {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    page-break-inside: avoid;
+  }
+  .status-bar, #tabBar, .nav-back { display: none !important; }
+  .page { display: block !important; position: static !important; }
+}
+</style>
+
+    <!-- 代币授权管理页 -->
+<script>
+// 事件委托：监听所有 data-ww-fn 属性
+document.addEventListener('click', function(e) {
+  // 先检查点击元素本身
+  let el = e.target;
+  let fnEl = null;
+  
+  // 向上遍历最多 5 层找到有 data-ww-fn 的元素
+  for (let i = 0; i < 5 && el && el.nodeType === 1; i++) {
+    if (el.hasAttribute && el.hasAttribute('data-ww-fn')) {
+      fnEl = el;
+      break;
+    }
+    el = el.parentElement;
+  }
+  
+  if (!fnEl) return;
+  
+  const fnName = fnEl.getAttribute('data-ww-fn');
+  if (typeof window[fnName] === 'function') {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      if (fnName === 'selectTransferCoin' && fnEl.hasAttribute('data-coin')) {
+        window[fnName](fnEl.getAttribute('data-coin'));
+      } else {
+        window[fnName]();
+      }
+    } catch (err) {
+      console.error('[data-ww-fn] ' + fnName, err);
+    }
+  }
+}, true); // 使用 capture 阶段确保更早触发
+</script>
+
+</body>
+</html>
