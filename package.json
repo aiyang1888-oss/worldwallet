@@ -8,6 +8,7 @@
     "dup-fn": "node scripts/ww-duplicate-functions.mjs",
     "dup-fn:ui-rt": "node scripts/ww-duplicate-functions.mjs --ui-runtime-only",
     "wordlist:zh": "node scripts/ww-regen-zh-wordlist.mjs",
+    "wordlists:build": "node scripts/ww-build-wordlists.mjs",
     "test:ww": "node scripts/ww-deep-check.mjs",
     "test:ww:e2e": "node scripts/ww-puppeteer-smoke.mjs",
     "test:ww:chrome": "node scripts/ww-chrome-deep-check.mjs",
