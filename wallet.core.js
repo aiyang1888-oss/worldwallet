@@ -149,9 +149,7 @@ function loadWallet() {
   try {
     if (typeof updateAddr === 'function') updateAddr();
   } catch (_ua) {}
-  try {
-    document.documentElement.classList.remove('ww-addr-pending');
-  } catch (_c) {}
+  /* ww-addr-pending 须由 wallet.addr.js 的 renderHomeAddrChip 在写入芯片后再移除；此处若无条件移除会出现「看得见但无字的空胶囊」 */
   if (REAL_WALLET && REAL_WALLET.ethAddress) {
     try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
   }
