@@ -143,8 +143,8 @@ try {
 })();
 </script>
 <title>WorldToken</title>
-<meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/USDT/BTC多链">
-<meta name="keywords" content="加密钱包,多语言,WorldToken,TRX,ETH,USDT,BTC,区块链">
+<meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/TRC USDT/BTC多链">
+<meta name="keywords" content="加密钱包,多语言,WorldToken,TRX,ETH,TRC USDT,BTC,区块链">
 <meta name="theme-color" content="#0c0c18">
 <meta property="og:title" content="WorldToken - 全球多语言钱包">
 <meta property="og:description" content="支持120+种语言的万语地址加密钱包">
@@ -152,7 +152,7 @@ try {
 <meta property="og:url" content="https://worldtoken.cc/wallet.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="WorldToken - 全球多语言加密钱包">
-<meta name="twitter:description" content="支持120+种语言万语地址，TRX / ETH / USDT / BTC 多链资产管理。">
+<meta name="twitter:description" content="支持120+种语言万语地址，TRX / ETH / TRC USDT / BTC 多链资产管理。">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://worldtoken.cc/wallet.html">
 <link rel="manifest" href="manifest.json">
@@ -571,7 +571,7 @@ try {
         </div>
 
         <div id="transferUsdtNetworkRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">USDT 网络</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">TRC USDT 网络</div>
           <label for="transferUsdtNetwork" class="u5">主网</label>
           <select id="transferUsdtNetwork" autocomplete="off" style="width:100%;margin-top:8px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit;outline:none"></select>
           <div id="transferUsdtNetHint" style="display:none;margin-top:10px;font-size:11px;color:var(--text-muted);line-height:1.5" aria-live="polite"></div>
@@ -590,10 +590,10 @@ try {
         </div>
 
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px" id="transferAmountLabel">金额（USDT · TRC-20）</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px" id="transferAmountLabel">金额（TRC USDT）</div>
           <input id="transferAmount" type="number" placeholder="0.00" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
           <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
-            当前余额: <span id="transferBal">0</span> <span id="transferBalSuffix">USDT</span>
+            当前余额: <span id="transferBal">0</span> <span id="transferBalSuffix">TRC USDT</span>
           </div>
         </div>
 
@@ -607,7 +607,7 @@ try {
           <p style="margin:12px 0 10px;font-size:11px;color:var(--text-muted);line-height:1.55">向合约 / DApp 授权后，对方可在额度内划扣代币。请确认合约地址可信。</p>
           <label for="transferApproveSpender" class="u5">授权对象地址</label>
           <input id="transferApproveSpender" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="0x… 或 T…" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
-          <label for="transferApproveAmount" class="u5" style="display:block;margin-top:10px">额度（USDT）</label>
+          <label for="transferApproveAmount" class="u5" style="display:block;margin-top:10px">额度（TRC USDT）</label>
           <input id="transferApproveAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="留空或填 max 表示无限" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
           <button type="button" class="btn-secondary" id="transferApproveBtn" onclick="if(typeof wwDoTransferApprove==='function')wwDoTransferApprove()" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;font-size:14px;cursor:pointer">确认授权</button>
         </details>
@@ -622,11 +622,11 @@ try {
       <div class="qr-overlay" id="transferConfirmOverlay">
         <div style="background:var(--bg2);border-radius:24px;padding:28px 22px;width:300px;text-align:center" onclick="event.stopPropagation()">
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">转账确认</div>
-          <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 USDT</div>
+          <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 TRC USDT</div>
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">→ <span id="confirmRecipient"></span></div>
           <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:var(--text-muted);text-align:left;line-height:1.8">
-            <div class="u9"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 USDT</span></div>
-            <div class="u9"><span>到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
+            <div class="u9"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 TRC USDT</span></div>
+            <div class="u9"><span>到账</span><span style="color:var(--gold)" id="confirmActual">99.70 TRC USDT</span></div>
             <div class="u9"><span>网络</span><span id="confirmChain">TRC-20</span></div>
           </div>
           <div style="display:flex;gap:10px">
@@ -811,7 +811,7 @@ try {
             <div style="display:flex;align-items:center;gap:10px">
               <span id="swapFromIcon" class="ww-swap-coin-icon" style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.06)"></span>
               <div>
-                <div id="swapFromName" style="font-size:16px;font-weight:700;color:var(--text)">USDT</div>
+                <div id="swapFromName" style="font-size:16px;font-weight:700;color:var(--text)">TRC USDT</div>
                 <div id="swapFromChain" style="font-size:11px;color:var(--text-muted)">TRC-20 · Tron</div>
               </div>
             </div>
@@ -861,7 +861,7 @@ try {
         </div>
 
         <button type="button" class="btn-primary" style="width:100%;padding:14px 0" onclick="doSwap()">⚡ 立即兑换</button>
-        <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.55">TRON 对使用 SunSwap 现货参考；以太坊对使用 Uniswap V3 链上询价（失败时回退现货估算）。支持交易对示例：USDT↔TRX、USDT↔USDC、USDT↔ETH、ETH↔BTC(WBTC)、USDC↔ETH 等（同链内选择）。</p>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.55">TRON 对使用 SunSwap 现货参考；以太坊对使用 Uniswap V3 链上询价（失败时回退现货估算）。支持交易对示例：TRC USDT↔TRX、ERC USDT↔USDC、ETH↔BTC(WBTC)、USDC↔ETH 等（同链内选择）。</p>
       </div>
     </div>
 
@@ -953,7 +953,7 @@ try {
           <div id="btnLucky" onclick="switchHbType('lucky')" style="flex:1;text-align:center;padding:9px 6px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);background:transparent;transition:all 0.2s">随机礼物</div>
         </div>
         <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 6px 2px">总金额将按下方数量拆成多份领取</div>
-        <input id="hbAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="总金额 (USDT)" oninput="updateHbPreview()"
+        <input id="hbAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="总金额 (TRC USDT)" oninput="updateHbPreview()"
           style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:10px;outline:none;box-sizing:border-box" />
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3)">
           <span style="font-size:12px;color:var(--text-muted)">数量</span>
@@ -966,7 +966,7 @@ try {
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:10px;padding:0 2px">
           <span style="color:var(--text-muted)" id="hbTypeLabel">每人金额</span>
-          <span style="color:var(--gold);font-weight:600" id="hbPerPerson">— USDT</span>
+          <span style="color:var(--gold);font-weight:600" id="hbPerPerson">— TRC USDT</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3)">
           <span style="font-size:12px;color:var(--text-muted);flex-shrink:0">礼物留言</span>
@@ -1027,7 +1027,7 @@ try {
       <div class="key-content" style="padding-top:20px;text-align:center">
         <div style="font-size:56px;margin-bottom:12px">🎉</div>
         <div style="font-size:22px;font-weight:800;color:var(--gold);margin-bottom:10px">礼物领取成功</div>
-        <div id="claimedAmount" style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px">0 USDT</div>
+        <div id="claimedAmount" style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px">0 TRC USDT</div>
         <div id="claimedMessage" style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:22px"></div>
         <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px" onclick="goTo('page-home')">返回首页</button>
         <button type="button" class="btn-secondary" style="width:100%;padding:12px 0" onclick="goTo('page-hongbao')">继续看礼物</button>
@@ -1154,7 +1154,7 @@ try {
     <!-- 金额 -->
     <div id="swooshAmount" style="text-align:center;margin-bottom:40px">
     <div style="font-size:42px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1" id="swooshAmtVal">500</div>
-    <div style="font-size:12px;color:#555;letter-spacing:4px;margin-top:4px" id="swooshCoinName">USDT</div>
+    <div style="font-size:12px;color:#555;letter-spacing:4px;margin-top:4px" id="swooshCoinName">TRC USDT</div>
     </div>
     <!-- 发件人（下方） -->
     <div style="width:280px;border:1.5px solid rgba(200,168,75,0.2);border-radius:20px;padding:14px 18px;background:linear-gradient(135deg,rgba(200,168,75,0.06),transparent)">
@@ -1209,7 +1209,7 @@ try {
     <div style="position:absolute;right:20px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,#1a1a30,transparent,#1a1a30)"></div>
     <div style="font-size:10px;color:#333;letter-spacing:3px;margin-bottom:10px">· · · · ·</div>
     <div style="font-size:54px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:6px" id="successAmount">500</div>
-    <div style="font-size:12px;color:#666;letter-spacing:5px" id="successCoin">USDT</div>
+    <div style="font-size:12px;color:#666;letter-spacing:5px" id="successCoin">TRC USDT</div>
     <div style="font-size:10px;color:#333;letter-spacing:3px;margin-top:10px">· · · · ·</div>
     </div>
     <!-- 发件人（下） -->
@@ -1261,7 +1261,7 @@ try {
     <div style="font-size:11px;color:rgba(255,255,255,0.5)">朋友在WorldToken搜索此口令即可领取</div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.6)">
-    <span id="kwAmtText">100 USDT</span>
+    <span id="kwAmtText">100 TRC USDT</span>
     <span id="kwCntText">共5份礼物</span>
     <span id="kwExpText">有效期24小时</span>
     </div>
@@ -1460,7 +1460,7 @@ try {
     <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
       <div style="font-size:40px;margin-bottom:12px">🎁</div>
       <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
-      <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
+      <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 TRC USDT · 5份礼物</div>
       <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
     </div>
   </div>
@@ -1594,7 +1594,7 @@ try {
 <script type="application/ld+json">
 {"@graph":[
 {"@context":"https://schema.org","@type":"WebApplication","name":"WorldToken","applicationCategory":"FinanceApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"全球多语言加密钱包：万语地址、多链资产与转账。","url":"https://worldtoken.cc/wallet.html"},
-{"@context":"https://schema.org","@type":"WebPage","name":"WorldToken","description":"全球多语言加密钱包，支持万语地址与 TRX、ETH、USDT、BTC。","url":"https://worldtoken.cc/wallet.html","isPartOf":{"@type":"WebSite","name":"WorldToken","url":"https://worldtoken.cc/"}}
+{"@context":"https://schema.org","@type":"WebPage","name":"WorldToken","description":"全球多语言加密钱包，支持万语地址与 TRX、ETH、TRC USDT、BTC。","url":"https://worldtoken.cc/wallet.html","isPartOf":{"@type":"WebSite","name":"WorldToken","url":"https://worldtoken.cc/"}}
 ]}
 </script>
 <style media="print">

@@ -793,20 +793,20 @@ function wwResolveMnemonicWordlistKey() {
 var MAIN_PAGES = ['page-home','page-swap','page-addr','page-settings','page-hongbao'];
 var TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-addr','tab-hongbao':'page-hongbao','tab-settings':'page-settings'};
 
-var WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
+var WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / TRC USDT / BTC 多链，本地保管助记词与资产。' };
 var WW_PAGE_SEO = {
   'page-welcome': { title: '欢迎 — WorldToken 多语言钱包', description: '创建或导入钱包：万语地址与多链资产管理。' },
   'page-key': { title: '备份助记词 — WorldToken', description: '请安全抄写并离线保存助记词，勿截图或上传网络。' },
   'page-key-verify': { title: '验证助记词 — WorldToken', description: '按提示输入助记词以确认您已正确备份。' },
   'page-home': { title: '资产 — WorldToken', description: '查看余额、快捷转账、兑换与交易记录。' },
   'page-addr': { title: '收款地址 — WorldToken', description: '展示 TRX / ETH / BTC 地址与收款二维码。' },
-  'page-transfer': { title: '转账 — WorldToken', description: '向 TRC-20 地址发送 USDT。' },
+  'page-transfer': { title: '转账 — WorldToken', description: '向 TRC-20 地址发送 TRC USDT。' },
   'page-swoosh': { title: '处理中 — WorldToken', description: '交易正在提交。' },
   'page-transfer-success': { title: '转账成功 — WorldToken', description: '转账已提交，可查看摘要与分享。' },
   'page-settings': { title: '设置 — WorldToken', description: 'PIN、两步验证、备份与隐私相关选项。' },
   'page-address-book': { title: '地址簿 — WorldToken', description: '管理本机常用收款地址，与转账页共用。' },
   'page-convert-mnemonic': { title: '转换助记词 — WorldToken', description: '选择助记词语言，按 BIP39 索引映射显示对应词表，便于与其他钱包互导入。' },
-  'page-swap': { title: '兑换 — WorldToken', description: 'USDT（TRC-20）兑换为 TRX，跳转 SunSwap。' },
+  'page-swap': { title: '兑换 — WorldToken', description: 'TRC USDT（TRC-20）兑换为 TRX，跳转 SunSwap。' },
   'page-swap-records': { title: '兑换记录 — WorldToken', description: '历史兑换与路由记录。' },
   'page-password-restore': { title: 'PIN 解锁 — WorldToken', description: '使用本机 PIN 解锁并进入钱包。' },
   'page-import': { title: '导入钱包 — WorldToken', description: '使用 12 词助记词恢复钱包。' },
@@ -2638,7 +2638,7 @@ async function refreshHomePriceTicker() {
         usdt: d.tether && d.tether.usd
       });
     } catch (_cg) { wwQuiet(_cg); }
-    const html = 'USDT <strong>$' + ust + '</strong>';
+    const html = 'TRC USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
     if(a) a.innerHTML = html;
@@ -2812,14 +2812,14 @@ function wwOptionsPopulate() {
   var timeVal = S * vol * Math.sqrt(t) * 0.4;
   var unit = intrinsic + timeVal;
   var total = unit * qty;
-  if (prem) prem.textContent = (total < 0.01 ? total.toFixed(6) : total.toFixed(2)) + ' USDT';
+  if (prem) prem.textContent = (total < 0.01 ? total.toFixed(6) : total.toFixed(2)) + ' TRC USDT';
   if (ex) ex.textContent = '现货参考 ' + (u === 'TRX' ? S.toFixed(5) : S.toLocaleString(undefined, { maximumFractionDigits: 2 })) + ' USD · 简化波动率模型，非 Deribit / 链上期权报价。';
 }
 
 var WW_YIELD_AGG_PROTOCOLS = ['Aave V3', 'Compound V3', 'Venus'];
 
 var WW_LAUNCHPAD_PROJECTS = [
-  { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 USDT', status: '即将开始' },
+  { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 TRC USDT', status: '即将开始' },
   { name: 'TronBoost', chain: 'TRON', date: '2026-04-22', allocation: '2,000 TRX', status: '白名单' },
   { name: 'MetaVault', chain: 'BSC', date: '2026-05-01', allocation: 'TBD', status: '筹备中' }
 ];
@@ -2983,7 +2983,7 @@ function calcTransferFee() {
     if (transferCoin.id === 'eth') amtLbl.textContent = '金额（ETH · Ethereum）';
     else if (transferCoin.id === 'trx') amtLbl.textContent = '金额（TRX · Tron）';
     else if (transferCoin.id === 'btc') amtLbl.textContent = '金额（BTC · Bitcoin）';
-    else amtLbl.textContent = '金额（USDT · TRC-20）';
+    else amtLbl.textContent = '金额（TRC USDT）';
   }
   var balSuf = document.getElementById('transferBalSuffix');
   if (balSuf) balSuf.textContent = transferCoin.name || '';
@@ -3325,12 +3325,12 @@ function submitClaim() {
     } catch (e2) { wwQuiet(e2); }
     var creditLegacy = typeof wwRoundUsdt2 === 'function' ? wwRoundUsdt2(hb.amount) : Math.round(Number(hb.amount) * 100) / 100;
     if (typeof wwGiftCreditUsdt === 'function') wwGiftCreditUsdt(myAddr, creditLegacy);
-    showToast('✅ 领取成功 · ' + String(hb.amount) + ' USDT', 'success');
+    showToast('✅ 领取成功 · ' + String(hb.amount) + ' TRC USDT', 'success');
     if (inp) inp.value = '';
     var lines = [];
     if (hb.message && String(hb.message).trim()) lines.push(String(hb.message).trim());
     lines.push('口令 ' + kw);
-    applyClaimSuccessPage(String(hb.amount) + ' USDT', lines.join('\n'));
+    applyClaimSuccessPage(String(hb.amount) + ' TRC USDT', lines.join('\n'));
     return;
   }
 
@@ -3381,10 +3381,10 @@ function submitClaim() {
   if (typeof wwGiftCreditUsdt === 'function' && isFinite(creditAmt) && creditAmt > 0) wwGiftCreditUsdt(myAddr2, creditAmt);
 
   var rank = hb.claimed.length;
-  showToast('✅ 领取成功 · ' + amt + ' USDT', 'success');
+  showToast('✅ 领取成功 · ' + amt + ' TRC USDT', 'success');
   if (inp) inp.value = '';
   applyClaimSuccessPage(
-    amt + ' USDT',
+    amt + ' TRC USDT',
     '口令 ' + kw + '\n第 ' + rank + ' 个领取 · 共 ' + hb.count + ' 份礼物'
   );
 }
@@ -3447,7 +3447,7 @@ function updateHbPreview() {
   const amount = parseFloat(document.getElementById('hbAmount')?.value)||0;
   const per = document.getElementById('hbPerPerson');
   const tl = document.getElementById('hbTypeLabel');
-  if(per) per.textContent = hbType==='lucky' ? '随机金额' : (hbCount>0?(amount/hbCount).toFixed(2)+' USDT':'- USDT');
+  if(per) per.textContent = hbType==='lucky' ? '随机金额' : (hbCount>0?(amount/hbCount).toFixed(2)+' TRC USDT':'- TRC USDT');
   if(tl) tl.textContent = hbType==='lucky' ? '随机金额' : '每人金额';
 }
 
@@ -5055,7 +5055,7 @@ function createGift() {
   try {
     if (typeof wwRunGiftExpirySettlement === 'function') wwRunGiftExpirySettlement();
   } catch (_e3) { wwQuiet(_e3); }
-  showToast('🎁 礼物创建成功（已从余额扣除 ' + amount + ' USDT）', 'success');
+  showToast('🎁 礼物创建成功（已从余额扣除 ' + amount + ' TRC USDT）', 'success');
   if (typeof updateGiftUI === 'function') updateGiftUI();
   if (typeof updateGiftCountBadge === 'function') updateGiftCountBadge();
 }
