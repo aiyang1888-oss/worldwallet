@@ -119,7 +119,7 @@ try {
       try {
         var w2 = localStorage.getItem('ww_wallet');
         var o2 = w2 ? JSON.parse(w2) : null;
-        if (!o2 || !(o2.trxAddress || o2.ethAddress || o2.btcAddress)) boot = '';
+        if (!o2 || !_wwObjHasValidAddr(o2)) boot = '';
       } catch (e1b) {
         boot = '';
       }
@@ -152,7 +152,7 @@ try {
     try {
       var _wCk = localStorage.getItem('ww_wallet');
       var _oCk = _wCk ? JSON.parse(_wCk) : null;
-      _wwHasAddr = !!(_oCk && (_oCk.trxAddress || _oCk.ethAddress || _oCk.btcAddress));
+      _wwHasAddr = _wwObjHasValidAddr(_oCk);
     } catch (_a0) {}
     /* encrypted+PIN：底栏/资产类 hash 先 boot 解锁页（补早段仅 page-home 的缺口） */
     try {
