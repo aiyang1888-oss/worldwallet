@@ -2445,6 +2445,7 @@ function renderAddressBookSettingsList() {
 function wwAddAddressBookFromSettings() {
   var nickEl = document.getElementById('addrBookNickInput');
   var addrEl = document.getElementById('addrBookAddrInput');
+  var origEl = document.getElementById('addrBookEditOriginal');
   var addr = addrEl ? String(addrEl.value || '').trim() : '';
   var nick = nickEl ? String(nickEl.value || '').trim() : '';
   if (!addr) {
@@ -2453,18 +2454,30 @@ function wwAddAddressBookFromSettings() {
   }
   if (!nick) nick = '未命名';
   nick = nick.slice(0, 32);
+  var origRaw = origEl ? String(origEl.value || '').trim() : '';
+  var origNorm = origRaw.toLowerCase();
+  var newNorm = addr.toLowerCase();
+  var isEdit = !!origNorm;
   var list = getTransferContacts().filter(function (c) {
-    return c.addr.trim().toLowerCase() !== addr.toLowerCase();
-  });
-  var hadSameAddr = getTransferContacts().some(function (c) {
-    return c.addr.trim().toLowerCase() === addr.toLowerCase();
+    var ca = c.addr.trim().toLowerCase();
+    if (origNorm && ca === origNorm) return false;
+    if (ca === newNorm) return false;
+    return true;
   });
   list.unshift({ addr: addr, nick: nick });
   setTransferContacts(list);
   if (addrEl) addrEl.value = '';
   if (nickEl) nickEl.value = '';
+  if (origEl) origEl.value = '';
   wwRefreshAddressBookLists();
-  if (typeof showToast === 'function') showToast(hadSameAddr ? '备注已更新' : '已保存到地址簿', 'success');
+  if (typeof showToast === 'function') {
+    if (isEdit) {
+      if (newNorm === origNorm) showToast('备注已更新', 'success');
+      else showToast('地址已更新', 'success');
+    } else {
+      showToast('已保存到地址簿', 'success');
+    }
+  }
 }
 
 
