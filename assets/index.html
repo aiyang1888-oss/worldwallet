@@ -324,7 +324,7 @@ try {
 <meta name="twitter:description" content="支持120+种语言万语地址，TRX / ETH / TRC USDT / BTC 多链资产管理。">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://worldtoken.cc/wallet.html">
-<link rel="manifest" href="manifest.json?v=f4dd001">
+<link rel="manifest" href="manifest.json">
 
 
 <!-- QR Code Generator -->
@@ -334,8 +334,8 @@ try {
 
 <!-- TronWeb 懒加载，仅转账时加载 -->
 
-<link id="ww-wallet-css" rel="stylesheet" href="wallet.css?v=f4dd001" fetchpriority="high">
-  <link rel="apple-touch-icon" href="icon-192.png?v=f4dd001">
+<link id="ww-wallet-css" rel="stylesheet" href="wallet.css" fetchpriority="high">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1746,20 +1746,20 @@ try {
 <!-- wt-pad-0094 -->
 <!-- wt-pad-0095 -->
 <!-- wt-pad-0096 -->
-<script src="lib/ethers.umd.min.js?v=f4dd001"></script>
+<script src="lib/ethers.umd.min.js"></script>
 <!-- globals.js disabled to fix var conflict -->
-<script src="js/api-config.js?v=f4dd001"></script>
-<script src="wallet.swap.js?v=f4dd001"></script>
-<script src="wallet.swap.history.js?v=f4dd001"></script>
-<script src="wallet.swap.exec.js?v=f4dd001"></script>
-<script src="js/btc-segwit.js?v=f4dd001"></script>
-<script src="js/idb-kv.js?v=f4dd001"></script>
-<script src="js/storage.js?v=f4dd001"></script>
-<script src="js/idb-cache.js?v=f4dd001"></script>
-<script src="core/security.js?v=f4dd001"></script>
-<script src="core/key-derivation-cache.js?v=f4dd001"></script>
-<script src="core/wallet.js?v=f4dd001"></script>
-<script src="wordlists.js?v=f4dd001"></script>
+<script src="js/api-config.js"></script>
+<script src="wallet.swap.js"></script>
+<script src="wallet.swap.history.js"></script>
+<script src="wallet.swap.exec.js"></script>
+<script src="js/btc-segwit.js"></script>
+<script src="js/idb-kv.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/idb-cache.js"></script>
+<script src="core/security.js"></script>
+<script src="core/key-derivation-cache.js"></script>
+<script src="core/wallet.js"></script>
+<script src="wordlists.js"></script>
 <!-- 先于 wallet.core：若 core 未加载/缓存异常，后续 catch 内调用 wwQuiet 否则会 ReferenceError -->
 <script>
 (function () {
@@ -1773,17 +1773,17 @@ try {
   };
 })();
 </script>
-<script src="wallet.core.js?v=f4dd001"></script>
-<script src="wallet.token.js?v=f4dd001"></script>
-<script src="core/session-key-cache.js?v=f4dd001"></script>
-<script src="wallet.ui.modals.js?v=f4dd001"></script>
-<script src="wallet.ui.js?v=f4dd001"></script>
-<script src="wallet.chains.js?v=f4dd001"></script>
-<script src="wallet.tx.js?v=f4dd001"></script>
-<script src="wallet.runtime.js?v=f4dd001"></script>
+<script src="wallet.core.js"></script>
+<script src="wallet.token.js"></script>
+<script src="core/session-key-cache.js"></script>
+<script src="wallet.ui.modals.js"></script>
+<script src="wallet.ui.js"></script>
+<script src="wallet.chains.js"></script>
+<script src="wallet.tx.js"></script>
+<script src="wallet.runtime.js"></script>
 <!-- wallet.addr.js 必须在 wallet.runtime.js 之后：runtime 内含旧版 updateAddr/getNativeAddr，否则会覆盖 addr 的万语芯片与 TEMP 种子逻辑 -->
-<script src="wallet.addr.js?v=f4dd001"></script>
-<script src="wallet.dom-bind.js?v=f4dd001"></script>
+<script src="wallet.addr.js"></script>
+<script src="wallet.dom-bind.js"></script>
 
 
 

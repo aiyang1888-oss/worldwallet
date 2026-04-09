@@ -5101,7 +5101,7 @@ function wwSetCoinIconElement(el, coin) {
 }
 
 const COINS = [
-  {id:'usdt', name:'TRC USDT', chain:'TRC-20 · Tron', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
+  {id:'usdt', name:'USDT (TRC-20)', chain:'Tron', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
   {id:'usdt_eth', name:'USDT (ERC-20)', chain:'Ethereum', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,130,90,0.18)', bal:0, price:1},
   {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', logoUrl: WW_COIN_LOGO_URL.btc, bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
   {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', logoUrl: WW_COIN_LOGO_URL.eth, bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
