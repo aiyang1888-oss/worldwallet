@@ -1183,10 +1183,13 @@ body {
 .tab-bar {
   height: 76px; background: var(--bg2);
   border-top: 1px solid var(--border);
-  display: flex; align-items: center;
-  justify-content: space-around;
-  padding-bottom: 12px; flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 8px 0 max(12px, env(safe-area-inset-bottom, 0px));
+  flex-shrink: 0;
   width: 100%; position: relative; z-index: 10;
+  box-sizing: border-box;
 }
 .tab-bar-indicator {
   position: absolute;
@@ -1204,12 +1207,17 @@ body {
 }
 .tab-item {
   display: flex; flex-direction: column;
-  align-items: center; gap: 3px;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  gap: 4px;
   font-size: 10px; color: var(--text-muted);
-  cursor: pointer; padding: 4px 10px;
+  cursor: pointer; padding: 6px 4px;
   border-radius: 10px; transition: all 0.2s;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
   -webkit-tap-highlight-color: rgba(200, 168, 75, 0.15);
 }
 .tab-item.active { color: var(--gold); }
@@ -1243,9 +1251,26 @@ body {
   min-height: 44px;
   line-height: 1.4;
 }
-.tab-icon { font-size: 22px; }
-.tab-icon svg { width: 22px; height: 22px; display: block; }
+.tab-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0;
+  line-height: 0;
+}
+.tab-icon svg { width: 22px; height: 22px; display: block; flex-shrink: 0; }
 .tab-item .tab-icon svg { color: inherit; }
+.tab-item > span:not(.tab-icon) {
+  line-height: 1.15;
+  white-space: nowrap;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #page-faq .faq-body { padding: 0 16px 32px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
 #page-faq .faq-block { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
 #page-faq .faq-block h3 { font-size: 15px; font-weight: 700; color: var(--gold); margin: 0 0 8px; }
