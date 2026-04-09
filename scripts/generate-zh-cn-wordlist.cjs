@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 /**
  * 从 scripts/pcas-code.json（modood/Administrative-divisions-of-China）生成
- * 2048 个唯一中文地名：省级 → 地级 → 县级；县级重名时用「地级市简称+县名」区分。
- * 输出 dist/wordlists/zh-cn.json（与 BIP39 英文词按索引 0..2047 对齐，供 inject-zh-wordlist.cjs 写入 wordlists.js）。
+ * 2048 个唯一中文地名：省级 → 地级 → 县级 → 镇级补足；**每条 2～3 个 Unicode 字符**
+ *（避免 UI 截断为伪词如「齐齐哈」、且与真实地名一致）。
+ * 输出 dist/wordlists/zh-cn.json（与 BIP39 英文词索引 0..2047 对齐）。
  */
 const fs = require('fs');
 const path = require('path');
 
 const OUT = path.join(__dirname, '..', 'dist', 'wordlists', 'zh-cn.json');
 const PCAS = path.join(__dirname, 'pcas-code.json');
+
+function ulen(s) {
+  return [...String(s)].length;
+}
 
 function ensurePcas() {
   if (!fs.existsSync(PCAS)) {
@@ -26,7 +31,7 @@ function ensurePcas() {
 }
 
 const SKIP_RE =
-  /街道|办事处|片区|园区|开发区|经济区|高新区|保税区|新区|风景区|管理区|保护区|监狱|农场|林场|水库|群岛|水域|海区|虚拟|不详|其它|其他|示范区|合作区|试验区|科技谷|物流园|工业园|聚集区|大学城|管理处|养殖场|群岛|铁厂街道/;
+  /街道|办事处|片区|园区|开发区|经济区|高新区|保税区|新区|风景区|管理区|保护区|监狱|农场|林场|水库|群岛|水域|海区|虚拟|不详|其它|其他|示范区|合作区|试验区|科技谷|物流园|工业园|聚集区|大学城|管理处|养殖场|铁厂街道/;
 
 function normProvince(name) {
   if (!name) return '';
@@ -51,14 +56,17 @@ function normCityName(name) {
     .replace(/州$/, '');
 }
 
+/** 去掉县级名称末尾常见后缀，用于去重时的「地级市简称 + 专名」 */
 function stripDistrictSuffix(name) {
-  return String(name || '')
-    .replace(/区$/, '')
-    .replace(/县$/, '')
-    .replace(/市$/, '')
-    .replace(/旗$/, '')
-    .replace(/自治县$/, '')
-    .replace(/自治旗$/, '');
+  let s = String(name || '');
+  const sfx = ['自治县', '自治旗', '林区', '特区', '市辖区', '市', '区', '县', '旗'];
+  for (const x of sfx) {
+    if (s.endsWith(x)) {
+      s = s.slice(0, -x.length);
+      break;
+    }
+  }
+  return s;
 }
 
 function shouldSkipCounty(name) {
@@ -74,7 +82,7 @@ function build(tree) {
 
   function add(s) {
     const t = String(s || '').trim();
-    if (!t || t.length < 2) return false;
+    if (!t || ulen(t) < 2 || ulen(t) > 3) return false;
     if (seen.has(t)) return false;
     seen.add(t);
     out.push(t);
@@ -98,7 +106,7 @@ function build(tree) {
         if (!raw || shouldSkipCounty(raw)) continue;
         if (add(raw)) continue;
         const disambig = (cityShort || '') + stripDistrictSuffix(raw);
-        if (disambig.length >= 2) add(disambig);
+        if (ulen(disambig) >= 2 && ulen(disambig) <= 3) add(disambig);
       }
     }
   }
@@ -106,7 +114,7 @@ function build(tree) {
   return { out, seen };
 }
 
-/** 收集 9 位 code 的镇名（区县级下），用于补足 2048 */
+/** 镇名（去掉「镇」），仅 2～3 字 */
 function collectTownZhen(tree, seen, out) {
   function walk(nodes, cityShort) {
     if (!nodes) return;
@@ -115,11 +123,14 @@ function collectTownZhen(tree, seen, out) {
       const name = node.name;
       if (c.length === 9 && name && /镇$/.test(name) && !SKIP_RE.test(name)) {
         const short = name.replace(/镇$/, '');
-        if (short.length < 2) continue;
-        const cand = (cityShort || '') + short;
-        if (!seen.has(cand)) {
-          seen.add(cand);
-          out.push(cand);
+        if (ulen(short) < 2 || ulen(short) > 3) {
+          /* skip */
+        } else {
+          const cand = (cityShort || '') + short;
+          if (ulen(cand) >= 2 && ulen(cand) <= 3 && !seen.has(cand)) {
+            seen.add(cand);
+            out.push(cand);
+          }
         }
       }
       if (node.children) walk(node.children, cityShort);
@@ -138,6 +149,70 @@ function collectTownZhen(tree, seen, out) {
   }
 }
 
+/**
+ * 广度补足：任意县级专名去掉后缀后若为 2～3 字则收录（与主循环顺序一致）
+ */
+function collectStrippedCounties(tree, seen, out) {
+  for (const prov of tree) {
+    for (const city of prov.children || []) {
+      const cc = String(city.code || '');
+      if (cc.length !== 4) continue;
+      for (const co of city.children || []) {
+        const coc = String(co.code || '');
+        if (coc.length !== 6) continue;
+        const raw = co.name;
+        if (!raw || shouldSkipCounty(raw)) continue;
+        const base = stripDistrictSuffix(raw);
+        if (ulen(base) >= 2 && ulen(base) <= 3 && !seen.has(base)) {
+          seen.add(base);
+          out.push(base);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * 最后补足：乡级 2～3 字专名（去掉「乡」「民族乡」等）
+ */
+function collectTownships(tree, seen, out) {
+  const stripXiang = (n) =>
+    String(n || '')
+      .replace(/民族乡$/, '')
+      .replace(/苏木$/, '')
+      .replace(/乡$/, '');
+  function walk(nodes) {
+    if (!nodes) return;
+    for (const node of nodes) {
+      const c = String(node.code || '');
+      const name = node.name;
+      if (
+        c.length === 9 &&
+        name &&
+        (/(乡|苏木)$/.test(name) || /民族乡$/.test(name)) &&
+        !SKIP_RE.test(name)
+      ) {
+        const short = stripXiang(name);
+        if (ulen(short) >= 2 && ulen(short) <= 3 && !seen.has(short)) {
+          seen.add(short);
+          out.push(short);
+        }
+      }
+      if (node.children) walk(node.children);
+    }
+  }
+  for (const prov of tree) {
+    for (const city of prov.children || []) {
+      const cc = String(city.code || '');
+      if (cc.length !== 4) continue;
+      for (const co of city.children || []) {
+        const coc = String(co.code || '');
+        if (coc.length === 6) walk(co.children);
+      }
+    }
+  }
+}
+
 function main() {
   ensurePcas();
   const tree = JSON.parse(fs.readFileSync(PCAS, 'utf8'));
@@ -145,6 +220,12 @@ function main() {
 
   if (out.length < 2048) {
     collectTownZhen(tree, seen, out);
+  }
+  if (out.length < 2048) {
+    collectStrippedCounties(tree, seen, out);
+  }
+  if (out.length < 2048) {
+    collectTownships(tree, seen, out);
   }
 
   if (out.length < 2048) {
@@ -157,6 +238,14 @@ function main() {
   if (uniq.size !== 2048) {
     console.error('[generate-zh-cn-wordlist] duplicate entries in first 2048');
     process.exit(1);
+  }
+
+  for (let i = 0; i < final2048.length; i++) {
+    const w = final2048[i];
+    if (ulen(w) < 2 || ulen(w) > 3) {
+      console.error('[generate-zh-cn-wordlist] length violation at', i, w);
+      process.exit(1);
+    }
   }
 
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
