@@ -3269,7 +3269,7 @@ async function doImportWallet() {
       privateKey: result.eth.privateKey,
       trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
-      backedUp: false
+      backedUp: true
     };
 
     window.REAL_WALLET = {
@@ -3281,7 +3281,7 @@ async function doImportWallet() {
       trxPrivateKey: result.trx.privateKey,
       createdAt: result.createdAt,
       hasEncrypted: false,
-      backedUp: false
+      backedUp: true
     };
 
     try { localStorage.setItem('ww_import_pending', JSON.stringify(flatForStore)); } catch (e) {}
