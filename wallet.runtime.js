@@ -4628,7 +4628,7 @@ function wwHomeAssetRowsMeta() {
 /** 首页 #wwHomeAssetCardsMount 为空时注入 USDT/TRX/ETH/BTC 四行（与 COINS 一致），供余额与「隐藏零余额」使用 */
 function wwInitHomeAssetCardsFromCoins() {
   var mount = document.getElementById('wwHomeAssetCardsMount');
-  if (!mount || mount.getAttribute('data-ww-asset-cards') === '1') return;
+  if (!mount || mount.getAttribute('data-ww-asset-cards') === '2') return;
   var order = ['usdt', 'trx', 'eth', 'btc'];
   var suf = { usdt: 'Usdt', trx: 'Trx', eth: 'Eth', btc: 'Btc' };
   var html = '';
@@ -4665,7 +4665,7 @@ function wwInitHomeAssetCardsFromCoins() {
       '</div></div>';
   }
   mount.innerHTML = html;
-  mount.setAttribute('data-ww-asset-cards', '1');
+  mount.setAttribute('data-ww-asset-cards', '2');
 }
 
 let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
