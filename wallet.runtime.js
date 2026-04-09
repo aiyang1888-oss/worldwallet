@@ -6299,18 +6299,42 @@ async function loadBalances() {
     const trxUsd = trxBal * prices.trx;
     const ethUsd = ethBal * prices.eth;
     const btcUsd = btcBal * (prices.btc || 60000);
-    const total = usdtUsd;
+    const total = usdtUsd + trxUsd + ethUsd + btcUsd;
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
     set('valUsdt', fmtUsd(usdtUsd));
-    // 更新涨跌幅（从 CoinGecko 获取）
+    set('balTrx', fmt(trxBal));
+    set('valTrx', fmtUsd(trxUsd));
+    set('balEth', fmt(ethBal));
+    set('valEth', fmtUsd(ethUsd));
+    set('balBtc', fmt(btcBal));
+    set('valBtc', fmtUsd(btcUsd));
     try {
-      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true');
+      const r2 = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd&include_24hr_change=true'
+      );
       const d2 = await r2.json();
-      const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
-      if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
-    } catch(e) {}
+      const fmtChg = (v) => (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+      function applyChgLine(chgId, changeVal) {
+        if (changeVal === undefined || changeVal === null) return;
+        const txt = fmtChg(changeVal);
+        const el = document.getElementById(chgId);
+        if (!el) return;
+        el.textContent = txt;
+        if (String(txt).indexOf('-') === 0) {
+          el.classList.remove('up');
+          el.classList.add('down');
+        } else {
+          el.classList.remove('down');
+          el.classList.add('up');
+        }
+      }
+      applyChgLine('chgUsdt', d2.tether && d2.tether.usd_24h_change);
+      applyChgLine('chgTrx', d2.tron && d2.tron.usd_24h_change);
+      applyChgLine('chgEth', d2.ethereum && d2.ethereum.usd_24h_change);
+      applyChgLine('chgBtc', d2.bitcoin && d2.bitcoin.usd_24h_change);
+    } catch (e) {}
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
@@ -6338,6 +6362,9 @@ async function loadBalances() {
 
     try {
       var chgU = document.getElementById('chgUsdt');
+      var chgT = document.getElementById('chgTrx');
+      var chgE = document.getElementById('chgEth');
+      var chgB = document.getElementById('chgBtc');
       var cnyR = window._cnyRate || 7.2;
       wwPersistHomeBalanceSnapRecord({
         totalTxt: fmtUsd(total),
@@ -6345,6 +6372,15 @@ async function loadBalances() {
         balUsdt: fmt(usdtBal),
         valUsdt: fmtUsd(usdtUsd),
         chgUsdt: chgU ? chgU.textContent : null,
+        balTrx: fmt(trxBal),
+        valTrx: fmtUsd(trxUsd),
+        chgTrx: chgT ? chgT.textContent : null,
+        balEth: fmt(ethBal),
+        valEth: fmtUsd(ethUsd),
+        chgEth: chgE ? chgE.textContent : null,
+        balBtc: fmt(btcBal),
+        valBtc: fmtUsd(btcUsd),
+        chgBtc: chgB ? chgB.textContent : null,
         totalUsd: total,
         usdtUsd: usdtUsd,
         trxUsd: trxUsd,
@@ -6354,6 +6390,7 @@ async function loadBalances() {
     } catch (_snap) {}
 
     if(btn) btn.textContent = '刷新';
+    window._wwHomeBalancesHydrated = true;
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
     if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
