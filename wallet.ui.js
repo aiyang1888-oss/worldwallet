@@ -2327,7 +2327,70 @@ function removeTransferContact(addr) {
   const t = (addr || '').trim().toLowerCase();
   if(!t) return;
   setTransferContacts(getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== t));
-  renderTransferContactsList();
+  if (typeof wwRefreshAddressBookLists === 'function') wwRefreshAddressBookLists();
+  else renderTransferContactsList();
+}
+
+/** 设置页与转账页联系人列表共用同一存储，任一处变更后刷新两处 UI */
+function wwRefreshAddressBookLists() {
+  try { if (typeof renderTransferContactsList === 'function') renderTransferContactsList(); } catch (_r) {}
+  try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_a) {}
+}
+
+function renderAddressBookSettingsList() {
+  const box = document.getElementById('addrBookSettingsList');
+  if (!box) return;
+  const list = getTransferContacts();
+  if (!list.length) {
+    box.innerHTML = '<div class="addr-book-settings-empty">暂无条目，请在下方添加常用收款地址</div>';
+    return;
+  }
+  box.innerHTML = '';
+  list.forEach(function (c) {
+    const row = document.createElement('div');
+    row.className = 'addr-book-settings-row';
+    const nick = document.createElement('div');
+    nick.className = 'addr-book-settings-nick';
+    nick.textContent = c.nick || '未命名';
+    const ad = document.createElement('div');
+    ad.className = 'addr-book-settings-addr';
+    ad.textContent = c.addr;
+    ad.title = c.addr;
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'addr-book-settings-del';
+    del.textContent = '删除';
+    del.onclick = function (e) {
+      e.stopPropagation();
+      if (typeof removeTransferContact === 'function') removeTransferContact(c.addr);
+    };
+    row.appendChild(nick);
+    row.appendChild(ad);
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+
+function wwAddAddressBookFromSettings() {
+  var nickEl = document.getElementById('addrBookNickInput');
+  var addrEl = document.getElementById('addrBookAddrInput');
+  var addr = addrEl ? String(addrEl.value || '').trim() : '';
+  var nick = nickEl ? String(nickEl.value || '').trim() : '';
+  if (!addr) {
+    if (typeof showToast === 'function') showToast('请填写地址', 'error');
+    return;
+  }
+  if (!nick) nick = '未命名';
+  nick = nick.slice(0, 32);
+  var list = getTransferContacts().filter(function (c) {
+    return c.addr.trim().toLowerCase() !== addr.toLowerCase();
+  });
+  list.unshift({ addr: addr, nick: nick });
+  setTransferContacts(list);
+  if (addrEl) addrEl.value = '';
+  if (nickEl) nickEl.value = '';
+  wwRefreshAddressBookLists();
+  if (typeof showToast === 'function') showToast('已保存到地址簿', 'success');
 }
 
 
