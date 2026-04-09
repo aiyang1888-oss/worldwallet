@@ -1566,6 +1566,9 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
     try { if(typeof wwGaslessPopulate==='function') wwGaslessPopulate(); } catch(_gsp) {}
     try { if(typeof wwGasManagerRender==='function') setTimeout(wwGasManagerRender, 30); } catch(_wg) {}
   }
+  if (pageId === 'page-address-book') {
+    try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_ab) {}
+  }
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
@@ -2619,14 +2622,16 @@ function saveTransferContact(addr, nick) {
   let list = getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== a.toLowerCase());
   list.unshift({ addr: a, nick: n });
   setTransferContacts(list);
-  renderTransferContactsList();
+  if (typeof wwRefreshAddressBookLists === 'function') wwRefreshAddressBookLists();
+  else renderTransferContactsList();
   showToast('已保存联系人', 'success');
 }
 function removeTransferContact(addr) {
   const t = (addr || '').trim().toLowerCase();
   if(!t) return;
   setTransferContacts(getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== t));
-  renderTransferContactsList();
+  if (typeof wwRefreshAddressBookLists === 'function') wwRefreshAddressBookLists();
+  else renderTransferContactsList();
 }
 function toggleContactAddForm() {
   const f = document.getElementById('transferContactAddForm');
