@@ -2999,7 +2999,7 @@ function wwCheckPriceAlertsAfterTicker(d) {
       { key: 'btc', name: 'BTC', get: function (z) { return z.bitcoin && z.bitcoin.usd; } },
       { key: 'eth', name: 'ETH', get: function (z) { return z.ethereum && z.ethereum.usd; } },
       { key: 'trx', name: 'TRX', get: function (z) { return z.tron && z.tron.usd; } },
-      { key: 'usdt', name: 'TRC USDT', get: function (z) { return z.tether && z.tether.usd; } }
+      { key: 'usdt', name: 'USDT (TRC-20)', get: function (z) { return z.tether && z.tether.usd; } }
     ];
     var prev = window._wwAlertPricePrev || {};
     map.forEach(function (m) {
@@ -3028,7 +3028,7 @@ function updateYieldFarmTracker(parts, total) {
     el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'USDT (TRC-20)': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var estYr = 0;
   var rows = [];
   parts.forEach(function (p) {
@@ -6249,7 +6249,7 @@ function wwYieldOptimizerPopulate() {
     body.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">—</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'USDT (TRC-20)': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var top = null;
   var bestA = 0;
   parts.forEach(function (p) {
