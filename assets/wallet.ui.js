@@ -711,6 +711,12 @@ function switchLang(lang) {
   try {
     if (typeof applyImportGridInputLangAttrs === 'function') applyImportGridInputLangAttrs();
   } catch (e2) {}
+  try {
+    var wlk = typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : lang;
+    if (typeof wwEnsureWordlistLoaded === 'function') {
+      wwEnsureWordlistLoaded(wlk).catch(function () {});
+    }
+  } catch (_wl) {}
 }
 
 function syncKeyPageLangSelect() {
@@ -4289,6 +4295,28 @@ document.getElementById = function(id) {
 // _safeEl moved to top of script
 
 // ── Toast 提示系统（替换 alert）──────────────────────────────
+/** 将 Error / 字符串规范为可读提示（链上 / 网络 / 用户输入） */
+function wwFmtUserError(err) {
+  if (err == null) return '未知错误';
+  if (typeof err === 'string') return err;
+  var m = err.message || err.reason || String(err);
+  var l = m.toLowerCase();
+  if (l.indexOf('user denied') >= 0 || l.indexOf('user rejected') >= 0) return '已取消签名或授权';
+  if (l.indexOf('timeout') >= 0 || l.indexOf('超时') >= 0) return '请求超时，请检查网络后重试';
+  if (l.indexOf('network') >= 0 && l.indexOf('change') >= 0) return '网络已切换，请在本页重试';
+  if (l.indexOf('insufficient funds') >= 0) return '主网币余额不足以支付 Gas';
+  if (l.indexOf('nonce') >= 0) return '交易序号冲突，请稍后重试';
+  return m;
+}
+
+function wwLog(tag, detail) {
+  try {
+    if (typeof console !== 'undefined' && console.log) {
+      console.log('[WW]', tag, detail != null ? detail : '');
+    }
+  } catch (_e) {}
+}
+
 function showToast(msg, type='info', duration=2500) {
   let t = document.getElementById('wt-toast');
   if(!t) {
@@ -5313,10 +5341,17 @@ if (document.readyState === 'loading') {
 
 function wwPrefetchAllMnemonicWordlists() {
   var langs = ['ja', 'ko', 'es', 'fr', 'de', 'it', 'ru', 'pt'];
-  for (var i = 0; i < langs.length; i++) {
-    if (typeof wwEnsureWordlistLoaded === 'function') {
-      wwEnsureWordlistLoaded(langs[i]).catch(function () {});
+  var run = function () {
+    for (var i = 0; i < langs.length; i++) {
+      if (typeof wwEnsureWordlistLoaded === 'function') {
+        wwEnsureWordlistLoaded(langs[i]).catch(function () {});
+      }
     }
+  };
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(run, { timeout: 4000 });
+  } else {
+    setTimeout(run, 800);
   }
 }
 if (document.readyState === 'loading') {
