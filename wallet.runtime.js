@@ -4351,7 +4351,7 @@ function selectTransferCoin(id) {
   // 从 COINS 读取实时余额和价格
   const coinData = COINS.find(c=>c.id===id);
   const map = {
-    usdt:{id:'usdt',name:'TRC USDT',chain:'TRC-20 · Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
+    usdt:{id:'usdt',name:'USDT (TRC-20)',chain:'Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
     usdt_eth:{id:'usdt_eth',name:'USDT (ERC-20)',chain:'Ethereum',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,130,90,0.18)',bal:coinData&&coinData.id==='usdt_eth'?coinData.bal:0,price:coinData&&coinData.id==='usdt_eth'?coinData.price:1},
     trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',logoUrl:WW_COIN_LOGO_URL.trx,bg:'rgba(255,80,80,0.12)',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
     eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',logoUrl:WW_COIN_LOGO_URL.eth,bg:'rgba(100,100,255,0.12)',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
