@@ -385,7 +385,8 @@ function mnemonicToLang(mnemonic, lang) {
   }).join(" ");
 }
 
-/** 英文 BIP39 词数组 → 当前语言密钥表词条（词数与上方词数选择一致，逐词映射索引） */
+/** 英文 BIP39 词数组 → 当前语言密钥表词条（词数与上方词数选择一致，逐词映射索引）。
+ * 不做任何截断：目标词仅为 WT_WORDLISTS[lang][idx]；中文若存在展示用缩短词，由 wallet.ui.js 的 wwNormalizeZhWordlistForDisplay 在加载词表时完成。 */
 function enWordsToLangKeyTableWords(enWords, lang) {
   if (!enWords || !enWords.length) return [];
   if (!lang || lang === 'en') return enWords.slice();

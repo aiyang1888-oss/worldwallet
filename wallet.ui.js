@@ -142,10 +142,19 @@ var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star'
 // ═══════════════════════════════════════════════════════
 // WT_WORDLISTS loaded from wordlists.js
 
-/** 词表文件中的 zh 可能含 4 字以上地名；展示侧压缩为「同索引全局唯一、尽量 3 字起前缀」，并保留 WT_ZH_ORIGINAL 供导入旧备份时解析 */
+/** 词表文件中的 zh 可能含 4 字以上地名；展示侧压缩为「同索引全局唯一、尽量 3 字起前缀」，并保留 WT_ZH_ORIGINAL 供导入旧备份时解析。
+ * 注：enWordsToLangKeyTableWords / mnemonicToLang 仅按 BIP39 索引取 WT_WORDLISTS.zh[i]，本身不截断；截断只发生在本函数。
+ * dist/wordlists/zh-cn.json 现由 generate-zh-cn-wordlist 保证每条 2～3 字，此路径下本函数为恒等映射，快路径避免长词分支的边界情况。 */
 var WT_ZH_ORIGINAL = [];
 
 function wwNormalizeZhWordlistForDisplay(origArr) {
+  if (!origArr || !origArr.length) return origArr ? origArr.slice() : [];
+  var si;
+  for (si = 0; si < origArr.length; si++) {
+    if (Array.from(String(origArr[si] || '')).length > 3) break;
+  }
+  if (si >= origArr.length) return origArr.slice();
+
   var nList = origArr.length;
   var used = {};
   var disp = [];
