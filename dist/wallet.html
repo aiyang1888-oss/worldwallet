@@ -20,6 +20,12 @@ html.ww-hide-welcome-until-ready #page-welcome.page {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+/* wallet.css 未加载时 .page 默认不透明：在未由 head 指定 boot 进首页前隐藏资产页，避免无钱包首访先闪「资产」 */
+html.ww-first-route-pending:not([data-ww-boot-page="page-home"]) #page-home.page {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
 </style>
 <script>
 /* 开发阶段：刷新保留当前页（与 #hash / goTo 同步）；生产环境不设置此项，仍走「强刷回欢迎页」逻辑 */
