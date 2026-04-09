@@ -6250,7 +6250,24 @@ async function loadBalances() {
       else if(coin.id === 'btc') { coin.bal = btcBal; coin.price = prices.btc || 60000; }
     });
     renderSwapUI(); calcSwap();
-    
+
+    try {
+      var chgU = document.getElementById('chgUsdt');
+      var cnyR = window._cnyRate || 7.2;
+      wwPersistHomeBalanceSnapRecord({
+        totalTxt: fmtUsd(total),
+        subTxt: '≈ ' + (total * cnyR).toFixed(0) + ' CNY · 实时价格',
+        balUsdt: fmt(usdtBal),
+        valUsdt: fmtUsd(usdtUsd),
+        chgUsdt: chgU ? chgU.textContent : null,
+        totalUsd: total,
+        usdtUsd: usdtUsd,
+        trxUsd: trxUsd,
+        ethUsd: ethUsd,
+        btcUsd: btcUsd
+      });
+    } catch (_snap) {}
+
     if(btn) btn.textContent = '刷新';
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
     if(typeof loadTrxResource==='function') loadTrxResource();
