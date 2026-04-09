@@ -1472,6 +1472,12 @@ function goTo(pageId, opts) {
     if (typeof wwClearHtmlBootRouteIfDestChanges === 'function') wwClearHtmlBootRouteIfDestChanges(pageId);
   } catch (_wwBootClr) { wwQuiet(_wwBootClr); }
   try { sessionStorage.setItem('ww_last_page', pageId); } catch (_) { wwQuiet(_); }
+  try {
+    if (pageId !== 'page-swap' && window._wwSwapPriceInterval) {
+      clearInterval(window._wwSwapPriceInterval);
+      window._wwSwapPriceInterval = null;
+    }
+  } catch (_spi) { wwQuiet(_spi); }
   /* 已在目标页则不再 strip/.active（否则刷新时重复触发 .page 的 opacity 过渡 → 欢迎页闪一下） */
   try {
     if (!opts.force && !opts.forceRoute) {
@@ -1581,7 +1587,22 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
   if (pageId === 'page-address-book') {
     try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_ab) { wwQuiet(_ab); }
   }
-  if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
+  if(pageId==='page-swap') {
+    if (typeof renderSwapUI === 'function') {
+      renderSwapUI();
+      calcSwap();
+    }
+    setTimeout(loadSwapPrices, 200);
+    try {
+      if (window._wwSwapPriceInterval) {
+        clearInterval(window._wwSwapPriceInterval);
+        window._wwSwapPriceInterval = null;
+      }
+      window._wwSwapPriceInterval = setInterval(function () {
+        if (typeof loadSwapPrices === 'function') loadSwapPrices();
+      }, 45000);
+    } catch (_spx) { wwQuiet(_spx); }
+  }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
   if(pageId==='page-addr') {
@@ -1601,7 +1622,6 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
       const cb = (_safeEl('chainBtc') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* chainBtc fallback */; if(cb) cb.textContent = btc;
     }
   }
-  if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
     try {
@@ -2772,7 +2792,7 @@ async function refreshHomePriceTicker() {
     if(a) a.innerHTML = html;
     if(b) b.innerHTML = html;
     if(!_wwTickerInterval) {
-      _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 90000);
+      _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 45000);
     }
     try {
       if (typeof wwCheckPriceAlertsAfterTicker === 'function') {
@@ -7439,7 +7459,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   if (typeof caches === 'undefined' || !caches.keys) return;
   caches.keys().then(function(names) {
     names.forEach(function(name) {
-      if (name !== 'worldtoken-v202604091200') caches.delete(name);
+      if (name !== 'worldtoken-static-v202604091300') caches.delete(name);
     });
   });
 })();

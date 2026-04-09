@@ -30,11 +30,11 @@
     return new ethers.providers.JsonRpcProvider(rpc);
   }
 
-  /** 主网 L1 波动大：在估算值上再加安全余量，降低 out-of-gas */
+  /** 主网 L1：在估算 gasLimit 上加 10% 余量，降低 out-of-gas */
   function bumpGasLimit(g, ethersLib) {
     var E = ethersLib || global.ethers;
     if (!g || !g.mul || !E) return g;
-    return g.mul(135).div(100).add(E.BigNumber.from('56000'));
+    return g.mul(110).div(100).add(E.BigNumber.from('32000'));
   }
 
   function recordSwapGasSample(gasUsedBn) {
@@ -70,7 +70,7 @@
 
   function slipToBps(slipPct) {
     var b = Math.round(Number(slipPct) * 100);
-    if (!isFinite(b) || b < 1) b = 10;
+    if (!isFinite(b) || b < 1) b = 50;
     if (b > 500) b = 500;
     return b;
   }
@@ -82,7 +82,7 @@
 
   function feeDataOpts(fd, ethers) {
     var sp = typeof getTransferFeeSpeed === 'function' ? getTransferFeeSpeed() : 'normal';
-    var m = sp === 'slow' ? 88 : sp === 'fast' ? 124 : 100;
+    var m = sp === 'slow' ? 88 : sp === 'fast' ? 124 : 110;
     var o = {};
     if (fd.maxFeePerGas && fd.maxPriorityFeePerGas) {
       o.maxFeePerGas = fd.maxFeePerGas.mul(m).div(100);

@@ -2644,7 +2644,7 @@ async function refreshHomePriceTicker() {
     if(a) a.innerHTML = html;
     if(b) b.innerHTML = html;
     if(!_wwTickerInterval) {
-      _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 90000);
+      _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 45000);
     }
     try { if (typeof wwCheckPriceAlertsAfterTicker === 'function') wwCheckPriceAlertsAfterTicker(d); } catch (_pa) { wwQuiet(_pa); }
   } catch (e) { wwQuiet(e); }

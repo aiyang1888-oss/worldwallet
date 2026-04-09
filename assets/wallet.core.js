@@ -71,6 +71,14 @@ function wwQuiet(e, hint) {
   } catch (_q) { void _q; }
 }
 
+try {
+  if (typeof window !== 'undefined') {
+    window.wwFmtUserError = wwFmtUserError;
+    window.wwLog = wwLog;
+    window.wwQuiet = wwQuiet;
+  }
+} catch (_wwGlob) { void _wwGlob; }
+
 /**
  * 简单 ETH 原生转账：在 estimateGas 上加余量，降低主网波动导致的 gas 不足
  */
