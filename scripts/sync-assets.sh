@@ -40,3 +40,18 @@ rsync -a --delete \
   --exclude '.env' \
   "${DIST_DIR}/" "${ASSETS_DIR}/"
 echo "✅ assets/ 已与 dist/ 对齐（已排除 .git、.env）"
+
+# 为 HTML 内相对路径的 JS/CSS 等追加 ?v=短 SHA，减轻 CDN/浏览器缓存旧资源（与提交绑定，同 commit 下 idempotent）
+WW_ASSET_VER="${GITHUB_SHA:-}"
+if [ -z "$WW_ASSET_VER" ] && command -v git >/dev/null 2>&1; then
+  WW_ASSET_VER="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || true)"
+fi
+WW_ASSET_VER="$(echo "$WW_ASSET_VER" | cut -c1-7)"
+[ -z "$WW_ASSET_VER" ] && WW_ASSET_VER="dev"
+export WW_ASSET_VER
+for html in "$ASSETS_DIR/wallet.html" "$ASSETS_DIR/index.html" "$ASSETS_DIR/app.html"; do
+  if [ -f "$html" ]; then
+    node "$ROOT_DIR/scripts/inject-html-asset-query.mjs" "$html"
+  fi
+done
+echo "✅ HTML 资源 URL 已追加 ?v=${WW_ASSET_VER}"

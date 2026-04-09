@@ -27,9 +27,9 @@ node --check "$ROOT_DIR/dist/wallet.addr.js"
 node --check "$ROOT_DIR/dist/wallet.ui.js"
 
 echo "[2/4] 更新 Service Worker 缓存版本（dist/sw.js）…"
-# DRY_RUN / CI 校验：不修改 dist，避免工作区出现无关 diff
-if [[ "${DRY_RUN:-}" == "1" || "${CI:-}" == "true" ]]; then
-  echo "    （跳过：DRY_RUN 或 CI — 不改 dist/sw.js）"
+# DRY_RUN：只校验构建，不修改 dist（避免 CI / 本地 dry 出现无关 diff）
+if [[ "${DRY_RUN:-}" == "1" ]]; then
+  echo "    （跳过：DRY_RUN — 不改 dist/sw.js）"
 elif [[ -f "$ROOT_DIR/dist/sw.js" ]] && grep -q 'worldtoken-v' "$ROOT_DIR/dist/sw.js" 2>/dev/null; then
   NEW_VER="worldtoken-v$(date -u +%Y%m%d%H%M)"
   if [[ "$(uname)" == "Darwin" ]]; then
