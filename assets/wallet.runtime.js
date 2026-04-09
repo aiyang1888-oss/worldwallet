@@ -1511,6 +1511,11 @@ function goTo(pageId, opts) {
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
 if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getElementById('importError'); if (_impErrGo) _impErrGo.style.display = 'none'; const paste=document.getElementById('importPaste'); if(paste) paste.value=''; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
+  if(pageId==='page-convert-mnemonic') {
+    try {
+      if (typeof wwPopulateConvertMnemonicPage === 'function') setTimeout(wwPopulateConvertMnemonicPage, 0);
+    } catch (_pcm) {}
+  }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
   if(pageId==='page-whale-alerts') { try { if(typeof wwWhalePopulate==='function') setTimeout(wwWhalePopulate, 40); } catch(_wh) {} }

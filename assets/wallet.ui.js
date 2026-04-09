@@ -759,6 +759,7 @@ var WW_PAGE_SEO = {
   'page-swoosh': { title: '处理中 — WorldToken', description: '交易正在提交。' },
   'page-transfer-success': { title: '转账成功 — WorldToken', description: '转账已提交，可查看摘要与分享。' },
   'page-settings': { title: '设置 — WorldToken', description: 'PIN、两步验证、备份与隐私相关选项。' },
+  'page-convert-mnemonic': { title: '转换助记词 — WorldToken', description: '同一钱包英文 BIP39 与中文词表对照，便于与其他钱包互导入。' },
   'page-swap': { title: '兑换 — WorldToken', description: 'USDT（TRC-20）兑换为 TRX，跳转 SunSwap。' },
   'page-swap-records': { title: '兑换记录 — WorldToken', description: '历史兑换与路由记录。' },
   'page-password-restore': { title: 'PIN 解锁 — WorldToken', description: '使用本机 PIN 解锁并进入钱包。' },
@@ -1371,6 +1372,11 @@ function goTo(pageId, opts) {
   if(pageId==='page-key-verify') {} // 验证页由 startVerify 初始化
 if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp) {} try { importGridWordCount = 12; var _iml=document.getElementById('importMnemonicLength'); if(_iml){ _iml.value='12'; _iml.selectedIndex=0; } if(typeof syncKeyPageLangSelect==='function') syncKeyPageLangSelect(); } catch(_impSync){} initImportGrid(); document.getElementById('importError').style.display='none'; updateImportWordCount(); }
   if(pageId==='page-recovery-test') { try { const rt=document.getElementById('recoveryTestInput'); if(rt) rt.value=''; } catch(_rt) {} }
+  if(pageId==='page-convert-mnemonic') {
+    try {
+      if (typeof wwPopulateConvertMnemonicPage === 'function') setTimeout(wwPopulateConvertMnemonicPage, 0);
+    } catch (_pcm) {}
+  }
   if(pageId==='page-social-recovery') { try { if(typeof wwSocialRecoveryRender==='function') setTimeout(wwSocialRecoveryRender, 40); } catch(_sr) {} }
   if(pageId==='page-spending-limits') { try { if(typeof wwSpendLimitPopulate==='function') setTimeout(wwSpendLimitPopulate, 40); } catch(_sl) {} }
   if(pageId==='page-whale-alerts') { try { if(typeof wwWhalePopulate==='function') setTimeout(wwWhalePopulate, 40); } catch(_wh) {} }
@@ -3184,6 +3190,73 @@ function updateHbPreview() {
 
 var CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
 var currencyIdx = 0;
+
+function wwGoConvertMnemonicFromSettings() {
+  if (typeof goTo === 'function') goTo('page-convert-mnemonic');
+}
+try {
+  window.wwGoConvertMnemonicFromSettings = wwGoConvertMnemonicFromSettings;
+} catch (_wGcm) {}
+
+/** 设置 → 转换助记词页：填充英文 BIP39 与中文词表对照（需已解密助记词） */
+function wwPopulateConvertMnemonicPage() {
+  var enEl = document.getElementById('wwConvertMnemonicEn');
+  var zhEl = document.getElementById('wwConvertMnemonicZh');
+  if (!enEl || !zhEl) return;
+  enEl.textContent = '';
+  zhEl.textContent = '';
+  function fillConvertMnemonic() {
+    var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (!rw) {
+      if (typeof showToast === 'function') showToast('未加载钱包', 'error');
+      if (typeof goTo === 'function') goTo('page-settings');
+      return;
+    }
+    var en = String(rw.enMnemonic || rw.mnemonic || '')
+      .trim()
+      .replace(/\s+/g, ' ');
+    if (!en) {
+      if (typeof showToast === 'function') showToast('无法读取助记词，请先解锁钱包或从备份页查看', 'warning', 3200);
+      if (typeof goTo === 'function') goTo('page-settings');
+      return;
+    }
+    enEl.textContent = en;
+    var zh = '';
+    try {
+      if (typeof mnemonicToLang === 'function') zh = mnemonicToLang(en, 'zh');
+      else if (typeof enWordsToLangKeyTableWords === 'function') {
+        var ew = en.split(/\s+/).filter(Boolean);
+        zh = enWordsToLangKeyTableWords(ew, 'zh').join(' ');
+      }
+    } catch (_m) {
+      zh = '';
+    }
+    zhEl.textContent = zh || '—';
+  }
+  try {
+    var rw0 = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (
+      rw0 &&
+      rw0.hasEncrypted &&
+      !(rw0.enMnemonic || rw0.mnemonic) &&
+      typeof wwUnsealWalletSensitive === 'function'
+    ) {
+      void wwUnsealWalletSensitive()
+        .then(function () {
+          fillConvertMnemonic();
+        })
+        .catch(function () {
+          if (typeof showToast === 'function') showToast('解锁失败，无法显示助记词', 'error');
+          if (typeof goTo === 'function') goTo('page-settings');
+        });
+      return;
+    }
+  } catch (_u) {}
+  fillConvertMnemonic();
+}
+try {
+  window.wwPopulateConvertMnemonicPage = wwPopulateConvertMnemonicPage;
+} catch (_wPop) {}
 
 function updateSettingsPage() {
   try {

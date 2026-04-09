@@ -617,6 +617,13 @@ try {
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof wwGoConvertMnemonicFromSettings==='function')wwGoConvertMnemonicFromSettings();else if(typeof goTo==='function')goTo('page-convert-mnemonic');">
+            <span class="settings-icon">🔁</span>
+            <span class="settings-label">转换助记词</span>
+            <span class="settings-value" style="color:var(--text-muted)">英↔中文词表</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
           <div class="settings-row" onclick="if(typeof showToast==='function')showToast('WorldToken v'+(typeof WW_APP_VERSION!=='undefined'?WW_APP_VERSION:'')+' · worldtoken.cc','info',3200)">
             <span class="settings-icon">ℹ️</span>
             <span class="settings-label">版本号</span>
@@ -644,6 +651,28 @@ try {
             <span class="settings-value" style="color:var(--red)">清空本机</span>
             <span class="settings-arrow">›</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 转换助记词（英 BIP39 ↔ 中文词表对照，entropy 相同） -->
+    <div class="page" id="page-convert-mnemonic">
+      <div class="nav-bar">
+        <div class="nav-leading">
+        <div class="nav-back" onclick="goTo('page-settings')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">转换助记词</div>
+        </div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 18px 28px">
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">同一钱包仅有一套熵；标准<strong style="color:var(--text)">英文 BIP39</strong> 与本应用<strong style="color:var(--text)">中文（地名）词表</strong>按索引一一对应，可与其他支持 BIP39 的钱包互导入。请勿截图或外传。</p>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:10px">英文 BIP39</div>
+          <div id="wwConvertMnemonicEn" style="font-size:12px;line-height:1.7;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+          <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:10px">中文词表（地名）</div>
+          <div id="wwConvertMnemonicZh" style="font-size:12px;line-height:1.7;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
         </div>
       </div>
     </div>
