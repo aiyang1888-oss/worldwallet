@@ -302,7 +302,8 @@
     var tabBar = document.getElementById('tabBar');
     if (tabBar) {
       tabBar.addEventListener('click', function (e) {
-        var item = e.target.closest('.tab-item');
+        var _tb = wwDomEventTargetEl(e);
+        var item = _tb && _tb.closest && _tb.closest('.tab-item');
         if (!item || !tabBar.contains(item)) return;
         if (typeof window.goTab === 'function') window.goTab(item.id);
       });
