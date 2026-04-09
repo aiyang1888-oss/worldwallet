@@ -2933,7 +2933,7 @@ async function refreshHomePriceTicker() {
       return x < 10 ? x.toFixed(4) : x.toLocaleString('en', { maximumFractionDigits: 2 });
     };
     const ust = fmt(ustNum);
-    const html = 'TRC USDT <strong>$' + ust + '</strong>';
+    const html = 'USDT (TRC-20) <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
     if(a) a.innerHTML = html;
