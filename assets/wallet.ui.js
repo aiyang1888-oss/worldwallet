@@ -4782,6 +4782,40 @@ function openPinSettingsDialog() {
 /* 时钟、闲置锁、活动重置、SEO/离线、余额隐私与滚动顶按钮由 wallet.runtime.js 统一初始化，避免与下文重复注册定时器与监听器 */
 
 (function () {
+  var WW_GUEST_HASH_OK = {
+    'page-welcome': 1,
+    'page-import': 1,
+    'page-key': 1,
+    'page-key-verify': 1,
+    'page-password-restore': 1,
+    'page-verify-success': 1,
+    'page-recovery-test': 1,
+    'page-convert-mnemonic': 1
+  };
+  function wwGuestHasSavedAddress() {
+    try {
+      var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      return typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(d);
+    } catch (_g) {
+      return false;
+    }
+  }
+  /** 无链上地址时仅允许导入/密钥等 hash 深链；与 wallet.html head boot 白名单一致 */
+  function wwGuestHashAllowed(pid) {
+    if (!pid) return true;
+    if (wwGuestHasSavedAddress()) return true;
+    return !!WW_GUEST_HASH_OK[pid];
+  }
+  function wwStripLocationHash() {
+    try {
+      var u = new URL(location.href);
+      if (!u.hash) return;
+      u.hash = '';
+      if (typeof history !== 'undefined' && history.replaceState) {
+        history.replaceState(null, '', u.pathname + u.search);
+      }
+    } catch (_u) { wwQuiet(_u); }
+  }
   function wwHashToPageId() {
     try {
       var h = (location.hash || '').replace(/^#/, '').trim();
@@ -4797,11 +4831,25 @@ function openPinSettingsDialog() {
   }
   function wwApplyHashRoute() {
     var pid = wwHashToPageId();
-    if (pid && typeof goTo === 'function') goTo(pid);
+    if (!pid || typeof goTo !== 'function') return;
+    if (!wwGuestHashAllowed(pid)) {
+      wwStripLocationHash();
+      goTo('page-welcome');
+      return;
+    }
+    goTo(pid);
   }
   /** 首次加载：hash 为空或指向不存在的 id 时，按 localStorage 钱包状态落到首页或欢迎页 */
   function wwEnsureInitialHashRoute() {
-    if (wwHashToPageId()) return;
+    var hid = wwHashToPageId();
+    if (hid) {
+      if (!wwGuestHashAllowed(hid)) {
+        wwStripLocationHash();
+        if (typeof goTo === 'function') goTo('page-welcome');
+        return;
+      }
+      return;
+    }
     try {
       if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) {
         if (typeof goTo === 'function') goTo('page-welcome');
