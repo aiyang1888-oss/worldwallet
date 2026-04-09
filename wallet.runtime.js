@@ -21,6 +21,17 @@ document.addEventListener('click', function(ev) {
   tapHaptic(12);
 }, true);
 
+document.addEventListener('click', function (ev) {
+  try {
+    var ab = document.getElementById('transferAddrBook');
+    var box = document.getElementById('transferAddrBox');
+    if (!ab || ab.style.display === 'none' || !box) return;
+    var t = ev.target;
+    if (box.contains(t)) return;
+    if (typeof hideTransferAddrBook === 'function') hideTransferAddrBook();
+  } catch (_hab) {}
+}, true);
+
 function parseUsdFromBalanceTxt(txt) {
   if (!txt) return 0;
   var n = parseFloat(String(txt).replace(/[$,\s]/g, ''));
