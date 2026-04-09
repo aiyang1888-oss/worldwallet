@@ -4296,6 +4296,7 @@ function calcTransferFee() {
   const bal = Number(transferCoin.bal) || 0;
   if (amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
+  try { if (typeof wwRefreshTransferRecipientFeedback === 'function') wwRefreshTransferRecipientFeedback(); } catch (_wh) { wwQuiet(_wh); }
   try { if (typeof wwUpdateTxSimulation === 'function') wwUpdateTxSimulation(); } catch (_ws) { wwQuiet(_ws); }
 }
 
