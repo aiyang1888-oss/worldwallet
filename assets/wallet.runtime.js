@@ -2881,7 +2881,7 @@ function updateYieldFarmTracker(parts, total) {
     el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var estYr = 0;
   var rows = [];
   parts.forEach(function (p) {
@@ -3145,7 +3145,7 @@ function updateCrossChainSwapCompare() {
   var sid = swapFrom && swapFrom.id;
   var tid = swapTo && swapTo.id;
   var tronPair = !!(sid && tid && ['trx', 'usdt'].indexOf(sid) >= 0 && ['trx', 'usdt'].indexOf(tid) >= 0);
-  var roughEthIds = { eth: 1, btc: 1, bnb: 1, usdt: 1 };
+  var roughEthIds = { eth: 1, btc: 1, bnb: 1, usdt: 1, usdt_eth: 1 };
   var evmRoughPair = !!(sid && tid && roughEthIds[sid] && roughEthIds[tid]);
   var showTron = amtIn > 0 && tronPair;
   var showEth = amtIn > 0 && evmRoughPair;
@@ -3731,14 +3731,17 @@ function wwRecoveryTestSubmit() {
   }
 }
 
-function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
+function drawPortfolioPieChart(trcUsdtUsd, ercUsdtUsd, trxUsd, ethUsd, btcUsd) {
   const card = document.getElementById('wwPortfolioPieCard');
   const c = document.getElementById('portfolioPieCanvas');
   const leg = document.getElementById('portfolioPieLegend');
   if(!card || !c || !leg) return;
-  void trxUsd; void ethUsd; void btcUsd;
   const parts = [
-    { v: Number(usdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
+    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
+    { v: Number(ercUsdtUsd) || 0, c: '#3d9a72', l: 'USDT (ERC-20)' },
+    { v: Number(trxUsd) || 0, c: '#ff4d4d', l: 'TRX' },
+    { v: Number(ethUsd) || 0, c: '#627eea', l: 'ETH' },
+    { v: Number(btcUsd) || 0, c: '#f7931a', l: 'BTC' }
   ];
   const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
   try { window._wwLastPortfolioParts = parts; window._wwLastPortfolioTotal = total; } catch (_wp) { wwQuiet(_wp); }
@@ -4202,6 +4205,7 @@ function selectTransferCoin(id) {
   const coinData = COINS.find(c=>c.id===id);
   const map = {
     usdt:{id:'usdt',name:'TRC USDT',chain:'TRC-20 · Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
+    usdt_eth:{id:'usdt_eth',name:'USDT (ERC-20)',chain:'Ethereum',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,130,90,0.18)',bal:coinData&&coinData.id==='usdt_eth'?coinData.bal:0,price:coinData&&coinData.id==='usdt_eth'?coinData.price:1},
     trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',logoUrl:WW_COIN_LOGO_URL.trx,bg:'rgba(255,80,80,0.12)',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
     eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',logoUrl:WW_COIN_LOGO_URL.eth,bg:'rgba(100,100,255,0.12)',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
     btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',logoUrl:WW_COIN_LOGO_URL.btc,bg:'rgba(255,165,0,0.12)',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
@@ -4951,6 +4955,7 @@ function wwSetCoinIconElement(el, coin) {
 
 const COINS = [
   {id:'usdt', name:'TRC USDT', chain:'TRC-20 · Tron', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
+  {id:'usdt_eth', name:'USDT (ERC-20)', chain:'Ethereum', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,130,90,0.18)', bal:0, price:1},
   {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', logoUrl: WW_COIN_LOGO_URL.btc, bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
   {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', logoUrl: WW_COIN_LOGO_URL.eth, bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
   {id:'trx',  name:'TRX',  chain:'Tron', icon:'🔴', logoUrl: WW_COIN_LOGO_URL.trx, bg:'rgba(255,80,80,0.12)', bal:0, price:0.12},
@@ -4960,18 +4965,19 @@ const COINS = [
 function wwHomeAssetRowsMeta() {
   return [
     { id: 'assetRowUsdt', balId: 'balUsdt' },
+    { id: 'assetRowUsdtErc', balId: 'balUsdtErc' },
     { id: 'assetRowTrx', balId: 'balTrx' },
     { id: 'assetRowEth', balId: 'balEth' },
     { id: 'assetRowBtc', balId: 'balBtc' }
   ];
 }
 
-/** 首页 #wwHomeAssetCardsMount 为空时注入 USDT/TRX/ETH/BTC 四行（与 COINS 一致），供余额与「隐藏零余额」使用 */
+/** 首页 #wwHomeAssetCardsMount 为空时注入 TRC USDT / ERC20 USDT / TRX / ETH / BTC（与 COINS 一致），供余额与「隐藏零余额」使用 */
 function wwInitHomeAssetCardsFromCoins() {
   var mount = document.getElementById('wwHomeAssetCardsMount');
-  if (!mount || mount.getAttribute('data-ww-asset-cards') === '3') return;
-  var order = ['usdt', 'trx', 'eth', 'btc'];
-  var suf = { usdt: 'Usdt', trx: 'Trx', eth: 'Eth', btc: 'Btc' };
+  if (!mount || mount.getAttribute('data-ww-asset-cards') === 'v2') return;
+  var order = ['usdt', 'usdt_eth', 'trx', 'eth', 'btc'];
+  var suf = { usdt: 'Usdt', usdt_eth: 'UsdtErc', trx: 'Trx', eth: 'Eth', btc: 'Btc' };
   var html = '';
   for (var i = 0; i < order.length; i++) {
     var cid = order[i];
@@ -5006,11 +5012,11 @@ function wwInitHomeAssetCardsFromCoins() {
       '</div></div>';
   }
   mount.innerHTML = html;
-  mount.setAttribute('data-ww-asset-cards', '3');
+  mount.setAttribute('data-ww-asset-cards', 'v2');
 }
 
 let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
-let swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
+let swapTo   = COINS.find(c => c.id === 'trx') || COINS[0];
 let pickerTarget = 'from';
 
 function setSwapCoin(target, coin) {
@@ -5274,6 +5280,7 @@ function openDex() {
     // Uniswap
     const UNISWAP_TOKENS = {
       usdt: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      usdt_eth: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
       eth: 'ETH',
       btc: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
       bnb: '0xB8c77482e45F1F44dE1745F52C74426C631bDD52',
@@ -6095,7 +6102,7 @@ function wwYieldOptimizerPopulate() {
     body.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">—</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var top = null;
   var bestA = 0;
   parts.forEach(function (p) {
@@ -6561,6 +6568,38 @@ async function wwFetchEthBalanceForHome(ethAddr) {
   return 0;
 }
 
+/** 主网 ERC-20 USDT（Tether）余额，与万语绑定的 ethAddress 对应 */
+async function wwFetchErc20UsdtBalanceForHome(ethAddr) {
+  if (!ethAddr || !/^0x[a-fA-F0-9]{40}$/.test(String(ethAddr).trim())) return 0;
+  var contract = '0xdAC17F958D2ee523a2206206994597C13D831ec7';
+  var addr = String(ethAddr).trim();
+  var data = '0x70a08231000000000000000000000000' + addr.slice(2).toLowerCase();
+  try {
+    var req = {
+      jsonrpc: '2.0',
+      method: 'eth_call',
+      params: [{ to: contract, data: data }, 'latest'],
+      id: 1
+    };
+    if (typeof wwFetchEthJsonRpc === 'function') {
+      var res = await wwFetchEthJsonRpc(req);
+      var j = await res.json();
+      if (j && j.result && j.result !== '0x') return parseInt(j.result, 16) / 1e6;
+    } else {
+      var res2 = await fetch('https://eth.llamarpc.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req)
+      });
+      var j2 = await res2.json();
+      if (j2 && j2.result && j2.result !== '0x') return parseInt(j2.result, 16) / 1e6;
+    }
+  } catch (e) {
+    console.log('ERC20 USDT query failed:', e);
+  }
+  return 0;
+}
+
 async function wwFetchBtcBalanceForHome(btcAddr) {
   if (!btcAddr) return 0;
   try {
@@ -6614,6 +6653,8 @@ function wwApplyHomeBalanceSnapRecord(h) {
   }
   setEl('balUsdt', h.balUsdt);
   setEl('valUsdt', h.valUsdt);
+  setEl('balUsdtErc', h.balUsdtErc);
+  setEl('valUsdtErc', h.valUsdtErc);
   setEl('balTrx', h.balTrx);
   setEl('valTrx', h.valTrx);
   setEl('balEth', h.balEth);
@@ -6635,6 +6676,7 @@ function wwApplyHomeBalanceSnapRecord(h) {
     }
   }
   pinSnapChg('chgUsdt', h.chgUsdt);
+  pinSnapChg('chgUsdtErc', h.chgUsdtErc != null ? h.chgUsdtErc : h.chgUsdt);
   pinSnapChg('chgTrx', h.chgTrx);
   pinSnapChg('chgEth', h.chgEth);
   pinSnapChg('chgBtc', h.chgBtc);
@@ -6642,8 +6684,14 @@ function wwApplyHomeBalanceSnapRecord(h) {
     window._lastTotalUsd = h.totalUsd;
     if (typeof drawHomeBalanceChart === 'function' && h.totalUsd > 0) drawHomeBalanceChart(h.totalUsd);
   }
-  if (typeof drawPortfolioPieChart === 'function' && h.usdtUsd != null && isFinite(h.usdtUsd)) {
-    drawPortfolioPieChart(h.usdtUsd, h.trxUsd || 0, h.ethUsd || 0, h.btcUsd || 0);
+  if (typeof drawPortfolioPieChart === 'function' && h.totalUsd != null && isFinite(h.totalUsd) && h.totalUsd > 0) {
+    drawPortfolioPieChart(
+      h.usdtUsd || 0,
+      h.usdtErcUsd != null && isFinite(h.usdtErcUsd) ? h.usdtErcUsd : 0,
+      h.trxUsd || 0,
+      h.ethUsd || 0,
+      h.btcUsd || 0
+    );
   }
   return true;
 }
@@ -6682,7 +6730,7 @@ async function loadBalances() {
     if (tbd) tbd.classList.add('home-balance--loading');
     if (tbs) tbs.textContent = '同步中…';
     if (btn) btn.textContent = '查询中...';
-    ['balUsdt', 'balTrx', 'balEth', 'balBtc'].forEach(function (id) {
+    ['balUsdt', 'balUsdtErc', 'balTrx', 'balEth', 'balBtc'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.textContent = '...';
     });
@@ -6695,22 +6743,26 @@ async function loadBalances() {
     const ethAddr = REAL_WALLET.ethAddress;
     const btcAddr = REAL_WALLET.btcAddress || '';
 
-    /* 价格 + 三链余额并行 + 单路超时；墙钟≈最慢一路，目标 <1s。能量条/次要 UI 延后，避免抢带宽 */
-    const [pricesRaw, trxRaw, ethRaw, btcRaw] = await Promise.all([
+    /* 价格 + TRC / ETH 原生 / BTC / 主网 ERC20 USDT 并行 + 单路超时 */
+    const [pricesRaw, trxRaw, ethRaw, btcRaw, usdtErcRaw] = await Promise.all([
       wwRaceMs(getPrices(), WW_HOME_NET_MS, wwPricesFallbackFromCache()),
       wwRaceMs(wwFetchTrxAccountBalancesForHome(trxAddr), WW_HOME_NET_MS_TRX, null),
       wwRaceMs(wwFetchEthBalanceForHome(ethAddr), WW_HOME_NET_MS, null),
-      wwRaceMs(wwFetchBtcBalanceForHome(btcAddr), WW_HOME_NET_MS_BTC, null)
+      wwRaceMs(wwFetchBtcBalanceForHome(btcAddr), WW_HOME_NET_MS_BTC, null),
+      wwRaceMs(wwFetchErc20UsdtBalanceForHome(ethAddr), WW_HOME_NET_MS, null)
     ]);
     const prices = pricesRaw || wwPricesFallbackFromCache();
     const trxPack =
       trxRaw === null ? window._wwLastTrxPack || { trxBal: 0, usdtBal: 0 } : trxRaw;
     let ethBal = ethRaw === null ? (typeof window._wwLastKnownEthBal === 'number' ? window._wwLastKnownEthBal : 0) : ethRaw;
     let btcBal = btcRaw === null ? (typeof window._wwLastKnownBtcBal === 'number' ? window._wwLastKnownBtcBal : 0) : btcRaw;
+    let usdtErcBal =
+      usdtErcRaw === null ? (typeof window._wwLastKnownUsdtErcBal === 'number' ? window._wwLastKnownUsdtErcBal : 0) : usdtErcRaw;
     try {
       window._wwLastTrxPack = { trxBal: trxPack.trxBal, usdtBal: trxPack.usdtBal };
       window._wwLastKnownEthBal = ethBal;
       window._wwLastKnownBtcBal = btcBal;
+      window._wwLastKnownUsdtErcBal = usdtErcBal;
     } catch (_k) { wwQuiet(_k); }
     if (btcRaw === null && btcAddr) {
       setTimeout(function () {
@@ -6744,14 +6796,17 @@ async function loadBalances() {
     const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
 
     const usdtUsd = usdtBal * prices.usdt;
+    const usdtErcUsd = usdtErcBal * prices.usdt;
     const trxUsd = trxBal * prices.trx;
     const ethUsd = ethBal * prices.eth;
     const btcUsd = btcBal * (prices.btc || 60000);
-    const total = usdtUsd + trxUsd + ethUsd + btcUsd;
+    const total = usdtUsd + usdtErcUsd + trxUsd + ethUsd + btcUsd;
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
     set('valUsdt', fmtUsd(usdtUsd));
+    set('balUsdtErc', fmt(usdtErcBal));
+    set('valUsdtErc', fmtUsd(usdtErcUsd));
     set('balTrx', fmt(trxBal));
     set('valTrx', fmtUsd(trxUsd));
     set('balEth', fmt(ethBal));
@@ -6775,6 +6830,7 @@ async function loadBalances() {
         }
       }
       applyChgLine('chgUsdt', prices.chgUsdt);
+      applyChgLine('chgUsdtErc', prices.chgUsdt);
       applyChgLine('chgTrx', prices.chgTrx);
       applyChgLine('chgEth', prices.chgEth);
       applyChgLine('chgBtc', prices.chgBtc);
@@ -6800,15 +6856,16 @@ async function loadBalances() {
     // ── 同步 COINS 余额（兑换页使用）──
     COINS.forEach(coin => {
       if(coin.id === 'usdt') { coin.bal = usdtBal; coin.price = prices.usdt || 1; }
+      else if(coin.id === 'usdt_eth') { coin.bal = usdtErcBal; coin.price = prices.usdt || 1; }
       else if(coin.id === 'trx') { coin.bal = trxBal; coin.price = prices.trx || 0.12; }
       else if(coin.id === 'eth') { coin.bal = ethBal; coin.price = prices.eth || 2500; }
       else if(coin.id === 'btc') { coin.bal = btcBal; coin.price = prices.btc || 60000; }
     });
     /* 饼图/行情条/兑换 UI 延后一帧，避免阻塞首屏 commit */
-    var _u = usdtUsd, _t = trxUsd, _e = ethUsd, _b = btcUsd;
+    var _u = usdtUsd, _ue = usdtErcUsd, _t = trxUsd, _e = ethUsd, _b = btcUsd;
     requestAnimationFrame(function () {
       try {
-        if (typeof drawPortfolioPieChart === 'function') drawPortfolioPieChart(_u, _t, _e, _b);
+        if (typeof drawPortfolioPieChart === 'function') drawPortfolioPieChart(_u, _ue, _t, _e, _b);
       } catch (_p) { wwQuiet(_p); }
       try {
         if (typeof refreshHomePriceTicker === 'function') refreshHomePriceTicker();
@@ -6826,6 +6883,7 @@ async function loadBalances() {
 
     try {
       var chgU = document.getElementById('chgUsdt');
+      var chgUe = document.getElementById('chgUsdtErc');
       var chgT = document.getElementById('chgTrx');
       var chgE = document.getElementById('chgEth');
       var chgB = document.getElementById('chgBtc');
@@ -6836,6 +6894,9 @@ async function loadBalances() {
         balUsdt: fmt(usdtBal),
         valUsdt: fmtUsd(usdtUsd),
         chgUsdt: chgU ? chgU.textContent : null,
+        balUsdtErc: fmt(usdtErcBal),
+        valUsdtErc: fmtUsd(usdtErcUsd),
+        chgUsdtErc: chgUe ? chgUe.textContent : null,
         balTrx: fmt(trxBal),
         valTrx: fmtUsd(trxUsd),
         chgTrx: chgT ? chgT.textContent : null,
@@ -6847,6 +6908,7 @@ async function loadBalances() {
         chgBtc: chgB ? chgB.textContent : null,
         totalUsd: total,
         usdtUsd: usdtUsd,
+        usdtErcUsd: usdtErcUsd,
         trxUsd: trxUsd,
         ethUsd: ethUsd,
         btcUsd: btcUsd

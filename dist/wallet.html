@@ -315,6 +315,20 @@ try {
                   chgEl.classList.add('up');
                 }
               }
+              set('balUsdtErc', h.balUsdtErc);
+              set('valUsdtErc', h.valUsdtErc);
+              var chgUeTxt = h.chgUsdtErc != null ? h.chgUsdtErc : h.chgUsdt;
+              if (chgUeTxt != null) {
+                set('chgUsdtErc', chgUeTxt);
+                var chgUe = document.getElementById('chgUsdtErc');
+                if (chgUe && String(chgUeTxt).indexOf('-') === 0) {
+                  chgUe.classList.remove('up');
+                  chgUe.classList.add('down');
+                } else if (chgUe) {
+                  chgUe.classList.remove('down');
+                  chgUe.classList.add('up');
+                }
+              }
               if (typeof h.totalUsd === 'number' && isFinite(h.totalUsd)) window._lastTotalUsd = h.totalUsd;
             }
           }

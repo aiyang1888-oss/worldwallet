@@ -2017,6 +2017,7 @@ function applyHideZeroTokens() {
       ? wwHomeAssetRowsMeta()
       : [
           { id: 'assetRowUsdt', balId: 'balUsdt' },
+          { id: 'assetRowUsdtErc', balId: 'balUsdtErc' },
           { id: 'assetRowTrx', balId: 'balTrx' },
           { id: 'assetRowEth', balId: 'balEth' },
           { id: 'assetRowBtc', balId: 'balBtc' },
@@ -2703,7 +2704,7 @@ function updateYieldFarmTracker(parts, total) {
     el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var estYr = 0;
   var rows = [];
   parts.forEach(function (p) {
@@ -2835,14 +2836,17 @@ function wwOnchainMessagingPopulate() {
   if (el) el.textContent = '';
 }
 
-function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
+function drawPortfolioPieChart(trcUsdtUsd, ercUsdtUsd, trxUsd, ethUsd, btcUsd) {
   const card = document.getElementById('wwPortfolioPieCard');
   const c = document.getElementById('portfolioPieCanvas');
   const leg = document.getElementById('portfolioPieLegend');
   if(!card || !c || !leg) return;
-  void trxUsd; void ethUsd; void btcUsd;
   const parts = [
-    { v: Number(usdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
+    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
+    { v: Number(ercUsdtUsd) || 0, c: '#3d9a72', l: 'USDT (ERC-20)' },
+    { v: Number(trxUsd) || 0, c: '#ff4d4d', l: 'TRX' },
+    { v: Number(ethUsd) || 0, c: '#627eea', l: 'ETH' },
+    { v: Number(btcUsd) || 0, c: '#f7931a', l: 'BTC' }
   ];
   const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
   try { window._wwLastPortfolioParts = parts; window._wwLastPortfolioTotal = total; } catch (_wp) { wwQuiet(_wp); }
