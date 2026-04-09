@@ -28,7 +28,7 @@ html.ww-hide-welcome-until-ready #page-welcome.page {
 try {
   var _wwHost = location.hostname;
   var _wwPort = String(location.port || '');
-  if (_wwHost === 'localhost' || _wwHost === '127.0.0.1' || _wwPort === '8766' || /[?&]devRoute=1(?:&|$)/.test(location.search || '')) {
+  if (_wwHost === 'localhost' || _wwHost === '127.0.0.1' || _wwPort === '8766' || _wwPort === '8767' || /[?&]devRoute=1(?:&|$)/.test(location.search || '')) {
     window.WW_DEV_PRESERVE_ROUTE = true;
   }
 } catch (_wwDevR) {}
