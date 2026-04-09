@@ -1,0 +1,9 @@
+{
+  "name": "WorldToken",
+  "short_name": "WorldToken",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0c0c18",
+  "theme_color": "#0c0c18",
+  "icons": []
+}

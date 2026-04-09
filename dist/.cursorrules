@@ -1,0 +1,24 @@
+# WorldWallet Round 11 修复任务
+
+## 优先级 P2 任务
+
+### 任务 1：index.html 删除钱包对齐 wallet.html
+- 文件：`index.html`
+- 位置：第 482 行，settings-row onclick 内联逻辑
+- 问题：使用内联脚本 wwPurgeLocalWalletStorage(); goTo 而非统一的 deleteWallet()
+- 修复：将该行 onclick 改为 onclick="deleteWallet()"（与 Round 10 对 wallet.html 的修复一致）
+
+### 任务 2：移除 wallet.ui.js 中重复的 goTab 函数
+- 文件：wallet.ui.js
+- 位置：第 1044 行的 function goTab(tabId) 定义（约 15 行）
+- 问题：与 wallet.runtime.js:1539 完全相同，造成冗余
+- 修复：删除 wallet.ui.js 中的 goTab 函数定义，保留 wallet.runtime.js 中的唯一实现
+
+## 要求
+- 保持代码风格与现有代码一致
+- 不要删除或修改无关代码
+- 完成后 git commit 并 push
+- commit message: fix: round 11 - sync index.html deleteWallet and remove duplicate goTab
+
+## 完成后发送 Telegram 通知
+bash scripts/telegram-notify-working.sh "Round 11 完成：index.html deleteWallet 对齐 + goTab 去重"
