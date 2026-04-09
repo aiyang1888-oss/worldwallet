@@ -994,14 +994,27 @@ try {
 // 英文用户用公链地址，其他用母语诗句地址
 /* const ADDR_SAMPLES: wallet.ui.js */
 
-CHAIN_ADDR = (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : '--';
+CHAIN_ADDR =
+  typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress
+    ? REAL_WALLET.trxAddress
+    : '--';
 // 如果有真实钱包，使用真实 TRX 地址（与 wallet.core.js 共用 var，勿用 const 重复声明）
 function getChainAddr() {
-  return (REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : CHAIN_ADDR;
-};
+  return typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress
+    ? REAL_WALLET.trxAddress
+    : CHAIN_ADDR;
+}
 // ETH/BTC 地址动态读取（不用 const 硬编码）
-function getEthAddr() { return (REAL_WALLET && REAL_WALLET.ethAddress) ? REAL_WALLET.ethAddress : '--'; }
-function getBtcAddr() { return (REAL_WALLET && REAL_WALLET.btcAddress) ? REAL_WALLET.btcAddress : '--'; }
+function getEthAddr() {
+  return typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.ethAddress
+    ? REAL_WALLET.ethAddress
+    : '--';
+}
+function getBtcAddr() {
+  return typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.btcAddress
+    ? REAL_WALLET.btcAddress
+    : '--';
+}
 /* const ETH_ADDR_LEGACY: wallet.ui.js */
 
 let currentLang = detectDeviceLang();
@@ -1319,7 +1332,11 @@ function goTo(pageId, opts) {
   var _tbGo = document.getElementById('tabBar');
   if (_tbGo) {
     if (pageId === 'page-home') {
-      _tbGo.style.display = (typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) ? 'flex' : 'none';
+      _tbGo.style.display =
+        typeof wwWalletHasAnyChainAddress === 'function' &&
+        wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null)
+          ? 'flex'
+          : 'none';
     } else {
       _tbGo.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -1437,7 +1454,11 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
       } catch(e) {}
     }, 200);
   }
-  if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET)) {
+  if (
+    pageId === 'page-home' &&
+    typeof wwWalletHasAnyChainAddress === 'function' &&
+    wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null)
+  ) {
     setTimeout(loadTxHistory, 500);
     setTimeout(loadBalances, 500);
   }
