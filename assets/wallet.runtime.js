@@ -2542,37 +2542,61 @@ async function broadcastRealTransfer() {
   try {
     let txHash = '';
 
-    if(coin === 'usdt') {
-      var _net = transferCoin && transferCoin.usdtNet ? transferCoin.usdtNet : 'tron';
-      var _meta = typeof wwGetUsdtMetaByKey === 'function' ? wwGetUsdtMetaByKey(_net) : null;
-      if (_meta && _meta.family === 'evm') {
-        if (!REAL_WALLET.privateKey || !REAL_WALLET.ethAddress) {
-          showToast('缺少以太坊私钥', 'error');
+    async function runBroadcast() {
+      var h = '';
+      if (coin === 'usdt') {
+        var _net = transferCoin && transferCoin.usdtNet ? transferCoin.usdtNet : 'tron';
+        var _meta = typeof wwGetUsdtMetaByKey === 'function' ? wwGetUsdtMetaByKey(_net) : null;
+        if (_meta && _meta.family === 'evm') {
+          if (!REAL_WALLET.privateKey || !REAL_WALLET.ethAddress) {
+            showToast('缺少以太坊私钥', 'error');
+            return false;
+          }
+          if (typeof wwErc20SendTransfer !== 'function') {
+            showToast('ERC20 模块未加载', 'error');
+            return false;
+          }
+          h = await wwErc20SendTransfer(addr, amt, REAL_WALLET.privateKey, _meta);
+        } else {
+          h = await sendUSDT_TRC20(addr, amt);
+        }
+      } else if (coin === 'trx') {
+        await loadTronWeb();
+        if (typeof TronWeb !== 'undefined' && typeof TronWeb.isAddress === 'function') {
+          if (!TronWeb.isAddress(addr)) {
+            showToast('TRON地址格式错误', 'error');
+            return false;
+          }
+        } else if (!addr.match(/^T[a-zA-Z0-9]{33}$/)) {
+          showToast('TRON地址格式错误', 'error');
           return false;
         }
-        if (typeof wwErc20SendTransfer !== 'function') {
-          showToast('ERC20 模块未加载', 'error');
+        h = await sendTRX(addr, amt);
+      } else if (coin === 'eth') {
+        try {
+          if (typeof wwValidateEvmAddressChecksum === 'function') {
+            addr = wwValidateEvmAddressChecksum(addr);
+            var _taEth = document.getElementById('transferAddr');
+            if (_taEth) _taEth.value = addr;
+          } else if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.getAddress) {
+            addr = ethers.utils.getAddress(addr);
+          }
+        } catch (_eEth) {
+          showToast('❌ 以太坊地址校验失败', 'error');
           return false;
         }
-        txHash = await wwErc20SendTransfer(addr, amt, REAL_WALLET.privateKey, _meta);
+        h = await sendETH(addr, amt);
       } else {
-        txHash = await sendUSDT_TRC20(addr, amt);
+        showToast('⚠️ 暂不支持 ' + transferCoin.name + ' 转账', 'warning');
+        return false;
       }
-    } else if(coin === 'trx') {
-      // TRX 转账：加载 TronWeb 后用 isAddress 校验（优于纯正则）
-      await loadTronWeb();
-      if(typeof TronWeb !== 'undefined' && typeof TronWeb.isAddress === 'function') {
-        if(!TronWeb.isAddress(addr)) { showToast('TRON地址格式错误','error'); return false; }
-      } else if(!addr.match(/^T[a-zA-Z0-9]{33}$/)) {
-        showToast('TRON地址格式错误','error'); return false;
-      }
-      txHash = await sendTRX(addr, amt);
-    } else if(coin === 'eth') {
-      // ETH 转账
-      txHash = await sendETH(addr, amt);
+      return h;
+    }
+
+    if (typeof wwWithWalletSensitive === 'function') {
+      txHash = await wwWithWalletSensitive(runBroadcast);
     } else {
-      showToast('⚠️ 暂不支持 ' + transferCoin.name + ' 转账', 'warning');
-      return false;
+      txHash = await runBroadcast();
     }
 
     if(txHash) {
@@ -2609,7 +2633,8 @@ async function sendUSDT_TRC20(toAddr, amount) {
     return wwTrc20SendTransfer(toAddr, amount, WW_USDT_NETWORK_META.tron);
   }
   await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
+  var twOpt = typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID };
+  const tw = new TronWeb(twOpt);
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
   if (!Number.isFinite(amount) || amount <= 0 || amount > 1e8) {
     throw new Error('金额范围错误');
@@ -2626,14 +2651,18 @@ async function sendUSDT_TRC20(toAddr, amount) {
     REAL_WALLET.trxAddress
   );
   const signed = await tw.trx.sign(tx.transaction);
-  const result = await tw.trx.sendRawTransaction(signed);
+  var result =
+    typeof wwTronBroadcastSignedWithFallback === 'function'
+      ? await wwTronBroadcastSignedWithFallback(signed)
+      : await tw.trx.sendRawTransaction(signed);
   if (result.result) return result.txid;
   throw new Error(result.message || 'USDT 广播失败');
 }
 
 async function sendTRX(toAddr, amount) {
   await loadTronWeb();
-  const tw = new TronWeb({ fullHost: TRON_GRID });
+  var twOpt = typeof wwTronWebOptions === 'function' ? wwTronWebOptions() : { fullHost: TRON_GRID };
+  const tw = new TronWeb(twOpt);
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
   if(typeof TronWeb !== 'undefined' && typeof TronWeb.isAddress === 'function') {
     if(!TronWeb.isAddress(toAddr)) { throw new Error('TRON地址格式错误'); }
@@ -2644,13 +2673,22 @@ async function sendTRX(toAddr, amount) {
   if(!toAddr.match(/^T[a-zA-Z0-9]{33}$/)) { throw new Error('TRON地址格式错误'); }
   const tx = await tw.transactionBuilder.sendTrx(toAddr, amtSun, REAL_WALLET.trxAddress, { feeLimit: (typeof getTronFeeLimitTrx==='function' ? getTronFeeLimitTrx() : 25000000) });
   const signed = await tw.trx.sign(tx);
-  const result = await tw.trx.sendRawTransaction(signed);
+  var result =
+    typeof wwTronBroadcastSignedWithFallback === 'function'
+      ? await wwTronBroadcastSignedWithFallback(signed)
+      : await tw.trx.sendRawTransaction(signed);
   if(result.result) return result.txid;
   throw new Error(result.message || 'TRX 广播失败');
 }
 
 async function sendETH(toAddr, amount) {
-  const provider = new ethers.providers.JsonRpcProvider(ETH_RPC);
+  var provider =
+    typeof wwMakeEvmProviderForChain === 'function'
+      ? wwMakeEvmProviderForChain(1)
+      : new ethers.providers.JsonRpcProvider(typeof ETH_RPC !== 'undefined' ? ETH_RPC : 'https://rpc.ankr.com/eth');
+  if (!provider) {
+    provider = new ethers.providers.JsonRpcProvider(typeof ETH_RPC !== 'undefined' ? ETH_RPC : 'https://rpc.ankr.com/eth');
+  }
   if(!ethers.utils.isAddress(toAddr)){throw new Error('以太坊地址无效');}
   toAddr = ethers.utils.getAddress(toAddr);
   const wallet = new ethers.Wallet(REAL_WALLET.privateKey, provider);
@@ -4814,10 +4852,15 @@ function shareSuccess(ev) {
   const coin = _safeEl('successCoin').textContent;
   const from = _safeEl('successFromPart1').textContent+' '+_safeEl('successFromPart2').textContent;
   const txRaw = String(_safeEl('successTxHash').textContent || '').trim();
+  var linkEl = _safeEl('successTxLink');
+  var linkFromUi = linkEl && linkEl.href ? String(linkEl.href).trim() : '';
   var linkHint = '';
-  if (txRaw && /^0x[0-9a-fA-F]{64}$/.test(txRaw)) linkHint = '\nhttps://etherscan.io/tx/' + txRaw;
-  else if (txRaw && txRaw.length > 10 && txRaw.indexOf('inapp') !== 0 && txRaw.indexOf('sunswap') !== 0) {
-    linkHint = '\nhttps://tronscan.org/#/transaction/' + txRaw;
+  if (linkFromUi && /^https?:\/\//i.test(linkFromUi)) {
+    linkHint = '\n' + linkFromUi;
+  } else if (txRaw && /^0x[0-9a-fA-F]{64}$/.test(txRaw)) {
+    linkHint = '\nhttps://etherscan.io/tx/' + encodeURIComponent(txRaw);
+  } else if (txRaw && txRaw.length > 10 && txRaw.indexOf('inapp') !== 0 && txRaw.indexOf('sunswap') !== 0) {
+    linkHint = '\nhttps://tronscan.org/#/transaction/' + encodeURIComponent(txRaw);
   }
   let shareBlock = '我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.cc';
   if (txRaw) shareBlock += '\n' + txRaw + linkHint;
@@ -8379,6 +8422,25 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     names.forEach(function(name) {
       if (name !== 'worldtoken-v202604091200') caches.delete(name);
     });
+  });
+})();
+
+/** 首页展示时定时刷新法币参考价（与 loadBalances 解耦，避免频繁打链上 RPC） */
+(function wwHomePeriodicPriceRefresh() {
+  if (typeof window === 'undefined') return;
+  var tmr = null;
+  function tick() {
+    try {
+      var home = document.getElementById('page-home');
+      if (!home || !home.classList || !home.classList.contains('active')) return;
+      if (typeof getPrices === 'function') void getPrices();
+    } catch (_e) {}
+  }
+  window.addEventListener('load', function () {
+    try {
+      if (tmr) clearInterval(tmr);
+    } catch (_c) {}
+    tmr = setInterval(tick, 120000);
   });
 })();
 

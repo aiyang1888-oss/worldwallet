@@ -2144,6 +2144,111 @@ function wwTickIdleLock() {
 if (typeof TRON_GRID === 'undefined') var TRON_GRID = 'https://api.trongrid.io';
 var USDT_TRC20 = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 if (typeof ETH_RPC === 'undefined') var ETH_RPC = 'https://rpc.ankr.com/eth';
+/** 以太坊主网 JSON-RPC 列表（wallet.token.js 的 FallbackProvider 使用）；首项失败时自动切换 */
+if (typeof WW_ETH_RPC_URLS === 'undefined') {
+  var WW_ETH_RPC_URLS = [
+    ETH_RPC,
+    'https://ethereum.publicnode.com',
+    'https://cloudflare-eth.com',
+    'https://rpc.ankr.com/eth'
+  ];
+}
+/** Tron 全节点 HTTP 根 URL（与 TronWeb fullHost 一致，勿带尾斜杠） */
+if (typeof WW_TRON_HTTP_URLS === 'undefined') {
+  var WW_TRON_HTTP_URLS = [
+    String(TRON_GRID || 'https://api.trongrid.io').replace(/\/$/, ''),
+    'https://api.trongrid.io',
+    'https://api.trongrid.org'
+  ];
+}
+function wwTronGridCandidates() {
+  var seen = {};
+  var out = [];
+  function push(u) {
+    var s = String(u || '')
+      .trim()
+      .replace(/\/$/, '');
+    if (!s || seen[s]) return;
+    seen[s] = 1;
+    out.push(s);
+  }
+  push(TRON_GRID);
+  if (typeof WW_TRON_HTTP_URLS !== 'undefined' && WW_TRON_HTTP_URLS.length) {
+    for (var i = 0; i < WW_TRON_HTTP_URLS.length; i++) push(WW_TRON_HTTP_URLS[i]);
+  }
+  if (!out.length) push('https://api.trongrid.io');
+  return out;
+}
+/** 当前优先 Tron HTTP 根（本机记住上次成功或轮询） */
+function wwTronGridBase() {
+  var c = wwTronGridCandidates();
+  var i = 0;
+  try {
+    i = parseInt(localStorage.getItem('ww_tron_rpc_prefer_i') || '0', 10) || 0;
+  } catch (_e) {}
+  i = ((i % c.length) + c.length) % c.length;
+  return c[i];
+}
+function wwTronRotatePreferNext() {
+  try {
+    var c = wwTronGridCandidates();
+    var i = parseInt(localStorage.getItem('ww_tron_rpc_prefer_i') || '0', 10) || 0;
+    localStorage.setItem('ww_tron_rpc_prefer_i', String((i + 1) % c.length));
+  } catch (_e2) {}
+}
+function wwTronSetPreferIndex(idx) {
+  try {
+    var c = wwTronGridCandidates();
+    var n = parseInt(idx, 10);
+    if (!isFinite(n)) return;
+    n = ((n % c.length) + c.length) % c.length;
+    localStorage.setItem('ww_tron_rpc_prefer_i', String(n));
+  } catch (_e3) {}
+}
+/** TronWeb 构造参数：统一 fullHost，便于 RPC 切换 */
+function wwTronWebOptions() {
+  return { fullHost: wwTronGridBase() };
+}
+try {
+  if (typeof window !== 'undefined') {
+    window.wwTronGridCandidates = wwTronGridCandidates;
+    window.wwTronGridBase = wwTronGridBase;
+    window.wwTronRotatePreferNext = wwTronRotatePreferNext;
+    window.wwTronSetPreferIndex = wwTronSetPreferIndex;
+    window.wwTronWebOptions = wwTronWebOptions;
+  }
+} catch (_wx) {}
+
+/**
+ * 已签名 TRON 交易：多节点依次广播（loadTronWeb / TronWeb 需已存在）
+ */
+async function wwTronBroadcastSignedWithFallback(signed) {
+  if (typeof loadTronWeb !== 'function') throw new Error('TronWeb 未就绪');
+  await loadTronWeb();
+  var bases =
+    typeof wwTronGridCandidates === 'function'
+      ? wwTronGridCandidates()
+      : [String(typeof TRON_GRID !== 'undefined' ? TRON_GRID : 'https://api.trongrid.io').replace(/\/$/, '')];
+  var lastErr = null;
+  for (var bi = 0; bi < bases.length; bi++) {
+    try {
+      var twB = new TronWeb({ fullHost: bases[bi] });
+      var resB = await twB.trx.sendRawTransaction(signed);
+      if (resB && resB.result) {
+        if (typeof wwTronSetPreferIndex === 'function') wwTronSetPreferIndex(bi);
+        return resB;
+      }
+      lastErr = new Error((resB && resB.message) || 'TRON 广播未接受');
+    } catch (eB) {
+      lastErr = eB;
+      if (typeof wwTronRotatePreferNext === 'function') wwTronRotatePreferNext();
+    }
+  }
+  throw lastErr || new Error('TRON 广播失败');
+}
+try {
+  if (typeof window !== 'undefined') window.wwTronBroadcastSignedWithFallback = wwTronBroadcastSignedWithFallback;
+} catch (_wbf) {}
 /** 收款地址类错误统一提示（toast / 页内红字） */
 var WW_MSG_ADDR_WRONG = '地址有误，请核对地址';
 var WW_MSG_TRANSFER_SELF = '不能给自己转账';

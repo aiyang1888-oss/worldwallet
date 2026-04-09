@@ -249,7 +249,10 @@
       owner
     );
     var signed = await tw.trx.sign(tx.transaction);
-    var result = await tw.trx.sendRawTransaction(signed);
+    var result =
+      typeof wwTronBroadcastSignedWithFallback === 'function'
+        ? await wwTronBroadcastSignedWithFallback(signed)
+        : await tw.trx.sendRawTransaction(signed);
     if (result.result) return result.txid;
     throw new Error(result.message || 'TRC20 广播失败');
   };
@@ -285,7 +288,10 @@
       ownerA
     );
     var signed = await tw.trx.sign(tx.transaction);
-    var result = await tw.trx.sendRawTransaction(signed);
+    var result =
+      typeof wwTronBroadcastSignedWithFallback === 'function'
+        ? await wwTronBroadcastSignedWithFallback(signed)
+        : await tw.trx.sendRawTransaction(signed);
     if (result.result) return result.txid;
     throw new Error(result.message || 'TRC20 授权失败');
   };
