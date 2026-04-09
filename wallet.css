@@ -441,6 +441,10 @@ body {
     radial-gradient(ellipse 55% 50% at 95% 85%, rgba(100, 80, 200, 0.09) 0%, transparent 52%),
     var(--bg) !important;
 }
+/* 欢迎页须压过其它 .page，避免首帧/stack 异常时底层页挡住点击 */
+#page-welcome.page.active {
+  z-index: 50 !important;
+}
 
 .home-header {
   background: linear-gradient(180deg, rgba(14, 14, 28, 0.96) 0%, rgba(8, 8, 18, 0.55) 100%) !important;
