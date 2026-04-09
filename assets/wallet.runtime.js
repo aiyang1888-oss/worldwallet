@@ -6543,6 +6543,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof closeSwapConfirm === 'function') window.closeSwapConfirm = closeSwapConfirm;
     if (typeof openDex === 'function') window.openDex = openDex;
     if (typeof openCoinPicker === 'function') window.openCoinPicker = openCoinPicker;
+    if (typeof closeCoinPicker === 'function') window.closeCoinPicker = closeCoinPicker;
     if (typeof swapCoins === 'function') window.swapCoins = swapCoins;
     if (typeof doTransfer === 'function') window.doTransfer = doTransfer;
     if (typeof editHomeAddr === 'function') window.editHomeAddr = editHomeAddr;
