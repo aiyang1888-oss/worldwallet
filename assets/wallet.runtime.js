@@ -1457,6 +1457,9 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
   }
   try { if (typeof wwUpdateScrollTopBtn === 'function') wwUpdateScrollTopBtn(); } catch (e) {}
   try {
+    if (typeof MAIN_PAGES !== 'undefined' && MAIN_PAGES.includes(pageId)) wwSyncTabHighlightForPage(pageId);
+  } catch (_tab) {}
+  try {
     var _h = '#' + pageId;
     if (location.hash !== _h) {
       if (typeof history !== 'undefined' && history.replaceState) {
@@ -1480,9 +1483,44 @@ async function resolveENS(name) {
   } catch(e) { return name; }
 }
 
+function wwUpdateTabBarIndicator() {
+  var bar = document.getElementById('tabBar');
+  var ind = document.getElementById('tabBarIndicator');
+  var active = document.querySelector('#tabBar .tab-item.active');
+  if (!bar || !ind || !active) {
+    if (ind) ind.style.opacity = '0';
+    return;
+  }
+  try {
+    var br = bar.getBoundingClientRect();
+    var ar = active.getBoundingClientRect();
+    ind.style.opacity = '1';
+    ind.style.width = Math.max(28, ar.width + 10) + 'px';
+    ind.style.left = ar.left - br.left - 5 + 'px';
+  } catch (e) {
+    if (ind) ind.style.opacity = '0';
+  }
+}
+
+function wwSyncTabHighlightForPage(pageId) {
+  try {
+    if (typeof TAB_MAP === 'undefined' || !TAB_MAP) return;
+    var tabId = null;
+    Object.keys(TAB_MAP).forEach(function (k) {
+      if (TAB_MAP[k] === pageId) tabId = k;
+    });
+    if (!tabId) return;
+    document.querySelectorAll('.tab-item').forEach(function (t) {
+      t.classList.toggle('active', t.id === tabId);
+    });
+    wwUpdateTabBarIndicator();
+  } catch (_e) {}
+}
+
 function goTab(tabId) {
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
   document.getElementById(tabId)?.classList.add('active');
+  wwUpdateTabBarIndicator();
   goTo(TAB_MAP[tabId]||'page-home');
 }
 function wwUpdateScrollTopBtn() {
@@ -4490,8 +4528,10 @@ async function loadSwapPrices() {
 function swapCoins() {
   const tmp=swapFrom; swapFrom=swapTo; swapTo=tmp;
   const btn=_safeEl('swapArrowBtn');
-  btn.style.transform='rotate(180deg)';
-  setTimeout(()=>btn.style.transform='',300);
+  if (btn) {
+    btn.style.transform='rotate(180deg)';
+    setTimeout(function(){ btn.style.transform=''; },300);
+  }
   renderSwapUI(); calcSwap();
 }
 
