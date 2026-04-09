@@ -1472,6 +1472,13 @@ function goTo(pageId, opts) {
     if (typeof wwClearHtmlBootRouteIfDestChanges === 'function') wwClearHtmlBootRouteIfDestChanges(pageId);
   } catch (_wwBootClr) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
+  try {
+    var _prevGo = document.querySelector('.page.active');
+    var _prevGoId = _prevGo && _prevGo.id;
+    if (_prevGoId === 'page-swap' && pageId !== 'page-swap' && typeof wwSwapQuotePollStop === 'function') {
+      wwSwapQuotePollStop();
+    }
+  } catch (_wqStop) {}
   /* 已在目标页则不再 strip/.active（否则刷新时重复触发 .page 的 opacity 过渡 → 欢迎页闪一下） */
   try {
     if (!opts.force && !opts.forceRoute) {
@@ -1581,7 +1588,24 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
   if (pageId === 'page-address-book') {
     try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_ab) {}
   }
-  if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
+  if (pageId === 'page-swap') {
+    if (typeof renderSwapUI === 'function') {
+      renderSwapUI();
+      calcSwap();
+    }
+    setTimeout(function () {
+      try {
+        if (typeof loadSwapPrices === 'function') loadSwapPrices();
+      } catch (_lsp1) {}
+    }, 160);
+    try {
+      var _pm =
+        typeof wwSwapModule !== 'undefined' && wwSwapModule && wwSwapModule.quotePollIntervalMs
+          ? wwSwapModule.quotePollIntervalMs
+          : 5000;
+      if (typeof wwSwapQuotePollStart === 'function') wwSwapQuotePollStart(_pm);
+    } catch (_wqSt) {}
+  }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
   if(pageId==='page-addr') {
@@ -1601,7 +1625,6 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
       const cb = (_safeEl('chainBtc') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* chainBtc fallback */; if(cb) cb.textContent = btc;
     }
   }
-  if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
     try {
@@ -4721,8 +4744,10 @@ function confirmTransfer() {
   // 尝试真实广播
   const sendBtn = document.getElementById('confirmSendBtn');
   if(sendBtn) { sendBtn.disabled=true; sendBtn.textContent='⏳ 广播中...'; }
+  if (typeof wwModalShowProgress === 'function') wwModalShowProgress('正在广播', '链上确认中，请稍候…');
 
   broadcastRealTransfer().then(ok => {
+    if (typeof wwModalHideProgress === 'function') wwModalHideProgress();
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
     if(ok) {
       // wallet.html 精简版无 page-swoosh：直接回首页并刷新余额
@@ -4737,6 +4762,7 @@ function confirmTransfer() {
       showToast('⚠️ 转账广播失败，请检查余额和网络', 'warning');
     }
   }).catch(err => {
+    if (typeof wwModalHideProgress === 'function') wwModalHideProgress();
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
     showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
   });
@@ -5796,6 +5822,9 @@ function confirmSwapGo() {
     goBtn.disabled = true;
     goBtn.textContent = '⏳ 处理中…';
   }
+  if (typeof wwModalShowProgress === 'function') {
+    wwModalShowProgress('链上兑换', '授权 / 签名 / 广播中，请稍候…');
+  }
   var amtStr = String((_safeEl('swapAmountIn') || {}).value || '').trim();
   var slip = typeof wwGetSwapSlippagePct === 'function' ? wwGetSwapSlippagePct() : 0.5;
   var recipEvm = '';
@@ -5835,7 +5864,8 @@ function confirmSwapGo() {
         minOut: (_safeEl('swapMinOut') || {}).textContent,
         slip: slip,
         txHash: hash,
-        explorerUrl: ex
+        explorerUrl: ex,
+        status: 'confirmed'
       });
       if (typeof showToast === 'function') showToast('✅ 兑换已确认上链', 'success');
       if (typeof loadBalances === 'function') setTimeout(loadBalances, 2500);
@@ -5847,6 +5877,7 @@ function confirmSwapGo() {
       openDex();
     })
     .finally(function () {
+      if (typeof wwModalHideProgress === 'function') wwModalHideProgress();
       if (goBtn) {
         goBtn.disabled = false;
         goBtn.textContent = prevTxt || '打开 DEX';
@@ -5856,6 +5887,10 @@ function confirmSwapGo() {
 
 function wwAppendSwapHistory(payload) {
   try {
+    if (typeof WwSwapHistory !== 'undefined' && WwSwapHistory.append) {
+      WwSwapHistory.append(payload || {});
+      return;
+    }
     var key = 'ww_swap_history_v1';
     var arr = JSON.parse(localStorage.getItem(key) || '[]');
     if (!Array.isArray(arr)) arr = [];
@@ -5872,6 +5907,68 @@ function wwAppendSwapHistory(payload) {
   } catch (_e) {}
 }
 
+function wwSwapHistoryRender(queryStr) {
+  var body = document.getElementById('swapHistoryBody');
+  if (!body) return;
+  var arr;
+  try {
+    if (typeof WwSwapHistory !== 'undefined' && WwSwapHistory.list && WwSwapHistory.search) {
+      var q = String(queryStr || '').trim();
+      arr = q ? WwSwapHistory.search(q) : WwSwapHistory.list();
+    } else {
+      arr = JSON.parse(localStorage.getItem('ww_swap_history_v1') || '[]');
+    }
+  } catch (_e0) {
+    arr = [];
+  }
+  if (!Array.isArray(arr) || !arr.length) {
+    body.innerHTML =
+      '<div style="padding:20px;color:var(--text-muted);font-size:13px;text-align:center">暂无记录。链上兑换或打开 DEX 后会记下摘要（成交以链上浏览器为准）。</div>';
+    return;
+  }
+  body.innerHTML = arr
+    .slice(0, 100)
+    .map(function (row) {
+      var t = row.savedAt ? new Date(row.savedAt).toLocaleString() : '';
+      var line =
+        String(row.amtIn || '') +
+        ' ' +
+        String(row.fromSym || '') +
+        ' → ' +
+        String(row.estOut || '') +
+        ' ' +
+        String(row.toSym || '');
+      var txh = String(row.txHash || '').trim();
+      var exu = String(row.explorerUrl || '').trim();
+      if (txh && !exu) exu = 'https://etherscan.io/tx/' + encodeURIComponent(txh);
+      var txBlock =
+        txh && exu
+          ? '<div style="font-size:11px;margin-top:6px"><a href="' +
+            wwEscAttr(exu) +
+            '" target="_blank" rel="noopener noreferrer" style="color:var(--gold);word-break:break-all">Tx ' +
+            wwEscAttr(txh.slice(0, 12)) +
+            '…</a></div>'
+          : '';
+      var st = String(row.status || '').trim();
+      return (
+        '<div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px;line-height:1.45">' +
+        '<div style="color:var(--text-muted)">' +
+        wwEscAttr(t) +
+        (st ? ' · <span style="color:var(--gold)">' + wwEscAttr(st) + '</span>' : '') +
+        '</div><div style="color:var(--text)">' +
+        wwEscAttr(line) +
+        '</div>' +
+        txBlock +
+        '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">滑点 ' +
+        wwEscAttr(String(row.slip != null ? row.slip : '—')) +
+        '% · ' +
+        wwEscAttr(String(row.route || '')) +
+        '</div></div>'
+      );
+    })
+    .join('');
+}
+
 function wwSwapShowRecords() {
   var ov = document.getElementById('swapHistoryOverlay');
   var body = document.getElementById('swapHistoryBody');
@@ -5879,52 +5976,15 @@ function wwSwapShowRecords() {
     if (typeof showToast === 'function') showToast('暂无记录面板', 'info');
     return;
   }
+  var searchEl = document.getElementById('swapHistorySearch');
+  if (searchEl && !searchEl.getAttribute('data-ww-bound')) {
+    searchEl.setAttribute('data-ww-bound', '1');
+    searchEl.addEventListener('input', function () {
+      wwSwapHistoryRender(searchEl.value);
+    });
+  }
   try {
-    var arr = JSON.parse(localStorage.getItem('ww_swap_history_v1') || '[]');
-    if (!Array.isArray(arr) || !arr.length) {
-      body.innerHTML =
-        '<div style="padding:20px;color:var(--text-muted);font-size:13px;text-align:center">暂无记录。链上兑换或打开 DEX 后会记下摘要（成交以链上浏览器为准）。</div>';
-    } else {
-      body.innerHTML = arr
-        .slice(0, 50)
-        .map(function (row) {
-          var t = row.savedAt ? new Date(row.savedAt).toLocaleString() : '';
-          var line =
-            String(row.amtIn || '') +
-            ' ' +
-            String(row.fromSym || '') +
-            ' → ' +
-            String(row.estOut || '') +
-            ' ' +
-            String(row.toSym || '');
-          var txh = String(row.txHash || '').trim();
-          var exu = String(row.explorerUrl || '').trim();
-          if (txh && !exu) exu = 'https://etherscan.io/tx/' + encodeURIComponent(txh);
-          var txBlock =
-            txh && exu
-              ? '<div style="font-size:11px;margin-top:6px"><a href="' +
-                wwEscAttr(exu) +
-                '" target="_blank" rel="noopener noreferrer" style="color:var(--gold);word-break:break-all">Tx ' +
-                wwEscAttr(txh.slice(0, 12)) +
-                '…</a></div>'
-              : '';
-          return (
-            '<div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px;line-height:1.45">' +
-            '<div style="color:var(--text-muted)">' +
-            wwEscAttr(t) +
-            '</div><div style="color:var(--text)">' +
-            wwEscAttr(line) +
-            '</div>' +
-            txBlock +
-            '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">滑点 ' +
-            wwEscAttr(String(row.slip != null ? row.slip : '—')) +
-            '% · ' +
-            wwEscAttr(String(row.route || '')) +
-            '</div></div>'
-          );
-        })
-        .join('');
-    }
+    wwSwapHistoryRender(searchEl ? searchEl.value : '');
   } catch (_e2) {
     body.textContent = '读取失败';
   }
@@ -5965,7 +6025,8 @@ function openDex() {
     amtIn: amtInStr,
     estOut: estOutTxt,
     minOut: minOutTxt,
-    slip: slip
+    slip: slip,
+    status: 'dex_browser'
   });
 
   var COIN_ADDRS = {

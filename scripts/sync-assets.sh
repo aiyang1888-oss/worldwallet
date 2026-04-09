@@ -7,7 +7,7 @@ DIST_DIR="$ROOT_DIR/dist"
 ASSETS_DIR="$ROOT_DIR/assets"
 
 echo "📦 校验 dist/（唯一真源）…"
-for f in wallet.html wallet.css wallet.core.js wallet.ui.js wallet.addr.js wallet.tx.js wallet.token.js wallet.swap.js wallet.swap.exec.js wallet.runtime.js wallet.dom-bind.js wordlists.js; do
+for f in wallet.html wallet.css wallet.core.js wallet.ui.js wallet.ui.modals.js wallet.addr.js wallet.tx.js wallet.token.js wallet.swap.js wallet.swap.history.js wallet.swap.exec.js wallet.runtime.js wallet.dom-bind.js wordlists.js; do
   if [ ! -f "$DIST_DIR/$f" ]; then
     echo "❌ 缺少 dist/$f"
     exit 1

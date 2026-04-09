@@ -1322,6 +1322,13 @@ function goTo(pageId, opts) {
   } catch (_wwBootClrUi) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
+    var _prevGoUi = document.querySelector('.page.active');
+    var _prevGoUiId = _prevGoUi && _prevGoUi.id;
+    if (_prevGoUiId === 'page-swap' && pageId !== 'page-swap' && typeof wwSwapQuotePollStop === 'function') {
+      wwSwapQuotePollStop();
+    }
+  } catch (_wqUiS) {}
+  try {
     if (!opts.force && !opts.forceRoute) {
       var _wwSamePgUi = document.querySelector('.page.active');
       if (_wwSamePgUi && _wwSamePgUi.id === pageId) return;
@@ -1476,7 +1483,24 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
   if (pageId === 'page-address-book') {
     try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_ab) {}
   }
-  if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
+  if (pageId === 'page-swap') {
+    if (typeof renderSwapUI === 'function') {
+      renderSwapUI();
+      calcSwap();
+    }
+    setTimeout(function () {
+      try {
+        if (typeof loadSwapPrices === 'function') loadSwapPrices();
+      } catch (_lspU) {}
+    }, 160);
+    try {
+      var _pmU =
+        typeof wwSwapModule !== 'undefined' && wwSwapModule && wwSwapModule.quotePollIntervalMs
+          ? wwSwapModule.quotePollIntervalMs
+          : 5000;
+      if (typeof wwSwapQuotePollStart === 'function') wwSwapQuotePollStart(_pmU);
+    } catch (_wqU) {}
+  }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
   if(pageId==='page-addr') {
