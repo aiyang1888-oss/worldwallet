@@ -2100,9 +2100,9 @@ function wwTickIdleLock() {
   window._wwForceIdleLock = true;
 }
 
-const TRON_GRID = 'https://api.trongrid.io';
+/* const TRON_GRID: wallet.ui.js */
 /* const USDT_TRC20: wallet.ui.js */
-const ETH_RPC = 'https://eth.llamarpc.com';
+/* const ETH_RPC: wallet.ui.js */
 
 function shakeTransferAmountTooHigh() {
   try {
