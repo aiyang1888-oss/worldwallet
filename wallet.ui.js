@@ -5088,6 +5088,24 @@ try {
     } catch (_wwFp) {
       wwQuiet(_wwFp);
     }
+    try {
+      requestAnimationFrame(function () {
+        try {
+          if (typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
+        } catch (_fix) {
+          wwQuiet(_fix);
+        }
+      });
+    } catch (_rfx) {
+      wwQuiet(_rfx);
+    }
+  });
+  window.addEventListener('pageshow', function (e) {
+    try {
+      if (e.persisted && typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
+    } catch (_ps) {
+      wwQuiet(_ps);
+    }
   });
 })();
 
