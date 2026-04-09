@@ -164,11 +164,14 @@ body {
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    /* svh：最小可视高度，避免地址栏/工具栏导致 100vh 大于实际可见区、底栏被推出屏幕 */
+    /* 先 100vh 兼容旧内核，再用 svh/dvh 贴合移动浏览器可视区，避免底栏被推出屏幕 */
+    height: 100vh !important;
     height: 100svh !important;
     height: 100dvh !important;
+    max-height: 100vh !important;
     max-height: 100svh !important;
     max-height: 100dvh !important;
+    min-height: 100vh !important;
     min-height: 100svh !important;
     min-height: 100dvh !important;
     border-radius: 0 !important;
