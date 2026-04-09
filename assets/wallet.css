@@ -1067,6 +1067,20 @@ body {
 }
 .qr-overlay.show { display: flex; }
 .overlay.show { display: flex !important; }
+
+/* 全屏弹窗：无 .show 时强制隐藏（按 id 兜底，避免层层叠显；hbSuccessOverlay 仍用内联 style 显隐，勿列入） */
+#walletLoadingOverlay:not(.show),
+#pinUnlockOverlay:not(.show),
+#totpUnlockOverlay:not(.show),
+#totpSetupOverlay:not(.show),
+#pinSetupOverlay:not(.show),
+#wanYuCustomizeOverlay:not(.show),
+#systemNotifOverlay:not(.show),
+#qrOverlay:not(.show),
+#transferConfirmOverlay:not(.show) {
+  display: none !important;
+}
+
 .overlay-sheet {
   background: var(--bg2); border-radius: 24px;
   padding: 24px; width: 320px; max-height: 80vh;
