@@ -13,7 +13,7 @@
       if (!card) return;
       var focusables = card.querySelectorAll('a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex="-1"])');
       if (focusables.length) focusables[0].focus();
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
   }
 
   function _ensureProgressOverlay() {
@@ -66,7 +66,7 @@
     document.removeEventListener('keydown', _wwModalOnKeydown, true);
     try {
       if (_wwModalLastFocus && _wwModalLastFocus.focus) _wwModalLastFocus.focus();
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
     _wwModalLastFocus = null;
   };
 
@@ -127,7 +127,7 @@
         ov.classList.remove('show');
         try {
           if (_wwModalConfirmPrevFocus && _wwModalConfirmPrevFocus.focus) _wwModalConfirmPrevFocus.focus();
-        } catch (_rf) {}
+        } catch (_rf) { wwQuiet(_rf); }
         _wwModalConfirmPrevFocus = null;
         resolve(!!ok);
       }
@@ -146,7 +146,7 @@
       ov.classList.add('show');
       try {
         (okBtn || cancelB).focus();
-      } catch (_ff) {}
+      } catch (_ff) { wwQuiet(_ff); }
     });
   };
 })(typeof window !== 'undefined' ? window : global);

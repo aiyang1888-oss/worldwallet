@@ -35,7 +35,7 @@ function wwFmtUserError(err, fallbackMsg) {
         eo.shortMessage ||
         (eo.error && eo.error.message));
     if (m && String(m).trim()) return String(m).trim();
-  } catch (_wrap) {}
+  } catch (_wrap) { void _wrap; }
   return fb;
 }
 
@@ -51,13 +51,13 @@ function wwLog(level) {
       safeLog.apply(null, [tag].concat(args));
       return;
     }
-  } catch (_sl) {}
+  } catch (_sl) { void _sl; }
   try {
     var fn = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
     if (typeof console !== 'undefined' && typeof console[fn] === 'function') {
       console[fn].apply(console, args.length ? [tag].concat(args) : [tag]);
     }
-  } catch (_cl) {}
+  } catch (_cl) { void _cl; }
 }
 
 /**
@@ -68,7 +68,7 @@ function wwQuiet(e, hint) {
     if (typeof localStorage !== 'undefined' && localStorage.getItem('WW_DEBUG') === '1') {
       wwLog('debug', hint || 'catch', e);
     }
-  } catch (_q) {}
+  } catch (_q) { void _q; }
 }
 
 /**
@@ -189,7 +189,7 @@ async function wwUnsealWalletSensitive() {
     w.words = obj.words || null;
     try {
       if (typeof wwUpgradeStoredBtcAddressIfLegacy === 'function') wwUpgradeStoredBtcAddressIfLegacy();
-    } catch (_btc) {}
+    } catch (_btc) { wwQuiet(_btc); }
   } catch (e) {
     console.error('[wwUnsealWalletSensitive]', e);
   }
@@ -210,7 +210,7 @@ function wwClearSessionSecretState() {
     if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET._wwSes) {
       delete REAL_WALLET._wwSes;
     }
-  } catch (e) {}
+  } catch (e) { wwQuiet(e); }
 }
 
 
@@ -219,16 +219,16 @@ function loadWallet() {
   // 万语地址：先于其他 UI，统一从 localStorage 载入 ADDR_WORDS 并一次性刷新各展示位
   try {
     if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
-  } catch (_na) {}
+  } catch (_na) { wwQuiet(_na); }
   try {
     if (typeof updateAddr === 'function') updateAddr();
-  } catch (_ua) {}
+  } catch (_ua) { wwQuiet(_ua); }
   /* ww-addr-pending 须由 wallet.addr.js 的 renderHomeAddrChip 在写入芯片后再移除；此处若无条件移除会出现「看得见但无字的空胶囊」 */
   if (REAL_WALLET && REAL_WALLET.ethAddress) {
-    try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
+    try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) { wwQuiet(_r); }
   }
-  try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
-  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
+  try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) { wwQuiet(_hb); }
+  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) { wwQuiet(_ws); }
 }
 
 /** 仅公开字段；供 UI 展示与调试，不包含助记词/私钥 */
@@ -243,7 +243,7 @@ function getRealWalletPublic() {
     hasEncrypted: !!REAL_WALLET.hasEncrypted
   };
 }
-try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) {}
+try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) { wwQuiet(_g); }
 
 
 /**
@@ -267,7 +267,7 @@ function getMnemonicWordlistLang(uiLang) {
     if (typeof WT_WORDLISTS !== 'undefined' && WT_WORDLISTS[uiLang] && WT_WORDLISTS[uiLang].length === 2048) {
       return uiLang;
     }
-  } catch (e) {}
+  } catch (e) { wwQuiet(e); }
   return 'en';
 }
 
@@ -305,7 +305,7 @@ async function generateMnemonic(wlKey, wordCount) {
 }
 try {
   window.generateMnemonic = generateMnemonic;
-} catch (_gm) {}
+} catch (_gm) { wwQuiet(_gm); }
 
 /**
  * 导入：先按标准英文 BIP39 解析；失败则按所选助记词语言词表转为英文再解析（与密钥页语言一致）；仍失败时再试中文词表（兼容旧数据）。
@@ -320,7 +320,7 @@ function importWalletFlexible(raw, preferredLang) {
   if (pl === undefined || pl === null) {
     try {
       if (typeof keyMnemonicLang === 'string') pl = keyMnemonicLang;
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
   }
   function tryLang(lg) {
     if (!lg || lg === 'en' || !WT_WORDLISTS[lg]) return null;

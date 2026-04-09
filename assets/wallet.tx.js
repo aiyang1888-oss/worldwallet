@@ -95,7 +95,7 @@ async function wwResolveCnyPerUsdtForHome() {
         return { rate: p, label: '币安U价第三档' };
       }
     }
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
   var fx = window._cnyRate;
   if (fx == null || !isFinite(fx) || Number(fx) <= 0) {
     try {
@@ -134,7 +134,7 @@ function wwGetTxHistoryWid() {
       var w = wwWalletSnapIdForCache();
       if (w) return w;
     }
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
   try {
     var raw = localStorage.getItem('ww_wallet');
     if (!raw) return '';
@@ -149,7 +149,7 @@ function wwEnsureWalletPublicLoaded() {
   try {
     if (typeof loadWalletPublic === 'function') loadWalletPublic();
     else if (typeof loadWallet === 'function') loadWallet();
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
 }
 
 /** 优先 REAL_WALLET，其次 TEMP_WALLET（助记词已生成未验证），再读 localStorage */
@@ -159,20 +159,20 @@ function wwResolveTrxAddressForHistory() {
       var a = String(REAL_WALLET.trxAddress).trim();
       if (a.charAt(0) === 'T' && a.length >= 34) return a;
     }
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
   try {
     if (typeof window !== 'undefined' && window.TEMP_WALLET && window.TEMP_WALLET.trxAddress) {
       var ta = String(window.TEMP_WALLET.trxAddress).trim();
       if (ta.charAt(0) === 'T' && ta.length >= 34) return ta;
     }
-  } catch (_et) {}
+  } catch (_et) { wwQuiet(_et); }
   try {
     var raw = localStorage.getItem('ww_wallet');
     if (!raw) return '';
     var p = JSON.parse(raw);
     var b = p && p.trxAddress ? String(p.trxAddress).trim() : '';
     if (b.charAt(0) === 'T' && b.length >= 34) return b;
-  } catch (_e2) {}
+  } catch (_e2) { wwQuiet(_e2); }
   return '';
 }
 
@@ -224,8 +224,8 @@ function wwPersistTxHistorySnap(txs) {
     localStorage.setItem(WW_TX_HISTORY_SNAP_KEY, JSON.stringify({ wid: wid, txs: clean }));
     try {
       window._wwTxHistoryCache = clean;
-    } catch (_c) {}
-  } catch (_e) {}
+    } catch (_c) { wwQuiet(_c); }
+  } catch (_e) { wwQuiet(_e); }
 }
 
 /** 导出当前缓存的交易列表为 CSV（UTF-8） */
@@ -260,7 +260,7 @@ function wwExportTxHistoryCsv() {
 }
 try {
   if (typeof window !== 'undefined') window.wwExportTxHistoryCsv = wwExportTxHistoryCsv;
-} catch (_ex) {}
+} catch (_ex) { wwQuiet(_ex); }
 
 
 /** Tron 协议里的地址字段（hex 或已是 Base58）→ Base58，便于与 REAL_WALLET.trxAddress 比较 */
@@ -275,7 +275,7 @@ function wwTronProtoAddrToBase58(a) {
     if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
       return TronWeb.address.fromHex(h);
     }
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
   return s;
 }
 
@@ -304,7 +304,7 @@ function wwAppendLocalTxLog(entry) {
     ar.unshift(row);
     if (ar.length > 100) ar = ar.slice(0, 100);
     localStorage.setItem(WW_TX_LOCAL_LOG_KEY, JSON.stringify(ar));
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
 }
 
 function wwReadLocalTxRowsForWallet() {
@@ -429,7 +429,7 @@ function wwRecordInappSwapTxActivity(fromId, toId, amtIn, amtOut) {
     window._wwTxHistoryCache = cur;
     renderTxHistoryFromCache();
     if (typeof wwPersistTxHistorySnap === 'function') wwPersistTxHistorySnap(cur);
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
 }
 
 /**
@@ -471,7 +471,7 @@ function wwRecordSunSwapOtherPlaceholder(amountIn, recipientTrx) {
     window._wwTxHistoryCache = cur;
     renderTxHistoryFromCache();
     if (typeof wwPersistTxHistorySnap === 'function') wwPersistTxHistorySnap(cur);
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
 }
 
 async function wwFetchJsonAny(url) {
@@ -621,7 +621,7 @@ async function wwLoadTronGridWalletPostHistory(trxAddr, pushTx) {
         });
         seen++;
       }
-    } catch (_pe) {}
+    } catch (_pe) { wwQuiet(_pe); }
   }
 }
 
@@ -629,7 +629,7 @@ async function loadTxHistory() {
   wwEnsureWalletPublicLoaded();
   try {
     if (typeof loadWallet === 'function') loadWallet();
-  } catch (_lw) {}
+  } catch (_lw) { wwQuiet(_lw); }
 
   const el = document.getElementById('txHistoryList');
   if (!el) return;
@@ -649,7 +649,7 @@ async function loadTxHistory() {
   try {
     var _tf = document.getElementById('txHistoryFilter');
     if (_tf) _tf.value = '';
-  } catch (_tf0) {}
+  } catch (_tf0) { wwQuiet(_tf0); }
   var hadTxSnap = typeof wwTryRestoreCachedTxHistory === 'function' && wwTryRestoreCachedTxHistory();
   /* 无本机快照时勿先画「暂无记录」（与静态 HTML 同文案易被误认为未加载）；先显示加载中 */
   if (!hadTxSnap) {
@@ -740,21 +740,21 @@ async function loadTxHistory() {
     if (trxAddr && trxAddr.indexOf('T') === 0) {
       try {
         await wwLoadTronscanHistoryFallback(trxAddr, pushTx, seenHash);
-      } catch (_tsf) {}
+      } catch (_tsf) { wwQuiet(_tsf); }
       try {
         await wwLoadTronGridWalletPostHistory(trxAddr, pushTx);
-      } catch (_wph) {}
+      } catch (_wph) { wwQuiet(_wph); }
     }
     try {
       wwMergeLocalTxActivity(pushTx);
-    } catch (_ml) {}
+    } catch (_ml) { wwQuiet(_ml); }
 
     txs.sort(function (a, b) {
       return (b._ts || 0) - (a._ts || 0);
     });
 
     if(txs.length === 0) {
-      try { window._wwTxHistoryCache = []; } catch (_c) {}
+      try { window._wwTxHistoryCache = []; } catch (_c) { wwQuiet(_c); }
       var sa = trxAddr.length > 14 ? trxAddr.slice(0, 6) + '…' + trxAddr.slice(-4) : trxAddr;
       if (typeof txHistoryFriendlyHtml === 'function') {
         el.innerHTML = txHistoryFriendlyHtml(
@@ -781,7 +781,7 @@ async function loadTxHistory() {
     forUi = wwSanitizeTxHistoryForPersist(forUi);
     try {
       window._wwTxHistoryCache = forUi;
-    } catch (_c2) {}
+    } catch (_c2) { wwQuiet(_c2); }
     try {
       if (typeof getPrices === 'function') {
         var _whPr = await getPrices();
@@ -792,8 +792,8 @@ async function loadTxHistory() {
           btc: _whPr.btc
         });
       }
-    } catch (_cgw) {}
-    try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(forUi); } catch (_wh) {}
+    } catch (_cgw) { wwQuiet(_cgw); }
+    try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(forUi); } catch (_wh) { wwQuiet(_wh); }
     renderTxHistoryFromCache();
     wwPersistTxHistorySnap(forUi);
 
@@ -827,7 +827,7 @@ function wwTxHistoryRowOnClick(ev) {
   if (hash.indexOf('inapp-swap-') === 0) {
     try {
       if (typeof showToast === 'function') showToast('此为应用内兑换记录，无独立链上交易哈希', 'info', 3200);
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
     return;
   }
   if (hash.indexOf('sunswap-other-') === 0) {
@@ -835,13 +835,13 @@ function wwTxHistoryRowOnClick(ev) {
       if (typeof showToast === 'function') {
         showToast('此为跳转 SunSwap「给他人」的占位记录；实际哈希请在 SunSwap / TronScan 查看，完成后可点「刷新」同步链上', 'info', 4200);
       }
-    } catch (_e2) {}
+    } catch (_e2) { wwQuiet(_e2); }
     return;
   }
   var base = coin === 'eth' ? 'https://etherscan.io/tx/' : 'https://tronscan.org/#/transaction/';
   try {
     window.open(base + encodeURIComponent(hash), '_blank', 'noopener,noreferrer');
-  } catch (e) {}
+  } catch (e) { wwQuiet(e); }
 }
 
 
@@ -857,7 +857,7 @@ function wwTxHistoryRowOnClick(ev) {
     if (!o || o.wid !== wid || !Array.isArray(o.txs)) return;
     window._wwTxHistoryCache = typeof wwSanitizeTxHistoryForPersist === 'function' ? wwSanitizeTxHistoryForPersist(o.txs) : o.txs;
     renderTxHistoryFromCache();
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
 })();
 
 /** 首页与 hash 路由竞态时 goTo 可能早于钱包就绪：在 load 后再拉 1～2 次交易列表 */
@@ -868,7 +868,7 @@ function wwTxHistoryRowOnClick(ev) {
       if (typeof loadTxHistory !== 'function' || typeof wwResolveTrxAddressForHistory !== 'function') return;
       if (!wwResolveTrxAddressForHistory()) return;
       void loadTxHistory();
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
   }
   window.addEventListener('load', function () {
     setTimeout(tick, 400);
@@ -886,5 +886,5 @@ function wwTxHistoryRowOnClick(ev) {
     if (missing.length && typeof console !== 'undefined' && console.warn) {
       console.warn('[WorldWallet] 浏览器能力缺失: ' + missing.join(', ') + ' — 部分功能可能不可用');
     }
-  } catch (_e) {}
+  } catch (_e) { wwQuiet(_e); }
 })();

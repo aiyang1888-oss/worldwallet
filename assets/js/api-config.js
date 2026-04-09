@@ -156,17 +156,17 @@ async function wwFetchCoinGecko(pathOrFullUrl) {
   try {
     r0 = await wwFetchRetry(full, { method: 'GET' });
     if (r0 && r0.ok) return r0;
-  } catch (_e) {}
+  } catch (_e) { void _e; }
   try {
     var o = '';
     try {
       o = typeof location !== 'undefined' && location.origin ? location.origin : '';
-    } catch (_e2) {}
+    } catch (_e2) { void _e2; }
     if (o) {
       var r2 = await wwFetchRetry(o + '/api/coingecko-proxy?u=' + encodeURIComponent(full), { method: 'GET' });
       if (r2 && r2.ok) return r2;
     }
-  } catch (_e3) {}
+  } catch (_e3) { void _e3; }
   if (r0) return r0;
   return fetch(full, { method: 'GET' });
 }

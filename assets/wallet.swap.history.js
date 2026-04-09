@@ -42,7 +42,7 @@
   function _write(arr) {
     try {
       localStorage.setItem(KEY, JSON.stringify(arr.slice(0, MAX)));
-    } catch (_e) {}
+    } catch (_e) { void _e; }
   }
 
   function append(payload) {

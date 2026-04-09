@@ -59,7 +59,7 @@
             bestOut = out;
             bestFee = fee;
           }
-        } catch (_e) {}
+        } catch (_e) { void _e; }
       }
       if (!bestOut) return null;
       return {
@@ -98,7 +98,7 @@
             bestOut = out;
             bestFee = fee;
           }
-        } catch (_e) {}
+        } catch (_e) { void _e; }
       }
       if (!bestOut) return null;
       return {
@@ -145,7 +145,7 @@
         } else if (typeof global.calcSwap === 'function') {
           global.calcSwap();
         }
-      } catch (_e) {}
+      } catch (_e) { void _e; }
     }, interval);
   };
 })(typeof window !== 'undefined' ? window : global);

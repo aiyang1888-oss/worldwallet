@@ -60,7 +60,7 @@
   function wwMigrateLocalStorageToIdbOnce() {
     if (!global.indexedDB) return Promise.resolve();
     var flag = '';
-    try { flag = localStorage.getItem('ww_idb_migrated_v1') || ''; } catch (e) {}
+    try { flag = localStorage.getItem('ww_idb_migrated_v1') || ''; } catch (e) { void e; }
     if (flag === '1') return Promise.resolve();
     var keys = ['ww_wallet', 'ww_pin_hash', 'ww_pin_device_salt_v1', 'ww_hongbaos'];
     return openDb().then(function () {
@@ -70,12 +70,12 @@
           try {
             var v = localStorage.getItem(k);
             if (v != null) return wwIdbSet(k, v);
-          } catch (e) {}
+          } catch (e) { void e; }
         });
       });
       return p;
     }).then(function () {
-      try { localStorage.setItem('ww_idb_migrated_v1', '1'); } catch (e) {}
+      try { localStorage.setItem('ww_idb_migrated_v1', '1'); } catch (e) { void e; }
     }).catch(function () {});
   }
 
@@ -94,6 +94,6 @@
         orig(key, val);
         if (K[key]) wwIdbMirrorSet(key, String(val));
       };
-    } catch (e) {}
+    } catch (e) { void e; }
   })();
 })(typeof window !== 'undefined' ? window : this);

@@ -16,7 +16,7 @@ var Store = {
 
   /** 删除 */
   remove: function(key) {
-    try { localStorage.removeItem(key); } catch(e) {}
+    try { localStorage.removeItem(key); } catch (e) { void e; }
   },
 
   /** 检查是否存在 */

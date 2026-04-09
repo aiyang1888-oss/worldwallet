@@ -188,7 +188,7 @@
       var raw = new Uint8Array(16);
       crypto.getRandomValues(raw);
       var b64 = btoa(String.fromCharCode.apply(null, Array.from(raw)));
-      try { localStorage.setItem('ww_pin_device_salt_v1', b64); } catch (e) {}
+      try { localStorage.setItem('ww_pin_device_salt_v1', b64); } catch (e) { void e; }
       return b64;
     } catch (e) {
       return 'ww_fallback_salt_' + String(Date.now()).slice(-8);
@@ -272,7 +272,7 @@
       if (window.wwKeyDerivationCache && typeof window.wwKeyDerivationCache.clearPin === 'function') {
         window.wwKeyDerivationCache.clearPin(String(pin));
       }
-    } catch (e) {}
+    } catch (e) { void e; }
     return false;
   }
 
@@ -303,7 +303,7 @@
       if (window.wwSessionKeyCache && typeof window.wwSessionKeyCache.clear === 'function') {
         window.wwSessionKeyCache.clear();
       }
-    } catch (e) {}
+    } catch (e) { void e; }
   }
 
   // ── 会话私钥管理（闭包保护，不挂 window）──
@@ -341,12 +341,12 @@
     function wipe() {
       try {
         clearSessionKeys();
-      } catch (_e) {}
+      } catch (_e) { void _e; }
     }
     window.addEventListener('pagehide', wipe);
     try {
       window.addEventListener('beforeunload', wipe);
-    } catch (_e2) {}
+    } catch (_e2) { void _e2; }
   })();
 
   // 白名单导出（仅此等可从其他脚本 / 控制台预期访问）

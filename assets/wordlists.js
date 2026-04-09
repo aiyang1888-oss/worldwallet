@@ -52,12 +52,12 @@ function wwWordlistAssetUrl(lang) {
     if (typeof document !== 'undefined' && document.baseURI) {
       return new URL(rel, document.baseURI).href;
     }
-  } catch (_e) {}
+  } catch (_e) { void _e; }
   try {
     if (typeof window !== 'undefined' && window.location && window.location.href) {
       return new URL(rel, window.location.href).href;
     }
-  } catch (_e2) {}
+  } catch (_e2) { void _e2; }
   return rel;
 }
 
@@ -93,7 +93,7 @@ function wwEnsureWordlistLoaded(lang) {
     .catch(function (e) {
       try {
         delete WT_WORDLIST_LOAD_PROMISES[lang];
-      } catch (_d) {}
+      } catch (_d) { void _d; }
       var msg = e && e.message ? e.message : String(e);
       throw new Error('词库加载失败（' + lang + '）：' + msg + '。请检查网络或与 wordlists/ 路径是否一致。');
     });
@@ -105,6 +105,6 @@ try {
   window.wwMapEnWordsToLangWords = wwMapEnWordsToLangWords;
   window.wwEnsureWordlistLoaded = wwEnsureWordlistLoaded;
   window.wwWordlistAssetUrl = wwWordlistAssetUrl;
-} catch (_w) {}
+} catch (_w) { void _w; }
 
 wwRebuildWordlistIndexes();

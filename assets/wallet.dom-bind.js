@@ -9,14 +9,14 @@
         ret.catch(function (err) {
           try {
             if (typeof safeLog === 'function') safeLog('[wwCall async] ' + name, err);
-          } catch (_sl) {}
+          } catch (_sl) { wwQuiet(_sl); }
         });
       }
       return ret;
     } catch (_e) {
       try {
         if (typeof safeLog === 'function') safeLog('[wwCall] ' + name, _e);
-      } catch (_s) {}
+      } catch (_s) { wwQuiet(_s); }
     }
     return undefined;
   }
@@ -117,7 +117,7 @@
       var opts0 = {};
       try {
         opts0 = JSON.parse(raw);
-      } catch (_e) {}
+      } catch (_e) { wwQuiet(_e); }
       if (page0 && typeof window.goTo === 'function') window.goTo(page0, opts0);
       ev.preventDefault();
       return;
@@ -166,7 +166,7 @@
               localStorage.removeItem('ww_pin');
               localStorage.removeItem('ww_hongbaos');
             }
-          } catch (_ls) {}
+          } catch (_ls) { wwQuiet(_ls); }
           if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
           if (typeof window.goTo === 'function') window.goTo('page-welcome');
           wwCall('showToast', '钱包已删除', 'success');
@@ -268,22 +268,22 @@
           try {
             if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
             if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
-          } catch (_pe) {}
+          } catch (_pe) { wwQuiet(_pe); }
           try {
             if (typeof window.wwSkipVerifyToHome === 'function') {
               window.wwSkipVerifyToHome();
               return;
             }
-          } catch (_sk) {}
+          } catch (_sk) { wwQuiet(_sk); }
           try {
             if (typeof hideWalletLoading === 'function') hideWalletLoading();
-          } catch (_h) {}
+          } catch (_h) { wwQuiet(_h); }
           try {
             if (typeof window.goTo === 'function') window.goTo('page-home', { forceHome: true, instant: true });
-          } catch (_g) {}
+          } catch (_g) { wwQuiet(_g); }
           try {
             if (typeof window.goTab === 'function') setTimeout(function () { window.goTab('tab-home'); }, 0);
-          } catch (_gt) {}
+          } catch (_gt) { wwQuiet(_gt); }
         },
         true
       );

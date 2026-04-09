@@ -147,7 +147,7 @@
         var sp = getTransferFeeSpeed();
         mult = sp === 'slow' ? 88 : sp === 'fast' ? 124 : 100;
       }
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
     var feeWei;
     if (fd.maxFeePerGas) {
       feeWei = gas.mul(fd.maxFeePerGas.mul(mult).div(100));
@@ -372,7 +372,7 @@
       );
       if (res && res.energy_used != null) energyUsed = Number(res.energy_used);
       else if (res && res.result && res.result.energy_used != null) energyUsed = Number(res.result.energy_used);
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
     var sunPerEnergy = 420;
     try {
       var chain = await tw.trx.getChainParameters();
@@ -385,7 +385,7 @@
           }
         }
       }
-    } catch (_e2) {}
+    } catch (_e2) { wwQuiet(_e2); }
     if (!isFinite(sunPerEnergy) || sunPerEnergy <= 0) sunPerEnergy = 420;
     var feeSun = Math.ceil(energyUsed * sunPerEnergy);
     var feeTrx = feeSun / 1e6;

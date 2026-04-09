@@ -140,13 +140,13 @@ function deriveAddress(mnemonic) {
     if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
       trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
     }
-  } catch (e) {}
+  } catch (e) { void e; }
   if (!trxAddr) trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
 
   var btcAddr = '';
   try {
     if (typeof wwDeriveBtcNativeSegwitAddress === 'function') btcAddr = wwDeriveBtcNativeSegwitAddress(mnemonic);
-  } catch (e) {}
+  } catch (e) { void e; }
   if (!btcAddr) btcAddr = btcWallet.address;
 
   return {
@@ -200,7 +200,7 @@ async function getBalance(addresses) {
       if (!provider) throw new Error('no eth provider');
       var ethBal = await provider.getBalance(addresses.eth);
       result.eth = parseFloat(ethers.utils.formatEther(ethBal));
-    } catch (e) {}
+    } catch (e) { void e; }
 
     // 总 USD
     result.totalUsd =

@@ -52,7 +52,7 @@
         return a + b;
       }, 0);
       localStorage.setItem('ww_swap_gas_avg_last_v1', String(Math.round(sum / arr.length)));
-    } catch (_e) {}
+    } catch (_e) { void _e; }
   }
 
   var ROUTER_ABI = [
@@ -104,7 +104,7 @@
       try {
         var tx0 = await token.approve(spender, ethers.constants.Zero, baseOpts);
         await tx0.wait(1);
-      } catch (_z) {}
+      } catch (_z) { void _z; }
       var tx2 = await token.approve(spender, ethers.constants.MaxUint256, baseOpts);
       await tx2.wait(1);
     }
@@ -122,7 +122,8 @@
     var toId = opts.swapTo && opts.swapTo.id;
     if (!fromId || !toId || !mod.isEvmSwapPair(fromId, toId)) throw new Error('不支持的交易对');
     var amountInStr = String(opts.amountInStr || '').trim();
-    var slip = opts.slippagePct != null ? opts.slippagePct : 0.5;
+    var slipRaw = Number(opts.slippagePct);
+    var slip = isFinite(slipRaw) && slipRaw > 0 && slipRaw <= 50 ? slipRaw : 0.5;
     var pk = opts.privateKey;
     if (!pk) throw new Error('缺少私钥');
 
@@ -175,13 +176,13 @@
       try {
         var estA = await withTimeout(router.estimateGas.exactInputSingle(singleA), GAS_ESTIMATE_MS, 'Gas 估算');
         glA = bumpGasLimit(estA, ethers);
-      } catch (_ga) {}
+      } catch (_ga) { void _ga; }
       var tx1 = await router.exactInputSingle(singleA, Object.assign({ gasLimit: glA }, gasOpts));
       if (onProgress) onProgress('wait');
       var rc1 = await tx1.wait(1);
       try {
         if (rc1 && rc1.gasUsed) recordSwapGasSample(rc1.gasUsed);
-      } catch (_r1) {}
+      } catch (_r1) { void _r1; }
       return tx1.hash;
     }
 
@@ -210,13 +211,13 @@
           'Gas 估算'
         );
         glB = bumpGasLimit(estB, ethers);
-      } catch (_gb) {}
+      } catch (_gb) { void _gb; }
       var tx2 = await router.multicall([w1, w2], Object.assign({ value: amountInWei, gasLimit: glB }, gasOpts));
       if (onProgress) onProgress('wait');
       var rc2 = await tx2.wait(1);
       try {
         if (rc2 && rc2.gasUsed) recordSwapGasSample(rc2.gasUsed);
-      } catch (_r2) {}
+      } catch (_r2) { void _r2; }
       return tx2.hash;
     }
 
@@ -242,13 +243,13 @@
       try {
         var estC = await withTimeout(router.estimateGas.multicall([u1, u2]), GAS_ESTIMATE_MS, 'Gas 估算');
         glC = bumpGasLimit(estC, ethers);
-      } catch (_gc) {}
+      } catch (_gc) { void _gc; }
       var tx3 = await router.multicall([u1, u2], Object.assign({ gasLimit: glC }, gasOpts));
       if (onProgress) onProgress('wait');
       var rc3 = await tx3.wait(1);
       try {
         if (rc3 && rc3.gasUsed) recordSwapGasSample(rc3.gasUsed);
-      } catch (_r3) {}
+      } catch (_r3) { void _r3; }
       return tx3.hash;
     }
 
