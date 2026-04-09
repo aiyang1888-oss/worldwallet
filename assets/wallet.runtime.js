@@ -1093,7 +1093,9 @@ window.addEventListener('pageshow', function () {
   } catch (e) { wwQuiet(e); }
 })();
 // 强刷后进入应用最开始的页面（欢迎页），不恢复 URL hash 深链
+// 勿对 #page-welcome 先 remove('active') 再 add：中间会有一帧「无任何 .page.active」→ .page 默认 opacity:0 → 欢迎页闪一下
 document.querySelectorAll('.page').forEach(p => {
+  if (p.id === 'page-welcome') return;
   p.classList.remove('active');
   p.style.display = '';
 });
