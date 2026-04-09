@@ -214,16 +214,9 @@ try {
   }
 } catch (_zhNorm) {}
 
-// 英文词 → 索引（BIP39标准索引）
-var EN_WORD_INDEX = {};
-WT_WORDLISTS.en.forEach((w, i) => EN_WORD_INDEX[w] = i);
-
-// 各语言词 → 索引
-var WT_LANG_INDEX = {};
-Object.keys(WT_WORDLISTS).forEach(lang => {
-  WT_LANG_INDEX[lang] = {};
-  WT_WORDLISTS[lang].forEach((w, i) => WT_LANG_INDEX[lang][w] = i);
-});
+try {
+  if (typeof wwRebuildWordlistIndexes === 'function') wwRebuildWordlistIndexes();
+} catch (_rix) {}
 
 /** 中文助记词 token → 索引：优先当前展示词，再回退词表文件中的原始长词（兼容旧备份） */
 function wwResolveZhWordlistIndex(tok) {
@@ -411,6 +404,12 @@ async function createWallet(forcedWordCount) {
     throw new Error('钱包库（ethers）未就绪，请检查网络连接后刷新页面重试');
   }
   var nWords = (typeof forcedWordCount === 'number' && [12, 15, 18, 21, 24].includes(forcedWordCount)) ? forcedWordCount : 12;
+  var wlKeyPre = typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : 'en';
+  if (typeof wwEnsureWordlistLoaded === 'function') {
+    try {
+      await wwEnsureWordlistLoaded(wlKeyPre);
+    } catch (_wlp) {}
+  }
   var entropyBytes =
     typeof getEntropyByteCountForMnemonicWords === 'function'
       ? getEntropyByteCountForMnemonicWords(nWords)
@@ -637,7 +636,7 @@ var ADDR_SAMPLES = {
 var ETH_ADDR_LEGACY = '0x7f3a9b2c4d8e1f5a6b3c7d2e'; // 仅兼容用，勿使用
 
 /** 密钥页助记词显示语言（与 wordlists 语言键一致） */
-var WW_KEY_PAGE_LANGS = ['zh', 'en', 'ja', 'ko', 'es', 'fr', 'ar', 'ru', 'pt', 'hi'];
+var WW_KEY_PAGE_LANGS = ['zh', 'en', 'ja', 'ko', 'es', 'fr', 'de', 'it', 'ru', 'pt'];
 var WW_KEY_MNEMONIC_LANG_STORAGE = 'ww_key_mnemonic_lang';
 
 function readUiLangFromStorage() {
@@ -651,7 +650,7 @@ function readUiLangFromStorage() {
 currentLang = readUiLangFromStorage() || (typeof detectDeviceLang === 'function' ? detectDeviceLang() : 'zh');
 
 /**
- * 将系统语言映射到本应用支持的 BIP39 词表键（密钥页「我的密钥」无手动语言项，始终用此结果展示助记词）。
+ * 将系统语言映射到本应用支持的助记词界面语言（密钥页可通过 #keyPageLang 覆盖；无记录时与导入页一致）。
  * wallet.ui.js 先于 wallet.runtime.js 加载时 detectDeviceLang 可能尚不存在，故用 navigator 做最小兜底。
  */
 function wwDeviceLangToMnemonicKey() {
@@ -690,8 +689,8 @@ function persistKeyMnemonicLang(lang) {
     if (WW_KEY_PAGE_LANGS.indexOf(lang) >= 0) localStorage.setItem(WW_KEY_MNEMONIC_LANG_STORAGE, lang);
   } catch (e) {}
 }
-/** 仅密钥页助记词网格 / 导入校验用词表语言，与 currentLang 独立；密钥页展示语言由 syncKeyPageLangSelect 按设备刷新 */
-var keyMnemonicLang = wwDeviceLangToMnemonicKey();
+/** 仅密钥页助记词网格 / 导入校验用词表语言，与 currentLang 独立 */
+var keyMnemonicLang = readImportMnemonicLangPreference();
 
 function switchLang(lang) {
   if (WW_KEY_PAGE_LANGS.indexOf(lang) === -1) return;
@@ -701,6 +700,10 @@ function switchLang(lang) {
     var il = document.getElementById('importPageLang');
     if (il) il.value = lang;
   } catch (e) {}
+  try {
+    var kl = document.getElementById('keyPageLang');
+    if (kl) kl.value = lang;
+  } catch (_kl) {}
   try {
     var pk = document.getElementById('page-key');
     if (pk && pk.classList.contains('active') && typeof renderKeyGrid === 'function') renderKeyGrid();
@@ -715,7 +718,13 @@ function syncKeyPageLangSelect() {
     var pk = document.getElementById('page-key');
     var pi = document.getElementById('page-import');
     if (pk && pk.classList.contains('active')) {
-      keyMnemonicLang = wwDeviceLangToMnemonicKey();
+      var kpl = document.getElementById('keyPageLang');
+      if (kpl && kpl.value && WW_KEY_PAGE_LANGS.indexOf(kpl.value) >= 0) {
+        keyMnemonicLang = kpl.value;
+      } else {
+        keyMnemonicLang = readImportMnemonicLangPreference();
+        if (kpl) kpl.value = WW_KEY_PAGE_LANGS.indexOf(keyMnemonicLang) >= 0 ? keyMnemonicLang : 'zh';
+      }
     } else if (pi && pi.classList.contains('active')) {
       var il0 = document.getElementById('importPageLang');
       if (il0 && il0.value && WW_KEY_PAGE_LANGS.indexOf(il0.value) >= 0) {
@@ -730,6 +739,11 @@ function syncKeyPageLangSelect() {
     if (il) {
       il.value = v;
       if (il.value !== v) il.value = 'zh';
+    }
+    var kpl2 = document.getElementById('keyPageLang');
+    if (kpl2) {
+      kpl2.value = v;
+      if (kpl2.value !== v) kpl2.value = 'zh';
     }
   } catch (e2) {}
 }
@@ -761,7 +775,7 @@ var WW_PAGE_SEO = {
   'page-settings': { title: '设置 — WorldToken', description: 'PIN、两步验证、备份与隐私相关选项。' },
   'page-address-book': { title: '地址簿 — WorldToken', description: '管理本机常用收款地址，与转账页共用。' },
   'page-convert-mnemonic': { title: '转换助记词 — WorldToken', description: '选择助记词语言，按 BIP39 索引映射显示对应词表，便于与其他钱包互导入。' },
-  'page-swap': { title: '兑换 — WorldToken', description: 'USDT（TRC-20）兑换为 TRX，跳转 SunSwap。' },
+  'page-swap': { title: '兑换 — WorldToken', description: 'TRON SunSwap 与以太坊 Uniswap V3 兑换，滑点与记录。' },
   'page-swap-records': { title: '兑换记录 — WorldToken', description: '历史兑换与路由记录。' },
   'page-password-restore': { title: 'PIN 解锁 — WorldToken', description: '使用本机 PIN 解锁并进入钱包。' },
   'page-import': { title: '导入钱包 — WorldToken', description: '使用 12 词助记词恢复钱包。' },
@@ -1670,102 +1684,109 @@ function initTabSwipeGesture() {
 }
 
 function renderKeyGrid() {
-  let words;
   var wlKey = wwResolveMnemonicWordlistKey();
-  const isEn = wlKey === 'en';
-  const tw = window.TEMP_WALLET;
-  var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-  // TEMP_WALLET（创建中）优先；否则用已解密的真实钱包助记词（备份页 / skipKeyRegen）
-  const enMnemonic =
-    (tw && (tw.mnemonic || tw.enMnemonic)) ||
-    (rw && (rw.enMnemonic || rw.mnemonic));
-  if (!enMnemonic) {
+  (async function () {
     try {
-      var _wlo = document.getElementById('walletLoadingOverlay');
-      if (_wlo && _wlo.classList.contains('show')) return;
-    } catch (_wl) {}
-    goTo('page-welcome');
-    return;
-  }
-  const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
-  if (isEn) {
-    words = enWords;
-    if (tw) tw.words = words;
-    else if (rw && (rw.enMnemonic || rw.mnemonic)) rw.words = words;
-  } else {
-    words = enWordsToLangKeyTableWords(enWords, wlKey);
-    if (tw) {
-      tw.displayLang = keyMnemonicLang;
-      tw.mnemonicWordlistKey = wlKey;
-      tw.displayWords = words;
-      tw.words = words;
-    } else if (rw && (rw.enMnemonic || rw.mnemonic)) {
-      rw.displayLang = keyMnemonicLang;
-      rw.mnemonicWordlistKey = wlKey;
-      rw.displayWords = words;
-      rw.words = words;
+      if (typeof wwEnsureWordlistLoaded === 'function') await wwEnsureWordlistLoaded(wlKey);
+    } catch (e) {
+      if (typeof showToast === 'function') showToast('助记词词表加载失败，请检查网络后重试', 'error', 3800);
+      console.error('[renderKeyGrid] wordlist', e);
+      return;
     }
-  }
-  try {
-    const wlen = words.length;
-    const wce = document.getElementById('warnWordCount');
-    if (wce) wce.textContent = String(wlen);
-    // 下拉与 currentMnemonicLength 与当前网格一致（避免已保存钱包词数与 TEMP 展示不一致时 UI 错位）
-    if ([12, 15, 18, 21, 24].includes(wlen)) {
-      currentMnemonicLength = wlen;
-      var _ml = document.getElementById('mnemonicLength');
-      if (_ml) {
-        _ml.value = String(wlen);
-        var _ix = [12, 15, 18, 21, 24].indexOf(wlen);
-        if (_ix >= 0) _ml.selectedIndex = _ix;
+    let words;
+    const isEn = wlKey === 'en';
+    const tw = window.TEMP_WALLET;
+    var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    const enMnemonic =
+      (tw && (tw.mnemonic || tw.enMnemonic)) ||
+      (rw && (rw.enMnemonic || rw.mnemonic));
+    if (!enMnemonic) {
+      try {
+        var _wlo = document.getElementById('walletLoadingOverlay');
+        if (_wlo && _wlo.classList.contains('show')) return;
+      } catch (_wl) {}
+      goTo('page-welcome');
+      return;
+    }
+    const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
+    if (isEn) {
+      words = enWords;
+      if (tw) tw.words = words;
+      else if (rw && (rw.enMnemonic || rw.mnemonic)) rw.words = words;
+    } else {
+      words = enWordsToLangKeyTableWords(enWords, wlKey);
+      if (tw) {
+        tw.displayLang = keyMnemonicLang;
+        tw.mnemonicWordlistKey = wlKey;
+        tw.displayWords = words;
+        tw.words = words;
+      } else if (rw && (rw.enMnemonic || rw.mnemonic)) {
+        rw.displayLang = keyMnemonicLang;
+        rw.mnemonicWordlistKey = wlKey;
+        rw.displayWords = words;
+        rw.words = words;
       }
     }
-  } catch (e) {}
-  const grid = document.getElementById('keyWordGrid');
-  if (!grid) {
-    console.warn('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
-    return;
-  }
-  grid.innerHTML = '';
-
-  const hint = _safeEl('keyEnHint');
-  if(isEn) {
-    if(!hint) {
-      const h = document.createElement('div');
-      h.id = 'keyEnHint';
-      h.style.cssText = 'background:rgba(100,150,255,0.08);border:1px solid rgba(100,150,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#8aadff;line-height:1.7';
-      h.innerHTML = '⛓️ 英文使用 BIP39 标准密钥，兼容所有公链钱包';
-      grid.parentNode.insertBefore(h, grid);
+    try {
+      const wlen = words.length;
+      const wce = document.getElementById('warnWordCount');
+      if (wce) wce.textContent = String(wlen);
+      if ([12, 15, 18, 21, 24].includes(wlen)) {
+        currentMnemonicLength = wlen;
+        var _ml = document.getElementById('mnemonicLength');
+        if (_ml) {
+          _ml.value = String(wlen);
+          var _ix = [12, 15, 18, 21, 24].indexOf(wlen);
+          if (_ix >= 0) _ml.selectedIndex = _ix;
+        }
+      }
+    } catch (e) {}
+    const grid = document.getElementById('keyWordGrid');
+    if (!grid) {
+      console.warn('[WorldToken] renderKeyGrid: #keyWordGrid not in DOM');
+      return;
     }
-  } else {
-    if(hint) hint.remove();
-  }
+    grid.innerHTML = '';
 
-  words.forEach((w,i)=>{
-    const d=document.createElement('div');
-    d.className='key-word fade-up';
-    d.style.animationDelay=i*0.04+'s';
-    const isSmall = wlKey === 'en';
-    const line=document.createElement('div');
-    line.className='key-word-line';
-    const idx=document.createElement('span');
-    idx.className='word-idx';
-    idx.textContent=String(i+1).padStart(2,'0')+'.';
-    const val=document.createElement('span');
-    val.className='word-val';
-    val.textContent=w;
-    val.style.fontSize=isSmall?'11px':'13px';
-    line.appendChild(idx);
-    line.appendChild(document.createTextNode(' '));
-    line.appendChild(val);
-    d.appendChild(line);
-    grid.appendChild(d);
-  });
-  var metaWallet = tw || (rw && (rw.enMnemonic || rw.mnemonic) ? rw : null);
-  if (metaWallet) {
-    metaWallet.words = words.slice();
-  }
-  if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
+    const hint = _safeEl('keyEnHint');
+    if (isEn) {
+      if (!hint) {
+        const h = document.createElement('div');
+        h.id = 'keyEnHint';
+        h.style.cssText = 'background:rgba(100,150,255,0.08);border:1px solid rgba(100,150,255,0.2);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:11px;color:#8aadff;line-height:1.7';
+        h.innerHTML = '⛓️ 英文使用 BIP39 标准密钥，兼容所有公链钱包';
+        grid.parentNode.insertBefore(h, grid);
+      }
+    } else {
+      if (hint) hint.remove();
+    }
+
+    words.forEach((w, i) => {
+      const d = document.createElement('div');
+      d.className = 'key-word fade-up';
+      d.style.animationDelay = i * 0.04 + 's';
+      const isSmall = wlKey === 'en';
+      const line = document.createElement('div');
+      line.className = 'key-word-line';
+      const idx = document.createElement('span');
+      idx.className = 'word-idx';
+      idx.textContent = String(i + 1).padStart(2, '0') + '.';
+      const val = document.createElement('span');
+      val.className = 'word-val';
+      val.textContent = w;
+      val.style.fontSize = isSmall ? '11px' : '13px';
+      line.appendChild(idx);
+      line.appendChild(document.createTextNode(' '));
+      line.appendChild(val);
+      d.appendChild(line);
+      grid.appendChild(d);
+    });
+    var metaWallet = tw || (rw && (rw.enMnemonic || rw.mnemonic) ? rw : null);
+    if (metaWallet) {
+      metaWallet.words = words.slice();
+    }
+    if (typeof updateMnemonicStrengthIndicator === 'function') updateMnemonicStrengthIndicator();
+  })();
 }
 
 function shortChainAddr(addr) {
@@ -3498,10 +3519,10 @@ var WW_CONVERT_LANG_OPTION_LABELS = {
   ko: '한국어',
   es: 'Español',
   fr: 'Français',
-  ar: 'العربية',
+  de: 'Deutsch',
+  it: 'Italiano',
   ru: 'Русский',
-  pt: 'Português',
-  hi: 'हिन्दी'
+  pt: 'Português'
 };
 
 function wwFillConvertMnemonicLangSelect() {
@@ -3517,11 +3538,6 @@ function wwFillConvertMnemonicLangSelect() {
   for (i = 0; i < langs.length; i++) {
     lg = langs[i];
     wl = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(lg) : lg === 'en' ? 'en' : 'zh';
-    try {
-      if (typeof WT_WORDLISTS === 'undefined' || !WT_WORDLISTS[wl] || WT_WORDLISTS[wl].length !== 2048) continue;
-    } catch (_skip) {
-      continue;
-    }
     opt = document.createElement('option');
     opt.value = lg;
     opt.textContent = WW_CONVERT_LANG_OPTION_LABELS[lg] || wl + ' · ' + lg;
@@ -3570,17 +3586,25 @@ function wwRenderConvertMnemonicOutput() {
   }
   var uiLang = sel && sel.value ? sel.value : 'zh';
   var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(uiLang) : uiLang === 'en' ? 'en' : 'zh';
-  var disp = words;
-  try {
-    if (typeof enWordsToLangKeyTableWords === 'function') disp = enWordsToLangKeyTableWords(words.slice(), wlKey);
-  } catch (_e) {
-    disp = words;
-  }
-  out.textContent = disp.join(' ');
-  if (title) {
-    var lab = WW_CONVERT_LANG_OPTION_LABELS[uiLang] || wlKey;
-    title.textContent = '当前词表（' + lab + '）';
-  }
+  (async function () {
+    try {
+      if (typeof wwEnsureWordlistLoaded === 'function') await wwEnsureWordlistLoaded(wlKey);
+    } catch (_e0) {
+      out.textContent = '词表加载失败';
+      return;
+    }
+    var disp = words;
+    try {
+      if (typeof enWordsToLangKeyTableWords === 'function') disp = enWordsToLangKeyTableWords(words.slice(), wlKey);
+    } catch (_e) {
+      disp = words;
+    }
+    out.textContent = disp.join(' ');
+    if (title) {
+      var lab = WW_CONVERT_LANG_OPTION_LABELS[uiLang] || wlKey;
+      title.textContent = '当前词表（' + lab + '）';
+    }
+  })();
 }
 
 /** 设置 → 转换助记词页：英文 BIP39 真源 + 语言下拉映射（需已解密助记词） */
@@ -3876,7 +3900,18 @@ function requestPushPermissionOnFirstLaunch() {
 
 // ── 导入钱包 ──────────────────────────────────────────────────
 /** 与助记词语言下拉一致，写入 input[lang] 以便系统选用对应输入法（中文/日韩等） */
-var WW_HTML_LANG_FOR_MNEMONIC = { zh: 'zh-Hans', en: 'en', ja: 'ja', ko: 'ko', es: 'es', fr: 'fr', ar: 'ar', ru: 'ru', pt: 'pt', hi: 'hi' };
+var WW_HTML_LANG_FOR_MNEMONIC = {
+  zh: 'zh-Hans',
+  en: 'en',
+  ja: 'ja',
+  ko: 'ko',
+  es: 'es',
+  fr: 'fr',
+  de: 'de',
+  it: 'it',
+  ru: 'ru',
+  pt: 'pt'
+};
 function applyImportGridInputLangAttrs() {
   var lg = typeof keyMnemonicLang === 'string' && WW_KEY_PAGE_LANGS.indexOf(keyMnemonicLang) >= 0 ? keyMnemonicLang : 'zh';
   var htmlLang = WW_HTML_LANG_FOR_MNEMONIC[lg] || 'zh-Hans';
@@ -4901,6 +4936,12 @@ async function doImportWallet() {
   }
   showWalletLoading();
   try {
+    var wlImp = typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : 'en';
+    if (typeof wwEnsureWordlistLoaded === 'function') {
+      try {
+        await wwEnsureWordlistLoaded(wlImp);
+      } catch (_eWL) {}
+    }
     var result = typeof importWalletFlexible === 'function' ? importWalletFlexible(mnemonicRaw, keyMnemonicLang) : (typeof importWallet === 'function' ? importWallet(mnemonicRaw) : null);
     if (!result) {
       if (errEl) { errEl.style.display = 'block'; errEl.textContent = '助记词无效，请检查后重试'; }

@@ -181,18 +181,57 @@ try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) {}
  * 密钥页「助记词显示语言」→ wordlists 键 wlKey（renderKeyGrid：enWords → 索引 i → WT_WORDLISTS[wlKey][i]）：
  * - en → 标准 BIP39 英文（createWallet：ethers.utils.entropyToMnemonic）；
  * - zh → 2048 个中国行政区划顺延地名（词表源可含长地名；首屏展示在 wallet.ui.js 内规范为同索引唯一短前缀，导入仍认原始长词），与英文 BIP39 按索引一对一；
- * - ja/ko/… → 若 WT_WORDLISTS[lang] 为 2048 项则用该语种展示词，否则回退 zh。
+ * - ja/ko/es/fr/de/it/ru/pt → bitcoinjs/bip39 或 BIPs PR 词表（与英文同索引），懒加载自 wordlists/*.json。
  */
+var WW_MNEMONIC_BIP39_LANGS = ['ja', 'ko', 'es', 'fr', 'de', 'it', 'ru', 'pt'];
+
 function getMnemonicWordlistLang(uiLang) {
   if (!uiLang || uiLang === 'en') return 'en';
   if (uiLang === 'zh') return 'zh';
+  if (WW_MNEMONIC_BIP39_LANGS.indexOf(uiLang) >= 0) return uiLang;
   try {
     if (typeof WT_WORDLISTS !== 'undefined' && WT_WORDLISTS[uiLang] && WT_WORDLISTS[uiLang].length === 2048) {
       return uiLang;
     }
   } catch (e) {}
-  return 'zh';
+  return 'en';
 }
+
+/**
+ * 标准 BIP39 熵 → 英文助记词为真源；wlKey 为展示用词表（与 keyMnemonicLang 解析结果一致）。
+ * @param {string} wlKey en/zh/ja/…
+ * @param {number} wordCount 12|15|18|21|24
+ */
+async function generateMnemonic(wlKey, wordCount) {
+  if (typeof ethers === 'undefined') throw new Error('ethers not ready');
+  var nWords = parseInt(wordCount, 10) || 12;
+  if ([12, 15, 18, 21, 24].indexOf(nWords) < 0) nWords = 12;
+  var entropyBytes =
+    typeof getEntropyByteCountForMnemonicWords === 'function'
+      ? getEntropyByteCountForMnemonicWords(nWords)
+      : { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 }[nWords] || 16;
+  var key = wlKey || 'en';
+  if (key !== 'en' && typeof wwEnsureWordlistLoaded === 'function') {
+    await wwEnsureWordlistLoaded(key);
+  }
+  var enMnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
+  var enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
+  var words =
+    !key || key === 'en'
+      ? enWords.slice()
+      : typeof wwMapEnWordsToLangWords === 'function'
+        ? wwMapEnWordsToLangWords(enWords, key)
+        : enWords.slice();
+  return {
+    enMnemonic: enMnemonic,
+    words: words,
+    wordCount: nWords,
+    mnemonicWordlistKey: key === 'en' ? 'en' : key
+  };
+}
+try {
+  window.generateMnemonic = generateMnemonic;
+} catch (_gm) {}
 
 /**
  * 导入：先按标准英文 BIP39 解析；失败则按所选助记词语言词表转为英文再解析（与密钥页语言一致）；仍失败时再试中文词表（兼容旧数据）。

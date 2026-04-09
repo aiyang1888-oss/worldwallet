@@ -387,6 +387,7 @@ function mnemonicToLang(mnemonic, lang) {
 
 /** 英文 BIP39 词数组 → 当前语言密钥表词条（词数与上方词数选择一致，逐词映射索引） */
 function enWordsToLangKeyTableWords(enWords, lang) {
+  if (typeof wwMapEnWordsToLangWords === 'function') return wwMapEnWordsToLangWords(enWords, lang);
   if (!enWords || !enWords.length) return [];
   if (!lang || lang === 'en') return enWords.slice();
   if (!WT_WORDLISTS[lang]) return enWords.slice();
@@ -8153,6 +8154,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof openCoinPicker === 'function') window.openCoinPicker = openCoinPicker;
     if (typeof closeCoinPicker === 'function') window.closeCoinPicker = closeCoinPicker;
     if (typeof swapCoins === 'function') window.swapCoins = swapCoins;
+    if (typeof wwOnSwapSlippageChange === 'function') window.wwOnSwapSlippageChange = wwOnSwapSlippageChange;
     if (typeof doTransfer === 'function') window.doTransfer = doTransfer;
     if (typeof editHomeAddr === 'function') window.editHomeAddr = editHomeAddr;
     if (typeof goToPinConfirm === 'function') window.goToPinConfirm = goToPinConfirm;

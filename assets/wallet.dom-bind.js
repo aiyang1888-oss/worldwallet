@@ -175,7 +175,8 @@
         return;
       }
       if (fn === 'swapHistoryToast' || fn === 'wwSwapRecordsToast') {
-        if (typeof window.showToast === 'function') window.showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info');
+        if (typeof window.wwSwapShowRecords === 'function') window.wwSwapShowRecords();
+        else if (typeof window.showToast === 'function') window.showToast('暂无兑换记录', 'info');
         ev.preventDefault();
         return;
       }
