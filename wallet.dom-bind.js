@@ -156,15 +156,21 @@
     if (el.hasAttribute('data-ww-fn')) {
       var fn = el.getAttribute('data-ww-fn');
       if (fn === 'deleteWalletRow' || fn === 'wwDeleteLocalWallet') {
-        if (!confirm('确定删除本机钱包？此操作会清空本地数据。')) return;
-        try {
-          localStorage.removeItem('ww_wallet');
-          localStorage.removeItem('ww_pin');
-          localStorage.removeItem('ww_hongbaos');
-        } catch (_ls) {}
-        if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
-        if (typeof window.goTo === 'function') window.goTo('page-welcome');
-        wwCall('showToast', '钱包已删除', 'success');
+        if (typeof window.wwDeleteWalletFromSettings === 'function') {
+          window.wwDeleteWalletFromSettings();
+        } else if (confirm('确定删除本机钱包？此操作会清空本地数据。')) {
+          try {
+            if (typeof window.wwPurgeLocalWalletStorage === 'function') window.wwPurgeLocalWalletStorage();
+            else {
+              localStorage.removeItem('ww_wallet');
+              localStorage.removeItem('ww_pin');
+              localStorage.removeItem('ww_hongbaos');
+            }
+          } catch (_ls) {}
+          if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
+          if (typeof window.goTo === 'function') window.goTo('page-welcome');
+          wwCall('showToast', '钱包已删除', 'success');
+        }
         ev.preventDefault();
         return;
       }
