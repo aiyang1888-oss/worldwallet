@@ -1,6 +1,6 @@
 <!-- worldtoken.cc v20260405 -->
 <!DOCTYPE html>
-<html lang="zh" class="ww-addr-pending ww-hide-welcome-until-ready">
+<html lang="zh" class="ww-addr-pending ww-hide-welcome-until-ready ww-first-route-pending">
 <head>
 
 
@@ -16,6 +16,12 @@
 /* 任意脚本执行前：欢迎页不参与首帧；无钱包时下方脚本会移除 ww-hide-welcome-until-ready */
 html.ww-hide-welcome-until-ready #page-welcome.page {
   display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+/* wallet.css 未加载时 .page 默认不透明：在未由 head 指定 boot 进首页前隐藏资产页，避免无钱包首访先闪「资产」 */
+html.ww-first-route-pending:not([data-ww-boot-page="page-home"]) #page-home.page {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
