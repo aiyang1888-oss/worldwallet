@@ -5031,6 +5031,13 @@ try {
         _dest = 'page-password-restore';
       }
     } catch (_destE) { wwQuiet(_destE); }
+    if (!hasWallet && _dest === 'page-welcome') {
+      try {
+        sessionStorage.removeItem('ww_last_page');
+      } catch (_sl) {
+        wwQuiet(_sl);
+      }
+    }
     goTo(_dest);
   }
   window.addEventListener('hashchange', function () {
