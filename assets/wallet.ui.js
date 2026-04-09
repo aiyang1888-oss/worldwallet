@@ -2355,20 +2355,31 @@ function wwGoToTransferWithAddr(addr) {
   } catch (e2) {}
 }
 
-/** 将条目载入上方表单，修改备注后点「保存」即更新（按地址去重） */
+/** 将条目载入上方表单；保存时若修改了地址，会替换原条目（由 #addrBookEditOriginal 记录原地址） */
 function wwStartEditAddressBookEntry(addr, nick) {
   var nickEl = document.getElementById('addrBookNickInput');
   var addrEl = document.getElementById('addrBookAddrInput');
+  var origEl = document.getElementById('addrBookEditOriginal');
+  if (origEl) origEl.value = String(addr || '').trim();
   if (addrEl) addrEl.value = String(addr || '').trim();
   if (nickEl) nickEl.value = String(nick || '').trim();
   try {
-    if (nickEl) nickEl.focus();
+    if (addrEl) addrEl.focus();
   } catch (e) {}
   try {
     var sc = document.querySelector('#page-address-book .u14');
     if (sc) sc.scrollTop = 0;
   } catch (e2) {}
-  if (typeof showToast === 'function') showToast('修改备注后点「保存」', 'info', 2600);
+  if (typeof showToast === 'function') showToast('可修改备注或地址，完成后点「保存」', 'info', 2800);
+}
+
+function wwClearAddressBookDraft() {
+  var nickEl = document.getElementById('addrBookNickInput');
+  var addrEl = document.getElementById('addrBookAddrInput');
+  var origEl = document.getElementById('addrBookEditOriginal');
+  if (nickEl) nickEl.value = '';
+  if (addrEl) addrEl.value = '';
+  if (origEl) origEl.value = '';
 }
 
 function renderAddressBookSettingsList() {
@@ -2434,6 +2445,7 @@ function renderAddressBookSettingsList() {
 function wwAddAddressBookFromSettings() {
   var nickEl = document.getElementById('addrBookNickInput');
   var addrEl = document.getElementById('addrBookAddrInput');
+  var origEl = document.getElementById('addrBookEditOriginal');
   var addr = addrEl ? String(addrEl.value || '').trim() : '';
   var nick = nickEl ? String(nickEl.value || '').trim() : '';
   if (!addr) {
@@ -2442,18 +2454,30 @@ function wwAddAddressBookFromSettings() {
   }
   if (!nick) nick = '未命名';
   nick = nick.slice(0, 32);
+  var origRaw = origEl ? String(origEl.value || '').trim() : '';
+  var origNorm = origRaw.toLowerCase();
+  var newNorm = addr.toLowerCase();
+  var isEdit = !!origNorm;
   var list = getTransferContacts().filter(function (c) {
-    return c.addr.trim().toLowerCase() !== addr.toLowerCase();
-  });
-  var hadSameAddr = getTransferContacts().some(function (c) {
-    return c.addr.trim().toLowerCase() === addr.toLowerCase();
+    var ca = c.addr.trim().toLowerCase();
+    if (origNorm && ca === origNorm) return false;
+    if (ca === newNorm) return false;
+    return true;
   });
   list.unshift({ addr: addr, nick: nick });
   setTransferContacts(list);
   if (addrEl) addrEl.value = '';
   if (nickEl) nickEl.value = '';
+  if (origEl) origEl.value = '';
   wwRefreshAddressBookLists();
-  if (typeof showToast === 'function') showToast(hadSameAddr ? '备注已更新' : '已保存到地址簿', 'success');
+  if (typeof showToast === 'function') {
+    if (isEdit) {
+      if (newNorm === origNorm) showToast('备注已更新', 'success');
+      else showToast('地址已更新', 'success');
+    } else {
+      showToast('已保存到地址簿', 'success');
+    }
+  }
 }
 
 
