@@ -290,19 +290,21 @@ try {
   window.wwResolveZhWordlistIndex = wwResolveZhWordlistIndex;
 } catch (_wRZ) { wwQuiet(_wRZ); }
 
-/** 离开首帧 data-ww-boot-page 目标时移除 head 注入，否则 wallet.css 的 !important 会让旧页叠在新页之上 */
+/** 首帧 goTo 后卸下 data-ww-boot-page 与 head 注入样式。须包含「目标与 boot 一致」的情形：仅刷新欢迎页时若 b===dest 旧逻辑会跳过，data-ww-boot-page 永不卸，部分环境（尤其移动端缓存旧 CSS）仍挡点击。 */
 function wwClearHtmlBootRouteIfDestChanges(destPageId) {
   try {
     var b = document.documentElement.getAttribute('data-ww-boot-page');
-    if (!b || b === destPageId) return;
+    if (!b) return;
     document.documentElement.removeAttribute('data-ww-boot-page');
     try {
       document.documentElement.classList.remove('ww-boot-route');
     } catch (_w0) { wwQuiet(_w0); }
     try {
-      var st = document.querySelector('style[data-ww-boot-route="1"]');
-      if (!st) st = document.querySelector('style[data-ww-boot-route]');
-      if (st && st.parentNode) st.parentNode.removeChild(st);
+      var _sts = document.querySelectorAll('style[data-ww-boot-route]');
+      for (var _si = 0; _si < _sts.length; _si++) {
+        var st = _sts[_si];
+        if (st && st.parentNode) st.parentNode.removeChild(st);
+      }
     } catch (_w1) { wwQuiet(_w1); }
   } catch (_e) { wwQuiet(_e); }
 }
