@@ -1394,6 +1394,27 @@ try {
 
 function goTo(pageId, opts) {
   opts = opts || {};
+  /* 切换路由时清理易冲突状态（与 wallet.runtime.js goTo 对齐） */
+  try {
+    if (!opts.preserveRouteState) {
+      window._wwGoToEpoch = (window._wwGoToEpoch | 0) + 1;
+      if (pageId !== 'page-swap' && window._wwSwapPriceInterval) {
+        clearInterval(window._wwSwapPriceInterval);
+        window._wwSwapPriceInterval = null;
+      }
+    }
+  } catch (_rst) {
+    wwQuiet(_rst);
+  }
+  /* 加密包 + 已配 PIN 且未会话解锁：敏感页统一改道解锁页（与 wallet.html head boot 一致） */
+  try {
+    if (typeof wwNeedsPinUnlockBeforeHome === 'function' && wwNeedsPinUnlockBeforeHome() && pageId !== 'page-password-restore') {
+      var _wwPinGate = { 'page-home': 1, 'page-swap': 1, 'page-addr': 1, 'page-settings': 1, 'page-hongbao': 1, 'page-transfer': 1, 'page-swoosh': 1, 'page-address-book': 1, 'page-swap-records': 1, 'page-claim': 1, 'page-claimed': 1, 'page-hb-keyword': 1, 'page-hb-records': 1, 'page-transfer-success': 1 };
+      if (_wwPinGate[pageId]) pageId = 'page-password-restore';
+    }
+  } catch (_p5) {
+    wwQuiet(_p5);
+  }
   /* 首帧路由清理见 wallet.runtime.js 的 goTo（运行时覆盖本函数） */
   /* 须与 runtime 的 wwUserHasAnySavedChainAddress 一致：首屏 goTo 早于 loadWallet()，仅查 IncludingTemp 会把「仅 localStorage 有地址」误判为无钱包 → head 已 boot 资产页又改道欢迎页，闪一下 */
   if (pageId === 'page-home' && !opts.forceHome) {
@@ -4929,7 +4950,8 @@ try {
     'page-password-restore': 1,
     'page-verify-success': 1,
     'page-recovery-test': 1,
-    'page-convert-mnemonic': 1
+    'page-convert-mnemonic': 1,
+    'page-faq': 1
   };
   function wwGuestHasSavedAddress() {
     try {
@@ -5013,7 +5035,14 @@ try {
       'page-hongbao': 1,
       'page-settings': 1,
       'page-transfer': 1,
-      'page-swoosh': 1
+      'page-swoosh': 1,
+      'page-address-book': 1,
+      'page-swap-records': 1,
+      'page-claim': 1,
+      'page-claimed': 1,
+      'page-hb-keyword': 1,
+      'page-hb-records': 1,
+      'page-transfer-success': 1
     };
     if (hid) {
       if (!wwGuestHashAllowed(hid)) {

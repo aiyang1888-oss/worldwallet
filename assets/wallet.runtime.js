@@ -1467,6 +1467,25 @@ function wwUserHasAnySavedChainAddress() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
+  try {
+    if (!opts.preserveRouteState) {
+      window._wwGoToEpoch = (window._wwGoToEpoch | 0) + 1;
+      if (pageId !== 'page-swap' && window._wwSwapPriceInterval) {
+        clearInterval(window._wwSwapPriceInterval);
+        window._wwSwapPriceInterval = null;
+      }
+    }
+  } catch (_rst) {
+    wwQuiet(_rst);
+  }
+  try {
+    if (typeof wwNeedsPinUnlockBeforeHome === 'function' && wwNeedsPinUnlockBeforeHome() && pageId !== 'page-password-restore') {
+      var _wwPinGateRt = { 'page-home': 1, 'page-swap': 1, 'page-addr': 1, 'page-settings': 1, 'page-hongbao': 1, 'page-transfer': 1, 'page-swoosh': 1, 'page-address-book': 1, 'page-swap-records': 1, 'page-claim': 1, 'page-claimed': 1, 'page-hb-keyword': 1, 'page-hb-records': 1, 'page-transfer-success': 1 };
+      if (_wwPinGateRt[pageId]) pageId = 'page-password-restore';
+    }
+  } catch (_p5) {
+    wwQuiet(_p5);
+  }
   /* ww-first-route-pending 在成功切换路由后由 wwDeferFirstRoutePaint 延迟摘掉（见 wallet.ui 首屏 IIFE），勿在此处同步移除以免触发 .page 过渡 */
   /* 与 wallet.ui.js 一致：forceHome 时不改道；首屏须认 localStorage，避免 REAL 未注入时被送回欢迎页 */
   if (pageId === 'page-home' && !opts.forceHome && !wwUserHasAnySavedChainAddress()) {
