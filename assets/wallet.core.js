@@ -180,7 +180,7 @@ try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) {}
 /**
  * 密钥页「助记词显示语言」→ wordlists 键 wlKey（renderKeyGrid：enWords → 索引 i → WT_WORDLISTS[wlKey][i]）：
  * - en → 标准 BIP39 英文（createWallet：ethers.utils.entropyToMnemonic）；
- * - zh → 2048 个中国行政区划顺延地名（每词 ≤3 字），与英文 BIP39 按索引一对一（WT_WORDLISTS.zh；dist/wordlists/zh-cn.json）；
+ * - zh → 2048 个中国行政区划顺延地名（词表源可含长地名；首屏展示在 wallet.ui.js 内规范为同索引唯一短前缀，导入仍认原始长词），与英文 BIP39 按索引一对一；
  * - ja/ko/… → 若 WT_WORDLISTS[lang] 为 2048 项则用该语种展示词，否则回退 zh。
  */
 function getMnemonicWordlistLang(uiLang) {
