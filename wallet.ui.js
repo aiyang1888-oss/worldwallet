@@ -4416,12 +4416,35 @@ function closePinUnlock() {
 
 
 function openPinSettingsDialog() {
+  if (typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
+    if (typeof openPinSetupOverlay === 'function') {
+      openPinSetupOverlay({ skipFirstRunLock: true });
+      return;
+    }
+  } else if (typeof wwHasPinConfigured === 'function' && wwHasPinConfigured()) {
+    if (typeof wwEnsurePinThenForced === 'function' && typeof openPinChangeOverlay === 'function') {
+      wwEnsurePinThenForced(function () {
+        openPinChangeOverlay();
+      });
+      return;
+    }
+  }
   const cur = localStorage.getItem('ww_pin') || '';
   const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
-  if(a === null) return;
+  if (a === null) return;
   const t = a.trim();
-  if(t === '') { localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
-  if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
+  if (t === '') {
+    localStorage.removeItem('ww_pin');
+    localStorage.removeItem('ww_totp_secret');
+    localStorage.removeItem('ww_totp_enabled');
+    showToast('已清除 PIN', 'success');
+    if (typeof updateSettingsPage === 'function') updateSettingsPage();
+    return;
+  }
+  if (!/^\d{6}$/.test(t)) {
+    showToast('PIN 须为 6 位数字', 'error');
+    return;
+  }
   localStorage.setItem('ww_pin', t);
   try { window._wwInFirstRun = false; } catch (_frPs) {}
   showToast('PIN 已保存', 'success');
