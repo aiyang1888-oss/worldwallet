@@ -288,6 +288,34 @@
       );
     }
 
+    /* 欢迎页三按钮：部分移动浏览器（尤其 iOS WebKit）对内联 onclick 不合成 click；touchend 兜底并 preventDefault 避免双触发 */
+    var pgWelcome = document.getElementById('page-welcome');
+    if (pgWelcome) {
+      pgWelcome.addEventListener(
+        'touchend',
+        function (ev) {
+          var btn = ev.target && ev.target.closest && ev.target.closest('button.btn-primary, button.btn-secondary');
+          if (!btn || !pgWelcome.contains(btn) || !btn.getAttribute('data-ww-welcome-act')) return;
+          if (ev.cancelable) ev.preventDefault();
+          try {
+            ev.stopPropagation();
+          } catch (_sp) {}
+          try {
+            if (typeof tapHaptic === 'function') tapHaptic(12);
+          } catch (_th) {}
+          var act = btn.getAttribute('data-ww-welcome-act');
+          if (act === 'create') {
+            if (typeof window.createNewWallet === 'function') void window.createNewWallet();
+          } else if (act === 'pin') {
+            if (typeof window.goTo === 'function') window.goTo('page-password-restore');
+          } else if (act === 'import') {
+            if (typeof window.goTo === 'function') window.goTo('page-import');
+          }
+        },
+        { capture: true, passive: false }
+      );
+    }
+
     document.addEventListener('click', handleWwClick, false);
   }
 
