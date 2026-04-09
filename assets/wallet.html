@@ -1233,6 +1233,18 @@ try {
     </div>
   </div>
 
+  <!-- 系统风格确认（替代浏览器 confirm，无页面来源标题） -->
+  <div class="overlay" id="wwSystemConfirmOverlay" style="z-index:110">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;width:88%;padding:22px 20px 18px;text-align:center;border-radius:22px">
+      <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.35" id="wwSystemConfirmTitle">提示</div>
+      <div style="font-size:14px;color:var(--text-muted);line-height:1.55;margin-bottom:22px;text-align:center" id="wwSystemConfirmMessage"></div>
+      <div style="display:flex;gap:10px;align-items:stretch">
+        <button type="button" class="btn-secondary" id="wwSystemConfirmCancel" style="flex:1;padding:13px 10px;font-size:16px;border-radius:14px">取消</button>
+        <button type="button" class="btn-primary" id="wwSystemConfirmOk" style="flex:1;padding:13px 10px;font-size:16px;font-weight:700;border-radius:14px">确定</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 底部导航（勿加 .u5：该工具类为 display:none，会压过 .tab-bar 的 flex，导致底栏不可点） -->
   <div class="tab-bar" id="tabBar">
     <div class="tab-item active" id="tab-home"><span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8h5z"/></svg></span><span>资产</span></div>
