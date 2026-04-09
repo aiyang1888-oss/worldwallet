@@ -5021,12 +5021,18 @@ try {
   function wwApplyHashRoute() {
     var pid = wwHashToPageId();
     if (!pid || typeof goTo !== 'function') return;
+    var _wwHashReload = false;
+    try {
+      var _wwNavH = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      _wwHashReload = _wwNavH && _wwNavH.type === 'reload';
+    } catch (_wh) {}
+    var _hashOpts = _wwHashReload ? { forceRoute: true } : {};
     if (!wwGuestHashAllowed(pid)) {
       wwStripLocationHash();
       goTo('page-welcome');
       return;
     }
-    goTo(pid);
+    goTo(pid, _hashOpts);
   }
   /** 首次加载：hash 为空或指向不存在的 id 时，按 localStorage 钱包状态落到首页或欢迎页 */
   function wwEnsureInitialHashRoute() {
