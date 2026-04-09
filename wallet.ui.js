@@ -2799,7 +2799,7 @@ function wwCheckPriceAlertsAfterTicker(d) {
       { key: 'btc', name: 'BTC', get: function (z) { return z.bitcoin && z.bitcoin.usd; } },
       { key: 'eth', name: 'ETH', get: function (z) { return z.ethereum && z.ethereum.usd; } },
       { key: 'trx', name: 'TRX', get: function (z) { return z.tron && z.tron.usd; } },
-      { key: 'usdt', name: 'TRC USDT', get: function (z) { return z.tether && z.tether.usd; } }
+      { key: 'usdt', name: 'USDT (TRC-20)', get: function (z) { return z.tether && z.tether.usd; } }
     ];
     var prev = window._wwAlertPricePrev || {};
     map.forEach(function (m) {
