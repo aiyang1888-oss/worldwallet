@@ -891,13 +891,12 @@ async function createRealWallet(forcedWordCount) {
   trxAddr = '';
   try {
     await loadTronWeb();
-    if (typeof TronWeb !== 'undefined') {
+    if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
       trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-    } else {
-      trxAddr = 'T' + trxWallet.address.slice(2, 35);
     }
-  } catch (e2) {
-    trxAddr = 'T' + trxWallet.address.slice(2, 35);
+  } catch (e2) {}
+  if (!trxAddr && typeof wwTrxBase58FromEthAddressHex === 'function') {
+    trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
   }
   if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
@@ -948,12 +947,13 @@ async function restoreWallet(mnemonic) {
     // 将 ETH 地址转换为正确的 TRX 地址（Base58Check）
     let trxAddr = '';
     try {
-      if(typeof TronWeb !== 'undefined') {
+      if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
         trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-      } else {
-        trxAddr = 'T' + trxWallet.address.slice(2, 36); // fallback
       }
-    } catch(e) { trxAddr = 'T' + trxWallet.address.slice(2, 36); }
+    } catch (e) {}
+    if (!trxAddr && typeof wwTrxBase58FromEthAddressHex === 'function') {
+      trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
+    }
     // BTC 地址（m/44'/0'/0'/0/0）
     let btcAddr2 = '';
     try {
