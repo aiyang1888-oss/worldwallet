@@ -5657,6 +5657,11 @@ function doSwap() {
     _safeEl('swapConfirmTo').textContent = out + ' ' + swapTo.name;
     var pr = swapTo.price ? (swapFrom.price/swapTo.price) : 0;
     _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (isFinite(pr) ? (swapTo.id === 'trx' ? pr.toFixed(2) : pr.toFixed(8)) : '—') + ' ' + swapTo.name;
+    var cm = _safeEl('swapConfirmMin');
+    if (cm) {
+      var mn = (_safeEl('swapMinOut') || {}).textContent || '—';
+      cm.textContent = mn;
+    }
     overlay.classList.add('show');
   } else {
     openDex();
