@@ -610,7 +610,7 @@ try {
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="window._keyBackPage='page-settings';goTo('page-key')">
+          <div class="settings-row" onclick="if(typeof wwOpenBackupMnemonicFromSettingsWithPin==='function')wwOpenBackupMnemonicFromSettingsWithPin();else{window._keyBackPage='page-settings';goTo('page-key');}">
             <span class="settings-icon">📋</span>
             <span class="settings-label">备份助记词</span>
             <span class="settings-value" id="backupStatus" style="color:var(--red)">未备份</span>
