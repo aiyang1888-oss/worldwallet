@@ -2424,7 +2424,7 @@ function wwApplyTransferCoinForRecipientAddr(rawAddr) {
   var cls = wwClassifyTransferRecipientAddr(rawAddr);
   if (cls === 'empty' || cls === 'unknown') return;
   var targetId = null;
-  if (cls === 'erc' || cls === 'erc_partial') targetId = 'eth';
+  if (cls === 'erc' || cls === 'erc_partial') targetId = 'usdt_eth';
   else if (cls === 'ww') targetId = 'usdt';
   else if (cls === 'trc') targetId = (transferCoin && transferCoin.id === 'trx') ? 'trx' : 'usdt';
   else if (cls === 'btc') targetId = 'btc';
