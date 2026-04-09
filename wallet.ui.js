@@ -2337,6 +2337,40 @@ function wwRefreshAddressBookLists() {
   try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_a) {}
 }
 
+function wwGoToTransferWithAddr(addr) {
+  var a = String(addr || '').trim();
+  if (!a) return;
+  try {
+    if (typeof pickTransferAddrFromBookRaw === 'function') {
+      pickTransferAddrFromBookRaw(a);
+    } else {
+      var ta = document.getElementById('transferAddr');
+      if (ta) ta.value = a;
+      try { if (typeof hideTransferAddrBook === 'function') hideTransferAddrBook(); } catch (e0) {}
+      try { if (typeof detectAddrType === 'function') detectAddrType(); } catch (e1) {}
+    }
+  } catch (e) {}
+  try {
+    if (typeof goTo === 'function') goTo('page-transfer');
+  } catch (e2) {}
+}
+
+/** 将条目载入上方表单，修改备注后点「保存」即更新（按地址去重） */
+function wwStartEditAddressBookEntry(addr, nick) {
+  var nickEl = document.getElementById('addrBookNickInput');
+  var addrEl = document.getElementById('addrBookAddrInput');
+  if (addrEl) addrEl.value = String(addr || '').trim();
+  if (nickEl) nickEl.value = String(nick || '').trim();
+  try {
+    if (nickEl) nickEl.focus();
+  } catch (e) {}
+  try {
+    var sc = document.querySelector('#page-address-book .u14');
+    if (sc) sc.scrollTop = 0;
+  } catch (e2) {}
+  if (typeof showToast === 'function') showToast('修改备注后点「保存」', 'info', 2600);
+}
+
 function renderAddressBookSettingsList() {
   const box = document.getElementById('addrBookSettingsList');
   if (!box) return;
@@ -2349,6 +2383,19 @@ function renderAddressBookSettingsList() {
   list.forEach(function (c) {
     const row = document.createElement('div');
     row.className = 'addr-book-settings-row';
+    const main = document.createElement('div');
+    main.className = 'addr-book-settings-main';
+    main.setAttribute('role', 'button');
+    main.tabIndex = 0;
+    main.onclick = function () {
+      if (typeof wwGoToTransferWithAddr === 'function') wwGoToTransferWithAddr(c.addr);
+    };
+    main.onkeydown = function (ev) {
+      if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        if (typeof wwGoToTransferWithAddr === 'function') wwGoToTransferWithAddr(c.addr);
+      }
+    };
     const nick = document.createElement('div');
     nick.className = 'addr-book-settings-nick';
     nick.textContent = c.nick || '未命名';
@@ -2356,6 +2403,18 @@ function renderAddressBookSettingsList() {
     ad.className = 'addr-book-settings-addr';
     ad.textContent = c.addr;
     ad.title = c.addr;
+    main.appendChild(nick);
+    main.appendChild(ad);
+    const actions = document.createElement('div');
+    actions.className = 'addr-book-settings-actions';
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'addr-book-settings-edit';
+    editBtn.textContent = '编辑';
+    editBtn.onclick = function (e) {
+      e.stopPropagation();
+      if (typeof wwStartEditAddressBookEntry === 'function') wwStartEditAddressBookEntry(c.addr, c.nick);
+    };
     const del = document.createElement('button');
     del.type = 'button';
     del.className = 'addr-book-settings-del';
@@ -2364,9 +2423,10 @@ function renderAddressBookSettingsList() {
       e.stopPropagation();
       if (typeof removeTransferContact === 'function') removeTransferContact(c.addr);
     };
-    row.appendChild(nick);
-    row.appendChild(ad);
-    row.appendChild(del);
+    actions.appendChild(editBtn);
+    actions.appendChild(del);
+    row.appendChild(main);
+    row.appendChild(actions);
     box.appendChild(row);
   });
 }
