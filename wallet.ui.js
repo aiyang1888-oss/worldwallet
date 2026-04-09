@@ -1459,6 +1459,9 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     try { if(typeof wwGaslessPopulate==='function') wwGaslessPopulate(); } catch(_gsp) {}
     try { if(typeof wwGasManagerRender==='function') setTimeout(wwGasManagerRender, 30); } catch(_wg) {}
   }
+  if (pageId === 'page-address-book') {
+    try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_ab) {}
+  }
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
