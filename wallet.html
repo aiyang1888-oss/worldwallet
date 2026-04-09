@@ -873,9 +873,10 @@
 <script src="wallet.core.js"></script>
 <script src="core/session-key-cache.js"></script>
 <script src="wallet.ui.js"></script>
-<script src="wallet.addr.js"></script>
 <script src="wallet.tx.js"></script>
 <script src="wallet.runtime.js"></script>
+<!-- wallet.addr.js 须在 wallet.runtime.js 之后，避免 runtime 内旧版 updateAddr 覆盖 -->
+<script src="wallet.addr.js"></script>
 <script src="wallet.dom-bind.js"></script>
 
 

@@ -1340,9 +1340,10 @@ try {
 <script src="core/session-key-cache.js"></script>
 <script src="wallet.ui.js"></script>
 <script src="wallet.chains.js"></script>
-<script src="wallet.addr.js"></script>
 <script src="wallet.tx.js"></script>
 <script src="wallet.runtime.js"></script>
+<!-- wallet.addr.js 必须在 wallet.runtime.js 之后：runtime 内含旧版 updateAddr/getNativeAddr，否则会覆盖 addr 的万语芯片与 TEMP 种子逻辑 -->
+<script src="wallet.addr.js"></script>
 <script src="wallet.dom-bind.js"></script>
 
 

@@ -1010,16 +1010,7 @@ async function restoreWallet(mnemonic) {
   }
 }
 
-// 页面加载时恢复钱包（只恢复数据，不跳转）
-captureReferralFromUrl();
-loadWallet();
-try { initMnemonicLengthSelectors(); } catch (_iml) {}
-try {
-  const _txList = document.getElementById('txHistoryList');
-  if (_txList && typeof txHistoryEmptyHtml === 'function') _txList.innerHTML = txHistoryEmptyHtml();
-} catch (_e) {}
-// 钱包昵称 localStorage（仅本机）
-try { if (localStorage.getItem('ww_wallet_nickname') == null) localStorage.setItem('ww_wallet_nickname', ''); } catch (_wn) {}
+/* 首屏恢复钱包：已在 wallet.ui.js（queueMicrotask）执行 loadWallet；此处若再调会在 wallet.addr.js 尚未加载时无效。勿重复。 */
 function getWalletNickname() { try { return localStorage.getItem('ww_wallet_nickname') || ''; } catch (e) { return ''; } }
 function setWalletNickname(s) { try { localStorage.setItem('ww_wallet_nickname', (s || '').trim().slice(0, 32)); } catch (e) {} }
 function applyWwTheme() {
