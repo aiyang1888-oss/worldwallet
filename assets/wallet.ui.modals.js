@@ -5,6 +5,7 @@
   'use strict';
 
   var _wwModalLastFocus = null;
+  var _wwModalConfirmPrevFocus = null;
 
   function _wwModalTrapFocus(overlay) {
     try {
@@ -111,6 +112,11 @@
       if (msgEl) msgEl.textContent = message || '确认？';
       if (okBtn) okBtn.textContent = okText || '确定';
       if (cancelB) cancelB.textContent = cancelText || '取消';
+      try {
+        _wwModalConfirmPrevFocus = document.activeElement;
+      } catch (_fp) {
+        _wwModalConfirmPrevFocus = null;
+      }
       function cleanup() {
         document.removeEventListener('keydown', onKey, true);
         if (okBtn) okBtn.onclick = null;
@@ -119,6 +125,10 @@
       function finish(ok) {
         cleanup();
         ov.classList.remove('show');
+        try {
+          if (_wwModalConfirmPrevFocus && _wwModalConfirmPrevFocus.focus) _wwModalConfirmPrevFocus.focus();
+        } catch (_rf) {}
+        _wwModalConfirmPrevFocus = null;
         resolve(!!ok);
       }
       function onKey(ev) {

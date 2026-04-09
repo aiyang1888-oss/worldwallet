@@ -404,6 +404,7 @@
     };
   };
 
+  /** EIP-55：与 ethers.utils.getAddress 一致；转账页 wwGetTransferRecipientValidation 等会依赖此校验 */
   global.wwValidateEvmAddressChecksum = function (addr) {
     if (typeof ethers === 'undefined' || !ethers.utils) throw new Error('ethers 未加载');
     try {

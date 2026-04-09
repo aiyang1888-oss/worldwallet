@@ -11,7 +11,29 @@
   function _read() {
     try {
       var arr = JSON.parse(localStorage.getItem(KEY) || '[]');
-      return Array.isArray(arr) ? arr : [];
+      if (!Array.isArray(arr)) arr = [];
+      var changed = false;
+      var i;
+      var row;
+      for (i = 0; i < arr.length; i++) {
+        row = arr[i];
+        if (!row || typeof row !== 'object') continue;
+        if (row.schemaVersion == null) {
+          row.schemaVersion = 1;
+          changed = true;
+        }
+        if (row.schemaVersion < 2) {
+          if (row.chainId == null && String(row.networkLabel || '').indexOf('Ethereum') >= 0) row.chainId = 1;
+          if (!row.networkLabel && row.chainId === 1) row.networkLabel = 'Ethereum';
+          if (!row.pairLabel && (row.fromSym || row.toSym)) {
+            row.pairLabel = String(row.fromSym || '') + ' → ' + String(row.toSym || '');
+          }
+          row.schemaVersion = 2;
+          changed = true;
+        }
+      }
+      if (changed) _write(arr);
+      return arr;
     } catch (_e) {
       return [];
     }

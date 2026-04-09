@@ -34,7 +34,7 @@
   function bumpGasLimit(g, ethersLib) {
     var E = ethersLib || global.ethers;
     if (!g || !g.mul || !E) return g;
-    return g.mul(128).div(100).add(E.BigNumber.from('48000'));
+    return g.mul(135).div(100).add(E.BigNumber.from('56000'));
   }
 
   function recordSwapGasSample(gasUsedBn) {
@@ -171,7 +171,7 @@
         amountOutMinimum: minOutWei,
         sqrtPriceLimitX96: 0
       };
-      var glA = ethers.BigNumber.from('520000');
+      var glA = ethers.BigNumber.from('600000');
       try {
         var estA = await withTimeout(router.estimateGas.exactInputSingle(singleA), GAS_ESTIMATE_MS, 'Gas 估算');
         glA = bumpGasLimit(estA, ethers);
@@ -202,7 +202,7 @@
       };
       var w2 = iface.encodeFunctionData('exactInputSingle', [pEth]);
       if (onProgress) onProgress('swap');
-      var glB = ethers.BigNumber.from('680000');
+      var glB = ethers.BigNumber.from('760000');
       try {
         var estB = await withTimeout(
           router.estimateGas.multicall([w1, w2], { value: amountInWei }),
@@ -238,7 +238,7 @@
       var u1 = iface.encodeFunctionData('exactInputSingle', [pTok]);
       var u2 = iface.encodeFunctionData('unwrapWETH9', [minOutWei, recip]);
       if (onProgress) onProgress('swap');
-      var glC = ethers.BigNumber.from('720000');
+      var glC = ethers.BigNumber.from('820000');
       try {
         var estC = await withTimeout(router.estimateGas.multicall([u1, u2]), GAS_ESTIMATE_MS, 'Gas 估算');
         glC = bumpGasLimit(estC, ethers);
