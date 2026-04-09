@@ -4661,6 +4661,9 @@ function markBackupDone() {
 }
 
 function updateSettingsPage() {
+  try {
+    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
+  } catch (_rh) {}
   const info = LANG_INFO[currentLang]||{name:'中文'};
   const sl = (_safeEl('settingsLang') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* settingsLang fallback */;
   if(sl) sl.textContent = info.name;
@@ -4672,6 +4675,18 @@ function updateSettingsPage() {
   if (typeof applyWwTheme === 'function') applyWwTheme();
   const sa = document.getElementById('settingsAddr');
   if(sa) sa.textContent = getNativeAddr();
+  const spv = document.getElementById('settingsPinValue');
+  if (spv) {
+    var pinSet = false;
+    try {
+      pinSet = typeof wwHasPinConfigured === 'function' && wwHasPinConfigured();
+    } catch (_p0) { pinSet = false; }
+    if (!pinSet) {
+      try { pinSet = !!(localStorage.getItem('ww_pin') || '').trim(); } catch (_p1) { pinSet = false; }
+    }
+    spv.textContent = pinSet ? '已设置' : '未设置';
+    spv.style.color = pinSet ? 'var(--green,#26a17b)' : 'var(--text-muted)';
+  }
   // 实时反映备份状态
   const bs = document.getElementById('backupStatus');
   if(bs) {
