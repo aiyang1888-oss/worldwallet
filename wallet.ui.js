@@ -4926,12 +4926,36 @@ try {
   function wwGuestHasSavedAddress() {
     try {
       var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      if (typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d)) return true;
-      return typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(d);
+      return typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d);
     } catch (_g) {
       return false;
     }
   }
+  /** 无有效地址却在欢迎页时，清 head 注入的 boot 遮罩，避免 pointer-events:none 卡死三按钮 */
+  function wwFixWelcomeBootIfGuest() {
+    try {
+      var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      var has = typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d);
+      if (has) return;
+      var w = document.getElementById('page-welcome');
+      if (!w || !w.classList.contains('active')) return;
+      document.documentElement.removeAttribute('data-ww-boot-page');
+      try {
+        document.documentElement.classList.remove('ww-boot-route');
+      } catch (_e) {}
+      try {
+        document.querySelectorAll('style[data-ww-boot-route]').forEach(function (st) {
+          if (st.parentNode) st.parentNode.removeChild(st);
+        });
+      } catch (_e2) {}
+      w.style.pointerEvents = 'auto';
+    } catch (_e3) {
+      wwQuiet(_e3);
+    }
+  }
+  try {
+    window.wwFixWelcomeBootIfGuest = wwFixWelcomeBootIfGuest;
+  } catch (_ex) {}
   /** 无链上地址时仅允许导入/密钥等 hash 深链；与 wallet.html head boot 白名单一致 */
   function wwGuestHashAllowed(pid) {
     if (!pid) return true;
