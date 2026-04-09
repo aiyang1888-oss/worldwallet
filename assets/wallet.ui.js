@@ -2442,7 +2442,7 @@ function wwApplyTransferCoinForRecipientAddr(rawAddr) {
   };
 }
 
-var transferCoin = {id:'usdt', name:'TRC USDT', chain:'TRC-20 · Tron', icon:'', logoUrl:'https://static.tronscan.org/production/logo/usdtlogo.png', bal:0, price:1};
+var transferCoin = {id:'usdt', name:'USDT (TRC-20)', chain:'Tron', icon:'', logoUrl:'https://static.tronscan.org/production/logo/usdtlogo.png', bal:0, price:1};
 
 function selectTransferCoin(coinId) {
   var id = coinId != null ? String(coinId).trim() : '';
@@ -2763,7 +2763,7 @@ async function refreshHomePriceTicker() {
         usdt: d.tether && d.tether.usd
       });
     } catch (_cg) { wwQuiet(_cg); }
-    const html = 'TRC USDT <strong>$' + ust + '</strong>';
+    const html = 'USDT (TRC-20) <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
     if(a) a.innerHTML = html;
@@ -2799,7 +2799,7 @@ function wwCheckPriceAlertsAfterTicker(d) {
       { key: 'btc', name: 'BTC', get: function (z) { return z.bitcoin && z.bitcoin.usd; } },
       { key: 'eth', name: 'ETH', get: function (z) { return z.ethereum && z.ethereum.usd; } },
       { key: 'trx', name: 'TRX', get: function (z) { return z.tron && z.tron.usd; } },
-      { key: 'usdt', name: 'TRC USDT', get: function (z) { return z.tether && z.tether.usd; } }
+      { key: 'usdt', name: 'USDT (TRC-20)', get: function (z) { return z.tether && z.tether.usd; } }
     ];
     var prev = window._wwAlertPricePrev || {};
     map.forEach(function (m) {
@@ -2828,7 +2828,7 @@ function updateYieldFarmTracker(parts, total) {
     el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'USDT (TRC-20)': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var estYr = 0;
   var rows = [];
   parts.forEach(function (p) {
@@ -2906,7 +2906,7 @@ function updateReputationSettingsRow() {
 }
 
 var WW_LENDING_MARKETS = [
-  { asset: 'TRC USDT', chain: 'TRON', supplyApy: '3.8%', borrowApr: '5.2%', color: '#26a17b' },
+  { asset: 'USDT (TRC-20)', chain: 'TRON', supplyApy: '3.8%', borrowApr: '5.2%', color: '#26a17b' },
   { asset: 'USDC', chain: 'Ethereum', supplyApy: '4.1%', borrowApr: '5.9%', color: '#2775ca' },
   { asset: 'ETH', chain: 'Ethereum', supplyApy: '2.4%', borrowApr: '3.6%', color: '#627eea' },
   { asset: 'TRX', chain: 'TRON', supplyApy: '1.9%', borrowApr: '4.0%', color: '#ff0013' }
@@ -2966,7 +2966,7 @@ function drawPortfolioPieChart(trcUsdtUsd, ercUsdtUsd, trxUsd, ethUsd, btcUsd) {
   const leg = document.getElementById('portfolioPieLegend');
   if(!card || !c || !leg) return;
   const parts = [
-    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
+    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'USDT (TRC-20)' },
     { v: Number(ercUsdtUsd) || 0, c: '#3d9a72', l: 'USDT (ERC-20)' },
     { v: Number(trxUsd) || 0, c: '#ff4d4d', l: 'TRX' },
     { v: Number(ethUsd) || 0, c: '#627eea', l: 'ETH' },
@@ -3111,7 +3111,9 @@ function calcTransferFee() {
     if (transferCoin.id === 'eth') amtLbl.textContent = '金额（ETH · Ethereum）';
     else if (transferCoin.id === 'trx') amtLbl.textContent = '金额（TRX · Tron）';
     else if (transferCoin.id === 'btc') amtLbl.textContent = '金额（BTC · Bitcoin）';
-    else amtLbl.textContent = '金额（TRC USDT）';
+    else if (transferCoin.id === 'usdt_eth') amtLbl.textContent = '金额（USDT · ERC-20）';
+    else if (transferCoin.id === 'usdt') amtLbl.textContent = '金额（USDT · TRC-20）';
+    else amtLbl.textContent = '金额（' + (transferCoin.name || '') + '）';
   }
   var balSuf = document.getElementById('transferBalSuffix');
   if (balSuf) balSuf.textContent = transferCoin.name || '';
@@ -4151,7 +4153,7 @@ function wwUsdFromTxRow(tx) {
   try { amtN = Math.abs(parseFloat(String(tx.amount || '0').replace(/[^0-9.+-]/g, ''))); } catch (e) { amtN = 0; }
   var cg = window._wwLastCgUsd || {};
   var c = String(tx.coin || '').toUpperCase();
-  if (c === 'USDT' || c === 'TRC USDT') return amtN * (parseFloat(cg.usdt) || 1);
+  if (c === 'USDT' || c === 'TRC USDT' || c === 'USDT (TRC-20)') return amtN * (parseFloat(cg.usdt) || 1);
   if (c === 'TRX') return amtN * (parseFloat(cg.trx) || 0.12);
   if (c === 'ETH') return amtN * (parseFloat(cg.eth) || 2000);
   if (c === 'BTC') return amtN * (parseFloat(cg.btc) || 60000);

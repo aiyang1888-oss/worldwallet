@@ -5119,7 +5119,7 @@ function wwHomeAssetRowsMeta() {
   ];
 }
 
-/** 首页 #wwHomeAssetCardsMount 为空时注入 TRC USDT / ERC20 USDT / TRX / ETH / BTC（与 COINS 一致），供余额与「隐藏零余额」使用 */
+/** 首页 #wwHomeAssetCardsMount 为空时注入 USDT (TRC-20) / USDT (ERC-20) / TRX / ETH / BTC（与 COINS 一致），供余额与「隐藏零余额」使用 */
 function wwInitHomeAssetCardsFromCoins() {
   var mount = document.getElementById('wwHomeAssetCardsMount');
   if (!mount || mount.getAttribute('data-ww-asset-cards') === 'v2') return;

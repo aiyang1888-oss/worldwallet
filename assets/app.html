@@ -754,7 +754,7 @@ try {
         </div>
 
         <div id="transferUsdtNetworkRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">TRC USDT 网络</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">USDT（TRC-20）网络</div>
           <label for="transferUsdtNetwork" class="u5">主网</label>
           <select id="transferUsdtNetwork" autocomplete="off" style="width:100%;margin-top:8px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit;outline:none"></select>
           <div id="transferUsdtNetHint" style="display:none;margin-top:10px;font-size:11px;color:var(--text-muted);line-height:1.5" aria-live="polite"></div>
@@ -773,10 +773,10 @@ try {
         </div>
 
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px" id="transferAmountLabel">金额（TRC USDT）</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px" id="transferAmountLabel">金额（USDT · TRC-20）</div>
           <input id="transferAmount" type="number" placeholder="0.00" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
           <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
-            当前余额: <span id="transferBal">0</span> <span id="transferBalSuffix">TRC USDT</span>
+            当前余额: <span id="transferBal">0</span> <span id="transferBalSuffix">USDT (TRC-20)</span>
           </div>
         </div>
 
@@ -994,8 +994,8 @@ try {
             <div style="display:flex;align-items:center;gap:10px">
               <span id="swapFromIcon" class="ww-swap-coin-icon" style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.06)"></span>
               <div>
-                <div id="swapFromName" style="font-size:16px;font-weight:700;color:var(--text)">TRC USDT</div>
-                <div id="swapFromChain" style="font-size:11px;color:var(--text-muted)">TRC-20 · Tron</div>
+                <div id="swapFromName" style="font-size:16px;font-weight:700;color:var(--text)">USDT (TRC-20)</div>
+                <div id="swapFromChain" style="font-size:11px;color:var(--text-muted)">Tron</div>
               </div>
             </div>
             <span style="font-size:11px;color:var(--text-muted)">余额 <span id="swapFromBal" style="color:var(--text)">0</span> · <span style="color:var(--gold);cursor:pointer" onclick="event.stopPropagation();setSwapMax()">全部</span></span>

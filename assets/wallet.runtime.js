@@ -2933,7 +2933,7 @@ async function refreshHomePriceTicker() {
       return x < 10 ? x.toFixed(4) : x.toLocaleString('en', { maximumFractionDigits: 2 });
     };
     const ust = fmt(ustNum);
-    const html = 'TRC USDT <strong>$' + ust + '</strong>';
+    const html = 'USDT (TRC-20) <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
     if(a) a.innerHTML = html;
@@ -2999,7 +2999,7 @@ function wwCheckPriceAlertsAfterTicker(d) {
       { key: 'btc', name: 'BTC', get: function (z) { return z.bitcoin && z.bitcoin.usd; } },
       { key: 'eth', name: 'ETH', get: function (z) { return z.ethereum && z.ethereum.usd; } },
       { key: 'trx', name: 'TRX', get: function (z) { return z.tron && z.tron.usd; } },
-      { key: 'usdt', name: 'TRC USDT', get: function (z) { return z.tether && z.tether.usd; } }
+      { key: 'usdt', name: 'USDT (TRC-20)', get: function (z) { return z.tether && z.tether.usd; } }
     ];
     var prev = window._wwAlertPricePrev || {};
     map.forEach(function (m) {
@@ -3028,7 +3028,7 @@ function updateYieldFarmTracker(parts, total) {
     el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'USDT (TRC-20)': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var estYr = 0;
   var rows = [];
   parts.forEach(function (p) {
@@ -3884,7 +3884,7 @@ function drawPortfolioPieChart(trcUsdtUsd, ercUsdtUsd, trxUsd, ethUsd, btcUsd) {
   const leg = document.getElementById('portfolioPieLegend');
   if(!card || !c || !leg) return;
   const parts = [
-    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
+    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'USDT (TRC-20)' },
     { v: Number(ercUsdtUsd) || 0, c: '#3d9a72', l: 'USDT (ERC-20)' },
     { v: Number(trxUsd) || 0, c: '#ff4d4d', l: 'TRX' },
     { v: Number(ethUsd) || 0, c: '#627eea', l: 'ETH' },
@@ -4351,7 +4351,7 @@ function selectTransferCoin(id) {
   // 从 COINS 读取实时余额和价格
   const coinData = COINS.find(c=>c.id===id);
   const map = {
-    usdt:{id:'usdt',name:'TRC USDT',chain:'TRC-20 · Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
+    usdt:{id:'usdt',name:'USDT (TRC-20)',chain:'Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
     usdt_eth:{id:'usdt_eth',name:'USDT (ERC-20)',chain:'Ethereum',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,130,90,0.18)',bal:coinData&&coinData.id==='usdt_eth'?coinData.bal:0,price:coinData&&coinData.id==='usdt_eth'?coinData.price:1},
     trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',logoUrl:WW_COIN_LOGO_URL.trx,bg:'rgba(255,80,80,0.12)',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
     eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',logoUrl:WW_COIN_LOGO_URL.eth,bg:'rgba(100,100,255,0.12)',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
@@ -5101,7 +5101,7 @@ function wwSetCoinIconElement(el, coin) {
 }
 
 const COINS = [
-  {id:'usdt', name:'TRC USDT', chain:'TRC-20 · Tron', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
+  {id:'usdt', name:'USDT (TRC-20)', chain:'Tron', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
   {id:'usdt_eth', name:'USDT (ERC-20)', chain:'Ethereum', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,130,90,0.18)', bal:0, price:1},
   {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', logoUrl: WW_COIN_LOGO_URL.btc, bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
   {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', logoUrl: WW_COIN_LOGO_URL.eth, bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
@@ -5868,7 +5868,7 @@ function wwUsdFromTxRow(tx) {
   try { amtN = Math.abs(parseFloat(String(tx.amount || '0').replace(/[^0-9.+-]/g, ''))); } catch (e) { amtN = 0; }
   var cg = window._wwLastCgUsd || {};
   var c = String(tx.coin || '').toUpperCase();
-  if (c === 'USDT' || c === 'TRC USDT') return amtN * (parseFloat(cg.usdt) || 1);
+  if (c === 'USDT' || c === 'TRC USDT' || c === 'USDT (TRC-20)') return amtN * (parseFloat(cg.usdt) || 1);
   if (c === 'TRX') return amtN * (parseFloat(cg.trx) || 0.12);
   if (c === 'ETH') return amtN * (parseFloat(cg.eth) || 2000);
   if (c === 'BTC') return amtN * (parseFloat(cg.btc) || 60000);
@@ -6249,7 +6249,7 @@ function wwYieldOptimizerPopulate() {
     body.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">—</div>';
     return;
   }
-  var apy = { 'TRC USDT': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'USDT (TRC-20)': 4.2, 'USDT (ERC-20)': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var top = null;
   var bestA = 0;
   parts.forEach(function (p) {
