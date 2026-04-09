@@ -2445,12 +2445,15 @@ function wwAddAddressBookFromSettings() {
   var list = getTransferContacts().filter(function (c) {
     return c.addr.trim().toLowerCase() !== addr.toLowerCase();
   });
+  var hadSameAddr = getTransferContacts().some(function (c) {
+    return c.addr.trim().toLowerCase() === addr.toLowerCase();
+  });
   list.unshift({ addr: addr, nick: nick });
   setTransferContacts(list);
   if (addrEl) addrEl.value = '';
   if (nickEl) nickEl.value = '';
   wwRefreshAddressBookLists();
-  if (typeof showToast === 'function') showToast('已保存到地址簿', 'success');
+  if (typeof showToast === 'function') showToast(hadSameAddr ? '备注已更新' : '已保存到地址簿', 'success');
 }
 
 
