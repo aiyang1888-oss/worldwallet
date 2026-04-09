@@ -638,7 +638,7 @@ try {
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
-          <div class="settings-row" onclick="if(confirm('确定删除本机钱包？此操作会清空本地数据。')){ wwPurgeLocalWalletStorage(); goTo('page-welcome'); showToast('钱包已删除', 'success'); }">
+          <div class="settings-row" onclick="if(typeof wwDeleteWalletFromSettings==='function')wwDeleteWalletFromSettings();else if(confirm('确定删除本机钱包？此操作会清空本地数据。')){ if(typeof wwPurgeLocalWalletStorage==='function')wwPurgeLocalWalletStorage(); if(typeof goTo==='function')goTo('page-welcome'); if(typeof showToast==='function')showToast('钱包已删除','success'); }">
             <span class="settings-icon">🗑️</span>
             <span class="settings-label" style="color:var(--red)">删除钱包</span>
             <span class="settings-value" style="color:var(--red)">清空本机</span>
