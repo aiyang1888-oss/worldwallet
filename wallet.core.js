@@ -13,6 +13,88 @@ var REAL_WALLET = null;
 /** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
 var CHAIN_ADDR = '--';
 
+/**
+ * 用户可见错误文案（不直接拼接未知对象）
+ * @param {*} err
+ * @param {string} [fallbackMsg]
+ */
+function wwFmtUserError(err, fallbackMsg) {
+  var fb = fallbackMsg != null && String(fallbackMsg).trim() ? String(fallbackMsg).trim() : '操作失败';
+  try {
+    if (err == null || err === '') return fb;
+    if (typeof err === 'string') {
+      var ts = err.trim();
+      return ts || fb;
+    }
+    if (typeof err === 'number' && isFinite(err)) return String(err);
+    var eo = err;
+    var m =
+      eo &&
+      (eo.message ||
+        eo.reason ||
+        eo.shortMessage ||
+        (eo.error && eo.error.message));
+    if (m && String(m).trim()) return String(m).trim();
+  } catch (_wrap) { void _wrap; }
+  return fb;
+}
+
+/**
+ * 结构化日志：优先 safeLog（若已加载）；否则 console。
+ * @param {string} [level] debug|info|warn|error
+ */
+function wwLog(level) {
+  var args = Array.prototype.slice.call(arguments, 1);
+  var tag = '[' + (level || 'log') + ']';
+  try {
+    if (typeof safeLog === 'function') {
+      safeLog.apply(null, [tag].concat(args));
+      return;
+    }
+  } catch (_sl) { void _sl; }
+  try {
+    var fn = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+    if (typeof console !== 'undefined' && typeof console[fn] === 'function') {
+      console[fn].apply(console, args.length ? [tag].concat(args) : [tag]);
+    }
+  } catch (_cl) { void _cl; }
+}
+
+/**
+ * 预期可忽略的 catch：默认静默；localStorage.WW_DEBUG=1 时经 wwLog 输出
+ */
+function wwQuiet(e, hint) {
+  try {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('WW_DEBUG') === '1') {
+      wwLog('debug', hint || 'catch', e);
+    }
+  } catch (_q) { void _q; }
+}
+
+try {
+  if (typeof window !== 'undefined') {
+    window.wwFmtUserError = wwFmtUserError;
+    window.wwLog = wwLog;
+    window.wwQuiet = wwQuiet;
+  }
+} catch (_wwGlob) { void _wwGlob; }
+
+/**
+ * 简单 ETH 原生转账：在 estimateGas 上加余量，降低主网波动导致的 gas 不足
+ */
+function wwBumpEvmNativeGasLimit(est, ethersLib) {
+  var E = ethersLib || (typeof ethers !== 'undefined' ? ethers : null);
+  if (!E || !E.BigNumber || !est || !est.mul) return est;
+  try {
+    return est.mul(130).div(100).add(E.BigNumber.from('28000'));
+  } catch (_b) {
+    try {
+      return est.mul(120).div(100);
+    } catch (_b2) {
+      return est;
+    }
+  }
+}
 
 function loadWalletPublic() {
   try {
@@ -115,7 +197,7 @@ async function wwUnsealWalletSensitive() {
     w.words = obj.words || null;
     try {
       if (typeof wwUpgradeStoredBtcAddressIfLegacy === 'function') wwUpgradeStoredBtcAddressIfLegacy();
-    } catch (_btc) {}
+    } catch (_btc) { wwQuiet(_btc); }
   } catch (e) {
     console.error('[wwUnsealWalletSensitive]', e);
   }
@@ -136,7 +218,7 @@ function wwClearSessionSecretState() {
     if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET._wwSes) {
       delete REAL_WALLET._wwSes;
     }
-  } catch (e) {}
+  } catch (e) { wwQuiet(e); }
 }
 
 
@@ -145,16 +227,16 @@ function loadWallet() {
   // 万语地址：先于其他 UI，统一从 localStorage 载入 ADDR_WORDS 并一次性刷新各展示位
   try {
     if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
-  } catch (_na) {}
+  } catch (_na) { wwQuiet(_na); }
   try {
     if (typeof updateAddr === 'function') updateAddr();
-  } catch (_ua) {}
+  } catch (_ua) { wwQuiet(_ua); }
   /* ww-addr-pending 须由 wallet.addr.js 的 renderHomeAddrChip 在写入芯片后再移除；此处若无条件移除会出现「看得见但无字的空胶囊」 */
   if (REAL_WALLET && REAL_WALLET.ethAddress) {
-    try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) {}
+    try { sessionStorage.removeItem('ww_ref_pending'); } catch (_r) { wwQuiet(_r); }
   }
-  try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
-  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
+  try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) { wwQuiet(_hb); }
+  try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) { wwQuiet(_ws); }
 }
 
 /** 仅公开字段；供 UI 展示与调试，不包含助记词/私钥 */
@@ -169,7 +251,7 @@ function getRealWalletPublic() {
     hasEncrypted: !!REAL_WALLET.hasEncrypted
   };
 }
-try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) {}
+try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) { wwQuiet(_g); }
 
 
 /**
@@ -181,18 +263,57 @@ try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) {}
  * 密钥页「助记词显示语言」→ wordlists 键 wlKey（renderKeyGrid：enWords → 索引 i → WT_WORDLISTS[wlKey][i]）：
  * - en → 标准 BIP39 英文（createWallet：ethers.utils.entropyToMnemonic）；
  * - zh → 2048 个中国行政区划顺延地名（词表源可含长地名；首屏展示在 wallet.ui.js 内规范为同索引唯一短前缀，导入仍认原始长词），与英文 BIP39 按索引一对一；
- * - ja/ko/… → 若 WT_WORDLISTS[lang] 为 2048 项则用该语种展示词，否则回退 zh。
+ * - ja/ko/es/fr/de/it/ru/pt → bitcoinjs/bip39 或 BIPs PR 词表（与英文同索引），懒加载自 wordlists/*.json。
  */
+var WW_MNEMONIC_BIP39_LANGS = ['ja', 'ko', 'es', 'fr', 'de', 'it', 'ru', 'pt'];
+
 function getMnemonicWordlistLang(uiLang) {
   if (!uiLang || uiLang === 'en') return 'en';
   if (uiLang === 'zh') return 'zh';
+  if (WW_MNEMONIC_BIP39_LANGS.indexOf(uiLang) >= 0) return uiLang;
   try {
     if (typeof WT_WORDLISTS !== 'undefined' && WT_WORDLISTS[uiLang] && WT_WORDLISTS[uiLang].length === 2048) {
       return uiLang;
     }
-  } catch (e) {}
-  return 'zh';
+  } catch (e) { wwQuiet(e); }
+  return 'en';
 }
+
+/**
+ * 标准 BIP39 熵 → 英文助记词为真源；wlKey 为展示用词表（与 keyMnemonicLang 解析结果一致）。
+ * @param {string} wlKey en/zh/ja/…
+ * @param {number} wordCount 12|15|18|21|24
+ */
+async function generateMnemonic(wlKey, wordCount) {
+  if (typeof ethers === 'undefined') throw new Error('ethers not ready');
+  var nWords = parseInt(wordCount, 10) || 12;
+  if ([12, 15, 18, 21, 24].indexOf(nWords) < 0) nWords = 12;
+  var entropyBytes =
+    typeof getEntropyByteCountForMnemonicWords === 'function'
+      ? getEntropyByteCountForMnemonicWords(nWords)
+      : { 12: 16, 15: 20, 18: 24, 21: 28, 24: 32 }[nWords] || 16;
+  var key = wlKey || 'en';
+  if (key !== 'en' && typeof wwEnsureWordlistLoaded === 'function') {
+    await wwEnsureWordlistLoaded(key);
+  }
+  var enMnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
+  var enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
+  var words =
+    !key || key === 'en'
+      ? enWords.slice()
+      : typeof wwMapEnWordsToLangWords === 'function'
+        ? wwMapEnWordsToLangWords(enWords, key)
+        : enWords.slice();
+  return {
+    enMnemonic: enMnemonic,
+    words: words,
+    wordCount: nWords,
+    mnemonicWordlistKey: key === 'en' ? 'en' : key
+  };
+}
+try {
+  window.generateMnemonic = generateMnemonic;
+} catch (_gm) { wwQuiet(_gm); }
 
 /**
  * 导入：先按标准英文 BIP39 解析；失败则按所选助记词语言词表转为英文再解析（与密钥页语言一致）；仍失败时再试中文词表（兼容旧数据）。
@@ -207,7 +328,7 @@ function importWalletFlexible(raw, preferredLang) {
   if (pl === undefined || pl === null) {
     try {
       if (typeof keyMnemonicLang === 'string') pl = keyMnemonicLang;
-    } catch (_e) {}
+    } catch (_e) { wwQuiet(_e); }
   }
   function tryLang(lg) {
     if (!lg || lg === 'en' || !WT_WORDLISTS[lg]) return null;
