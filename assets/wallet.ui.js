@@ -3988,17 +3988,32 @@ function wwNavigateHomeAfterCreateFlow(options) {
       } catch (_sc) {}
     }, 0);
   }
+  if (pid === 'page-settings') {
+    setTimeout(function () {
+      try {
+        if (typeof goTab === 'function') goTab('tab-settings');
+      } catch (_gts) {}
+      try {
+        if (typeof updateSettingsPage === 'function') updateSettingsPage();
+      } catch (_usp) {}
+    }, 0);
+  }
 }
 try {
   window.wwNavigateHomeAfterCreateFlow = wwNavigateHomeAfterCreateFlow;
 } catch (_wn) {}
 
 /**
- * 「暂时忽略验证」：先提升 TEMP→REAL 并落盘，再走与验证通过相同的首页路由（dom-bind / 线上入口依赖此函数）。
+ * 「暂时忽略验证」：先提升 TEMP→REAL 并落盘，再进入创建结束流程。
+ * 从设置「备份助记词」进入时（_keyBackPage===page-settings）应回到设置页，否则回资产首页。
  */
 function wwSkipVerifyToHome() {
+  var destPage = 'page-home';
   try {
-    wwClearHtmlBootRouteIfDestChanges('page-home');
+    if (window._keyBackPage === 'page-settings') destPage = 'page-settings';
+  } catch (_kb) {}
+  try {
+    if (typeof wwClearHtmlBootRouteIfDestChanges === 'function') wwClearHtmlBootRouteIfDestChanges(destPage);
   } catch (_b) {}
   try {
     if (typeof hideWalletLoading === 'function') hideWalletLoading();
@@ -4014,8 +4029,11 @@ function wwSkipVerifyToHome() {
     if (typeof wwPromoteTempWalletForSkipVerify === 'function') wwPromoteTempWalletForSkipVerify();
   } catch (_p) {}
   if (typeof wwNavigateHomeAfterCreateFlow === 'function') {
-    wwNavigateHomeAfterCreateFlow({ mnemonicVerified: false, pageId: 'page-home' });
+    wwNavigateHomeAfterCreateFlow({ mnemonicVerified: false, pageId: destPage });
   }
+  try {
+    if (destPage === 'page-settings') window._keyBackPage = null;
+  } catch (_kc) {}
 }
 try {
   window.wwSkipVerifyToHome = wwSkipVerifyToHome;
