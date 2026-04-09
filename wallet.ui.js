@@ -3988,6 +3988,16 @@ function wwNavigateHomeAfterCreateFlow(options) {
       } catch (_sc) {}
     }, 0);
   }
+  if (pid === 'page-settings') {
+    setTimeout(function () {
+      try {
+        if (typeof goTab === 'function') goTab('tab-settings');
+      } catch (_gts) {}
+      try {
+        if (typeof updateSettingsPage === 'function') updateSettingsPage();
+      } catch (_usp) {}
+    }, 0);
+  }
 }
 try {
   window.wwNavigateHomeAfterCreateFlow = wwNavigateHomeAfterCreateFlow;
