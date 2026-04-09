@@ -1332,6 +1332,7 @@ try {
         <div style="font-size:16px;font-weight:700;color:var(--text)">兑换记录</div>
         <button type="button" class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="if(typeof closeSwapHistory==='function')closeSwapHistory()">关闭</button>
       </div>
+      <input id="swapHistorySearch" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜索币种、金额、Tx" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
       <div id="swapHistoryBody" style="overflow-y:auto;flex:1;font-size:12px"></div>
     </div>
   </div>
@@ -1551,6 +1552,7 @@ try {
 <!-- globals.js disabled to fix var conflict -->
 <script src="js/api-config.js"></script>
 <script src="wallet.swap.js"></script>
+<script src="wallet.swap.history.js"></script>
 <script src="wallet.swap.exec.js"></script>
 <script src="js/btc-segwit.js"></script>
 <script src="js/idb-kv.js"></script>
@@ -1563,6 +1565,7 @@ try {
 <script src="wallet.core.js"></script>
 <script src="wallet.token.js"></script>
 <script src="core/session-key-cache.js"></script>
+<script src="wallet.ui.modals.js"></script>
 <script src="wallet.ui.js"></script>
 <script src="wallet.chains.js"></script>
 <script src="wallet.tx.js"></script>
