@@ -69,6 +69,29 @@ try {
 })();
 </script>
 <script>
+/** 首屏尽早卸载旧 SW 并清理 Cache Storage，减轻 SW 缓存旧 HTML/JS 导致错页（runtime 加载后会按需再 register） */
+(function wwHeadPurgeStaleServiceWorker() {
+  try {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) {
+          r.unregister();
+        });
+      });
+    }
+  } catch (_sw0) {}
+  try {
+    if (typeof caches !== 'undefined' && caches.keys) {
+      caches.keys().then(function (keys) {
+        keys.forEach(function (k) {
+          caches.delete(k);
+        });
+      });
+    }
+  } catch (_sw1) {}
+})();
+</script>
+<script>
 (function () {
   function releaseWelcomeGuard() {
     try {
