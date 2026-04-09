@@ -224,6 +224,7 @@
     bindInput('qrReceiveAmount', 'updateQRCode', false);
     bindInput('transferAddr', 'detectAddrType', false);
     bindInput('transferAmount', 'calcTransferFee', false);
+    bindInput('addrBookListSearch', 'renderAddressBookSettingsList', false);
     bindInput('swapAmountIn', 'calcSwap', false);
     bindInput('importPaste', 'syncImportGrid', true);
 
