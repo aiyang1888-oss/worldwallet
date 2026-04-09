@@ -1366,11 +1366,16 @@ function goTo(pageId, opts) {
     }
   } catch (_ib) { wwQuiet(_ib); }
   applySeoForPage(pageId);
-  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   const activePage=document.getElementById(pageId);
   if(!activePage){console.warn('[WorldToken] 页面不存在:',pageId);return;}
+  /* 与 wallet.runtime.js goTo 一致：先 active 目标页再清其它，避免一帧无 .active（runtime 会覆盖本函数） */
   activePage.classList.add('active');
   activePage.style.display='flex';
+  document.querySelectorAll('.page').forEach(function (p) {
+    if (p === activePage) return;
+    p.classList.remove('active');
+    p.style.display='none';
+  });
   var _tabBar = document.getElementById('tabBar');
   if (_tabBar) {
     if (pageId === 'page-home') {

@@ -1504,9 +1504,16 @@ function goTo(pageId, opts) {
     }
     return;
   }
-  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.display='';});
-  activePage.classList.add('active');
-  activePage.style.display='';
+  /* 先点亮目标页再熄灭其它页：避免先 strip 全部 .active 时出现一帧「无 active」→ .page 的 opacity 过渡造成资产页扇动 */
+  try {
+    activePage.classList.add('active');
+    activePage.style.display = '';
+    document.querySelectorAll('.page').forEach(function (p) {
+      if (p === activePage) return;
+      p.classList.remove('active');
+      p.style.display = '';
+    });
+  } catch (_wwPgAct) { wwQuiet(_wwPgAct); }
   var _tbGo = document.getElementById('tabBar');
   if (_tbGo) {
     if (pageId === 'page-home') {
