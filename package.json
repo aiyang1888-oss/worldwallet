@@ -3,6 +3,8 @@
   "description": "Web 钱包：真源 dist/；build 将 wallet.html 复制为 index/app 并 rsync → assets/",
   "scripts": {
     "build": "bash scripts/sync-assets.sh",
+    "minify:wallet": "node scripts/minify-wallet-delivery.mjs",
+    "minify:wallet:assets": "node scripts/minify-wallet-delivery.mjs --assets-only",
     "dev": "python3 -m http.server 8766 --directory dist",
     "dev:ping": "curl -sf -o /dev/null http://127.0.0.1:8766/wallet.html && echo OK || (echo 'FAIL: 请在仓库根执行 npm run dev，或检查 8766 被其它 http.server 占用' && exit 1)",
     "dup-fn": "node scripts/ww-duplicate-functions.mjs",

@@ -13,7 +13,6 @@ SYNC_PAIRS = [
     ('dist/wallet.tx.js',       'assets/wallet.tx.js'),
     ('dist/wallet.core.js',     'assets/wallet.core.js'),
     ('dist/wallet.css',         'assets/wallet.css'),
-    ('dist/wallet.v2.css',      'assets/wallet.v2.css'),
     ('dist/wallet.dom-bind.js', 'assets/wallet.dom-bind.js'),
     ('dist/wallet.html',        'assets/wallet.html'),
     ('dist/index.html',         'assets/index.html'),
