@@ -687,6 +687,27 @@ try {
       </div>
     </div>
 
+    <div class="page" id="page-address-book">
+      <div class="nav-bar">
+        <div class="nav-leading">
+        <div class="nav-back" onclick="goTo('page-settings')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">地址簿</div>
+        </div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14">
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">与转账页共用同一地址列表，数据仅保存在本机。</p>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">新增</div>
+          <input id="addrBookNickInput" type="text" autocomplete="off" placeholder="备注名" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit" />
+          <textarea id="addrBookAddrInput" rows="2" autocomplete="off" placeholder="收款地址" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+          <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;cursor:pointer;font-family:inherit" onclick="if(typeof wwAddAddressBookFromSettings==='function')wwAddAddressBookFromSettings()">保存</button>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">已保存</div>
+        <div id="addrBookSettingsList"></div>
+      </div>
+    </div>
+
     <!-- 转换助记词：选语言 → 按 BIP39 索引映射为对应词表词条（熵不变） -->
     <div class="page" id="page-convert-mnemonic">
       <div class="nav-bar">
