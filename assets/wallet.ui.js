@@ -4576,6 +4576,9 @@ function openPinSettingsDialog() {
       wwEnsureInitialHashRoute();
       wwApplyHashRoute();
     } catch (_wb) {}
+    try {
+      document.documentElement.classList.remove('ww-first-route-pending');
+    } catch (_wwFp) {}
   })();
 })();
 
