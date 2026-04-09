@@ -4304,7 +4304,11 @@ function calcTransferFee() {
     if (cnyEl) cnyEl.textContent = '0.00';
     if (hintEl) {
       hintEl.textContent =
-        isUsdtEvm ? nf.line + ' · ' + nf.sub : nf.line + ' · ' + nf.sub + ' · TRC-20 需能量/带宽';
+        transferCoin && transferCoin.id === 'eth'
+          ? nf.line + ' · ' + nf.sub + ' · Gas 随网络波动'
+          : isUsdtEvm
+            ? nf.line + ' · ' + nf.sub
+            : nf.line + ' · ' + nf.sub + ' · TRC-20 需能量/带宽';
     }
   } else if (isUsdtEvm) {
     var symE = transferCoin._usdtMeta && transferCoin._usdtMeta.nativeSymbol ? transferCoin._usdtMeta.nativeSymbol : 'ETH';
@@ -4320,6 +4324,16 @@ function calcTransferFee() {
         amt.toFixed(6) +
         ' USDT · ' +
         nf.sub;
+    }
+  } else if (transferCoin && transferCoin.id === 'eth') {
+    var gnEth = typeof window !== 'undefined' ? window._wwEthTransferGasNative : null;
+    if (feeEl) feeEl.textContent = gnEth != null && isFinite(gnEth) ? '~' + gnEth.toFixed(6) + ' ETH' : '… ETH';
+    if (actEl) actEl.textContent = amt.toFixed(6) + ' ETH';
+    if (usdEl) usdEl.textContent = '$' + (amt * price).toFixed(2);
+    if (cnyEl) cnyEl.textContent = (amt * price * usdToCny).toFixed(2);
+    if (hintEl) {
+      hintEl.textContent =
+        (gnEth != null && isFinite(gnEth) ? '预估 Gas 约 ' + gnEth.toFixed(6) + ' ETH · ' : '') + '原生 ETH 转账 · ' + nf.sub;
     }
   } else {
     const feeNum = amt * 0.003;
@@ -4384,6 +4398,64 @@ function calcTransferFee() {
             try {
               if (typeof checkTransferReady === 'function') checkTransferReady();
             } catch (_cr) {}
+          });
+      }
+    }
+    if (
+      transferCoin &&
+      transferCoin.id === 'eth' &&
+      typeof ethers !== 'undefined' &&
+      ethers.providers &&
+      typeof REAL_WALLET !== 'undefined' &&
+      REAL_WALLET &&
+      REAL_WALLET.ethAddress
+    ) {
+      var taH = document.getElementById('transferAddr');
+      var toH = taH ? String(taH.value || '').trim() : '';
+      if (toH.match(/^0x[a-fA-F0-9]{40}$/) && amt > 0) {
+        var rpcH = typeof ETH_RPC !== 'undefined' && ETH_RPC ? ETH_RPC : 'https://rpc.ankr.com/eth';
+        var prH = new ethers.providers.JsonRpcProvider(rpcH);
+        var spH = typeof getTransferFeeSpeed === 'function' ? getTransferFeeSpeed() : 'normal';
+        var mH = spH === 'slow' ? 88 : spH === 'fast' ? 124 : 100;
+        Promise.all([
+          prH.getFeeData(),
+          prH
+            .estimateGas({
+              from: REAL_WALLET.ethAddress,
+              to: ethers.utils.getAddress(toH),
+              value: ethers.utils.parseEther(String(amt > 0 ? amt : 0.0000001))
+            })
+            .catch(function () {
+              return ethers.BigNumber.from(21000);
+            })
+        ])
+          .then(function (arr) {
+            var fdH = arr[0];
+            var glH = arr[1].mul(110).div(100);
+            var feeWeiH;
+            if (fdH.maxFeePerGas) feeWeiH = glH.mul(fdH.maxFeePerGas.mul(mH).div(100));
+            else if (fdH.gasPrice) feeWeiH = glH.mul(fdH.gasPrice.mul(mH).div(100));
+            else return;
+            window._wwEthTransferGasNative = parseFloat(ethers.utils.formatEther(feeWeiH));
+          })
+          .catch(function () {
+            window._wwEthTransferGasNative = null;
+          })
+          .then(function () {
+            var hintElH = document.getElementById('transferFeeHint');
+            var feeElH = document.getElementById('transferFee');
+            var nfH = getNetworkFeeEstimateLines(transferCoin.id);
+            var gnH2 = window._wwEthTransferGasNative;
+            if (feeElH && amt > 0 && transferCoin.id === 'eth') {
+              feeElH.textContent = gnH2 != null && isFinite(gnH2) ? '~' + gnH2.toFixed(6) + ' ETH' : '… ETH';
+            }
+            if (hintElH && amt > 0 && transferCoin.id === 'eth') {
+              hintElH.textContent =
+                (gnH2 != null && isFinite(gnH2) ? '预估 Gas 约 ' + gnH2.toFixed(6) + ' ETH · ' : '') + '原生 ETH 转账 · ' + nfH.sub;
+            }
+            try {
+              if (typeof checkTransferReady === 'function') checkTransferReady();
+            } catch (_cr2) {}
           });
       }
     }
@@ -4527,6 +4599,7 @@ async function doTransfer() {
     transferCoin.id === 'usdt' &&
     transferCoin.usdtNet &&
     transferCoin.usdtNet !== 'tron';
+  var _ethNativeDo = transferCoin && transferCoin.id === 'eth';
   var fee = (amtNum * 0.003).toFixed(2);
   var actual = (amtNum - amtNum * 0.003).toFixed(2);
   if (_usdtEvmDo) {
@@ -4534,6 +4607,10 @@ async function doTransfer() {
     var _gnD = typeof window !== 'undefined' ? window._wwLastUsdtGasNative : null;
     fee = _gnD != null && isFinite(_gnD) ? '~' + _gnD.toFixed(6) + ' ' + _symD : '… ' + _symD;
     actual = amtNum.toFixed(6) + ' ' + transferCoin.name;
+  } else if (_ethNativeDo) {
+    var _gnEthD = typeof window !== 'undefined' ? window._wwEthTransferGasNative : null;
+    fee = _gnEthD != null && isFinite(_gnEthD) ? '~' + _gnEthD.toFixed(6) + ' ETH' : '… ETH';
+    actual = amtNum.toFixed(6) + ' ETH';
   }
   var ca = document.getElementById('confirmAmount');
   var cr = document.getElementById('confirmRecipient');
@@ -4570,10 +4647,14 @@ function confirmTransfer() {
     transferCoin.id === 'usdt' &&
     transferCoin.usdtNet &&
     transferCoin.usdtNet !== 'tron';
+  var _feeEthNative = transferCoin && transferCoin.id === 'eth';
   if (_feeUsdtEvm) {
     var _fs = transferCoin._usdtMeta && transferCoin._usdtMeta.nativeSymbol ? transferCoin._usdtMeta.nativeSymbol : 'ETH';
     var _fg = typeof window !== 'undefined' ? window._wwLastUsdtGasNative : null;
     fee = _fg != null && isFinite(_fg) ? '~' + _fg.toFixed(6) + ' ' + _fs : '… ' + _fs;
+  } else if (_feeEthNative) {
+    var _fge = typeof window !== 'undefined' ? window._wwEthTransferGasNative : null;
+    fee = _fge != null && isFinite(_fge) ? '~' + _fge.toFixed(6) + ' ETH' : '… ETH';
   }
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
   const isEn = currentLang==='en';

@@ -71,8 +71,51 @@
     }
   }
 
+  /**
+   * 链上兑换用：返回 wei 级数量与最优 fee，避免浮点截断。
+   * @returns {Promise<{ amountInWei: object, amountOutWei: object, bestFee: number, fromMeta: object, toMeta: object }|null>}
+   */
+  async function quoteEvmBestAmountOutWei(fromId, toId, amountInStr, rpcUrl) {
+    var ethers = getEthers();
+    var a = metaByCoinId(fromId);
+    var b = metaByCoinId(toId);
+    if (!ethers || !a || !b) return null;
+    var amt = String(amountInStr || '').trim();
+    var n = parseFloat(amt);
+    if (!isFinite(n) || n <= 0) return null;
+    var url = rpcUrl || (typeof ETH_RPC !== 'undefined' && ETH_RPC) || 'https://rpc.ankr.com/eth';
+    try {
+      var provider = new ethers.providers.StaticJsonRpcProvider(url, 1);
+      var contract = new ethers.Contract(QUOTER, QUOTER_ABI, provider);
+      var amountInWei = ethers.utils.parseUnits(amt, a.decimals);
+      var bestOut = null;
+      var bestFee = null;
+      for (var i = 0; i < FEES.length; i++) {
+        var fee = FEES[i];
+        try {
+          var out = await contract.callStatic.quoteExactInputSingle(a.addr, b.addr, fee, amountInWei, 0);
+          if (!bestOut || out.gt(bestOut)) {
+            bestOut = out;
+            bestFee = fee;
+          }
+        } catch (_e) {}
+      }
+      if (!bestOut) return null;
+      return {
+        amountInWei: amountInWei,
+        amountOutWei: bestOut,
+        bestFee: bestFee,
+        fromMeta: a,
+        toMeta: b
+      };
+    } catch (_e2) {
+      return null;
+    }
+  }
+
   window.wwSwapModule = {
     quoteEvmBestAmountOut: quoteEvmBestAmountOut,
+    quoteEvmBestAmountOutWei: quoteEvmBestAmountOutWei,
     isEvmSwapPair: isEvmSwapPair,
     metaByCoinId: metaByCoinId
   };
