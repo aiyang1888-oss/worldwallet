@@ -111,6 +111,18 @@ try {
     } catch (_devBoot) {}
     if (!boot || boot === 'page-welcome') {
       releaseWelcomeGuard();
+      /* 与有钱包时 boot 首页对称：显式锁定欢迎页，避免首帧在 wallet.css 生效前其它 .page 与欢迎页叠层闪一下 */
+      try {
+        document.documentElement.setAttribute('data-ww-boot-page', 'page-welcome');
+        document.documentElement.classList.add('ww-boot-route');
+        var cssWelcomeOnly =
+          'html[data-ww-boot-page] #page-welcome.page{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translate3d(0,0,0)!important;z-index:4!important;}' +
+          'html[data-ww-boot-page="page-welcome"] .page:not(#page-welcome){opacity:0!important;visibility:hidden!important;pointer-events:none!important;}';
+        var stW = document.createElement('style');
+        stW.setAttribute('data-ww-boot-route', '1');
+        stW.textContent = cssWelcomeOnly;
+        document.head.appendChild(stW);
+      } catch (_bootW) {}
       return;
     }
     var safe = String(boot).replace(/[^a-z0-9-]/gi, '');
