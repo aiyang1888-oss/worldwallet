@@ -5690,7 +5690,87 @@ function closeSwapConfirm() {
 }
 
 function confirmSwapGo() {
-  openDex();
+  var tronPair = swapFrom.family === 'tron' && swapTo.family === 'tron';
+  if (tronPair) {
+    openDex();
+    return;
+  }
+  if (
+    typeof wwSwapExecEvm === 'undefined' ||
+    typeof wwSwapExecEvm.run !== 'function' ||
+    !wwSwapExecEvm.canRun ||
+    !wwSwapExecEvm.canRun(swapFrom, swapTo)
+  ) {
+    openDex();
+    return;
+  }
+  if (!REAL_WALLET || !REAL_WALLET.privateKey) {
+    if (typeof showToast === 'function') showToast('请先导入钱包', 'warning');
+    openDex();
+    return;
+  }
+  var goBtn = document.querySelector('#swapConfirmOverlay button.btn-primary');
+  var prevTxt = goBtn ? goBtn.textContent : '';
+  if (goBtn) {
+    goBtn.disabled = true;
+    goBtn.textContent = '⏳ 处理中…';
+  }
+  var amtStr = String((_safeEl('swapAmountIn') || {}).value || '').trim();
+  var slip = typeof wwGetSwapSlippagePct === 'function' ? wwGetSwapSlippagePct() : 0.5;
+  var recipEvm = '';
+  try {
+    var rw = String(window._wwSwapRecipientAddr || '').trim();
+    if (rw && /^0x[a-fA-F0-9]{40}$/.test(rw)) recipEvm = rw;
+  } catch (_r0) {}
+  wwSwapExecEvm
+    .run({
+      swapFrom: swapFrom,
+      swapTo: swapTo,
+      amountInStr: amtStr,
+      slippagePct: slip,
+      privateKey: REAL_WALLET.privateKey,
+      recipientEvm: recipEvm || null,
+      onProgress: function (ph) {
+        if (typeof showToast !== 'function') return;
+        if (ph === 'approve') showToast('授权代币…', 'info', 1800);
+        else if (ph === 'swap') showToast('签名并广播兑换…', 'info', 1800);
+        else if (ph === 'wait') showToast('等待链上确认…', 'info', 2400);
+      }
+    })
+    .then(function (hash) {
+      closeSwapConfirm();
+      var ex =
+        typeof wwExplorerTxUrlForChain === 'function'
+          ? wwExplorerTxUrlForChain(1, hash)
+          : 'https://etherscan.io/tx/' + encodeURIComponent(hash);
+      wwAppendSwapHistory({
+        route: 'Ethereum · Uniswap V3 · 链上',
+        fromSym: swapFrom.name,
+        toSym: swapTo.name,
+        fromId: swapFrom.id,
+        toId: swapTo.id,
+        amtIn: amtStr,
+        estOut: (_safeEl('swapAmountOut') || {}).textContent,
+        minOut: (_safeEl('swapMinOut') || {}).textContent,
+        slip: slip,
+        txHash: hash,
+        explorerUrl: ex
+      });
+      if (typeof showToast === 'function') showToast('✅ 兑换已确认上链', 'success');
+      if (typeof loadBalances === 'function') setTimeout(loadBalances, 2500);
+    })
+    .catch(function (err) {
+      console.error(err);
+      var msg = err && err.message ? err.message : String(err);
+      if (typeof showToast === 'function') showToast('❌ ' + msg + ' · 将打开网页 DEX 备援', 'warning', 4500);
+      openDex();
+    })
+    .finally(function () {
+      if (goBtn) {
+        goBtn.disabled = false;
+        goBtn.textContent = prevTxt || '打开 DEX';
+      }
+    });
 }
 
 function wwAppendSwapHistory(payload) {
@@ -5722,7 +5802,7 @@ function wwSwapShowRecords() {
     var arr = JSON.parse(localStorage.getItem('ww_swap_history_v1') || '[]');
     if (!Array.isArray(arr) || !arr.length) {
       body.innerHTML =
-        '<div style="padding:20px;color:var(--text-muted);font-size:13px;text-align:center">暂无记录。确认跳转外链后会记下意向单（成交以链上为准）。</div>';
+        '<div style="padding:20px;color:var(--text-muted);font-size:13px;text-align:center">暂无记录。链上兑换或打开 DEX 后会记下摘要（成交以链上浏览器为准）。</div>';
     } else {
       body.innerHTML = arr
         .slice(0, 50)
@@ -5736,13 +5816,26 @@ function wwSwapShowRecords() {
             String(row.estOut || '') +
             ' ' +
             String(row.toSym || '');
+          var txh = String(row.txHash || '').trim();
+          var exu = String(row.explorerUrl || '').trim();
+          if (txh && !exu) exu = 'https://etherscan.io/tx/' + encodeURIComponent(txh);
+          var txBlock =
+            txh && exu
+              ? '<div style="font-size:11px;margin-top:6px"><a href="' +
+                wwEscAttr(exu) +
+                '" target="_blank" rel="noopener noreferrer" style="color:var(--gold);word-break:break-all">Tx ' +
+                wwEscAttr(txh.slice(0, 12)) +
+                '…</a></div>'
+              : '';
           return (
             '<div style="border-bottom:1px solid var(--border);padding:10px 0;font-size:12px;line-height:1.45">' +
             '<div style="color:var(--text-muted)">' +
             wwEscAttr(t) +
             '</div><div style="color:var(--text)">' +
             wwEscAttr(line) +
-            '</div><div style="font-size:11px;color:var(--text-muted)">滑点 ' +
+            '</div>' +
+            txBlock +
+            '<div style="font-size:11px;color:var(--text-muted);margin-top:6px">滑点 ' +
             wwEscAttr(String(row.slip != null ? row.slip : '—')) +
             '% · ' +
             wwEscAttr(String(row.route || '')) +
