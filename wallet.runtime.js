@@ -4917,7 +4917,8 @@ function calcSwap() {
   const pTo = swapTo.price || 1;
   const fee = amtIn * 0.003;
   const amtOut = ((amtIn - fee) * pFrom / pTo);
-  const fmt = amtOut > 1 ? amtOut.toFixed(4) : amtOut.toFixed(8);
+  const outDp = swapTo.id === 'trx' ? 2 : (amtOut > 1 ? 4 : 8);
+  const fmt = amtOut.toFixed(outDp);
   (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent = fmt;
   (_safeEl('swapInUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapInUSD fallback */.textContent = '$'+(amtIn*pFrom).toFixed(2);
   (_safeEl('swapOutUSD') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapOutUSD fallback */.textContent = '$'+((amtIn-fee)*pFrom).toFixed(2);
