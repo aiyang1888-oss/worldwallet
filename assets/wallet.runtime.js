@@ -4629,6 +4629,33 @@ function openDex() {
   } catch (_e2) {}
 })();
 
+(function wwTabIndicatorOnResize() {
+  try {
+    if (window._wwTabIndResize) return;
+    window._wwTabIndResize = true;
+    window.addEventListener('resize', function () {
+      try {
+        if (typeof wwUpdateTabBarIndicator === 'function') wwUpdateTabBarIndicator();
+      } catch (_e) {}
+    }, { passive: true });
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      setTimeout(function () {
+        try {
+          if (typeof wwUpdateTabBarIndicator === 'function') wwUpdateTabBarIndicator();
+        } catch (_e2) {}
+      }, 0);
+    } else {
+      document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+          try {
+            if (typeof wwUpdateTabBarIndicator === 'function') wwUpdateTabBarIndicator();
+          } catch (_e3) {}
+        }, 0);
+      });
+    }
+  } catch (_e4) {}
+})();
+
 
 // ── 导入钱包 ──────────────────────────────────────────────────
 function initImportGrid(count) {
