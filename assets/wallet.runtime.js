@@ -4536,7 +4536,8 @@ function swapCoins() {
 }
 
 function setSwapMax() {
-  _safeEl('swapAmountIn').value=swapFrom.bal;
+  var inp = _safeEl('swapAmountIn');
+  if (inp) inp.value = swapFrom.bal != null ? String(swapFrom.bal) : '';
   calcSwap();
 }
 
@@ -4611,6 +4612,22 @@ function openDex() {
     window.open(`https://app.uniswap.org/swap?inputCurrency=${inToken}&outputCurrency=${outToken}`, '_blank');
   }
 }
+
+(function wwSwapReturnRefresh() {
+  try {
+    if (window._wwSwapVisBound) return;
+    window._wwSwapVisBound = true;
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) return;
+      try {
+        if (sessionStorage.getItem('ww_swap_pending') !== '1') return;
+        sessionStorage.removeItem('ww_swap_pending');
+        if (typeof loadBalances === 'function') loadBalances();
+        if (typeof showToast === 'function') showToast('已从外链返回，正在同步余额…', 'info', 2600);
+      } catch (_e) {}
+    });
+  } catch (_e2) {}
+})();
 
 
 // ── 导入钱包 ──────────────────────────────────────────────────
@@ -6496,6 +6513,10 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof createNewWallet === 'function') window.createNewWallet = createNewWallet;
     if (typeof doImportWallet === 'function') window.doImportWallet = doImportWallet;
     if (typeof doSwap === 'function') window.doSwap = doSwap;
+    if (typeof closeSwapConfirm === 'function') window.closeSwapConfirm = closeSwapConfirm;
+    if (typeof openDex === 'function') window.openDex = openDex;
+    if (typeof openCoinPicker === 'function') window.openCoinPicker = openCoinPicker;
+    if (typeof swapCoins === 'function') window.swapCoins = swapCoins;
     if (typeof doTransfer === 'function') window.doTransfer = doTransfer;
     if (typeof editHomeAddr === 'function') window.editHomeAddr = editHomeAddr;
     if (typeof goToPinConfirm === 'function') window.goToPinConfirm = goToPinConfirm;
