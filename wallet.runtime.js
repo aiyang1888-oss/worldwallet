@@ -1479,14 +1479,14 @@ function goTo(pageId, opts) {
       }
     } catch (_npu) { wwQuiet(_npu); }
   }
-  if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
+  if (pageId === 'page-password-restore' && typeof wwWalletHasValidPersistedAddress === 'function') {
     var _pwStoreRt = null;
     try {
       _pwStoreRt = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
     } catch (_e) {
       _pwStoreRt = {};
     }
-    if (!wwWalletHasAnyChainAddress(_pwStoreRt)) pageId = 'page-welcome';
+    if (!wwWalletHasValidPersistedAddress(_pwStoreRt)) pageId = 'page-welcome';
     else if (typeof loadWallet === 'function') {
       try {
         loadWallet();
