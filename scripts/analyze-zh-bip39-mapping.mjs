@@ -18,6 +18,30 @@ function ulen(s) {
   return [...String(s)].length;
 }
 
+/** 与 wallet.ui.js wwStripZhPlaceSuffixForDisplay / wwNormalizeZhWordlistForDisplay 保持同步 */
+function wwStripZhPlaceSuffixForDisplay(s) {
+  const t = String(s || '').trim();
+  if (!t) return '';
+  const out = t
+    .replace(/特别行政区$/, '')
+    .replace(/自治区$/, '')
+    .replace(/自治州$/, '')
+    .replace(/自治县$/, '')
+    .replace(/自治旗$/, '')
+    .replace(/市辖区$/, '')
+    .replace(/林区$/, '')
+    .replace(/特区$/, '')
+    .replace(/新区$/, '')
+    .replace(/市$/, '')
+    .replace(/区$/, '')
+    .replace(/县$/, '')
+    .replace(/旗$/, '')
+    .replace(/盟$/, '')
+    .replace(/州$/, '')
+    .replace(/省$/, '');
+  return out || t;
+}
+
 function wwNormalizeZhWordlistForDisplay(origArr) {
   if (!origArr || !origArr.length) return origArr ? origArr.slice() : [];
   let si;
@@ -31,7 +55,8 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   const disp = [];
   let i;
   let j;
-  let w;
+  let raw;
+  let base;
   let arr;
   let n;
   let L;
@@ -40,16 +65,24 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   let hit;
   let guard;
   for (i = 0; i < nList; i++) {
-    w = String(origArr[i] || '');
-    arr = Array.from(w);
+    raw = String(origArr[i] || '');
+    arr = Array.from(raw);
     n = arr.length;
     if (n <= 3) {
-      used[w] = true;
-      disp.push(w);
+      used[raw] = true;
+      disp.push(raw);
+      continue;
+    }
+    base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
+    arr = Array.from(base);
+    n = arr.length;
+    if (n <= 3) {
+      used[base] = true;
+      disp.push(base);
       continue;
     }
     let placed = false;
-    for (L = 3; L <= n; L++) {
+    for (L = n; L >= 3; L--) {
       cand = arr.slice(0, L).join('');
       if (!used[cand]) {
         used[cand] = true;
@@ -62,7 +95,9 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   }
   for (i = 0; i < nList; i++) {
     d = disp[i];
-    arr = Array.from(String(origArr[i] || ''));
+    raw = String(origArr[i] || '');
+    base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
+    arr = Array.from(base);
     for (guard = 0; guard < 24; guard++) {
       hit = false;
       for (j = 0; j < nList; j++) {
@@ -83,7 +118,9 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   used = {};
   for (i = 0; i < nList; i++) {
     d = disp[i];
-    arr = Array.from(String(origArr[i] || ''));
+    raw = String(origArr[i] || '');
+    base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
+    arr = Array.from(base);
     guard = 0;
     while (used[d] && guard++ < 40) {
       L = Array.from(d).length + 1;
