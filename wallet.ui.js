@@ -720,7 +720,15 @@ async function finalizeImportedWalletAfterPin(pin) {
     return;
   }
   var pinStr = String(pin || '');
-  wwSetSessionPin(pinStr);
+  if (typeof wwPersistPinFromSetup === 'function') {
+    await wwPersistPinFromSetup(pinStr);
+  } else if (typeof savePinSecure === 'function') {
+    await savePinSecure(pinStr);
+    try { localStorage.setItem('ww_pin_set', '1'); } catch (_ps) {}
+    if (window.wwSessionPinBridge && typeof window.wwSessionPinBridge.set === 'function') window.wwSessionPinBridge.set(pinStr);
+  } else {
+    wwSetSessionPin(pinStr);
+  }
   await saveWalletSecure(flat, pinStr);
   localStorage.removeItem('ww_import_pending');
   window.REAL_WALLET = {
