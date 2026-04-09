@@ -484,6 +484,14 @@ body {
   text-align: center;
   overflow: hidden;
 }
+#page-welcome button.btn-primary,
+#page-welcome button.btn-secondary {
+  touch-action: manipulation;
+  position: relative;
+  z-index: 6;
+  -webkit-user-select: none;
+  user-select: none;
+}
 #welcomeLangGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
