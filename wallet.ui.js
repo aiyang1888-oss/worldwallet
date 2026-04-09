@@ -480,7 +480,11 @@ async function createWallet(forcedWordCount) {
     if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
       trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
     }
-  } catch (_e2) { wwQuiet(_e2); }
+  } catch (_e2) {
+    try {
+      if (typeof wwQuiet === 'function') wwQuiet(_e2);
+    } catch (_q0) {}
+  }
   if (!trxAddr && typeof wwTrxBase58FromEthAddressHex === 'function') {
     trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
   }
