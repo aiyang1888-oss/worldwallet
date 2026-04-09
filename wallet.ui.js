@@ -978,11 +978,25 @@ function closePinSetupOverlay() {
   window._pinSetupFirst = '';
   window._pinSetupMode = 'create';
   try { window._wwPinSetupComplete = null; } catch (_n) {}
+  try { window._pinSetupFlow = 'setup'; } catch (_pf) {}
   renderPinSetupUI();
 }
 
+/** 已验证当前 PIN 后打开：双重输入新 PIN（由 wallet.runtime.js 的 wwFinalizePinChange 落盘） */
+function openPinChangeOverlay() {
+  openPinSetupOverlay({ skipFirstRunLock: true, flow: 'change' });
+}
+try {
+  window.openPinChangeOverlay = openPinChangeOverlay;
+} catch (_opc) {}
+
 function openPinSetupOverlay(opts) {
   opts = opts || {};
+  try {
+    window._pinSetupFlow = opts.flow === 'change' ? 'change' : 'setup';
+  } catch (_fl) {
+    window._pinSetupFlow = 'setup';
+  }
   if (opts.skipFirstRunLock) {
     try { window._wwInFirstRun = false; } catch (_e) {}
   } else {
