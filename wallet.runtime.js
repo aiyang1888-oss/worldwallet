@@ -4985,11 +4985,64 @@ function openCoinPicker(target) {
 
 function closeCoinPicker() { const _ovcoinPi2 = document.getElementById('coinPickerOverlay'); if(_ovcoinPi2) _ovcoinPi2.classList.remove('show'); }
 
+function wwSwapRecipientModeOn() {
+  var row = document.getElementById('swapRecipientRow');
+  return !!(row && row.getAttribute('data-open') === '1');
+}
+
+function wwValidateTronAddress58(s) {
+  return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(String(s || '').trim());
+}
+function wwValidateEvmSwapRecipient(s) {
+  return /^0x[a-fA-F0-9]{40}$/.test(String(s || '').trim());
+}
+
+/** 兑换页：将「兑换到他人地址」展开为输入框，再次点击收起 */
+function wwSwapToOtherToggle() {
+  var row = document.getElementById('swapRecipientRow');
+  var btn = document.getElementById('swapToOtherBtn');
+  if (!row || !btn) return;
+  var on = row.getAttribute('data-open') === '1';
+  if (!on) {
+    row.setAttribute('data-open', '1');
+    row.style.display = 'block';
+    btn.textContent = '收起';
+    try { btn.setAttribute('aria-expanded', 'true'); } catch (_e) {}
+    var inp = document.getElementById('swapRecipientTrx');
+    if (inp) try { inp.focus(); } catch (_e2) {}
+  } else {
+    row.setAttribute('data-open', '0');
+    row.style.display = 'none';
+    var inp2 = document.getElementById('swapRecipientTrx');
+    if (inp2) inp2.value = '';
+    btn.textContent = '兑换到他人地址';
+    try { btn.setAttribute('aria-expanded', 'false'); } catch (_e3) {}
+  }
+}
+
 function doSwap() {
   const amt = parseFloat(_safeEl('swapAmountIn').value)||0;
   if(!amt) {
     if (typeof showToast === 'function') showToast('请输入兑换金额', 'warning');
     return;
+  }
+  if (wwSwapRecipientModeOn()) {
+    var raw = ((_safeEl('swapRecipientTrx') || {}).value || '').trim();
+    var tronPair = ['trx', 'usdt'].includes(swapFrom.id) && ['trx', 'usdt'].includes(swapTo.id);
+    if (tronPair) {
+      if (!wwValidateTronAddress58(raw)) {
+        if (typeof showToast === 'function') showToast('请输入有效的 TRON 收款地址（T 开头 34 位）', 'warning');
+        return;
+      }
+    } else {
+      if (!wwValidateEvmSwapRecipient(raw)) {
+        if (typeof showToast === 'function') showToast('请输入有效的以太坊收款地址（0x 开头 42 位）', 'warning');
+        return;
+      }
+    }
+    try { window._wwSwapRecipientAddr = raw; } catch (_w) {}
+  } else {
+    try { window._wwSwapRecipientAddr = ''; } catch (_w2) {}
   }
   const out = (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent;
 
