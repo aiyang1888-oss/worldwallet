@@ -206,7 +206,22 @@ try {
       var _wPz = localStorage.getItem('ww_wallet');
       var _oPz = _wPz ? JSON.parse(_wPz) : null;
       if (_oPz && _oPz.encrypted && _wwHasAddr && boot && boot !== 'page-password-restore' && boot !== 'page-welcome') {
-        var _pf = { 'page-home': 1, 'page-swap': 1, 'page-addr': 1, 'page-hongbao': 1, 'page-settings': 1, 'page-transfer': 1, 'page-swoosh': 1 };
+        var _pf = {
+          'page-home': 1,
+          'page-swap': 1,
+          'page-addr': 1,
+          'page-hongbao': 1,
+          'page-settings': 1,
+          'page-transfer': 1,
+          'page-swoosh': 1,
+          'page-address-book': 1,
+          'page-swap-records': 1,
+          'page-claim': 1,
+          'page-claimed': 1,
+          'page-hb-keyword': 1,
+          'page-hb-records': 1,
+          'page-transfer-success': 1
+        };
         if (_pf[boot]) {
           var _hasPin = !!(localStorage.getItem('ww_pin_hash') || localStorage.getItem('ww_pin_set') === '1');
           if (!_hasPin) try { var _plz = localStorage.getItem('ww_unlock_pin') || localStorage.getItem('ww_pin') || ''; _hasPin = !!(_plz && /^\d{6}$/.test(String(_plz))); } catch (_eZ) {}
@@ -214,16 +229,17 @@ try {
         }
       }
     } catch (_pzB) {}
+    /* 最终 boot 与 #hash 不一致时同步地址栏（含无痕模式残留 #page-home） */
+    try {
+      if (boot && h && /^page-[a-z0-9-]+$/i.test(h) && String(h).toLowerCase() !== String(boot).toLowerCase() && !window.WW_DEV_PRESERVE_ROUTE) {
+        var _uSyn = new URL(location.href);
+        _uSyn.hash = '#' + boot;
+        if (typeof history !== 'undefined' && history.replaceState) {
+          history.replaceState(null, '', _uSyn.pathname + _uSyn.search + _uSyn.hash);
+        }
+      }
+    } catch (_synH) {}
     if (!_wwHasAddr && boot && boot !== 'page-welcome') {
-      var _wwGuestHashOk = {
-        'page-import': 1,
-        'page-key': 1,
-        'page-key-verify': 1,
-        'page-password-restore': 1,
-        'page-verify-success': 1,
-        'page-recovery-test': 1,
-        'page-convert-mnemonic': 1
-      };
       if (!_wwGuestHashOk[boot]) {
         try {
           var _uGh = new URL(location.href);
@@ -239,6 +255,16 @@ try {
     }
     if (!boot || boot === 'page-welcome') {
       releaseWelcomeGuard();
+      /* 落地欢迎/空 boot 时去掉残留 hash，避免地址栏仍显示 #page-home 等 */
+      try {
+        if ((location.hash || '') && !window.WW_DEV_PRESERVE_ROUTE) {
+          var _uWel = new URL(location.href);
+          _uWel.hash = '';
+          if (typeof history !== 'undefined' && history.replaceState) {
+            history.replaceState(null, '', _uWel.pathname + _uWel.search);
+          }
+        }
+      } catch (_welH) {}
       /* 与有钱包时 boot 首页对称：显式锁定欢迎页，避免首帧在 wallet.css 生效前其它 .page 与欢迎页叠层闪一下 */
       try {
         document.documentElement.setAttribute('data-ww-boot-page', 'page-welcome');
