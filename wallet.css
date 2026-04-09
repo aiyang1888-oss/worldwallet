@@ -224,13 +224,17 @@ body {
 }
 
 /* ── 礼物页 · 礼金展示区与主按钮 ── */
+/* 礼物页主内容区：减少标题框上方的空隙（覆盖内联 padding-top） */
+#page-hongbao > .key-content {
+  padding-top: 6px !important;
+}
 #page-hongbao .gift-hero {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 #page-hongbao .gift-preview-shell {
   position: relative;
-  border-radius: 20px;
-  padding: 2px;
+  border-radius: 18px;
+  padding: 1px;
   background: linear-gradient(148deg, rgba(255, 214, 140, 0.65) 0%, rgba(160, 110, 50, 0.35) 45%, rgba(40, 18, 12, 0.75) 100%);
   box-shadow:
     0 16px 44px rgba(0, 0, 0, 0.42),
