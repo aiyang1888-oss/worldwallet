@@ -612,7 +612,7 @@ try {
           <button type="button" class="btn-secondary" id="transferApproveBtn" onclick="if(typeof wwDoTransferApprove==='function')wwDoTransferApprove()" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;font-size:14px;cursor:pointer">确认授权</button>
         </details>
 
-        <button type="button" class="btn-primary" id="transferBtn" onclick="doTransfer()" style="cursor:pointer">
+        <button type="button" class="btn-primary" id="transferBtn" onclick="doTransfer()" style="cursor:pointer" aria-label="确认转账">
           确认转账
         </button>
 
@@ -1077,6 +1077,18 @@ try {
         <div class="faq-block">
           <h3>还需要注意什么？</h3>
           <p>官方不会向您索要助记词；任何「客服」「链接领空投」索要助记词的都是诈骗。设置 PIN 与二次验证可保护应用内操作，但<b>无法替代助记词本身</b>——助记词仍是恢复钱包的最终凭据。</p>
+        </div>
+        <div class="faq-block">
+          <h3>转账与 Gas / 能量</h3>
+          <p>以太坊、Polygon、BSC 上的 ERC-20 转账需消耗对应主网原生币作为 Gas；Tron 上 TRC-20 需带宽与能量（或燃烧 TRX）。请在对应链预留足够手续费。大额转账（约 $1000 以上）会二次确认；可在设置中配置每日支出限额（美元计价示意）。</p>
+        </div>
+        <div class="faq-block">
+          <h3>交易记录与导出</h3>
+          <p>首页「最近交易」最多保留约 100 条展示数据；本机快照会定期清理约 30 天前的条目以节省空间。可使用「导出 CSV」将当前列表下载为表格，便于对账。</p>
+        </div>
+        <div class="faq-block">
+          <h3>兑换与浏览器</h3>
+          <p>以太坊主网同链代币兑换使用 Uniswap V3 询价；若链上路径不可用，可跳转网页 DEX。建议使用较新版本 Chrome / Firefox / Safari；若功能异常请尝试更新浏览器或清除站点数据后重试。</p>
         </div>
       </div>
     </div>
