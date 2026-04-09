@@ -4661,6 +4661,9 @@ function markBackupDone() {
 }
 
 function updateSettingsPage() {
+  try {
+    if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
+  } catch (_rh) {}
   const info = LANG_INFO[currentLang]||{name:'中文'};
   const sl = (_safeEl('settingsLang') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* settingsLang fallback */;
   if(sl) sl.textContent = info.name;
@@ -4672,6 +4675,18 @@ function updateSettingsPage() {
   if (typeof applyWwTheme === 'function') applyWwTheme();
   const sa = document.getElementById('settingsAddr');
   if(sa) sa.textContent = getNativeAddr();
+  const spv = document.getElementById('settingsPinValue');
+  if (spv) {
+    var pinSet = false;
+    try {
+      pinSet = typeof wwHasPinConfigured === 'function' && wwHasPinConfigured();
+    } catch (_p0) { pinSet = false; }
+    if (!pinSet) {
+      try { pinSet = !!(localStorage.getItem('ww_pin') || '').trim(); } catch (_p1) { pinSet = false; }
+    }
+    spv.textContent = pinSet ? '已设置' : '未设置';
+    spv.style.color = pinSet ? 'var(--green,#26a17b)' : 'var(--text-muted)';
+  }
   // 实时反映备份状态
   const bs = document.getElementById('backupStatus');
   if(bs) {
@@ -7060,39 +7075,83 @@ function checkWwAirdrop() {
   if (typeof showToast === 'function') showToast('已在浏览器打开官网，可在站内查看活动与公告', 'info', 2800);
 }
 
-async function openPinSettingsDialog() {
-  const cur = wwGetSessionPin() || '';
-  const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
-  if(a === null) return;
-  const t = a.trim();
-  if(t === '') {
-    wwClearSessionPin();
+/**
+ * 修改 PIN：须已通过当前 PIN 验证（会话中有旧 PIN）。更新 hash、钱包密文与 TOTP 密文。
+ */
+async function wwFinalizePinChange(newPin) {
+  var p = String(newPin || '');
+  if (!/^\d{6}$/.test(p)) throw new Error('PIN 须为 6 位数字');
+  var oldPin = typeof wwGetSessionPin === 'function' ? wwGetSessionPin() : '';
+  if (!oldPin || !/^\d{6}$/.test(oldPin)) throw new Error('请先验证当前 PIN');
+  if (oldPin === p) {
+    if (typeof showToast === 'function') showToast('新 PIN 不能与当前 PIN 相同', 'warning');
+    throw new Error('SAME_PIN');
+  }
+  if (typeof savePinSecure !== 'function') throw new Error('无法保存 PIN');
+  await savePinSecure(p);
+  if (window.wwSessionPinBridge && typeof window.wwSessionPinBridge.set === 'function') {
+    window.wwSessionPinBridge.set(p);
+  }
+  wwSetSessionPin(p);
+  try { localStorage.setItem('ww_pin_set', '1'); } catch (e0) {}
+
+  if (REAL_WALLET && typeof saveWalletSecure === 'function') {
     try {
-      localStorage.removeItem('ww_unlock_pin');
-      localStorage.removeItem('ww_pin');
-      localStorage.removeItem('ww_pin_hash');
-      localStorage.removeItem('ww_pin_set');
-      localStorage.removeItem('ww_totp_secret');
-      localStorage.removeItem('ww_totp_enabled');
-    } catch(e) {}
-    showToast('已清除 PIN', 'success');
-    if(typeof updateSettingsPage==='function') updateSettingsPage();
-    return;
+      var raw = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      var w = REAL_WALLET;
+      if (raw.encrypted || w.mnemonic || w.privateKey) {
+        await saveWalletSecure(w, p);
+      }
+    } catch (e1) {
+      console.error('[wwFinalizePinChange wallet]', e1);
+      try {
+        await saveWalletSecure(REAL_WALLET, p);
+      } catch (e1b) {
+        console.error(e1b);
+      }
+    }
   }
-  if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
-  try {
-    if (typeof savePinSecure === 'function') await savePinSecure(t);
-  } catch (e) {
-    console.error(e);
-    showToast('PIN 保存失败', 'error');
-    return;
+
+  if (typeof wwTotpEnabled === 'function' && wwTotpEnabled()) {
+    try {
+      var encT = localStorage.getItem('ww_totp_secret');
+      if (encT && typeof decryptTotpSecret === 'function' && typeof encryptTotpSecret === 'function') {
+        var sec = await decryptTotpSecret(encT, oldPin);
+        if (sec) {
+          localStorage.setItem('ww_totp_secret', await encryptTotpSecret(sec, p));
+        }
+      }
+    } catch (e2) {
+      console.error('[wwFinalizePinChange totp]', e2);
+    }
   }
-  wwSetSessionPin(t);
-  try { localStorage.setItem('ww_pin_set', '1'); } catch(e) {}
-  showToast('PIN 已保存', 'success');
+
+  if (typeof showToast === 'function') showToast('PIN 已更新', 'success');
   if (typeof updateSettingsPage === 'function') updateSettingsPage();
   if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI();
-  if(typeof offerTotpAfterPinSave === 'function') offerTotpAfterPinSave();
+}
+try { window.wwFinalizePinChange = wwFinalizePinChange; } catch (_wff) {}
+
+async function openPinSettingsDialog() {
+  if (!wwHasPinConfigured()) {
+    if (typeof openPinSetupOverlay !== 'function') {
+      if (typeof showToast === 'function') showToast('无法打开 PIN 设置', 'warning');
+      return;
+    }
+    openPinSetupOverlay({ skipFirstRunLock: true });
+    return;
+  }
+  if (typeof wwEnsurePinThenForced !== 'function') {
+    if (typeof showToast === 'function') showToast('无法验证 PIN', 'warning');
+    return;
+  }
+  wwEnsurePinThenForced(function () {
+    if (typeof openPinChangeOverlay === 'function') {
+      openPinChangeOverlay();
+    } else if (typeof showToast === 'function') {
+      showToast('无法打开修改 PIN 界面', 'warning');
+    }
+  });
 }
 
 // 时钟

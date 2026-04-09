@@ -978,11 +978,25 @@ function closePinSetupOverlay() {
   window._pinSetupFirst = '';
   window._pinSetupMode = 'create';
   try { window._wwPinSetupComplete = null; } catch (_n) {}
+  try { window._pinSetupFlow = 'setup'; } catch (_pf) {}
   renderPinSetupUI();
 }
 
+/** 已验证当前 PIN 后打开：双重输入新 PIN（由 wallet.runtime.js 的 wwFinalizePinChange 落盘） */
+function openPinChangeOverlay() {
+  openPinSetupOverlay({ skipFirstRunLock: true, flow: 'change' });
+}
+try {
+  window.openPinChangeOverlay = openPinChangeOverlay;
+} catch (_opc) {}
+
 function openPinSetupOverlay(opts) {
   opts = opts || {};
+  try {
+    window._pinSetupFlow = opts.flow === 'change' ? 'change' : 'setup';
+  } catch (_fl) {
+    window._pinSetupFlow = 'setup';
+  }
   if (opts.skipFirstRunLock) {
     try { window._wwInFirstRun = false; } catch (_e) {}
   } else {
@@ -1010,8 +1024,14 @@ function renderPinSetupUI() {
   var val = window._pinSetupValue || '';
   var first = window._pinSetupFirst || '';
   var mode = window._pinSetupMode || 'create';
-  if (title) title.textContent = mode === 'confirm' ? '确认 PIN' : '设置 PIN';
-  if (hint) hint.textContent = mode === 'confirm' ? '请再次输入 6 位数字' : '请输入 6 位数字';
+  var flow = window._pinSetupFlow || 'setup';
+  if (flow === 'change') {
+    if (title) title.textContent = mode === 'confirm' ? '确认新 PIN' : '修改 PIN';
+    if (hint) hint.textContent = mode === 'confirm' ? '请再次输入新 PIN' : '请输入 6 位新数字';
+  } else {
+    if (title) title.textContent = mode === 'confirm' ? '确认 PIN' : '设置 PIN';
+    if (hint) hint.textContent = mode === 'confirm' ? '请再次输入 6 位数字' : '请输入 6 位数字';
+  }
   if (dots) {
     dots.innerHTML = '';
     for (var i = 0; i < 6; i++) {
@@ -1122,6 +1142,23 @@ function handlePinSetupKey(key) {
       })
       .catch(function (e) {
         if (typeof showToast === 'function') showToast((e && e.message) || '操作失败', 'error');
+      });
+    return;
+  }
+
+  var flow = window._pinSetupFlow || 'setup';
+  if (flow === 'change') {
+    Promise.resolve()
+      .then(function () {
+        if (typeof wwFinalizePinChange === 'function') return wwFinalizePinChange(val);
+        throw new Error('无法保存新 PIN');
+      })
+      .then(function () {
+        closePinSetupOverlay();
+      })
+      .catch(function (e) {
+        if (e && e.message === 'SAME_PIN') return;
+        if (typeof showToast === 'function') showToast((e && e.message) || '修改失败', 'error');
       });
     return;
   }
@@ -3412,7 +3449,12 @@ function updateSettingsPage() {
   var spv = document.getElementById('settingsPinValue');
   if (spv) {
     var pinSet = false;
-    try { pinSet = !!(localStorage.getItem('ww_pin') || '').trim(); } catch (_pp) {}
+    try {
+      pinSet = typeof wwHasPinConfigured === 'function' && wwHasPinConfigured();
+    } catch (_pp) { pinSet = false; }
+    if (!pinSet) {
+      try { pinSet = !!(localStorage.getItem('ww_pin') || '').trim(); } catch (_pp2) {}
+    }
     spv.textContent = pinSet ? '已设置' : '未设置';
     spv.style.color = pinSet ? 'var(--green,#26a17b)' : 'var(--text-muted)';
   }
@@ -4374,12 +4416,35 @@ function closePinUnlock() {
 
 
 function openPinSettingsDialog() {
+  if (typeof wwHasPinConfigured === 'function' && !wwHasPinConfigured()) {
+    if (typeof openPinSetupOverlay === 'function') {
+      openPinSetupOverlay({ skipFirstRunLock: true });
+      return;
+    }
+  } else if (typeof wwHasPinConfigured === 'function' && wwHasPinConfigured()) {
+    if (typeof wwEnsurePinThenForced === 'function' && typeof openPinChangeOverlay === 'function') {
+      wwEnsurePinThenForced(function () {
+        openPinChangeOverlay();
+      });
+      return;
+    }
+  }
   const cur = localStorage.getItem('ww_pin') || '';
   const a = prompt('设置 6 位数字 PIN（留空则清除 PIN）', cur);
-  if(a === null) return;
+  if (a === null) return;
   const t = a.trim();
-  if(t === '') { localStorage.removeItem('ww_pin'); localStorage.removeItem('ww_totp_secret'); localStorage.removeItem('ww_totp_enabled'); showToast('已清除 PIN', 'success'); if(typeof updateSettingsPage==='function') updateSettingsPage(); return; }
-  if(!/^\d{6}$/.test(t)) { showToast('PIN 须为 6 位数字', 'error'); return; }
+  if (t === '') {
+    localStorage.removeItem('ww_pin');
+    localStorage.removeItem('ww_totp_secret');
+    localStorage.removeItem('ww_totp_enabled');
+    showToast('已清除 PIN', 'success');
+    if (typeof updateSettingsPage === 'function') updateSettingsPage();
+    return;
+  }
+  if (!/^\d{6}$/.test(t)) {
+    showToast('PIN 须为 6 位数字', 'error');
+    return;
+  }
   localStorage.setItem('ww_pin', t);
   try { window._wwInFirstRun = false; } catch (_frPs) {}
   showToast('PIN 已保存', 'success');
