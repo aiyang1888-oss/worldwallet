@@ -1,46 +1,5 @@
 // wallet.dom-bind.js — CSP：wallet.html 内联事件由同源脚本绑定（配合 data-ww-*）
-/** 欢迎页三按钮：必须在文件最前同步挂到 window，供按钮 HTML onclick 直接调用（不依赖事件捕获/冒泡委托）。
- * 本文件在 wallet.runtime.js 之后加载，goTo / createNewWallet 已存在。 */
-(function wwWelcomeTapInlineEarly() {
-  var _wwWelDeb = 0;
-  function run(act) {
-    var n = Date.now();
-    if (n - _wwWelDeb < 400) return;
-    _wwWelDeb = n;
-    try {
-      if (typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
-    } catch (_f) {}
-    try {
-      if (typeof window.wwClearHtmlBootRouteIfDestChanges === 'function') {
-        window.wwClearHtmlBootRouteIfDestChanges('page-welcome');
-      }
-    } catch (_c) {}
-    try {
-      if (typeof tapHaptic === 'function') tapHaptic(12);
-    } catch (_h) {}
-    try {
-      if (act === 'create' && typeof window.createNewWallet === 'function') {
-        void window.createNewWallet();
-        return;
-      }
-      if (act === 'pin' && typeof window.goTo === 'function') {
-        window.goTo('page-password-restore');
-        return;
-      }
-      if (act === 'import' && typeof window.goTo === 'function') {
-        window.goTo('page-import');
-        return;
-      }
-    } catch (e) {
-      try {
-        if (typeof safeLog === 'function') safeLog('[wwWelcomeTapInline]', e);
-      } catch (_s) {}
-    }
-  }
-  try {
-    window.wwWelcomeTapInline = run;
-  } catch (_w) {}
-})();
+// wwWelcomeTapInline 由 wallet.runtime.js 末尾注册；此处仅 touch 兜底与表单绑定
 (function () {
   function wwCall(name) {
     try {
