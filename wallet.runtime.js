@@ -4681,13 +4681,19 @@ function setSwapCoin(target, coin) {
 
 function renderSwapUI() {
   const f=swapFrom, t=swapTo;
-  _safeEl('swapFromIcon').style.background=f.bg;
-  (_safeEl('swapFromIcon') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapFromIcon fallback */.textContent=f.icon;
+  var sfi = _safeEl('swapFromIcon');
+  if (sfi) {
+    try { sfi.style.background = f.bg; } catch (_sfb) {}
+    wwSetCoinIconElement(sfi, f);
+  }
   (_safeEl('swapFromName') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapFromName fallback */.textContent=f.name;
   (_safeEl('swapFromChain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapFromChain fallback */.textContent=f.chain;
   (_safeEl('swapFromBal') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapFromBal fallback */.textContent=f.bal.toLocaleString();
-  _safeEl('swapToIcon').style.background=t.bg;
-  (_safeEl('swapToIcon') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToIcon fallback */.textContent=t.icon;
+  var sti = _safeEl('swapToIcon');
+  if (sti) {
+    try { sti.style.background = t.bg; } catch (_stb) {}
+    wwSetCoinIconElement(sti, t);
+  }
   (_safeEl('swapToName') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToName fallback */.textContent=t.name;
   (_safeEl('swapToChain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToChain fallback */.textContent=t.chain;
   const rate = (swapFrom.price/swapTo.price).toFixed(swapTo.price>100?6:4);
@@ -4755,7 +4761,7 @@ function openCoinPicker(target) {
     if(coin.id===other.id) return; // 不能选同一个
     const div=document.createElement('div');
     div.style.cssText='display:flex;align-items:center;gap:12px;background:var(--bg3);border:1.5px solid '+(coin.id===current.id?'var(--gold)':'var(--border)')+';border-radius:14px;padding:12px 14px;cursor:pointer;transition:all 0.2s';
-    div.innerHTML=`<div style="width:36px;height:36px;border-radius:50%;background:${coin.bg};display:flex;align-items:center;justify-content:center;font-size:18px">${coin.icon}</div><div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">${coin.name}</div><div style="font-size:11px;color:var(--text-muted)">${coin.chain}</div></div><div class="u6"><div style="font-size:14px;color:var(--text)">${coin.bal.toLocaleString()}</div></div>`;
+    div.innerHTML='<div style="width:36px;height:36px;border-radius:50%;background:'+coin.bg+';display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0">'+wwCoinIconHtml(coin)+'</div><div class="u4"><div style="font-size:15px;font-weight:600;color:var(--text)">'+coin.name+'</div><div style="font-size:11px;color:var(--text-muted)">'+coin.chain+'</div></div><div class="u6"><div style="font-size:14px;color:var(--text)">'+coin.bal.toLocaleString()+'</div></div>';
     div.onclick=()=>{setSwapCoin(pickerTarget,coin);closeCoinPicker();};
     list.appendChild(div);
   });
