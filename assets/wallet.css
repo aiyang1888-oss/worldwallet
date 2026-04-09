@@ -35,7 +35,6 @@ html[data-ww-boot-page] #page-welcome.page {
 }
 html[data-ww-boot-page="page-home"] #page-home.page,
 html[data-ww-boot-page="page-password-restore"] #page-password-restore.page,
-html[data-ww-boot-page="page-create"] #page-create.page,
 html[data-ww-boot-page="page-key"] #page-key.page,
 html[data-ww-boot-page="page-key-verify"] #page-key-verify.page,
 html[data-ww-boot-page="page-addr"] #page-addr.page,
