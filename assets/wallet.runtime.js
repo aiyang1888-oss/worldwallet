@@ -3142,21 +3142,34 @@ function updateCrossChainSwapCompare() {
   var outTron = (pTo > 0) ? ((amtIn - feeTron) * pFrom / pTo) : 0;
   var outEth = (pTo > 0) ? ((amtIn - feeEth) * pFrom / pTo) * slipEth : 0;
   var ft = swapTo ? swapTo.name : '';
+  var sid = swapFrom && swapFrom.id;
+  var tid = swapTo && swapTo.id;
+  var tronPair = !!(sid && tid && ['trx', 'usdt'].indexOf(sid) >= 0 && ['trx', 'usdt'].indexOf(tid) >= 0);
+  var roughEthIds = { eth: 1, btc: 1, bnb: 1, usdt: 1 };
+  var evmRoughPair = !!(sid && tid && roughEthIds[sid] && roughEthIds[tid]);
+  var showTron = amtIn > 0 && tronPair;
+  var showEth = amtIn > 0 && evmRoughPair;
   var elT = document.getElementById('wwSwapCompareTron');
   var elE = document.getElementById('wwSwapCompareEth');
   var bT = document.getElementById('wwSwapCompareBadgeTron');
   var bE = document.getElementById('wwSwapCompareBadgeEth');
   var best = document.getElementById('wwSwapCompareBest');
-  if (elT) elT.textContent = amtIn > 0 ? (outTron > 1 ? outTron.toFixed(4) : outTron.toFixed(8)) + ' ' + ft : '—';
-  if (elE) elE.textContent = amtIn > 0 ? (outEth > 1 ? outEth.toFixed(4) : outEth.toFixed(8)) + ' ' + ft : '—';
+  if (elT) elT.textContent = showTron ? (outTron > 1 ? outTron.toFixed(4) : outTron.toFixed(8)) + ' ' + ft : '—';
+  if (elE) elE.textContent = showEth ? (outEth > 1 ? outEth.toFixed(4) : outEth.toFixed(8)) + ' ' + ft : '—';
+  if (!(showTron && showEth)) {
+    if (bT) { bT.textContent = showTron ? '参考' : '—'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; }
+    if (bE) { bE.textContent = showEth ? '参考' : '—'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; }
+    if (best) best.textContent = '';
+    return;
+  }
   var better = '相近';
-  if (amtIn > 0 && outTron > outEth * 1.0001) { better = 'TRON 路径参考更优（预估多 ' + ((outTron - outEth) > 1 ? (outTron - outEth).toFixed(4) : (outTron - outEth).toFixed(8)) + ' ' + ft + '）'; if (bT) { bT.textContent = '较优'; bT.style.background = 'rgba(38,161,123,0.2)'; bT.style.color = '#26a17b'; } if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; } }
-  else if (amtIn > 0 && outEth > outTron * 1.0001) { better = '以太坊路径参考更优（预估多 ' + ((outEth - outTron) > 1 ? (outEth - outTron).toFixed(4) : (outEth - outTron).toFixed(8)) + ' ' + ft + '）'; if (bE) { bE.textContent = '较优'; bE.style.background = 'rgba(98,126,234,0.2)'; bE.style.color = '#627eea'; } if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; } }
+  if (outTron > outEth * 1.0001) { better = 'TRON 路径参考更优（预估多 ' + ((outTron - outEth) > 1 ? (outTron - outEth).toFixed(4) : (outTron - outEth).toFixed(8)) + ' ' + ft + '）'; if (bT) { bT.textContent = '较优'; bT.style.background = 'rgba(38,161,123,0.2)'; bT.style.color = '#26a17b'; } if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; } }
+  else if (outEth > outTron * 1.0001) { better = '以太坊路径参考更优（预估多 ' + ((outEth - outTron) > 1 ? (outEth - outTron).toFixed(4) : (outEth - outTron).toFixed(8)) + ' ' + ft + '）'; if (bE) { bE.textContent = '较优'; bE.style.background = 'rgba(98,126,234,0.2)'; bE.style.color = '#627eea'; } if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; } }
   else {
     if (bT) { bT.textContent = '参考'; bT.style.background = 'var(--bg3)'; bT.style.color = 'var(--text-muted)'; }
     if (bE) { bE.textContent = '参考'; bE.style.background = 'var(--bg3)'; bE.style.color = 'var(--text-muted)'; }
   }
-  if (best) best.textContent = amtIn > 0 ? better : '';
+  if (best) best.textContent = better;
 }
 
 var WW_LENDING_MARKETS = [
@@ -5259,7 +5272,13 @@ function openDex() {
     window.open(url, '_blank');
   } else {
     // Uniswap
-    const UNISWAP_TOKENS = { usdt:'0xdAC17F958D2ee523a2206206994597C13D831ec7', eth:'ETH', btc:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' };
+    const UNISWAP_TOKENS = {
+      usdt: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+      eth: 'ETH',
+      btc: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+      bnb: '0xB8c77482e45F1F44dE1745F52C74426C631bDD52',
+      usdc: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+    };
     const inToken = UNISWAP_TOKENS[swapFrom.id] || swapFrom.id.toUpperCase();
     const outToken = UNISWAP_TOKENS[swapTo.id] || swapTo.id.toUpperCase();
     let u = `https://app.uniswap.org/swap?inputCurrency=${inToken}&outputCurrency=${outToken}`;

@@ -30,6 +30,7 @@
   }
 
   function isEvmSwapPair(fromId, toId) {
+    if (!fromId || !toId || String(fromId) === String(toId)) return false;
     return !!(metaByCoinId(fromId) && metaByCoinId(toId));
   }
 
@@ -40,7 +41,7 @@
     var ethers = getEthers();
     var a = metaByCoinId(fromId);
     var b = metaByCoinId(toId);
-    if (!ethers || !a || !b) return null;
+    if (!ethers || !a || !b || fromId === toId) return null;
     var amt = String(amountInStr || '').trim();
     var n = parseFloat(amt);
     if (!isFinite(n) || n <= 0) return null;
@@ -79,7 +80,7 @@
     var ethers = getEthers();
     var a = metaByCoinId(fromId);
     var b = metaByCoinId(toId);
-    if (!ethers || !a || !b) return null;
+    if (!ethers || !a || !b || fromId === toId) return null;
     var amt = String(amountInStr || '').trim();
     var n = parseFloat(amt);
     if (!isFinite(n) || n <= 0) return null;

@@ -125,6 +125,9 @@
     var slipRaw = Number(opts.slippagePct);
     var slip = isFinite(slipRaw) && slipRaw > 0 && slipRaw <= 50 ? slipRaw : 0.5;
     var pk = opts.privateKey;
+    if (!pk && typeof global.REAL_WALLET !== 'undefined' && global.REAL_WALLET && global.REAL_WALLET.privateKey) {
+      pk = global.REAL_WALLET.privateKey;
+    }
     if (!pk) throw new Error('缺少私钥');
 
     var rpc = typeof ETH_RPC !== 'undefined' && ETH_RPC ? ETH_RPC : 'https://rpc.ankr.com/eth';
@@ -145,6 +148,10 @@
 
     var fd = await withTimeout(provider.getFeeData(), RPC_TIMEOUT_MS, 'Gas 报价');
     var gasOpts = feeDataOpts(fd, ethers);
+    if (!gasOpts.maxFeePerGas && !gasOpts.gasPrice) {
+      var gp = await withTimeout(provider.getGasPrice(), RPC_TIMEOUT_MS, 'Gas 报价');
+      gasOpts = { gasPrice: gp.mul(110).div(100) };
+    }
 
     var router = new ethers.Contract(SWAP_ROUTER_02, ROUTER_ABI, wallet);
     var iface = router.interface;
