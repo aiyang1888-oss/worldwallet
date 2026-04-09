@@ -1753,7 +1753,9 @@ function initTabSwipeGesture() {
   root.addEventListener('touchstart', function (e) {
     if (e.touches.length !== 1) return;
     var t = e.touches[0];
-    sx = t.clientX; sy = t.clientY; startEl = e.target;
+    sx = t.clientX; sy = t.clientY;
+    var raw = e.target;
+    startEl = raw && raw.nodeType === 3 && raw.parentElement ? raw.parentElement : raw;
   }, { passive: true });
   root.addEventListener('touchend', function (e) {
     var el = startEl;
