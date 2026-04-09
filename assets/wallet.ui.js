@@ -3129,6 +3129,9 @@ function closeTransferCoinPicker() {
 }
 
 function doTransfer() {
+  var _nd = Date.now();
+  if (window._wwLastDoTransferClick && _nd - window._wwLastDoTransferClick < 550) return;
+  window._wwLastDoTransferClick = _nd;
   var ta = document.getElementById('transferAddr');
   var amtInp = document.getElementById('transferAmount');
   var addr = ta ? ta.value.trim() : '';
@@ -3145,13 +3148,16 @@ function doTransfer() {
     return;
   }
   var amtPre = typeof wwParsePositiveAmount === 'function'
-    ? wwParsePositiveAmount(amtRaw, 1e12)
+    ? wwParsePositiveAmount(amtRaw, 1e12, 18)
     : NaN;
   if (typeof wwParsePositiveAmount !== 'function') {
     var _pf = parseFloat(amtRaw);
     amtPre = (isFinite(_pf) && _pf > 0) ? _pf : NaN;
   }
-  if (!isFinite(amtPre) || amtPre <= 0) { if (typeof showToast === 'function') showToast('❌ 请输入有效转账金额', 'error'); return; }
+  if (!isFinite(amtPre) || amtPre <= 0) {
+    if (typeof showToast === 'function') showToast('❌ 请输入有效金额（最多 18 位小数）', 'error');
+    return;
+  }
   var amtNum = amtPre;
   var bal = Number(transferCoin.bal) || 0;
   if (bal < amtNum) { if (typeof showToast === 'function') showToast('❌ 余额不足', 'error'); shakeTransferAmountTooHigh(); return; }

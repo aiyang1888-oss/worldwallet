@@ -253,7 +253,10 @@ try {
       <div class="home-tx-section">
         <div class="home-section-head">
           <span class="home-tx-title">最近交易</span>
-          <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="home-refresh-link" onclick="if(typeof wwExportTxHistoryCsv==='function')wwExportTxHistoryCsv();else if(typeof showToast==='function')showToast('导出不可用','info')">导出 CSV</span>
+            <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
+          </span>
         </div>
         <input type="search" id="txHistoryFilter" class="home-tx-filter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" />
         <div id="txHistoryList">

@@ -2497,8 +2497,19 @@ function shakeTransferAmountTooHigh() {
 
 async function broadcastRealTransfer() {
   if(!REAL_WALLET) { showToast('⚠️ 请先创建或导入钱包', 'warning'); return false; }
-  const addr = document.getElementById('transferAddr').value.trim();
+  var addr = document.getElementById('transferAddr').value.trim();
   const coin = transferCoin.id;
+  var _nk0 = transferCoin && transferCoin.usdtNet ? transferCoin.usdtNet : 'tron';
+  if (/\.eth$/i.test(addr) && (coin === 'eth' || (coin === 'usdt' && _nk0 !== 'tron')) && typeof wwResolveEnsIfNeeded === 'function') {
+    try {
+      addr = await wwResolveEnsIfNeeded(addr);
+      var _taEns = document.getElementById('transferAddr');
+      if (_taEns) _taEns.value = addr;
+    } catch (ensE) {
+      showToast('❌ ' + (ensE && ensE.message ? ensE.message : 'ENS 解析失败'), 'error');
+      return false;
+    }
+  }
   if(!addr || addr.length < 26){showToast('地址格式无效','error');return false;}
   if(coin==='eth' && !addr.match(/^0x[a-fA-F0-9]{40}$/)){showToast('以太坊地址格式错误','error');return false;}
   if (coin === 'usdt') {
@@ -2518,8 +2529,9 @@ async function broadcastRealTransfer() {
     showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
     return false;
   }
-  const amt = parseFloat(document.getElementById('transferAmount').value);
-  if(!amt || amt<=0 || isNaN(amt)){showToast('金额无效','error');return false;}
+  var amtRaw0 = document.getElementById('transferAmount').value;
+  var amt = typeof wwParsePositiveAmount === 'function' ? wwParsePositiveAmount(amtRaw0, 1e12, 18) : parseFloat(amtRaw0);
+  if(!amt || amt<=0 || isNaN(amt)){showToast('金额无效或小数位过多（最多 18 位）','error');return false;}
   if(amt>10000){showToast('单笔超10000限额','error');return false;}
   const bal = (transferCoin.bal||0);
   if(amt>bal){showToast('余额不足','error');return false;}
@@ -2987,7 +2999,7 @@ async function refreshHomePriceTicker() {
     if(a) a.innerHTML = html;
     if(b) b.innerHTML = html;
     if(!_wwTickerInterval) {
-      _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 90000);
+      _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 15000);
     }
     try {
       if (typeof wwCheckPriceAlertsAfterTicker === 'function') {
@@ -4652,6 +4664,7 @@ async function doTransfer() {
 function closeTransferConfirm() { _safeEl('transferConfirmOverlay').classList.remove('show'); }
 
 function confirmTransfer() {
+  if (window._wwConfirmTransferBusy) return;
   if((typeof wwIsOnline === 'function') ? !wwIsOnline() : (typeof navigator !== 'undefined' && navigator.onLine === false)) {
     showToast('📡 当前无网络，无法完成转账', 'warning');
     return;
@@ -4741,14 +4754,23 @@ function confirmTransfer() {
   const sf2=_safeEl('swooshFromPart2'); if(sf2) sf2.textContent=_safeEl('successFromPart2')?.textContent||'';
   const sfl=_safeEl('swooshFromLang'); if(sfl) sfl.textContent=_safeEl('successFromLang')?.textContent||'';
 
+  var usdRisk = typeof wwEstUsdForTransfer === 'function' ? wwEstUsdForTransfer(amtF) : 0;
+  if (usdRisk > 1000) {
+    if (!window.confirm('风险提示：本笔约 $' + usdRisk.toFixed(2) + ' USD（超过 $1000）。请再次核对收款地址与金额。\n点「确定」继续广播。')) {
+      return;
+    }
+  }
+
   // 尝试真实广播
   const sendBtn = document.getElementById('confirmSendBtn');
+  window._wwConfirmTransferBusy = true;
   if(sendBtn) { sendBtn.disabled=true; sendBtn.textContent='⏳ 广播中...'; }
   if (typeof wwModalShowProgress === 'function') wwModalShowProgress('正在广播', '链上确认中，请稍候…');
 
   broadcastRealTransfer().then(ok => {
     if (typeof wwModalHideProgress === 'function') wwModalHideProgress();
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
+    window._wwConfirmTransferBusy = false;
     if(ok) {
       // wallet.html 精简版无 page-swoosh：直接回首页并刷新余额
       if (document.getElementById('swooshCoin')) {
@@ -4764,6 +4786,7 @@ function confirmTransfer() {
   }).catch(err => {
     if (typeof wwModalHideProgress === 'function') wwModalHideProgress();
     if(sendBtn) { sendBtn.disabled=false; sendBtn.textContent='✅ 确认转账'; }
+    window._wwConfirmTransferBusy = false;
     showToast('❌ 转账失败：' + (err?.message || '网络错误'), 'error');
   });
 
@@ -4791,9 +4814,18 @@ function shareSuccess(ev) {
   const coin = _safeEl('successCoin').textContent;
   const from = _safeEl('successFromPart1').textContent+' '+_safeEl('successFromPart2').textContent;
   const txRaw = String(_safeEl('successTxHash').textContent || '').trim();
+  var linkHint = '';
+  if (txRaw && /^0x[0-9a-fA-F]{64}$/.test(txRaw)) linkHint = '\nhttps://etherscan.io/tx/' + txRaw;
+  else if (txRaw && txRaw.length > 10 && txRaw.indexOf('inapp') !== 0 && txRaw.indexOf('sunswap') !== 0) {
+    linkHint = '\nhttps://tronscan.org/#/transaction/' + txRaw;
+  }
   let shareBlock = '我刚通过 WorldToken 发送了 '+amt+' '+coin+'\n发款方：'+from+'\nworldtoken.cc';
-  if (txRaw) shareBlock += '\n'+txRaw;
-  if (navigator.clipboard && navigator.clipboard.writeText) {
+  if (txRaw) shareBlock += '\n' + txRaw + linkHint;
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    navigator.share({ title: 'WorldToken', text: shareBlock, url: 'https://worldtoken.cc/wallet.html' }).catch(function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(shareBlock).catch(function () {});
+    });
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(shareBlock).catch(function(){});
   }
   const clickEl = (ev && ev.target) || (typeof window !== 'undefined' && window.event && window.event.target) || (typeof document !== 'undefined' && document.activeElement);
