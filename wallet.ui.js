@@ -5073,6 +5073,37 @@ try {
       return;
     }
     try {
+      var _wwSessReload = false;
+      try {
+        var _wwNavS = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+        _wwSessReload = _wwNavS && _wwNavS.type === 'reload';
+      } catch (_ns) {}
+      var _sessRestore = '';
+      try {
+        _sessRestore = (sessionStorage.getItem('ww_last_page') || '').trim();
+      } catch (_sr0) {}
+      if (_sessRestore && document.getElementById(_sessRestore)) {
+        if (wwGuestHashAllowed(_sessRestore)) {
+          try {
+            if (
+              _wwPinBeforeMain[_sessRestore] &&
+              typeof wwNeedsPinUnlockBeforeHome === 'function' &&
+              wwNeedsPinUnlockBeforeHome()
+            ) {
+              if (typeof goTo === 'function') {
+                goTo('page-password-restore', _wwSessReload ? { forceRoute: true } : {});
+              }
+              return;
+            }
+          } catch (_pinS) { wwQuiet(_pinS); }
+          if (typeof goTo === 'function') {
+            goTo(_sessRestore, _wwSessReload ? { forceRoute: true } : {});
+          }
+          return;
+        }
+      }
+    } catch (_sessR) { wwQuiet(_sessR); }
+    try {
       if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) {
         if (typeof goTo === 'function') goTo('page-welcome');
         return;
