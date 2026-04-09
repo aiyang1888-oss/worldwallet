@@ -7,6 +7,8 @@ node_modules/
 .expo/
 dist/*
 !dist/.gitkeep
+# Service Worker：需含 worldtoken-v 供 deploy / GitHub Actions 替换缓存戳（与 assets/sw.js 同步）
+!dist/sw.js
 # 勿在 dist/ 内嵌套独立 Git 仓库（误操作会产生 dist/.git）
 dist/.git/
 web-build/
