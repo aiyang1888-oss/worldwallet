@@ -245,6 +245,26 @@ try {
   window.wwResolveZhWordlistIndex = wwResolveZhWordlistIndex;
 } catch (_wRZ) {}
 
+/** 离开首帧 data-ww-boot-page 目标时移除 head 注入，否则 wallet.css 的 !important 会让旧页叠在新页之上 */
+function wwClearHtmlBootRouteIfDestChanges(destPageId) {
+  try {
+    var b = document.documentElement.getAttribute('data-ww-boot-page');
+    if (!b || b === destPageId) return;
+    document.documentElement.removeAttribute('data-ww-boot-page');
+    try {
+      document.documentElement.classList.remove('ww-boot-route');
+    } catch (_w0) {}
+    try {
+      var st = document.querySelector('style[data-ww-boot-route="1"]');
+      if (!st) st = document.querySelector('style[data-ww-boot-route]');
+      if (st && st.parentNode) st.parentNode.removeChild(st);
+    } catch (_w1) {}
+  } catch (_e) {}
+}
+try {
+  window.wwClearHtmlBootRouteIfDestChanges = wwClearHtmlBootRouteIfDestChanges;
+} catch (_wCB) {}
+
 /**
  * 英文助记词 → 目标语言助记词
  * @param {string} mnemonic - 标准BIP39英文助记词
@@ -1245,18 +1265,7 @@ function goTo(pageId, opts) {
     }
   }
   try {
-    var _wwBootPgUi = document.documentElement.getAttribute('data-ww-boot-page');
-    if (_wwBootPgUi && _wwBootPgUi !== pageId) {
-      document.documentElement.removeAttribute('data-ww-boot-page');
-      try {
-        document.documentElement.classList.remove('ww-boot-route');
-      } catch (_wb0u) {}
-      try {
-        var _wwBootStUi = document.querySelector('style[data-ww-boot-route="1"]');
-        if (!_wwBootStUi) _wwBootStUi = document.querySelector('style[data-ww-boot-route]');
-        if (_wwBootStUi && _wwBootStUi.parentNode) _wwBootStUi.parentNode.removeChild(_wwBootStUi);
-      } catch (_wb1u) {}
-    }
+    wwClearHtmlBootRouteIfDestChanges(pageId);
   } catch (_wwBootClrUi) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
