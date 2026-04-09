@@ -1024,8 +1024,14 @@ function renderPinSetupUI() {
   var val = window._pinSetupValue || '';
   var first = window._pinSetupFirst || '';
   var mode = window._pinSetupMode || 'create';
-  if (title) title.textContent = mode === 'confirm' ? '确认 PIN' : '设置 PIN';
-  if (hint) hint.textContent = mode === 'confirm' ? '请再次输入 6 位数字' : '请输入 6 位数字';
+  var flow = window._pinSetupFlow || 'setup';
+  if (flow === 'change') {
+    if (title) title.textContent = mode === 'confirm' ? '确认新 PIN' : '修改 PIN';
+    if (hint) hint.textContent = mode === 'confirm' ? '请再次输入新 PIN' : '请输入 6 位新数字';
+  } else {
+    if (title) title.textContent = mode === 'confirm' ? '确认 PIN' : '设置 PIN';
+    if (hint) hint.textContent = mode === 'confirm' ? '请再次输入 6 位数字' : '请输入 6 位数字';
+  }
   if (dots) {
     dots.innerHTML = '';
     for (var i = 0; i < 6; i++) {
@@ -1136,6 +1142,23 @@ function handlePinSetupKey(key) {
       })
       .catch(function (e) {
         if (typeof showToast === 'function') showToast((e && e.message) || '操作失败', 'error');
+      });
+    return;
+  }
+
+  var flow = window._pinSetupFlow || 'setup';
+  if (flow === 'change') {
+    Promise.resolve()
+      .then(function () {
+        if (typeof wwFinalizePinChange === 'function') return wwFinalizePinChange(val);
+        throw new Error('无法保存新 PIN');
+      })
+      .then(function () {
+        closePinSetupOverlay();
+      })
+      .catch(function (e) {
+        if (e && e.message === 'SAME_PIN') return;
+        if (typeof showToast === 'function') showToast((e && e.message) || '修改失败', 'error');
       });
     return;
   }
