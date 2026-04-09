@@ -1292,6 +1292,35 @@ function wwWalletHasAnyChainAddress(rw) {
   }
 }
 
+/** 持久化 ww_wallet 是否含「可识别的」链上地址（排除占位/短串，避免首屏误判进资产页） */
+function wwWalletHasValidPersistedAddress(d) {
+  try {
+    if (!d || typeof d !== 'object') return false;
+    function ethOk(a) {
+      return typeof a === 'string' && /^0x[0-9a-fA-F]{40}$/.test(a.trim());
+    }
+    function trxOk(a) {
+      if (typeof a !== 'string') return false;
+      var s = a.trim();
+      return s.length >= 30 && s.length <= 52 && /^T[1-9A-HJ-NP-Za-km-z]+$/.test(s);
+    }
+    function btcOk(a) {
+      if (typeof a !== 'string') return false;
+      var s = a.trim();
+      if (s.length < 26) return false;
+      return /^(bc1|[13])[a-zA-HJ-NP-Za-km-z0-9]{24,}$/.test(s) || /^bc1[a-z0-9]{25,90}$/i.test(s);
+    }
+    return ethOk(d.ethAddress || '') || trxOk(d.trxAddress || '') || btcOk(d.btcAddress || '');
+  } catch (_e2) {
+    return false;
+  }
+}
+try {
+  window.wwWalletHasValidPersistedAddress = wwWalletHasValidPersistedAddress;
+} catch (_wwV) {
+  wwQuiet(_wwV);
+}
+
 /** REAL 已有任意链地址则用 REAL；否则（助记词已生成未验证）用 TEMP_WALLET 作首页/余额预览 */
 function wwGetChainViewWallet() {
   try {
@@ -1375,11 +1404,11 @@ function goTo(pageId, opts) {
     if (!_wwAllowHomeUi && typeof wwWalletHasAnyChainAddress === 'function') {
       try {
         var _rwUi = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-        if (wwWalletHasAnyChainAddress(_rwUi)) _wwAllowHomeUi = true;
-        else {
-          var _lsUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-          if (wwWalletHasAnyChainAddress(_lsUi)) _wwAllowHomeUi = true;
+        var _lsUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+        if (typeof wwWalletHasValidPersistedAddress === 'function') {
+          if (wwWalletHasValidPersistedAddress(_rwUi) || wwWalletHasValidPersistedAddress(_lsUi)) _wwAllowHomeUi = true;
         }
+        if (!_wwAllowHomeUi && (wwWalletHasAnyChainAddress(_rwUi) || wwWalletHasAnyChainAddress(_lsUi))) _wwAllowHomeUi = true;
       } catch (_ah1) { wwQuiet(_ah1); }
     }
     if (!_wwAllowHomeUi) pageId = 'page-welcome';
@@ -4905,6 +4934,7 @@ try {
   function wwGuestHasSavedAddress() {
     try {
       var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      if (typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d)) return true;
       return typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(d);
     } catch (_g) {
       return false;
@@ -4989,7 +5019,10 @@ try {
     var hasWallet = false;
     try {
       var _d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      hasWallet = wwWalletHasAnyChainAddress(_d);
+      hasWallet =
+        typeof wwWalletHasValidPersistedAddress === 'function'
+          ? wwWalletHasValidPersistedAddress(_d)
+          : wwWalletHasAnyChainAddress(_d);
     } catch (_e) { wwQuiet(_e); }
     if (typeof goTo !== 'function') return;
     var _dest = hasWallet ? 'page-home' : 'page-welcome';
@@ -4998,6 +5031,13 @@ try {
         _dest = 'page-password-restore';
       }
     } catch (_destE) { wwQuiet(_destE); }
+    if (!hasWallet && _dest === 'page-welcome') {
+      try {
+        sessionStorage.removeItem('ww_last_page');
+      } catch (_sl) {
+        wwQuiet(_sl);
+      }
+    }
     goTo(_dest);
   }
   window.addEventListener('hashchange', function () {
