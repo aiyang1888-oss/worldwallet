@@ -1286,6 +1286,42 @@ try {
   </div>
   <!-- /.pages：页面区结束；以下为全屏遮罩与底栏（仍在 .phone 内） -->
 
+  <!-- 兑换：币种选择 -->
+  <div class="overlay" id="coinPickerOverlay" onclick="if(event.target===this&&typeof closeCoinPicker==='function')closeCoinPicker()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:360px;max-height:72vh;overflow:auto;padding-bottom:12px">
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px">选择币种</div>
+      <div id="coinPickerList"></div>
+      <button type="button" class="btn-secondary" style="width:100%;margin-top:12px" onclick="if(typeof closeCoinPicker==='function')closeCoinPicker()">取消</button>
+    </div>
+  </div>
+
+  <!-- 兑换：确认 -->
+  <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this&&typeof closeSwapConfirm==='function')closeSwapConfirm()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:340px">
+      <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px">确认兑换</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:12px">将打开 SunSwap 或 Uniswap 完成交易；以下为当前页面估算。</div>
+      <div style="background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:14px">
+        <div><span style="color:var(--text-muted)">支付 </span><span id="swapConfirmFrom">—</span></div>
+        <div style="margin-top:6px"><span style="color:var(--text-muted)">预估获得 </span><span id="swapConfirmTo">—</span></div>
+        <div style="margin-top:6px;font-size:12px;color:var(--text-muted)" id="swapConfirmRate">—</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--text-muted)">最低到账 <strong style="color:var(--text)" id="swapConfirmMin">—</strong></div>
+      </div>
+      <button type="button" class="btn-primary" style="width:100%;padding:12px 0;margin-bottom:8px" onclick="if(typeof confirmSwapGo==='function')confirmSwapGo()">打开 DEX</button>
+      <button type="button" class="btn-secondary" style="width:100%" onclick="if(typeof closeSwapConfirm==='function')closeSwapConfirm()">取消</button>
+    </div>
+  </div>
+
+  <!-- 兑换：历史 -->
+  <div class="overlay" id="swapHistoryOverlay" onclick="if(event.target===this&&typeof closeSwapHistory==='function')closeSwapHistory()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:380px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:16px;font-weight:700;color:var(--text)">兑换记录</div>
+        <button type="button" class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="if(typeof closeSwapHistory==='function')closeSwapHistory()">关闭</button>
+      </div>
+      <div id="swapHistoryBody" style="overflow-y:auto;flex:1;font-size:12px"></div>
+    </div>
+  </div>
+
   <!-- PIN 解锁（继续使用钱包） -->
   <div class="overlay" id="pinUnlockOverlay">
     <div id="pinUnlockPanel" class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:300px;text-align:center">
@@ -1500,6 +1536,7 @@ try {
 <script src="lib/ethers.umd.min.js"></script>
 <!-- globals.js disabled to fix var conflict -->
 <script src="js/api-config.js"></script>
+<script src="wallet.swap.js"></script>
 <script src="js/btc-segwit.js"></script>
 <script src="js/idb-kv.js"></script>
 <script src="js/storage.js"></script>
