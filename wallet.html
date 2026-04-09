@@ -109,8 +109,50 @@ try {
       var WW_DEV_BOOT_PAGE = '';
       if (!h && WW_DEV_BOOT_PAGE && /^page-[a-z0-9-]+$/i.test(WW_DEV_BOOT_PAGE)) boot = WW_DEV_BOOT_PAGE;
     } catch (_devBoot) {}
+    /* 无链上地址时：禁止用 #hash 首帧 boot 到底栏/资产/设置等，否则先闪该页再被 goTo 拉回欢迎 */
+    var _wwHasAddr = false;
+    try {
+      var _wCk = localStorage.getItem('ww_wallet');
+      var _oCk = _wCk ? JSON.parse(_wCk) : null;
+      _wwHasAddr = !!(_oCk && (_oCk.trxAddress || _oCk.ethAddress || _oCk.btcAddress));
+    } catch (_a0) {}
+    if (!_wwHasAddr && boot && boot !== 'page-welcome') {
+      var _wwGuestHashOk = {
+        'page-import': 1,
+        'page-key': 1,
+        'page-key-verify': 1,
+        'page-password-restore': 1,
+        'page-verify-success': 1,
+        'page-recovery-test': 1,
+        'page-convert-mnemonic': 1
+      };
+      if (!_wwGuestHashOk[boot]) {
+        try {
+          var _uGh = new URL(location.href);
+          if (_uGh.hash) {
+            _uGh.hash = '';
+            if (typeof history !== 'undefined' && history.replaceState) {
+              history.replaceState(null, '', _uGh.pathname + _uGh.search);
+            }
+          }
+        } catch (_gh) {}
+        boot = 'page-welcome';
+      }
+    }
     if (!boot || boot === 'page-welcome') {
       releaseWelcomeGuard();
+      /* 与有钱包时 boot 首页对称：显式锁定欢迎页，避免首帧在 wallet.css 生效前其它 .page 与欢迎页叠层闪一下 */
+      try {
+        document.documentElement.setAttribute('data-ww-boot-page', 'page-welcome');
+        document.documentElement.classList.add('ww-boot-route');
+        var cssWelcomeOnly =
+          'html[data-ww-boot-page] #page-welcome.page{opacity:1!important;visibility:visible!important;pointer-events:auto!important;transform:translate3d(0,0,0)!important;z-index:4!important;}' +
+          'html[data-ww-boot-page="page-welcome"] .page:not(#page-welcome){opacity:0!important;visibility:hidden!important;pointer-events:none!important;}';
+        var stW = document.createElement('style');
+        stW.setAttribute('data-ww-boot-route', '1');
+        stW.textContent = cssWelcomeOnly;
+        document.head.appendChild(stW);
+      } catch (_bootW) {}
       return;
     }
     var safe = String(boot).replace(/[^a-z0-9-]/gi, '');
@@ -143,8 +185,8 @@ try {
 })();
 </script>
 <title>WorldToken</title>
-<meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/USDT/BTC多链">
-<meta name="keywords" content="加密钱包,多语言,WorldToken,TRX,ETH,USDT,BTC,区块链">
+<meta name="description" content="WorldToken - 全球多语言加密钱包，支持120+种语言万语地址，TRX/ETH/TRC USDT/BTC多链">
+<meta name="keywords" content="加密钱包,多语言,WorldToken,TRX,ETH,TRC USDT,BTC,区块链">
 <meta name="theme-color" content="#0c0c18">
 <meta property="og:title" content="WorldToken - 全球多语言钱包">
 <meta property="og:description" content="支持120+种语言的万语地址加密钱包">
@@ -152,7 +194,7 @@ try {
 <meta property="og:url" content="https://worldtoken.cc/wallet.html">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="WorldToken - 全球多语言加密钱包">
-<meta name="twitter:description" content="支持120+种语言万语地址，TRX / ETH / USDT / BTC 多链资产管理。">
+<meta name="twitter:description" content="支持120+种语言万语地址，TRX / ETH / TRC USDT / BTC 多链资产管理。">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://worldtoken.cc/wallet.html">
 <link rel="manifest" href="manifest.json">
@@ -165,7 +207,7 @@ try {
 
 <!-- TronWeb 懒加载，仅转账时加载 -->
 
-<link rel="stylesheet" href="wallet.css">
+<link id="ww-wallet-css" rel="stylesheet" href="wallet.css" fetchpriority="high">
   <link rel="apple-touch-icon" href="icon-192.png">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -253,7 +295,10 @@ try {
       <div class="home-tx-section">
         <div class="home-section-head">
           <span class="home-tx-title">最近交易</span>
-          <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
+          <span style="display:flex;align-items:center;gap:10px">
+            <span class="home-refresh-link" onclick="if(typeof wwExportTxHistoryCsv==='function')wwExportTxHistoryCsv();else if(typeof showToast==='function')showToast('导出不可用','info')">导出 CSV</span>
+            <span class="home-refresh-link" onclick="loadTxHistory()">刷新</span>
+          </span>
         </div>
         <input type="search" id="txHistoryFilter" class="home-tx-filter" placeholder="搜索地址、币种、方向或哈希…" autocomplete="off" inputmode="search" />
         <div id="txHistoryList">
@@ -310,6 +355,20 @@ try {
                 } else if (chgEl) {
                   chgEl.classList.remove('down');
                   chgEl.classList.add('up');
+                }
+              }
+              set('balUsdtErc', h.balUsdtErc);
+              set('valUsdtErc', h.valUsdtErc);
+              var chgUeTxt = h.chgUsdtErc != null ? h.chgUsdtErc : h.chgUsdt;
+              if (chgUeTxt != null) {
+                set('chgUsdtErc', chgUeTxt);
+                var chgUe = document.getElementById('chgUsdtErc');
+                if (chgUe && String(chgUeTxt).indexOf('-') === 0) {
+                  chgUe.classList.remove('up');
+                  chgUe.classList.add('down');
+                } else if (chgUe) {
+                  chgUe.classList.remove('down');
+                  chgUe.classList.add('up');
                 }
               }
               if (typeof h.totalUsd === 'number' && isFinite(h.totalUsd)) window._lastTotalUsd = h.totalUsd;
@@ -400,6 +459,20 @@ try {
         </div>
         <div class="nav-right u11" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
           <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
+          <select id="keyPageLang" name="ww-key-mnemonic-lang" autocomplete="off" data-form-type="other" data-lpignore="true"
+            style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:11px;padding:3px 4px;cursor:pointer;outline:none;max-width:118px"
+            title="助记词展示语言（BIP39 同索引；与导入页一致）">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+            <option value="ja">日本語</option>
+            <option value="ko">한국어</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="it">Italiano</option>
+            <option value="ru">Русский</option>
+            <option value="pt">Português</option>
+          </select>
           <select id="mnemonicLength" name="ww-mnemonic-length" autocomplete="off" data-form-type="other" data-lpignore="true"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none"
             title="词数与下方网格一致；每次进入本页默认 12 词；切换词数将生成全新随机助记词；所选词数不跨会话保存">
@@ -553,6 +626,13 @@ try {
           <div id="transferWanYuTrcHint" style="display:none;font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.45" aria-live="polite"></div>
         </div>
 
+        <div id="transferUsdtNetworkRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">TRC USDT 网络</div>
+          <label for="transferUsdtNetwork" class="u5">主网</label>
+          <select id="transferUsdtNetwork" autocomplete="off" style="width:100%;margin-top:8px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit;outline:none"></select>
+          <div id="transferUsdtNetHint" style="display:none;margin-top:10px;font-size:11px;color:var(--text-muted);line-height:1.5" aria-live="polite"></div>
+        </div>
+
         <div class="transfer-contacts-card">
           <div class="transfer-contacts-head">
             <span class="transfer-contacts-title">地址簿</span>
@@ -566,19 +646,29 @@ try {
         </div>
 
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px" id="transferAmountLabel">金额（USDT · TRC-20）</div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px" id="transferAmountLabel">金额（TRC USDT）</div>
           <input id="transferAmount" type="number" placeholder="0.00" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
           <div style="margin-top:12px;font-size:12px;color:var(--text-muted)">
-            当前余额: <span id="transferBal">0</span> <span id="transferBalSuffix">USDT</span>
+            当前余额: <span id="transferBal">0</span> <span id="transferBalSuffix">TRC USDT</span>
           </div>
         </div>
 
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:20px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">网络费（预估）</div>
           <div style="font-size:12px;color:var(--text);line-height:1.5" id="transferFeeHint">—</div>
         </div>
 
-        <button type="button" class="btn-primary" id="transferBtn" onclick="doTransfer()" style="cursor:pointer">
+        <details id="transferApproveDetails" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:12px 16px;margin-bottom:18px">
+          <summary style="font-size:12px;color:var(--gold);cursor:pointer;user-select:none;outline:none">高级：代币授权（approve）</summary>
+          <p style="margin:12px 0 10px;font-size:11px;color:var(--text-muted);line-height:1.55">向合约 / DApp 授权后，对方可在额度内划扣代币。请确认合约地址可信。</p>
+          <label for="transferApproveSpender" class="u5">授权对象地址</label>
+          <input id="transferApproveSpender" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="0x… 或 T…" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
+          <label for="transferApproveAmount" class="u5" style="display:block;margin-top:10px">额度（TRC USDT）</label>
+          <input id="transferApproveAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="留空或填 max 表示无限" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
+          <button type="button" class="btn-secondary" id="transferApproveBtn" onclick="if(typeof wwDoTransferApprove==='function')wwDoTransferApprove()" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;font-size:14px;cursor:pointer">确认授权</button>
+        </details>
+
+        <button type="button" class="btn-primary" id="transferBtn" onclick="doTransfer()" style="cursor:pointer" aria-label="确认转账">
           确认转账
         </button>
 
@@ -588,11 +678,11 @@ try {
       <div class="qr-overlay" id="transferConfirmOverlay">
         <div style="background:var(--bg2);border-radius:24px;padding:28px 22px;width:300px;text-align:center" onclick="event.stopPropagation()">
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">转账确认</div>
-          <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 USDT</div>
+          <div style="font-size:36px;font-weight:800;color:var(--gold-light);margin-bottom:4px" id="confirmAmount">100 TRC USDT</div>
           <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px">→ <span id="confirmRecipient"></span></div>
           <div style="background:var(--bg3);border-radius:12px;padding:12px;margin-bottom:20px;font-size:12px;color:var(--text-muted);text-align:left;line-height:1.8">
-            <div class="u9"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 USDT</span></div>
-            <div class="u9"><span>到账</span><span style="color:var(--gold)" id="confirmActual">99.70 USDT</span></div>
+            <div class="u9"><span>手续费</span><span style="color:var(--text)" id="confirmFee">0.30 TRC USDT</span></div>
+            <div class="u9"><span>到账</span><span style="color:var(--gold)" id="confirmActual">99.70 TRC USDT</span></div>
             <div class="u9"><span>网络</span><span id="confirmChain">TRC-20</span></div>
           </div>
           <div style="display:flex;gap:10px">
@@ -755,27 +845,47 @@ try {
         <div class="nav-back" onclick="goTo('page-home')" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
         <div class="nav-title">兑换</div>
         </div>
-        <div class="nav-right" onclick="if(typeof showToast==='function')showToast('应用内兑换与「给他人」跳转占位会记在首页「最近交易」；外链 SunSwap 成交后请点首页刷新同步链上', 'info', 4200)" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
+        <div class="nav-right" onclick="if(typeof wwSwapShowRecords==='function')wwSwapShowRecords();else if(typeof showToast==='function')showToast('记录', 'info')" style="font-size:13px;color:var(--gold);cursor:pointer">记录</div>
       </div>
       <div class="swap-content" style="padding:16px 18px 24px">
 
-        <div class="swap-card" style="margin-bottom:14px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">从</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+          <div style="font-size:11px;color:var(--text-muted)">滑点容忍</div>
+          <select id="swapSlippagePct" onchange="if(typeof wwOnSwapSlippageChange==='function')wwOnSwapSlippageChange()"
+            style="padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--gold);font-size:13px;outline:none;cursor:pointer;font-family:inherit;max-width:55%">
+            <option value="0.1">0.1%</option>
+            <option value="0.5" selected>0.5%</option>
+            <option value="1">1%</option>
+            <option value="3">3%</option>
+            <option value="5">5%</option>
+          </select>
+        </div>
+
+        <div class="swap-card" style="margin-bottom:10px;cursor:pointer" onclick="if(typeof openCoinPicker==='function')openCoinPicker('from')" role="button" tabindex="0">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">从 · 点选币种</div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
             <div style="display:flex;align-items:center;gap:10px">
               <span id="swapFromIcon" class="ww-swap-coin-icon" style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.06)"></span>
               <div>
-                <div id="swapFromName" style="font-size:16px;font-weight:700;color:var(--text)">USDT</div>
+                <div id="swapFromName" style="font-size:16px;font-weight:700;color:var(--text)">TRC USDT</div>
                 <div id="swapFromChain" style="font-size:11px;color:var(--text-muted)">TRC-20 · Tron</div>
               </div>
             </div>
-            <span style="font-size:11px;color:var(--text-muted)">余额 <span id="swapFromBal" style="color:var(--text)">0</span> · <span style="color:var(--gold);cursor:pointer" onclick="setSwapMax()">全部</span></span>
+            <span style="font-size:11px;color:var(--text-muted)">余额 <span id="swapFromBal" style="color:var(--text)">0</span> · <span style="color:var(--gold);cursor:pointer" onclick="event.stopPropagation();setSwapMax()">全部</span></span>
           </div>
-          <input id="swapAmountIn" class="swap-input" value="" type="number" inputmode="decimal" min="0" step="any" placeholder="0" style="width:100%;box-sizing:border-box;text-align:right;font-size:26px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" />
+          <input id="swapAmountIn" class="swap-input" value="" type="number" inputmode="decimal" min="0" step="any" placeholder="0" onclick="event.stopPropagation()" style="width:100%;box-sizing:border-box;text-align:right;font-size:26px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" />
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-muted)">
+            <span>输入约 <span id="swapInUSD">$0.00</span></span>
+            <span id="swapQuoteHint" style="color:var(--gold);max-width:58%;text-align:right"></span>
+          </div>
         </div>
 
-        <div class="swap-card" style="margin-bottom:18px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">到</div>
+        <div style="text-align:center;margin:6px 0 10px">
+          <button type="button" id="swapArrowBtn" class="btn-secondary" onclick="swapCoins()" style="width:44px;height:44px;border-radius:50%;padding:0;font-size:20px;line-height:1" aria-label="交换方向">⇅</button>
+        </div>
+
+        <div class="swap-card" style="margin-bottom:14px;cursor:pointer" onclick="if(typeof openCoinPicker==='function')openCoinPicker('to')" role="button" tabindex="0">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">到 · 点选币种</div>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
             <div style="display:flex;align-items:center;gap:10px">
               <span id="swapToIcon" class="ww-swap-coin-icon" style="width:28px;height:28px;border-radius:50%;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(255,255,255,0.06)"></span>
@@ -789,6 +899,12 @@ try {
               <div id="swapAmountOut" style="font-size:24px;font-weight:700;color:var(--gold)">0</div>
             </div>
           </div>
+          <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font-size:11px;color:var(--text-muted);flex-wrap:wrap">
+            <span>最低到账（含滑点） <strong style="color:var(--text)" id="swapMinOut">—</strong></span>
+            <span>约 <span id="swapOutUSD">$0.00</span></span>
+          </div>
+          <div id="swapRateInfo" style="margin-top:8px;font-size:11px;color:var(--text-muted);line-height:1.45"></div>
+          <div id="swapFee" style="margin-top:6px;font-size:11px;color:var(--text-muted)"></div>
         </div>
 
         <div class="swap-card" id="swapRecipientSection" style="margin-bottom:14px">
@@ -801,6 +917,7 @@ try {
         </div>
 
         <button type="button" class="btn-primary" style="width:100%;padding:14px 0" onclick="doSwap()">⚡ 立即兑换</button>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.55">TRON 对使用 SunSwap 现货参考；以太坊对使用 Uniswap V3 链上询价（失败时回退现货估算）。支持交易对示例：TRC USDT↔TRX、ERC USDT↔USDC、ETH↔BTC(WBTC)、USDC↔ETH 等（同链内选择）。</p>
       </div>
     </div>
 
@@ -825,10 +942,10 @@ try {
             <option value="ko">한국어</option>
             <option value="es">Español</option>
             <option value="fr">Français</option>
-            <option value="ar">العربية</option>
+            <option value="de">Deutsch</option>
+            <option value="it">Italiano</option>
             <option value="ru">Русский</option>
             <option value="pt">Português</option>
-            <option value="hi">हिन्दी</option>
           </select>
           <select id="importMnemonicLength" name="ww-import-mnemonic-length" autocomplete="off" data-form-type="other" data-lpignore="true"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 6px;cursor:pointer;outline:none"
@@ -892,7 +1009,7 @@ try {
           <div id="btnLucky" onclick="switchHbType('lucky')" style="flex:1;text-align:center;padding:9px 6px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);background:transparent;transition:all 0.2s">随机礼物</div>
         </div>
         <div style="font-size:11px;color:var(--text-muted);margin:-4px 0 6px 2px">总金额将按下方数量拆成多份领取</div>
-        <input id="hbAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="总金额 (USDT)" oninput="updateHbPreview()"
+        <input id="hbAmount" type="number" inputmode="decimal" min="0" step="any" placeholder="总金额 (TRC USDT)" oninput="updateHbPreview()"
           style="width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:15px;margin-bottom:10px;outline:none;box-sizing:border-box" />
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3)">
           <span style="font-size:12px;color:var(--text-muted)">数量</span>
@@ -905,7 +1022,7 @@ try {
         </div>
         <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:10px;padding:0 2px">
           <span style="color:var(--text-muted)" id="hbTypeLabel">每人金额</span>
-          <span style="color:var(--gold);font-weight:600" id="hbPerPerson">— USDT</span>
+          <span style="color:var(--gold);font-weight:600" id="hbPerPerson">— TRC USDT</span>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3)">
           <span style="font-size:12px;color:var(--text-muted);flex-shrink:0">礼物留言</span>
@@ -966,7 +1083,7 @@ try {
       <div class="key-content" style="padding-top:20px;text-align:center">
         <div style="font-size:56px;margin-bottom:12px">🎉</div>
         <div style="font-size:22px;font-weight:800;color:var(--gold);margin-bottom:10px">礼物领取成功</div>
-        <div id="claimedAmount" style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px">0 USDT</div>
+        <div id="claimedAmount" style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px">0 TRC USDT</div>
         <div id="claimedMessage" style="font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:22px"></div>
         <button type="button" class="btn-primary" style="width:100%;padding:14px 0;margin-bottom:10px" onclick="goTo('page-home')">返回首页</button>
         <button type="button" class="btn-secondary" style="width:100%;padding:12px 0" onclick="goTo('page-hongbao')">继续看礼物</button>
@@ -1016,6 +1133,18 @@ try {
         <div class="faq-block">
           <h3>还需要注意什么？</h3>
           <p>官方不会向您索要助记词；任何「客服」「链接领空投」索要助记词的都是诈骗。设置 PIN 与二次验证可保护应用内操作，但<b>无法替代助记词本身</b>——助记词仍是恢复钱包的最终凭据。</p>
+        </div>
+        <div class="faq-block">
+          <h3>转账与 Gas / 能量</h3>
+          <p>以太坊、Polygon、BSC 上的 ERC-20 转账需消耗对应主网原生币作为 Gas；Tron 上 TRC-20 需带宽与能量（或燃烧 TRX）。请在对应链预留足够手续费。大额转账（约 $1000 以上）会二次确认；可在设置中配置每日支出限额（美元计价示意）。</p>
+        </div>
+        <div class="faq-block">
+          <h3>交易记录与导出</h3>
+          <p>首页「最近交易」最多保留约 100 条展示数据；本机快照会定期清理约 30 天前的条目以节省空间。可使用「导出 CSV」将当前列表下载为表格，便于对账。</p>
+        </div>
+        <div class="faq-block">
+          <h3>兑换与浏览器</h3>
+          <p>以太坊主网同链代币兑换使用 Uniswap V3 询价；若链上路径不可用，可跳转网页 DEX。建议使用较新版本 Chrome / Firefox / Safari；若功能异常请尝试更新浏览器或清除站点数据后重试。</p>
         </div>
       </div>
     </div>
@@ -1081,7 +1210,7 @@ try {
     <!-- 金额 -->
     <div id="swooshAmount" style="text-align:center;margin-bottom:40px">
     <div style="font-size:42px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1" id="swooshAmtVal">500</div>
-    <div style="font-size:12px;color:#555;letter-spacing:4px;margin-top:4px" id="swooshCoinName">USDT</div>
+    <div style="font-size:12px;color:#555;letter-spacing:4px;margin-top:4px" id="swooshCoinName">TRC USDT</div>
     </div>
     <!-- 发件人（下方） -->
     <div style="width:280px;border:1.5px solid rgba(200,168,75,0.2);border-radius:20px;padding:14px 18px;background:linear-gradient(135deg,rgba(200,168,75,0.06),transparent)">
@@ -1136,7 +1265,7 @@ try {
     <div style="position:absolute;right:20px;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,#1a1a30,transparent,#1a1a30)"></div>
     <div style="font-size:10px;color:#333;letter-spacing:3px;margin-bottom:10px">· · · · ·</div>
     <div style="font-size:54px;font-weight:900;background:linear-gradient(135deg,#f0d070,#c8a84b);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;line-height:1;margin-bottom:6px" id="successAmount">500</div>
-    <div style="font-size:12px;color:#666;letter-spacing:5px" id="successCoin">USDT</div>
+    <div style="font-size:12px;color:#666;letter-spacing:5px" id="successCoin">TRC USDT</div>
     <div style="font-size:10px;color:#333;letter-spacing:3px;margin-top:10px">· · · · ·</div>
     </div>
     <!-- 发件人（下） -->
@@ -1188,7 +1317,7 @@ try {
     <div style="font-size:11px;color:rgba(255,255,255,0.5)">朋友在WorldToken搜索此口令即可领取</div>
     </div>
     <div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.6)">
-    <span id="kwAmtText">100 USDT</span>
+    <span id="kwAmtText">100 TRC USDT</span>
     <span id="kwCntText">共5份礼物</span>
     <span id="kwExpText">有效期24小时</span>
     </div>
@@ -1241,6 +1370,43 @@ try {
 
   </div>
   <!-- /.pages：页面区结束；以下为全屏遮罩与底栏（仍在 .phone 内） -->
+
+  <!-- 兑换：币种选择 -->
+  <div class="overlay" id="coinPickerOverlay" onclick="if(event.target===this&&typeof closeCoinPicker==='function')closeCoinPicker()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:360px;max-height:72vh;overflow:auto;padding-bottom:12px">
+      <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:12px">选择币种</div>
+      <div id="coinPickerList"></div>
+      <button type="button" class="btn-secondary" style="width:100%;margin-top:12px" onclick="if(typeof closeCoinPicker==='function')closeCoinPicker()">取消</button>
+    </div>
+  </div>
+
+  <!-- 兑换：确认 -->
+  <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this&&typeof closeSwapConfirm==='function')closeSwapConfirm()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:340px">
+      <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:10px">确认兑换</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:12px" id="swapConfirmHint">以太坊同链对可尝试直接链上签名；TRON 对将跳转 SunSwap；以下为当前页估算。</div>
+      <div style="background:var(--bg3);border-radius:12px;padding:12px 14px;margin-bottom:10px;font-size:14px">
+        <div><span style="color:var(--text-muted)">支付 </span><span id="swapConfirmFrom">—</span></div>
+        <div style="margin-top:6px"><span style="color:var(--text-muted)">预估获得 </span><span id="swapConfirmTo">—</span></div>
+        <div style="margin-top:6px;font-size:12px;color:var(--text-muted)" id="swapConfirmRate">—</div>
+        <div style="margin-top:6px;font-size:12px;color:var(--text-muted)">最低到账 <strong style="color:var(--text)" id="swapConfirmMin">—</strong></div>
+      </div>
+      <button type="button" class="btn-primary" style="width:100%;padding:12px 0;margin-bottom:8px" onclick="if(typeof confirmSwapGo==='function')confirmSwapGo()">打开 DEX</button>
+      <button type="button" class="btn-secondary" style="width:100%" onclick="if(typeof closeSwapConfirm==='function')closeSwapConfirm()">取消</button>
+    </div>
+  </div>
+
+  <!-- 兑换：历史 -->
+  <div class="overlay" id="swapHistoryOverlay" onclick="if(event.target===this&&typeof closeSwapHistory==='function')closeSwapHistory()">
+    <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:380px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:16px;font-weight:700;color:var(--text)">兑换记录</div>
+        <button type="button" class="btn-secondary" style="padding:6px 12px;font-size:12px" onclick="if(typeof closeSwapHistory==='function')closeSwapHistory()">关闭</button>
+      </div>
+      <input id="swapHistorySearch" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜索币种、金额、Tx" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
+      <div id="swapHistoryBody" style="overflow-y:auto;flex:1;font-size:12px"></div>
+    </div>
+  </div>
 
   <!-- PIN 解锁（继续使用钱包） -->
   <div class="overlay" id="pinUnlockOverlay">
@@ -1350,7 +1516,7 @@ try {
     <div style="background:var(--bg2);border-radius:24px;padding:28px;width:300px;text-align:center">
       <div style="font-size:40px;margin-bottom:12px">🎁</div>
       <div id="hbSuccessKeyword" style="font-size:20px;font-weight:800;color:var(--gold);margin-bottom:8px">举头望明月</div>
-      <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 USDT · 5份礼物</div>
+      <div id="hbSuccessDesc" style="font-size:13px;color:var(--text-muted);margin-bottom:20px">100 TRC USDT · 5份礼物</div>
       <button class="btn-primary" onclick="document.getElementById('hbSuccessOverlay').style.display='none'">关闭</button>
     </div>
   </div>
@@ -1456,6 +1622,9 @@ try {
 <script src="lib/ethers.umd.min.js"></script>
 <!-- globals.js disabled to fix var conflict -->
 <script src="js/api-config.js"></script>
+<script src="wallet.swap.js"></script>
+<script src="wallet.swap.history.js"></script>
+<script src="wallet.swap.exec.js"></script>
 <script src="js/btc-segwit.js"></script>
 <script src="js/idb-kv.js"></script>
 <script src="js/storage.js"></script>
@@ -1465,7 +1634,9 @@ try {
 <script src="core/wallet.js"></script>
 <script src="wordlists.js"></script>
 <script src="wallet.core.js"></script>
+<script src="wallet.token.js"></script>
 <script src="core/session-key-cache.js"></script>
+<script src="wallet.ui.modals.js"></script>
 <script src="wallet.ui.js"></script>
 <script src="wallet.chains.js"></script>
 <script src="wallet.tx.js"></script>
@@ -1479,7 +1650,7 @@ try {
 <script type="application/ld+json">
 {"@graph":[
 {"@context":"https://schema.org","@type":"WebApplication","name":"WorldToken","applicationCategory":"FinanceApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"description":"全球多语言加密钱包：万语地址、多链资产与转账。","url":"https://worldtoken.cc/wallet.html"},
-{"@context":"https://schema.org","@type":"WebPage","name":"WorldToken","description":"全球多语言加密钱包，支持万语地址与 TRX、ETH、USDT、BTC。","url":"https://worldtoken.cc/wallet.html","isPartOf":{"@type":"WebSite","name":"WorldToken","url":"https://worldtoken.cc/"}}
+{"@context":"https://schema.org","@type":"WebPage","name":"WorldToken","description":"全球多语言加密钱包，支持万语地址与 TRX、ETH、TRC USDT、BTC。","url":"https://worldtoken.cc/wallet.html","isPartOf":{"@type":"WebSite","name":"WorldToken","url":"https://worldtoken.cc/"}}
 ]}
 </script>
 <style media="print">
