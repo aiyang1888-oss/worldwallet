@@ -3927,16 +3927,19 @@ function selectTransferCoin(id) {
   // 从 COINS 读取实时余额和价格
   const coinData = COINS.find(c=>c.id===id);
   const map = {
-    usdt:{id:'usdt',name:'USDT',chain:'TRC-20 · Tron',icon:'💚',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
-    trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
-    eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
-    btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
+    usdt:{id:'usdt',name:'USDT',chain:'TRC-20 · Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
+    trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',logoUrl:WW_COIN_LOGO_URL.trx,bg:'rgba(255,80,80,0.12)',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
+    eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',logoUrl:WW_COIN_LOGO_URL.eth,bg:'rgba(100,100,255,0.12)',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
+    btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',logoUrl:WW_COIN_LOGO_URL.btc,bg:'rgba(255,165,0,0.12)',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
   };
   transferCoin = COINS.find(c=>c.id===id) || map[id] || map.usdt;
   var iconEl = document.getElementById('transferCoinIcon');
   var nameEl = document.getElementById('transferCoinName');
   var balEl = document.getElementById('transferBal');
-  if (iconEl) iconEl.textContent = transferCoin.icon;
+  if (iconEl) {
+    try { iconEl.style.background = transferCoin.bg || ''; } catch (_ib) {}
+    wwSetCoinIconElement(iconEl, transferCoin);
+  }
   if (nameEl) nameEl.textContent = transferCoin.name;
   if (balEl) balEl.textContent = transferCoin.bal.toLocaleString();
   closeTransferCoinPicker();
@@ -4608,12 +4611,52 @@ function promptWalletNotifications() {
 
 
 // ══ 兑换系统 ══
+/** 币种图标：使用 GitHub Raw 固定标签（spothq/cryptocurrency-icons），避免 assets.coingecko.com 根路径/部分网络返回 AccessDenied 或 403 */
+var WW_COIN_LOGO_BASE = 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/v0.18.1/128/color/';
+var WW_COIN_LOGO_URL = {
+  usdt: WW_COIN_LOGO_BASE + 'usdt.png',
+  btc: WW_COIN_LOGO_BASE + 'btc.png',
+  eth: WW_COIN_LOGO_BASE + 'eth.png',
+  trx: WW_COIN_LOGO_BASE + 'trx.png',
+  bnb: WW_COIN_LOGO_BASE + 'bnb.png',
+};
+function wwEscAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+function wwCoinIconHtml(coin) {
+  if (!coin) return '';
+  var url = coin.logoUrl;
+  if (url) {
+    return (
+      '<img class="ww-coin-logo-img" src="' +
+      wwEscAttr(url) +
+      '" alt="" loading="lazy" decoding="async" onerror="this.style.display=\'none\';var n=this.nextElementSibling;if(n)n.style.display=\'flex\';"/>' +
+      '<span class="ww-coin-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:18px;line-height:1">' +
+      wwEscAttr(coin.icon || '') +
+      '</span>'
+    );
+  }
+  return String(coin.icon || '');
+}
+function wwSetCoinIconElement(el, coin) {
+  if (!el || !coin) return;
+  if (coin.logoUrl) {
+    el.innerHTML = wwCoinIconHtml(coin);
+    return;
+  }
+  el.textContent = coin.icon || '';
+}
+
 const COINS = [
-  {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', bg:'rgba(38,161,123,0.15)', bal:0, price:1},
-  {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
-  {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
-  {id:'trx',  name:'TRX',  chain:'Tron', icon:'🔴', bg:'rgba(255,80,80,0.12)', bal:0, price:0.12},
-  {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', bg:'rgba(255,215,0,0.12)', bal:0, price:312},
+  {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
+  {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', logoUrl: WW_COIN_LOGO_URL.btc, bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
+  {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', logoUrl: WW_COIN_LOGO_URL.eth, bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
+  {id:'trx',  name:'TRX',  chain:'Tron', icon:'🔴', logoUrl: WW_COIN_LOGO_URL.trx, bg:'rgba(255,80,80,0.12)', bal:0, price:0.12},
+  {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', logoUrl: WW_COIN_LOGO_URL.bnb, bg:'rgba(255,215,0,0.12)', bal:0, price:312},
 ];
 
 function wwHomeAssetRowsMeta() {
@@ -4628,7 +4671,7 @@ function wwHomeAssetRowsMeta() {
 /** 首页 #wwHomeAssetCardsMount 为空时注入 USDT/TRX/ETH/BTC 四行（与 COINS 一致），供余额与「隐藏零余额」使用 */
 function wwInitHomeAssetCardsFromCoins() {
   var mount = document.getElementById('wwHomeAssetCardsMount');
-  if (!mount || mount.getAttribute('data-ww-asset-cards') === '2') return;
+  if (!mount || mount.getAttribute('data-ww-asset-cards') === '3') return;
   var order = ['usdt', 'trx', 'eth', 'btc'];
   var suf = { usdt: 'Usdt', trx: 'Trx', eth: 'Eth', btc: 'Btc' };
   var html = '';
@@ -4645,7 +4688,7 @@ function wwInitHomeAssetCardsFromCoins() {
       '<div class="asset-icon" style="background:' +
       coin.bg +
       '">' +
-      coin.icon +
+      wwCoinIconHtml(coin) +
       '</div>' +
       '<div class="asset-info"><div class="asset-name">' +
       coin.name +
@@ -4665,7 +4708,7 @@ function wwInitHomeAssetCardsFromCoins() {
       '</div></div>';
   }
   mount.innerHTML = html;
-  mount.setAttribute('data-ww-asset-cards', '2');
+  mount.setAttribute('data-ww-asset-cards', '3');
 }
 
 let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
