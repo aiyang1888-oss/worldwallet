@@ -2591,6 +2591,7 @@ function calcTransferFee() {
   if (amtLbl) {
     if (transferCoin.id === 'eth') amtLbl.textContent = '金额（ETH · Ethereum）';
     else if (transferCoin.id === 'trx') amtLbl.textContent = '金额（TRX · Tron）';
+    else if (transferCoin.id === 'btc') amtLbl.textContent = '金额（BTC · Bitcoin）';
     else amtLbl.textContent = '金额（USDT · TRC-20）';
   }
   var balSuf = document.getElementById('transferBalSuffix');
