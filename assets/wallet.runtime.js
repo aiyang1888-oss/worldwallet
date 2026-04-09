@@ -2046,34 +2046,48 @@ async function runBatchTransfer() {
   if(okCount > 0) goTo('page-home');
 }
 
+/** 返回 null 表示加载中或未知，不得当作 0 用于「隐藏零余额」（runtime 后加载须覆盖 wallet.ui.js 同名函数） */
 function parseAssetDisplayBalance(balId) {
   const el = document.getElementById(balId);
-  if(!el) return 0;
-  const t = (el.textContent || '').replace(/,/g,'').trim();
-  if(t === '--' || t === '...' || !t) return 0;
+  if (!el) return null;
+  const t = (el.textContent || '').replace(/,/g, '').trim();
+  if (t === '--' || t === '...' || !t) return null;
   const n = parseFloat(t);
-  return isNaN(n) ? 0 : n;
+  return isNaN(n) ? null : n;
 }
 
 function applyHideZeroTokens() {
-  let hide = false;
-  try { hide = localStorage.getItem('ww_hide_zero_tokens') === '1'; } catch(e) {}
+  let storedHide = false;
+  try { storedHide = localStorage.getItem('ww_hide_zero_tokens') === '1'; } catch (e) {}
   const cb = document.getElementById('hideZeroTokens');
-  if(cb) cb.checked = hide;
-  const rows = [
-    { id: 'assetRowUsdt', balId: 'balUsdt' },
-  ];
-  rows.forEach(function(row) {
+  if (cb) cb.checked = storedHide;
+  const hide = cb ? !!cb.checked : false;
+  var hydrated = typeof window !== 'undefined' && window._wwHomeBalancesHydrated;
+  const hideZeros = hide && hydrated;
+  var rows =
+    typeof wwHomeAssetRowsMeta === 'function'
+      ? wwHomeAssetRowsMeta()
+      : [
+          { id: 'assetRowUsdt', balId: 'balUsdt' },
+          { id: 'assetRowTrx', balId: 'balTrx' },
+          { id: 'assetRowEth', balId: 'balEth' },
+          { id: 'assetRowBtc', balId: 'balBtc' },
+        ];
+  rows.forEach(function (row) {
     const el = document.getElementById(row.id);
-    if(!el) return;
+    if (!el) return;
     const v = parseAssetDisplayBalance(row.balId);
-    el.style.display = (hide && v <= 1e-12) ? 'none' : '';
+    if (v === null) {
+      el.style.display = '';
+      return;
+    }
+    el.style.display = hideZeros && v <= 1e-12 ? 'none' : '';
   });
 }
 
 function onHideZeroTokensChange() {
   const cb = document.getElementById('hideZeroTokens');
-  try { localStorage.setItem('ww_hide_zero_tokens', cb && cb.checked ? '1' : '0'); } catch(e) {}
+  try { localStorage.setItem('ww_hide_zero_tokens', cb && cb.checked ? '1' : '0'); } catch (e) {}
   applyHideZeroTokens();
 }
 
@@ -4602,6 +4616,58 @@ const COINS = [
   {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', bg:'rgba(255,215,0,0.12)', bal:0, price:312},
 ];
 
+function wwHomeAssetRowsMeta() {
+  return [
+    { id: 'assetRowUsdt', balId: 'balUsdt' },
+    { id: 'assetRowTrx', balId: 'balTrx' },
+    { id: 'assetRowEth', balId: 'balEth' },
+    { id: 'assetRowBtc', balId: 'balBtc' }
+  ];
+}
+
+/** 首页 #wwHomeAssetCardsMount 为空时注入 USDT/TRX/ETH/BTC 四行（与 COINS 一致），供余额与「隐藏零余额」使用 */
+function wwInitHomeAssetCardsFromCoins() {
+  var mount = document.getElementById('wwHomeAssetCardsMount');
+  if (!mount || mount.getAttribute('data-ww-asset-cards') === '1') return;
+  var order = ['usdt', 'trx', 'eth', 'btc'];
+  var suf = { usdt: 'Usdt', trx: 'Trx', eth: 'Eth', btc: 'Btc' };
+  var html = '';
+  for (var i = 0; i < order.length; i++) {
+    var cid = order[i];
+    var coin = COINS.find(function (c) { return c.id === cid; });
+    if (!coin) continue;
+    var s = suf[cid];
+    if (!s) continue;
+    html +=
+      '<div class="asset-item" id="assetRow' +
+      s +
+      '">' +
+      '<div class="asset-icon" style="background:' +
+      coin.bg +
+      '">' +
+      coin.icon +
+      '</div>' +
+      '<div class="asset-info"><div class="asset-name">' +
+      coin.name +
+      '</div><div class="asset-chain">' +
+      coin.chain +
+      '</div></div>' +
+      '<div class="asset-right">' +
+      '<div class="asset-amount" id="bal' +
+      s +
+      '">--</div>' +
+      '<div class="asset-value" id="val' +
+      s +
+      '">$--</div>' +
+      '<div class="asset-change up" id="chg' +
+      s +
+      '">--</div>' +
+      '</div></div>';
+  }
+  mount.innerHTML = html;
+  mount.setAttribute('data-ww-asset-cards', '1');
+}
+
 let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
 let swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
 let pickerTarget = 'from';
@@ -5979,11 +6045,18 @@ function wwApplyHomeBalanceSnapRecord(h) {
   }
   setEl('balUsdt', h.balUsdt);
   setEl('valUsdt', h.valUsdt);
-  if (h.chgUsdt != null) {
-    setEl('chgUsdt', h.chgUsdt);
-    var chgEl = document.getElementById('chgUsdt');
+  setEl('balTrx', h.balTrx);
+  setEl('valTrx', h.valTrx);
+  setEl('balEth', h.balEth);
+  setEl('valEth', h.valEth);
+  setEl('balBtc', h.balBtc);
+  setEl('valBtc', h.valBtc);
+  function pinSnapChg(chgId, txt) {
+    if (txt == null) return;
+    setEl(chgId, txt);
+    var chgEl = document.getElementById(chgId);
     if (chgEl) {
-      if (String(h.chgUsdt).indexOf('-') === 0) {
+      if (String(txt).indexOf('-') === 0) {
         chgEl.classList.remove('up');
         chgEl.classList.add('down');
       } else {
@@ -5992,6 +6065,10 @@ function wwApplyHomeBalanceSnapRecord(h) {
       }
     }
   }
+  pinSnapChg('chgUsdt', h.chgUsdt);
+  pinSnapChg('chgTrx', h.chgTrx);
+  pinSnapChg('chgEth', h.chgEth);
+  pinSnapChg('chgBtc', h.chgBtc);
   if (typeof h.totalUsd === 'number' && isFinite(h.totalUsd)) {
     window._lastTotalUsd = h.totalUsd;
     if (typeof drawHomeBalanceChart === 'function' && h.totalUsd > 0) drawHomeBalanceChart(h.totalUsd);
@@ -6017,18 +6094,26 @@ async function loadBalances() {
   const tbd = document.getElementById('totalBalanceDisplay');
   const tbs = document.getElementById('totalBalanceSub');
   const btn = _safeEl('balRefreshBtn');
+  window._wwHomeBalancesHydrated = false;
+  try {
+    if (typeof wwInitHomeAssetCardsFromCoins === 'function') wwInitHomeAssetCardsFromCoins();
+  } catch (_wwi) {}
   var widSnap = wwHomeBalanceSnapWalletId();
   var snap =
     window._lastHomeBalSnap && window._lastHomeBalSnap.wid === widSnap
       ? window._lastHomeBalSnap
       : wwReadHomeBalanceSnapRecord();
   var hadSnap = snap && wwApplyHomeBalanceSnapRecord(snap);
+  if (hadSnap) {
+    window._wwHomeBalancesHydrated = true;
+    if (typeof applyHideZeroTokens === 'function') applyHideZeroTokens();
+  }
 
   if (!hadSnap) {
     if (tbd) tbd.classList.add('home-balance--loading');
     if (tbs) tbs.textContent = '同步中…';
     if (btn) btn.textContent = '查询中...';
-    ['balUsdt'].forEach(function (id) {
+    ['balUsdt', 'balTrx', 'balEth', 'balBtc'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.textContent = '...';
     });
@@ -6105,18 +6190,42 @@ async function loadBalances() {
     const trxUsd = trxBal * prices.trx;
     const ethUsd = ethBal * prices.eth;
     const btcUsd = btcBal * (prices.btc || 60000);
-    const total = usdtUsd;
+    const total = usdtUsd + trxUsd + ethUsd + btcUsd;
 
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
     set('balUsdt', fmt(usdtBal));
     set('valUsdt', fmtUsd(usdtUsd));
-    // 更新涨跌幅（从 CoinGecko 获取）
+    set('balTrx', fmt(trxBal));
+    set('valTrx', fmtUsd(trxUsd));
+    set('balEth', fmt(ethBal));
+    set('valEth', fmtUsd(ethUsd));
+    set('balBtc', fmt(btcBal));
+    set('valBtc', fmtUsd(btcUsd));
     try {
-      const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd&include_24hr_change=true');
+      const r2 = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd&include_24hr_change=true'
+      );
       const d2 = await r2.json();
-      const fmtChg = (v) => (v>0?'+':'')+v.toFixed(2)+'%';
-      if(d2.tether?.usd_24h_change!==undefined) set('chgUsdt', fmtChg(d2.tether.usd_24h_change));
-    } catch(e) {}
+      const fmtChg = (v) => (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+      function applyChgLine(chgId, changeVal) {
+        if (changeVal === undefined || changeVal === null) return;
+        const txt = fmtChg(changeVal);
+        const el = document.getElementById(chgId);
+        if (!el) return;
+        el.textContent = txt;
+        if (String(txt).indexOf('-') === 0) {
+          el.classList.remove('up');
+          el.classList.add('down');
+        } else {
+          el.classList.remove('down');
+          el.classList.add('up');
+        }
+      }
+      applyChgLine('chgUsdt', d2.tether && d2.tether.usd_24h_change);
+      applyChgLine('chgTrx', d2.tron && d2.tron.usd_24h_change);
+      applyChgLine('chgEth', d2.ethereum && d2.ethereum.usd_24h_change);
+      applyChgLine('chgBtc', d2.bitcoin && d2.bitcoin.usd_24h_change);
+    } catch (e) {}
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
@@ -6144,6 +6253,9 @@ async function loadBalances() {
 
     try {
       var chgU = document.getElementById('chgUsdt');
+      var chgT = document.getElementById('chgTrx');
+      var chgE = document.getElementById('chgEth');
+      var chgB = document.getElementById('chgBtc');
       var cnyR = window._cnyRate || 7.2;
       wwPersistHomeBalanceSnapRecord({
         totalTxt: fmtUsd(total),
@@ -6151,6 +6263,15 @@ async function loadBalances() {
         balUsdt: fmt(usdtBal),
         valUsdt: fmtUsd(usdtUsd),
         chgUsdt: chgU ? chgU.textContent : null,
+        balTrx: fmt(trxBal),
+        valTrx: fmtUsd(trxUsd),
+        chgTrx: chgT ? chgT.textContent : null,
+        balEth: fmt(ethBal),
+        valEth: fmtUsd(ethUsd),
+        chgEth: chgE ? chgE.textContent : null,
+        balBtc: fmt(btcBal),
+        valBtc: fmtUsd(btcUsd),
+        chgBtc: chgB ? chgB.textContent : null,
         totalUsd: total,
         usdtUsd: usdtUsd,
         trxUsd: trxUsd,
@@ -6160,6 +6281,7 @@ async function loadBalances() {
     } catch (_snap) {}
 
     if(btn) btn.textContent = '刷新';
+    window._wwHomeBalancesHydrated = true;
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
     if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
