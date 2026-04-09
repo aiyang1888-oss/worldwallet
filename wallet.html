@@ -1811,8 +1811,9 @@ try {
 <script>
 // 事件委托：监听所有 data-ww-fn 属性
 document.addEventListener('click', function(e) {
-  // 先检查点击元素本身
+  // 先检查点击元素本身（文本节点无 parentElement 链时需从父元素起）
   let el = e.target;
+  if (el && el.nodeType === 3) el = el.parentElement;
   let fnEl = null;
   
   // 向上遍历最多 5 层找到有 data-ww-fn 的元素

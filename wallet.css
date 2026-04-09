@@ -444,6 +444,8 @@ body {
 /* 欢迎页须压过其它 .page，避免首帧/stack 异常时底层页挡住点击 */
 #page-welcome.page.active {
   z-index: 50 !important;
+  position: relative;
+  isolation: isolate;
 }
 
 .home-header {
