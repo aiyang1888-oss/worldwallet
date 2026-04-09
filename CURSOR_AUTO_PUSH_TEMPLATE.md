@@ -273,7 +273,7 @@ git add assets/wallet.ui.js
 git commit -m "fix(assets): 解决刷新后显示问题"
 
 # 提交 3：颜色一致性
-git add assets/wallet.css assets/wallet.v2.css
+git add assets/wallet.css
 git commit -m "style(assets): 颜色一致性检查"
 
 【结果】
