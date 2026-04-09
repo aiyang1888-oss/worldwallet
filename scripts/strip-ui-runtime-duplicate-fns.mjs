@@ -45,19 +45,19 @@ function duplicateNames() {
   return d.sort();
 }
 
-/** 除「要删除的声明 id」外，是否还有对 name 的 Identifier 引用 */
-function hasExternalIdRef(ast, deleteRanges) {
-  const del = new Set(deleteRanges.map(([a, b]) => `${a}:${b}`));
-  let bad = false;
+/** 全文件中 name 的 Identifier 是否仅出现一次且为 fd.id（无调用、无其它引用） */
+function isUnusedDuplicateName(ast, fdNode) {
+  const name = fdNode.id && fdNode.id.name;
+  if (!name) return false;
+  const hits = [];
   walk.simple(ast, {
     Identifier(node) {
-      if (bad) return;
-      const k = node.range[0] + ':' + node.range[1];
-      if (del.has(k)) return;
-      bad = true;
+      if (node.name === name) hits.push(node);
     },
   });
-  return bad;
+  if (hits.length !== 1) return false;
+  const h = hits[0];
+  return h.range[0] === fdNode.id.range[0] && h.range[1] === fdNode.id.range[1];
 }
 
 function main() {
@@ -77,16 +77,8 @@ function main() {
     if (stmt.type !== 'FunctionDeclaration') continue;
     const name = stmt.id && stmt.id.name;
     if (!name || !dupSet.has(name)) continue;
+    if (!isUnusedDuplicateName(ast, stmt)) continue;
     const declRange = stmt.range;
-    const sliced = src.slice(0, declRange[0]) + src.slice(declRange[1]);
-    const subAst = parse(sliced, {
-      ecmaVersion: 'latest',
-      sourceType: 'script',
-      ranges: true,
-      allowHashBang: true,
-    });
-    const idRange = stmt.id.range;
-    if (hasExternalIdRef(subAst, [idRange])) continue;
     toRemove.push({ name, start: declRange[0], end: declRange[1] });
   }
 
