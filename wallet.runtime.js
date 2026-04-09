@@ -99,23 +99,39 @@ function countMnemonicWords(text) {
   return String(text || '').trim().split(/\s+/).filter(Boolean).length;
 }
 function updateImportWordCount() {
-  const input = document.getElementById('importPaste');
   const badge = document.getElementById('importWordCountBadge');
-  if(!badge) return;
-  const n = countMnemonicWords(input ? input.value : '');
+  if (!badge) return;
   var max = 12;
+  var n = 0;
+  var fromGrid = false;
   try {
     var grid = document.getElementById('importGrid');
     if (grid) {
-      var nIw = grid.querySelectorAll('input[id^="iw_"]').length;
-      var nAw = grid.querySelectorAll('.import-word').length;
-      if (nIw > 0) max = nIw;
-      else if (nAw > 0) max = nAw;
-      else if (typeof importGridWordCount === 'number' && importGridWordCount > 0) max = importGridWordCount;
+      var iw = grid.querySelectorAll('input[id^="iw_"]');
+      var aw = grid.querySelectorAll('.import-word');
+      if (iw.length > 0) {
+        fromGrid = true;
+        max = iw.length;
+        iw.forEach(function (inp) {
+          if (String(inp.value || '').trim()) n++;
+        });
+      } else if (aw.length > 0) {
+        fromGrid = true;
+        max = aw.length;
+        aw.forEach(function (inp) {
+          if (String(inp.value || '').trim()) n++;
+        });
+      } else if (typeof importGridWordCount === 'number' && importGridWordCount > 0) {
+        max = importGridWordCount;
+      }
     } else if (typeof importGridWordCount === 'number' && importGridWordCount > 0) {
       max = importGridWordCount;
     }
   } catch (_e) {}
+  if (!fromGrid) {
+    var pasteEl = document.getElementById('importPaste');
+    if (pasteEl) n = countMnemonicWords(pasteEl.value);
+  }
   badge.textContent = n + '/' + max;
 }
 function setWalletCreateStep(n) {
