@@ -227,6 +227,13 @@
     var tw = new TronWeb(opt);
     var pk = (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxPrivateKey) || (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.privateKey);
     tw.setPrivateKey(pk);
+    var owner =
+      (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress) ||
+      (typeof tw.defaultAddress !== 'undefined' && tw.defaultAddress && tw.defaultAddress.base58);
+    if (!owner) throw new Error('缺少 Tron 收款/发送地址（REAL_WALLET.trxAddress）');
+    if (typeof tw.isAddress === 'function' && !tw.isAddress(String(toAddr || '').trim())) {
+      throw new Error('收款地址不是有效的 Tron 地址');
+    }
     var dec = Number(meta.decimals) || 6;
     if (typeof ethers === 'undefined' || !ethers.utils || !ethers.utils.parseUnits) throw new Error('ethers 未加载');
     var rawStr = ethers.utils.parseUnits(String(amountHuman), dec).toString();
@@ -239,7 +246,7 @@
         { type: 'address', value: toAddr },
         { type: 'uint256', value: rawStr }
       ],
-      REAL_WALLET.trxAddress
+      owner
     );
     var signed = await tw.trx.sign(tx.transaction);
     var result = await tw.trx.sendRawTransaction(signed);
@@ -263,6 +270,10 @@
         ? '115792089237316195423570985008687907853269984665640564039457584007913129639935'
         : ethers.utils.parseUnits(String(amountHumanOrMax), dec).toString();
     var feeLim = typeof getTronFeeLimitUsdt === 'function' ? getTronFeeLimitUsdt() : 20000000;
+    var ownerA =
+      (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress) ||
+      (typeof tw.defaultAddress !== 'undefined' && tw.defaultAddress && tw.defaultAddress.base58);
+    if (!ownerA) throw new Error('缺少 Tron 地址（REAL_WALLET.trxAddress）');
     var tx = await tw.transactionBuilder.triggerSmartContract(
       meta.contract,
       'approve(address,uint256)',
@@ -271,7 +282,7 @@
         { type: 'address', value: spenderAddr },
         { type: 'uint256', value: val }
       ],
-      REAL_WALLET.trxAddress
+      ownerA
     );
     var signed = await tw.trx.sign(tx.transaction);
     var result = await tw.trx.sendRawTransaction(signed);
@@ -282,5 +293,190 @@
   global.wwGetUsdtMetaByKey = function (key) {
     var k = String(key || 'tron').trim();
     return global.WW_USDT_NETWORK_META[k] || global.WW_USDT_NETWORK_META.tron;
+  };
+
+  var TRC20_BAL_ABI = [
+    {
+      constant: true,
+      inputs: [{ name: 'who', type: 'address' }],
+      name: 'balanceOf',
+      outputs: [{ name: '', type: 'uint256' }],
+      type: 'Function'
+    }
+  ];
+
+  /**
+   * TRC20 人类可读余额（需已加载 TronWeb）
+   */
+  global.wwTrc20BalanceHuman = async function (ownerAddr, meta) {
+    if (!meta || meta.family !== 'tron' || !meta.contract || !ownerAddr) return 0;
+    await loadTronWeb();
+    var opt =
+      typeof wwTronWebOptions === 'function'
+        ? wwTronWebOptions()
+        : { fullHost: typeof TRON_GRID !== 'undefined' ? TRON_GRID : 'https://api.trongrid.io' };
+    var tw = new TronWeb(opt);
+    var dec = Number(meta.decimals) || 6;
+    try {
+      var cx = await tw.contract(TRC20_BAL_ABI, meta.contract);
+      var raw = await cx.balanceOf(String(ownerAddr).trim()).call();
+      var s = raw && raw.toString ? raw.toString() : String(raw);
+      if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.formatUnits) {
+        return parseFloat(ethers.utils.formatUnits(s, dec));
+      }
+      return parseFloat(s) / Math.pow(10, dec);
+    } catch (e) {
+      console.warn('[wwTrc20BalanceHuman]', e);
+      return 0;
+    }
+  };
+
+  /**
+   * Tron TRC20 transfer 的 Energy / TRX 消耗估算（constant call + 链参数）
+   */
+  global.wwTrc20EstimateTransferCost = async function (fromAddr, toAddr, amountHuman, meta) {
+    if (!meta || meta.family !== 'tron' || !meta.contract) throw new Error('非 Tron TRC20，请使用 EVM 的 Gas 估算');
+    await loadTronWeb();
+    var opt =
+      typeof wwTronWebOptions === 'function'
+        ? wwTronWebOptions()
+        : { fullHost: typeof TRON_GRID !== 'undefined' ? TRON_GRID : 'https://api.trongrid.io' };
+    var tw = new TronWeb(opt);
+    var dec = Number(meta.decimals) || 6;
+    if (typeof ethers === 'undefined' || !ethers.utils || !ethers.utils.parseUnits) throw new Error('ethers 未加载，无法解析金额');
+    var rawStr = ethers.utils.parseUnits(String(amountHuman), dec).toString();
+    var from = String(fromAddr || '').trim();
+    var to = String(toAddr || '').trim();
+    if (typeof tw.isAddress === 'function') {
+      if (!tw.isAddress(to)) throw new Error('收款地址不是有效的 Tron 地址（请使用 T 开头的 Base58）');
+    } else if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(to)) {
+      throw new Error('收款地址格式不正确（Tron 应为 34 位 Base58，以 T 开头）');
+    }
+    var energyUsed = 35000;
+    try {
+      var res = await tw.transactionBuilder.triggerConstantContract(
+        meta.contract,
+        'transfer(address,uint256)',
+        {},
+        [
+          { type: 'address', value: to },
+          { type: 'uint256', value: rawStr }
+        ],
+        from
+      );
+      if (res && res.energy_used != null) energyUsed = Number(res.energy_used);
+      else if (res && res.result && res.result.energy_used != null) energyUsed = Number(res.result.energy_used);
+    } catch (_e) {}
+    var sunPerEnergy = 420;
+    try {
+      var chain = await tw.trx.getChainParameters();
+      if (Array.isArray(chain)) {
+        for (var i = 0; i < chain.length; i++) {
+          var p = chain[i];
+          if (p && p.key === 'getEnergyFee' && p.value != null) {
+            sunPerEnergy = Number(p.value);
+            break;
+          }
+        }
+      }
+    } catch (_e2) {}
+    if (!isFinite(sunPerEnergy) || sunPerEnergy <= 0) sunPerEnergy = 420;
+    var feeSun = Math.ceil(energyUsed * sunPerEnergy);
+    var feeTrx = feeSun / 1e6;
+    var feeLim = typeof getTronFeeLimitUsdt === 'function' ? getTronFeeLimitUsdt() : 20000000;
+    return {
+      family: 'tron',
+      gasLimit: null,
+      energyUsed: energyUsed,
+      sunPerEnergy: sunPerEnergy,
+      feeSun: feeSun,
+      feeTrxEstimate: feeTrx,
+      feeNativeHuman: feeTrx,
+      feeLimitSun: feeLim,
+      nativeSymbol: 'TRX',
+      note: '若账户已冻结 TRX 获得能量或受委托能量，实付 TRX 可能更低；带宽另计。'
+    };
+  };
+
+  global.wwValidateEvmAddressChecksum = function (addr) {
+    if (typeof ethers === 'undefined' || !ethers.utils) throw new Error('ethers 未加载');
+    try {
+      return ethers.utils.getAddress(String(addr || '').trim());
+    } catch (e) {
+      throw new Error('EVM 地址无效或 EIP-55 校验和不匹配：' + (e && e.message ? e.message : String(e)));
+    }
+  };
+
+  global.wwValidateTronAddressFormat = function (addr) {
+    var s = String(addr || '').trim();
+    if (typeof window !== 'undefined' && window.TronWeb && typeof TronWeb.isAddress === 'function') {
+      if (!TronWeb.isAddress(s)) throw new Error('不是有效的 Tron 地址');
+      return s;
+    }
+    if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(s)) {
+      throw new Error('Tron 地址应为 34 位 Base58（以 T 开头）');
+    }
+    return s;
+  };
+
+  function _resolveMeta(metaOrKey) {
+    if (!metaOrKey) throw new Error('请指定网络（如 tron / eth / polygon / bsc）或 WW_USDT_NETWORK_META 对象');
+    if (typeof metaOrKey === 'string') return global.wwGetUsdtMetaByKey(metaOrKey);
+    if (typeof metaOrKey === 'object' && metaOrKey.contract) return metaOrKey;
+    throw new Error('无法解析代币网络元数据');
+  }
+
+  /**
+   * 统一入口：balanceOf / transfer / approve / estimateGas（ETH·Polygon·BSC·Tron USDT 等）
+   */
+  global.WWToken = {
+    balanceOf: async function (owner, metaOrKey) {
+      var meta = _resolveMeta(metaOrKey);
+      if (!owner) throw new Error('缺少持有者地址');
+      if (meta.family === 'evm') {
+        var p = global.wwMakeEvmProviderForChain(meta.chainId);
+        if (!p) throw new Error('无法连接 RPC（chainId=' + meta.chainId + '）');
+        var c = _erc20Contract(p, meta.contract);
+        var chk = global.wwValidateEvmAddressChecksum(owner);
+        var raw = await c.balanceOf(chk);
+        return {
+          human: ethers.utils.formatUnits(raw, meta.decimals),
+          raw: raw.toString(),
+          decimals: meta.decimals,
+          meta: meta
+        };
+      }
+      var h = await global.wwTrc20BalanceHuman(owner, meta);
+      return { human: String(h), raw: null, decimals: meta.decimals, meta: meta };
+    },
+    transfer: async function (toAddr, amountHuman, metaOrKey, opts) {
+      opts = opts || {};
+      var meta = _resolveMeta(metaOrKey);
+      if (meta.family === 'evm') {
+        var pk = opts.privateKey || (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.privateKey);
+        if (!pk) throw new Error('缺少 EVM 私钥（opts.privateKey 或 REAL_WALLET.privateKey）');
+        global.wwValidateEvmAddressChecksum(toAddr);
+        return global.wwErc20SendTransfer(toAddr, amountHuman, pk, meta);
+      }
+      global.wwValidateTronAddressFormat(toAddr);
+      return global.wwTrc20SendTransfer(toAddr, amountHuman, meta);
+    },
+    approve: async function (spenderAddr, amountHumanOrMax, metaOrKey, opts) {
+      opts = opts || {};
+      var meta = _resolveMeta(metaOrKey);
+      if (meta.family === 'evm') {
+        var pk = opts.privateKey || (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.privateKey);
+        if (!pk) throw new Error('缺少 EVM 私钥');
+        return global.wwErc20SendApprove(spenderAddr, amountHumanOrMax, pk, meta);
+      }
+      return global.wwTrc20SendApprove(spenderAddr, amountHumanOrMax, meta);
+    },
+    estimateGas: async function (fromAddr, toAddr, amountHuman, metaOrKey) {
+      var meta = _resolveMeta(metaOrKey);
+      if (meta.family === 'evm') {
+        return global.wwErc20EstimateTransferCost(fromAddr, toAddr, amountHuman, meta);
+      }
+      return global.wwTrc20EstimateTransferCost(fromAddr, toAddr, amountHuman, meta);
+    }
   };
 })(typeof window !== 'undefined' ? window : global);

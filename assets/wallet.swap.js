@@ -117,6 +117,35 @@
     quoteEvmBestAmountOut: quoteEvmBestAmountOut,
     quoteEvmBestAmountOutWei: quoteEvmBestAmountOutWei,
     isEvmSwapPair: isEvmSwapPair,
-    metaByCoinId: metaByCoinId
+    metaByCoinId: metaByCoinId,
+    /** 报价轮询间隔（毫秒），默认 5000；runtime 的 goTo(page-swap) 会启动 */
+    quotePollIntervalMs: 5000
   };
 })();
+
+/** 兑换页：CoinGecko 价格 + 链上询价轮询（依赖后载的 loadSwapPrices / calcSwap） */
+(function (global) {
+  'use strict';
+  var _pollId = null;
+
+  global.wwSwapQuotePollStop = function () {
+    if (_pollId) {
+      clearInterval(_pollId);
+      _pollId = null;
+    }
+  };
+
+  global.wwSwapQuotePollStart = function (ms) {
+    global.wwSwapQuotePollStop();
+    var interval = Number(ms) || (global.wwSwapModule && global.wwSwapModule.quotePollIntervalMs) || 5000;
+    _pollId = setInterval(function () {
+      try {
+        if (typeof global.loadSwapPrices === 'function') {
+          void global.loadSwapPrices();
+        } else if (typeof global.calcSwap === 'function') {
+          global.calcSwap();
+        }
+      } catch (_e) {}
+    }, interval);
+  };
+})(typeof window !== 'undefined' ? window : global);
