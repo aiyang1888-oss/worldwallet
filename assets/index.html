@@ -691,12 +691,10 @@ try {
         </div>
 
         <div class="swap-card" id="swapRecipientSection" style="margin-bottom:14px">
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:13px;color:var(--text);line-height:1.45">
-            <input type="checkbox" id="swapToOtherChk" style="width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:var(--gold)" onchange="wwSwapToOtherToggle()" />
-            <span>兑换到他人地址</span>
-          </label>
-          <div id="swapRecipientRow" style="display:none;margin-top:12px">
-            <input id="swapRecipientTrx" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false"
+          <button type="button" id="swapToOtherBtn" class="btn-secondary" style="width:100%;padding:12px 14px;font-size:14px;font-weight:600;border-radius:12px" onclick="wwSwapToOtherToggle()" aria-expanded="false">兑换到他人地址</button>
+          <div id="swapRecipientRow" data-open="0" style="display:none;margin-top:12px">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">对方收款地址</div>
+            <input id="swapRecipientTrx" type="text" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="TRON：T 开头 34 位；以太坊：0x 开头"
               style="width:100%;box-sizing:border-box;font-size:14px;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text)" />
           </div>
         </div>
