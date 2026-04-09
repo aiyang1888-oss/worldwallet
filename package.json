@@ -30,6 +30,7 @@
     "puppeteer": "^24.40.0"
   },
   "devDependencies": {
-    "acorn": "^8.16.0"
+    "acorn": "^8.16.0",
+    "acorn-walk": "^8.3.5"
   }
 }
