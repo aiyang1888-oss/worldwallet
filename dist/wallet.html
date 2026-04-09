@@ -401,7 +401,6 @@ try {
         <div class="nav-right u11" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
           <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
           <select id="keyPageLang" name="ww-key-mnemonic-lang" autocomplete="off" data-form-type="other" data-lpignore="true"
-            onchange="if(typeof switchLang==='function')switchLang(this.value);"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:11px;padding:3px 4px;cursor:pointer;outline:none;max-width:118px"
             title="助记词展示语言（BIP39 同索引；与导入页一致）">
             <option value="zh">中文</option>
@@ -876,7 +875,6 @@ try {
         <div class="nav-right u11" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end">
           <button type="button" class="nav-help-btn" onclick="goTo('page-faq')" title="常见问题">帮助</button>
           <select id="importPageLang" name="ww-import-lang" autocomplete="off" data-form-type="other" data-lpignore="true"
-            onchange="if(typeof switchLang==='function')switchLang(this.value);"
             style="background:var(--bg2);border:1px solid rgba(200,168,75,0.3);border-radius:8px;color:var(--gold);font-size:12px;padding:3px 4px;cursor:pointer;outline:none;max-width:130px"
             title="助记词输入语言（英文为 BIP39 原文）">
             <option value="zh">中文</option>

@@ -216,6 +216,7 @@
     bindKeydownEnter('pinVerifyInput', 'pinVerifyEnterWallet');
 
     bindSelect('keyPageLang', 'switchLang');
+    bindSelect('importPageLang', 'switchLang');
     bindSelect('mnemonicLength', 'changeMnemonicLength');
     bindSelect('qrChainSelect', 'updateQRCode');
 
