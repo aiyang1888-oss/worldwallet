@@ -1,5 +1,5 @@
 /* Service Worker：BUILD 戳与 wallet.runtime.js 中 WW_APP_CACHE_NAME 对齐以便清理旧缓存 */
-/* worldtoken-v202604091300 */
+/* worldtoken-v202604091428 */
 var WW_APP_CACHE_NAME = 'worldtoken-static-v202604091300';
 self.addEventListener('install', function (e) {
   e.waitUntil(
