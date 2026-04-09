@@ -7034,6 +7034,10 @@ function closePinUnlock() {
   }
   const ov = document.getElementById('pinUnlockOverlay');
   if(ov) ov.classList.remove('show');
+  try {
+    var tov = document.getElementById('totpUnlockOverlay');
+    if (!tov || !tov.classList.contains('show')) window._wwAfterPinUnlockContinue = null;
+  } catch (_cp) {}
 }
 function checkWwAirdrop() {
   try {
