@@ -1534,6 +1534,10 @@ if(pageId==='page-import') { try { window._wwInFirstRun = true; } catch (_frImp)
     loadHbRecords();
   }
   if(pageId==='page-home') {
+    /* 每次进入资产页：同步链上展示地址并确保万语已从存储恢复或生成（避免仅首屏 loadWallet 时序导致芯片空白） */
+    try {
+      if (typeof loadWallet === 'function') loadWallet();
+    } catch (_lwHome) {}
     try {
       if (typeof wwRunGiftExpirySettlement === 'function') wwRunGiftExpirySettlement();
     } catch (_gexH) {}

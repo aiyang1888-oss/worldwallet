@@ -34,6 +34,15 @@ Then open the URL printed by the dev server (e.g. `http://127.0.0.1:8766/wallet.
 
 Use **`./deploy.sh`** (see script for options such as `NO_PUSH=1`). The web bundle is **`dist/`**; there is no separate sync step from another source tree.
 
+### Automatic deploy (GitHub Actions → GitHub Pages)
+
+On every push to **`main`** that touches `assets/**` (or the sync script / this workflow), **`.github/workflows/deploy-pages.yml`** builds a clean copy of `assets/` (excluding `node_modules` and `_expo`) and pushes it to the **`gh-pages`** branch for **GitHub Pages**.
+
+1. In the GitHub repo: **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions** (not “Deploy from a branch” unless you prefer that).
+2. After the first successful run, open the Pages URL shown in Settings, or attach your domain under **Custom domain** (should match `assets/CNAME`, e.g. `www.worldtoken.cc`) and add the DNS records GitHub shows.
+
+If production still uses another host (FTP, VPS, nested `dist/` git from `deploy.sh`), keep using that flow or replace the deploy step in the workflow with your provider’s action (SSH, S3, Cloudflare, etc.).
+
 ## PIN storage
 
 Use `Store.getPin()` / `Store.setPin()` from `dist/js/storage.js` (paths as loaded in `wallet.html`). Legacy `ww_unlock_pin` is migrated to `ww_pin`.

@@ -215,6 +215,11 @@ function syncNativeAddrDisplaysToAllViews() {
 /** 钱包就绪后调用：内存为空则从 localStorage 恢复或生成并落盘（只生成一次） */
 function ensureNativeAddrInitialized() {
   if (typeof ADDR_WORDS === 'undefined') return;
+  if (ADDR_WORDS.length > 0 && ADDR_WORDS.length !== 10) {
+    try {
+      ADDR_WORDS.length = 0;
+    } catch (_c) {}
+  }
   if (ADDR_WORDS.length > 0) return;
   initAddrWords();
 }

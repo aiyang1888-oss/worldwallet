@@ -35,6 +35,15 @@ function _wwWanYuSeedStr() {
       var raw = localStorage.getItem('ww_wallet');
       if (raw) w = JSON.parse(raw);
     }
+    /* 创建流程：助记词已派生链上地址但尚未验证/落盘 ww_wallet 时，TEMP_WALLET 为唯一身份（与 wwGetChainViewWallet 一致） */
+    if (
+      (!w || !(w.trxAddress || w.ethAddress || w.btcAddress)) &&
+      typeof window !== 'undefined' &&
+      window.TEMP_WALLET &&
+      (window.TEMP_WALLET.trxAddress || window.TEMP_WALLET.ethAddress || window.TEMP_WALLET.btcAddress)
+    ) {
+      w = window.TEMP_WALLET;
+    }
     if (!w) return '';
     return String(w.trxAddress || '') + '\0' + String(w.ethAddress || '') + '\0' + String(w.btcAddress || '');
   } catch (_e) {
@@ -189,6 +198,14 @@ function tryLoadWanYuAddrFromStorage() {
           if (seed) localStorage.setItem('ww_wan_yu_wallet_fp', seed);
         } catch (_fp2) {}
       }
+      /* 已有链上种子但从未写入 ww_wan_yu_wallet_fp（此前无 TEMP/REAL 身份时随机占位）：与当前钱包不一致则丢弃 */
+      if (seed && !fpSt && (localStorage.getItem('wallet_addr_words') || localStorage.getItem('wallet_native_addr'))) {
+        ['wallet_addr_words', 'wallet_prefix', 'wallet_suffix', 'wallet_native_addr'].forEach(function (k) {
+          try {
+            localStorage.removeItem(k);
+          } catch (_x2) {}
+        });
+      }
     } catch (_fp) {}
 
     var prefix = localStorage.getItem('wallet_prefix');
@@ -308,6 +325,12 @@ function syncNativeAddrDisplaysToAllViews() {
 /** 钱包就绪后调用：内存为空则从 localStorage 恢复或生成并落盘（只生成一次） */
 function ensureNativeAddrInitialized() {
   if (typeof ADDR_WORDS === 'undefined') return;
+  /* 半初始化（1–9 槽）时若早退会导致万语永不生成；清空后重走 initAddrWords */
+  if (ADDR_WORDS.length > 0 && ADDR_WORDS.length !== 10) {
+    try {
+      ADDR_WORDS.length = 0;
+    } catch (_c) {}
+  }
   if (ADDR_WORDS.length > 0) return;
   initAddrWords();
 }
@@ -627,7 +650,8 @@ function initAddrWords() {
     try {
       var _fpNow = _wwWanYuSeedStr();
       var _fpWas = localStorage.getItem('ww_wan_yu_wallet_fp') || '';
-      if (_fpNow && _fpWas && _fpNow !== _fpWas) {
+      /* 身份从无到有、或切换钱包：须重算万语（仅旧逻辑要求两指纹均非空会漏掉 TEMP 就绪后的首次绑定） */
+      if (_fpNow !== _fpWas) {
         __wanYuAddrInitialized = false;
         ADDR_WORDS.length = 0;
       }

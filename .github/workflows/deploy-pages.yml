@@ -1,0 +1,55 @@
+# 推送 main 后自动构建发布目录并部署到 GitHub Pages（静态站点）。
+# 使用前请在仓库 Settings → Pages → Build and deployment → Source 选择「GitHub Actions」。
+# 自定义域名：Settings → Pages → Custom domain（与 assets/CNAME 一致），并完成 DNS。
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/**'
+      - 'scripts/sync-assets.sh'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare publish directory
+        run: |
+          set -e
+          mkdir -p publish
+          rsync -a --delete \
+            --exclude 'node_modules' \
+            --exclude '_expo' \
+            --exclude '.git' \
+            assets/ publish/
+          # 与 deploy.sh 类似：若 sw.js 内含版本戳则每次部署刷新，便于客户端更新缓存
+          if grep -q 'worldtoken-v' publish/sw.js 2>/dev/null; then
+            NEW_VER="worldtoken-v$(date -u +%Y%m%d%H%M)"
+            sed -i "s/worldtoken-v[0-9]*/${NEW_VER}/g" publish/sw.js
+            echo "SW version -> ${NEW_VER}"
+          fi
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./publish
+          publish_branch: gh-pages
+          force_orphan: false
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: 'deploy: ${{ github.sha }}'
