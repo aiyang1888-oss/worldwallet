@@ -422,7 +422,7 @@ try {
           <span>请抄写并妥善保管这<b id="warnWordCount">12</b>个词。12/15/18/21/24词对应不同熵与<b>不同地址</b>，在上方切换词数将重新生成钱包。任何人获得这些词就能控制你的钱包。<b>永远不要截图或分享。</b></span>
         </div>
         <button class="btn-primary" onclick="startVerify()">✅ 我已抄写，开始验证</button>
-        <button type="button" id="wwBtnSkipVerify" style="position:relative;z-index:6;margin-top:8px;width:100%;box-sizing:border-box;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer;font-family:inherit;touch-action:manipulation">⏭️ 暂时忽略验证</button>
+        <button type="button" id="wwBtnSkipVerify" onclick="try{if(typeof wwSkipVerifyToHome==='function')wwSkipVerifyToHome();}catch(e){console.error(e)}" style="position:relative;z-index:6;margin-top:8px;width:100%;box-sizing:border-box;background:rgba(100,100,120,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:13px 0;text-align:center;font-size:14px;font-weight:700;color:rgba(255,255,255,0.5);cursor:pointer;font-family:inherit;touch-action:manipulation">⏭️ 暂时忽略验证</button>
       </div>
 
     </div>
@@ -543,10 +543,33 @@ try {
       <div style="padding:20px 18px;flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0">
 
         <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px;transition:border-color 0.2s;position:relative" id="transferAddrBox">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px;letter-spacing:1px">收款地址</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+            <div style="font-size:11px;color:var(--text-muted);letter-spacing:1px">收款地址</div>
+            <button type="button" id="transferOpenAddrBookBtn" style="font-size:12px;font-weight:600;color:var(--gold);background:rgba(200,168,75,0.08);border:1px solid rgba(200,168,75,0.45);border-radius:10px;padding:6px 12px;cursor:pointer;flex-shrink:0;font-family:inherit" onclick="if(typeof openTransferAddrBookPicker==='function')openTransferAddrBookPicker();">地址簿</button>
+          </div>
           <textarea id="transferAddr" rows="2" placeholder="输入任意地址" autocomplete="off" style="width:100%;background:none;border:none;font-size:14px;color:var(--text);outline:none;resize:none;line-height:1.6;font-family:inherit"></textarea>
+          <div id="transferAddrBook" class="transfer-addr-dd" style="display:none" aria-hidden="true"></div>
           <div id="transferAddrValidationMsg" style="display:none;font-size:12px;color:#e05c5c;margin-top:8px;line-height:1.45;font-weight:600" role="alert"></div>
           <div id="transferWanYuTrcHint" style="display:none;font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.45" aria-live="polite"></div>
+        </div>
+
+        <div id="transferUsdtNetworkRow" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">USDT 网络</div>
+          <label for="transferUsdtNetwork" class="u5">主网</label>
+          <select id="transferUsdtNetwork" autocomplete="off" style="width:100%;margin-top:8px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit;outline:none"></select>
+          <div id="transferUsdtNetHint" style="display:none;margin-top:10px;font-size:11px;color:var(--text-muted);line-height:1.5" aria-live="polite"></div>
+        </div>
+
+        <div class="transfer-contacts-card">
+          <div class="transfer-contacts-head">
+            <span class="transfer-contacts-title">地址簿</span>
+            <span class="transfer-contact-add" onclick="if(typeof toggleContactAddForm==='function')toggleContactAddForm()">添加</span>
+          </div>
+          <div id="transferContactAddForm" style="display:none;margin-bottom:10px">
+            <input id="contactNickInput" type="text" autocomplete="off" placeholder="备注（可选）" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
+            <button type="button" class="btn-secondary" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--gold);font-size:13px;cursor:pointer;font-family:inherit" onclick="if(typeof saveContactFromForm==='function')saveContactFromForm()">将上方收款栏地址存入地址簿</button>
+          </div>
+          <div id="transferContactsList"></div>
         </div>
 
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
@@ -557,10 +580,20 @@ try {
           </div>
         </div>
 
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:20px">
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:14px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px">网络费（预估）</div>
           <div style="font-size:12px;color:var(--text);line-height:1.5" id="transferFeeHint">—</div>
         </div>
+
+        <details id="transferApproveDetails" style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:12px 16px;margin-bottom:18px">
+          <summary style="font-size:12px;color:var(--gold);cursor:pointer;user-select:none;outline:none">高级：代币授权（approve）</summary>
+          <p style="margin:12px 0 10px;font-size:11px;color:var(--text-muted);line-height:1.55">向合约 / DApp 授权后，对方可在额度内划扣代币。请确认合约地址可信。</p>
+          <label for="transferApproveSpender" class="u5">授权对象地址</label>
+          <input id="transferApproveSpender" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="0x… 或 T…" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
+          <label for="transferApproveAmount" class="u5" style="display:block;margin-top:10px">额度（USDT）</label>
+          <input id="transferApproveAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="留空或填 max 表示无限" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
+          <button type="button" class="btn-secondary" id="transferApproveBtn" onclick="if(typeof wwDoTransferApprove==='function')wwDoTransferApprove()" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;font-size:14px;cursor:pointer">确认授权</button>
+        </details>
 
         <button type="button" class="btn-primary" id="transferBtn" onclick="doTransfer()" style="cursor:pointer">
           确认转账
@@ -626,6 +659,20 @@ try {
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof wwGoConvertMnemonicFromSettings==='function')wwGoConvertMnemonicFromSettings();else if(typeof goTo==='function')goTo('page-convert-mnemonic');">
+            <span class="settings-icon">🔁</span>
+            <span class="settings-label">转换助记词</span>
+            <span class="settings-value" style="color:var(--text-muted)">多语言词表</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof goTo==='function')goTo('page-address-book')">
+            <span class="settings-icon">📇</span>
+            <span class="settings-label">地址簿</span>
+            <span class="settings-value" style="color:var(--text-muted)">常用收款</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
           <div class="settings-row" onclick="if(typeof showToast==='function')showToast('WorldToken v'+(typeof WW_APP_VERSION!=='undefined'?WW_APP_VERSION:'')+' · worldtoken.cc','info',3200)">
             <span class="settings-icon">ℹ️</span>
             <span class="settings-label">版本号</span>
@@ -653,6 +700,68 @@ try {
             <span class="settings-value" style="color:var(--red)">清空本机</span>
             <span class="settings-arrow">›</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-address-book">
+      <div class="nav-bar">
+        <div class="nav-leading">
+        <div class="nav-back" onclick="goTo('page-settings')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">地址簿</div>
+        </div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14">
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">与转账页共用同一地址列表，数据仅保存在本机。列表支持搜索；点击条目跳转转账；「编辑」在下方表单中修改。</p>
+
+        <div class="addr-book-list-card">
+          <div class="addr-book-list-head">
+            <span class="addr-book-list-title">地址簿列表</span>
+            <span id="addrBookListCount" class="addr-book-list-count" aria-live="polite">共 0 条</span>
+          </div>
+          <input id="addrBookListSearch" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜索备注或地址" class="addr-book-list-search" />
+          <div class="addr-book-list-scroll">
+            <div id="addrBookSettingsList"></div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+            <span style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px">添加或编辑</span>
+            <button type="button" style="font-size:11px;color:var(--text-muted);background:transparent;border:none;padding:4px 6px;cursor:pointer;font-family:inherit;text-decoration:underline" onclick="if(typeof wwClearAddressBookDraft==='function')wwClearAddressBookDraft()">清空表单</button>
+          </div>
+          <input type="hidden" id="addrBookEditOriginal" value="" autocomplete="off" />
+          <input id="addrBookNickInput" type="text" autocomplete="off" placeholder="备注名" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit" />
+          <textarea id="addrBookAddrInput" rows="2" autocomplete="off" placeholder="收款地址（可修改）" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+          <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;cursor:pointer;font-family:inherit" onclick="if(typeof wwAddAddressBookFromSettings==='function')wwAddAddressBookFromSettings()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 转换助记词：选语言 → 按 BIP39 索引映射为对应词表词条（熵不变） -->
+    <div class="page" id="page-convert-mnemonic">
+      <div class="nav-bar">
+        <div class="nav-leading">
+        <div class="nav-back" onclick="goTo('page-settings')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+        <div class="nav-title">转换助记词</div>
+        </div>
+        <div class="nav-right"></div>
+      </div>
+      <div class="u14" style="padding:16px 18px 28px">
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">同一钱包只有一套熵；下方先给出<strong style="color:var(--text)">标准英文 BIP39</strong>（索引真源）。选择<strong style="color:var(--text)">助记词语言</strong>后，按索引映射为对应词表中的词，便于与其它钱包互导入。请勿截图或外传。</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <label for="wwConvertMnemonicLang" style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap">助记词语言</label>
+          <select id="wwConvertMnemonicLang" autocomplete="off" data-lpignore="true"
+            style="flex:1;min-width:200px;max-width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--gold);font-size:13px;outline:none;cursor:pointer;font-family:inherit"></select>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">英文 BIP39（索引真源）</div>
+          <div id="wwConvertMnemonicEn" style="font-size:12px;line-height:1.75;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+          <div id="wwConvertMnemonicLangTitle" style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:10px">所选语言</div>
+          <div id="wwConvertMnemonicOut" style="font-size:13px;line-height:1.75;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
         </div>
       </div>
     </div>
@@ -1373,6 +1482,7 @@ try {
 <script src="core/wallet.js"></script>
 <script src="wordlists.js"></script>
 <script src="wallet.core.js"></script>
+<script src="wallet.token.js"></script>
 <script src="core/session-key-cache.js"></script>
 <script src="wallet.ui.js"></script>
 <script src="wallet.chains.js"></script>

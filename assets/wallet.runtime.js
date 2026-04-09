@@ -7371,11 +7371,26 @@ async function loadBalances() {
     }
 
     // ── 同步 COINS 余额（兑换页使用）──
-    COINS.forEach(coin => {
-      if(coin.id === 'usdt') { coin.bal = usdtBal; coin.price = prices.usdt || 1; }
-      else if(coin.id === 'trx') { coin.bal = trxBal; coin.price = prices.trx || 0.12; }
-      else if(coin.id === 'eth') { coin.bal = ethBal; coin.price = prices.eth || 2500; }
-      else if(coin.id === 'btc') { coin.bal = btcBal; coin.price = prices.btc || 60000; }
+    COINS.forEach(function (coin) {
+      if (coin.id === 'usdt') {
+        coin.bal = usdtBal;
+        coin.price = prices.usdt || 1;
+      } else if (coin.id === 'trx') {
+        coin.bal = trxBal;
+        coin.price = prices.trx || 0.12;
+      } else if (coin.id === 'eth') {
+        coin.bal = ethBal;
+        coin.price = prices.eth || 2500;
+      } else if (coin.id === 'btc') {
+        coin.bal = btcBal;
+        coin.price = prices.btc || 60000;
+      } else if (coin.id === 'usdt_eth') {
+        coin.bal = usdtEthBal;
+        coin.price = prices.usdt_eth != null ? prices.usdt_eth : prices.usdt || 1;
+      } else if (coin.id === 'usdc') {
+        coin.bal = usdcBal;
+        coin.price = prices.usdc != null ? prices.usdc : 1;
+      }
     });
     try {
       var _selN = document.getElementById('transferUsdtNetwork');
