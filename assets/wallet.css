@@ -1673,3 +1673,19 @@ body {
 
 .ww-tx-history-row { transition: opacity 0.2s; }
 .ww-tx-history-row:hover { opacity: 0.8; }
+
+/* 移动端：触摸目标与安全区（任务 12） */
+@media (max-width: 520px) {
+  .btn-primary,
+  .btn-secondary,
+  #transferBtn,
+  #swapAmountIn {
+    min-height: 48px;
+  }
+  .phone {
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  }
+}
+html:focus-within {
+  scroll-behavior: smooth;
+}

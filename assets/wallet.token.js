@@ -419,6 +419,24 @@
     return s;
   };
 
+  /**
+   * 以太坊主网 ENS：仅当名称以 .eth 结尾时解析为 0x 地址
+   */
+  global.wwResolveEnsIfNeeded = async function (addrOrName) {
+    var s = String(addrOrName || '').trim();
+    if (!/\.eth$/i.test(s)) return s;
+    if (typeof ethers === 'undefined' || !ethers.providers) throw new Error('ethers 未加载，无法解析 ENS');
+    var p = global.wwMakeEvmProviderForChain(1);
+    if (!p) throw new Error('无法连接以太坊主网 RPC，ENS 不可用');
+    try {
+      var resolved = await p.resolveName(s);
+      if (resolved && ethers.utils.isAddress(resolved)) return ethers.utils.getAddress(resolved);
+    } catch (e) {
+      throw new Error('ENS 解析失败：' + (e && e.message ? e.message : String(e)));
+    }
+    throw new Error('ENS 未解析到有效地址：' + s);
+  };
+
   function _resolveMeta(metaOrKey) {
     if (!metaOrKey) throw new Error('请指定网络（如 tron / eth / polygon / bsc）或 WW_USDT_NETWORK_META 对象');
     if (typeof metaOrKey === 'string') return global.wwGetUsdtMetaByKey(metaOrKey);

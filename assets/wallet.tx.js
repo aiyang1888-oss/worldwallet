@@ -868,3 +868,16 @@ function wwTxHistoryRowOnClick(ev) {
     setTimeout(tick, 2200);
   });
 })();
+
+(function wwBrowserCapabilityProbe() {
+  if (typeof window === 'undefined') return;
+  try {
+    var missing = [];
+    if (!window.Promise) missing.push('Promise');
+    if (!window.fetch) missing.push('fetch');
+    if (!window.crypto || !window.crypto.getRandomValues) missing.push('crypto.getRandomValues');
+    if (missing.length && typeof console !== 'undefined' && console.warn) {
+      console.warn('[WorldWallet] 浏览器能力缺失: ' + missing.join(', ') + ' — 部分功能可能不可用');
+    }
+  } catch (_e) {}
+})();

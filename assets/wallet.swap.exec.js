@@ -7,6 +7,51 @@
 
   var SWAP_ROUTER_02 = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
   var WETH = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
+  var RPC_TIMEOUT_MS = 14000;
+
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise(function (_resolve, reject) {
+        setTimeout(function () {
+          reject(new Error((label || '请求') + ' 超时（' + ms + 'ms），将重试或切换节点'));
+        }, ms);
+      })
+    ]);
+  }
+
+  function getEthMainnetProvider(ethers) {
+    if (typeof global.wwMakeEvmProviderForChain === 'function') {
+      var p = global.wwMakeEvmProviderForChain(1);
+      if (p) return p;
+    }
+    var rpc = typeof ETH_RPC !== 'undefined' && ETH_RPC ? ETH_RPC : 'https://rpc.ankr.com/eth';
+    return new ethers.providers.JsonRpcProvider(rpc);
+  }
+
+  function bumpGasLimit(g, ethersLib) {
+    var E = ethersLib || global.ethers;
+    if (!g || !g.mul || !E) return g;
+    return g.mul(118).div(100).add(E.BigNumber.from('8000'));
+  }
+
+  function recordSwapGasSample(gasUsedBn) {
+    try {
+      if (!gasUsedBn || !gasUsedBn.toNumber) return;
+      var n = gasUsedBn.toNumber();
+      if (!isFinite(n) || n <= 0) return;
+      var raw = localStorage.getItem('ww_swap_gas_avg_v1');
+      var arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) arr = [];
+      arr.push(n);
+      if (arr.length > 8) arr = arr.slice(-8);
+      localStorage.setItem('ww_swap_gas_avg_v1', JSON.stringify(arr));
+      var sum = arr.reduce(function (a, b) {
+        return a + b;
+      }, 0);
+      localStorage.setItem('ww_swap_gas_avg_last_v1', String(Math.round(sum / arr.length)));
+    } catch (_e) {}
+  }
 
   var ROUTER_ABI = [
     'function exactInputSingle(tuple(address tokenIn,address tokenOut,uint24 fee,address recipient,uint256 deadline,uint256 amountIn,uint256 amountOutMinimum,uint160 sqrtPriceLimitX96)) external payable returns (uint256 amountOut)',
@@ -83,7 +128,7 @@
     var q = await mod.quoteEvmBestAmountOutWei(fromId, toId, amountInStr, rpc);
     if (!q || !q.amountOutWei) throw new Error('无法获取链上询价');
 
-    var provider = new ethers.providers.JsonRpcProvider(rpc);
+    var provider = getEthMainnetProvider(ethers);
     var wallet = new ethers.Wallet(pk, provider);
     var userAddr = wallet.address;
     var recip = opts.recipientEvm && /^0x[a-fA-F0-9]{40}$/.test(String(opts.recipientEvm).trim())
@@ -95,7 +140,7 @@
     var fee = q.bestFee;
     var deadline = Math.floor(Date.now() / 1000) + 20 * 60;
 
-    var fd = await provider.getFeeData();
+    var fd = await withTimeout(provider.getFeeData(), RPC_TIMEOUT_MS, 'Gas 报价');
     var gasOpts = feeDataOpts(fd, ethers);
 
     var router = new ethers.Contract(SWAP_ROUTER_02, ROUTER_ABI, wallet);
@@ -114,21 +159,27 @@
       if (bal.lt(amountInWei)) throw new Error('代币余额不足');
       await ensureErc20Approve(ercIn, userAddr, SWAP_ROUTER_02, amountInWei, wallet, gasOpts, onProgress, ethers);
       if (onProgress) onProgress('swap');
-      var tx1 = await router.exactInputSingle(
-        {
-          tokenIn: tokenIn,
-          tokenOut: tokenOut,
-          fee: fee,
-          recipient: recip,
-          deadline: deadline,
-          amountIn: amountInWei,
-          amountOutMinimum: minOutWei,
-          sqrtPriceLimitX96: 0
-        },
-        Object.assign({ gasLimit: ethers.BigNumber.from('450000') }, gasOpts)
-      );
+      var singleA = {
+        tokenIn: tokenIn,
+        tokenOut: tokenOut,
+        fee: fee,
+        recipient: recip,
+        deadline: deadline,
+        amountIn: amountInWei,
+        amountOutMinimum: minOutWei,
+        sqrtPriceLimitX96: 0
+      };
+      var glA = ethers.BigNumber.from('450000');
+      try {
+        var estA = await withTimeout(router.estimateGas.exactInputSingle(singleA), 22000, 'Gas 估算');
+        glA = bumpGasLimit(estA, ethers);
+      } catch (_ga) {}
+      var tx1 = await router.exactInputSingle(singleA, Object.assign({ gasLimit: glA }, gasOpts));
       if (onProgress) onProgress('wait');
-      await tx1.wait(1);
+      var rc1 = await tx1.wait(1);
+      try {
+        if (rc1 && rc1.gasUsed) recordSwapGasSample(rc1.gasUsed);
+      } catch (_r1) {}
       return tx1.hash;
     }
 
@@ -149,9 +200,21 @@
       };
       var w2 = iface.encodeFunctionData('exactInputSingle', [pEth]);
       if (onProgress) onProgress('swap');
-      var tx2 = await router.multicall([w1, w2], Object.assign({ value: amountInWei, gasLimit: ethers.BigNumber.from('550000') }, gasOpts));
+      var glB = ethers.BigNumber.from('550000');
+      try {
+        var estB = await withTimeout(
+          router.estimateGas.multicall([w1, w2], { value: amountInWei }),
+          22000,
+          'Gas 估算'
+        );
+        glB = bumpGasLimit(estB, ethers);
+      } catch (_gb) {}
+      var tx2 = await router.multicall([w1, w2], Object.assign({ value: amountInWei, gasLimit: glB }, gasOpts));
       if (onProgress) onProgress('wait');
-      await tx2.wait(1);
+      var rc2 = await tx2.wait(1);
+      try {
+        if (rc2 && rc2.gasUsed) recordSwapGasSample(rc2.gasUsed);
+      } catch (_r2) {}
       return tx2.hash;
     }
 
@@ -173,9 +236,17 @@
       var u1 = iface.encodeFunctionData('exactInputSingle', [pTok]);
       var u2 = iface.encodeFunctionData('unwrapWETH9', [minOutWei, recip]);
       if (onProgress) onProgress('swap');
-      var tx3 = await router.multicall([u1, u2], Object.assign({ gasLimit: ethers.BigNumber.from('600000') }, gasOpts));
+      var glC = ethers.BigNumber.from('600000');
+      try {
+        var estC = await withTimeout(router.estimateGas.multicall([u1, u2]), 22000, 'Gas 估算');
+        glC = bumpGasLimit(estC, ethers);
+      } catch (_gc) {}
+      var tx3 = await router.multicall([u1, u2], Object.assign({ gasLimit: glC }, gasOpts));
       if (onProgress) onProgress('wait');
-      await tx3.wait(1);
+      var rc3 = await tx3.wait(1);
+      try {
+        if (rc3 && rc3.gasUsed) recordSwapGasSample(rc3.gasUsed);
+      } catch (_r3) {}
       return tx3.hash;
     }
 
