@@ -6203,18 +6203,26 @@ async function loadBalances() {
   const tbd = document.getElementById('totalBalanceDisplay');
   const tbs = document.getElementById('totalBalanceSub');
   const btn = _safeEl('balRefreshBtn');
+  window._wwHomeBalancesHydrated = false;
+  try {
+    if (typeof wwInitHomeAssetCardsFromCoins === 'function') wwInitHomeAssetCardsFromCoins();
+  } catch (_wwi) {}
   var widSnap = wwHomeBalanceSnapWalletId();
   var snap =
     window._lastHomeBalSnap && window._lastHomeBalSnap.wid === widSnap
       ? window._lastHomeBalSnap
       : wwReadHomeBalanceSnapRecord();
   var hadSnap = snap && wwApplyHomeBalanceSnapRecord(snap);
+  if (hadSnap) {
+    window._wwHomeBalancesHydrated = true;
+    if (typeof applyHideZeroTokens === 'function') applyHideZeroTokens();
+  }
 
   if (!hadSnap) {
     if (tbd) tbd.classList.add('home-balance--loading');
     if (tbs) tbs.textContent = '同步中…';
     if (btn) btn.textContent = '查询中...';
-    ['balUsdt'].forEach(function (id) {
+    ['balUsdt', 'balTrx', 'balEth', 'balBtc'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el) el.textContent = '...';
     });
