@@ -547,6 +547,7 @@ body {
   justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
   margin-bottom: 0;
   box-sizing: border-box;
 }
