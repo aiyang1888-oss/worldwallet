@@ -373,8 +373,12 @@ async function createNewWallet() {
   }
 }
 
-// 页面加载时恢复钱包（只恢复数据，不跳转）
-captureReferralFromUrl();
+// 页面加载时恢复钱包（只恢复数据，不跳转）；captureReferralFromUrl 在 wallet.runtime.js 中定义，须延后到同批脚本执行完
+setTimeout(function () {
+  try {
+    if (typeof captureReferralFromUrl === 'function') captureReferralFromUrl();
+  } catch (_cap) {}
+}, 0);
 (function wwDeferInitialLoadWallet() {
   function run() {
     try {
