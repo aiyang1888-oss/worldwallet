@@ -45,10 +45,91 @@ document.addEventListener('click', function (ev) {
     var box = document.getElementById('transferAddrBox');
     if (!ab || ab.style.display === 'none' || !box) return;
     var t = ev.target;
+    if (t && t.nodeType === 3) t = t.parentElement;
     if (box.contains(t)) return;
     if (typeof hideTransferAddrBook === 'function') hideTransferAddrBook();
   } catch (_hab) { wwQuiet(_hab); }
 }, true);
+
+/** 欢迎页三按钮：紧跟在捕获 click 之后注册，避免文件后部执行失败导致 wwWelcomeTapInline 从未挂载 */
+(function wwWelcomeTapInlineRegisterEarly() {
+  var _wwWelDeb = 0;
+  function run(act) {
+    var n = Date.now();
+    if (n - _wwWelDeb < 400) return;
+    _wwWelDeb = n;
+    try {
+      if (typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
+    } catch (_f) {}
+    try {
+      if (typeof window.wwClearHtmlBootRouteIfDestChanges === 'function') {
+        window.wwClearHtmlBootRouteIfDestChanges('page-welcome');
+      }
+    } catch (_c) {}
+    try {
+      if (typeof tapHaptic === 'function') tapHaptic(12);
+    } catch (_h) {}
+    try {
+      if (act === 'create' && typeof window.createNewWallet === 'function') {
+        void window.createNewWallet();
+        return;
+      }
+      if (act === 'pin' && typeof window.goTo === 'function') {
+        window.goTo('page-password-restore');
+        return;
+      }
+      if (act === 'import' && typeof window.goTo === 'function') {
+        window.goTo('page-import');
+        return;
+      }
+    } catch (e) {
+      try {
+        if (typeof safeLog === 'function') safeLog('[wwWelcomeTapInline]', e);
+      } catch (_s) {}
+    }
+  }
+  try {
+    window.wwWelcomeTapInline = run;
+  } catch (_w) {}
+
+  function wwBindWelcomeButtonsById() {
+    var pairs = [
+      ['wwWelcomeBtnCreate', 'create'],
+      ['wwWelcomeBtnPin', 'pin'],
+      ['wwWelcomeBtnImport', 'import']
+    ];
+    pairs.forEach(function (pair) {
+      var id = pair[0];
+      var act = pair[1];
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener(
+        'click',
+        function (ev) {
+          try {
+            if (ev) {
+              ev.preventDefault();
+              ev.stopPropagation();
+            }
+          } catch (_e) {}
+          if (typeof window.wwWelcomeTapInline === 'function') window.wwWelcomeTapInline(act);
+        },
+        false
+      );
+    });
+  }
+  try {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', wwBindWelcomeButtonsById);
+    } else {
+      wwBindWelcomeButtonsById();
+    }
+  } catch (_b) {
+    try {
+      if (typeof wwQuiet === 'function') wwQuiet(_b);
+    } catch (__q) {}
+  }
+})();
 
 function parseUsdFromBalanceTxt(txt) {
   if (!txt) return 0;
@@ -7670,84 +7751,4 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof submitPinUnlock === 'function') window.submitPinUnlock = submitPinUnlock;
     if (typeof submitTotpUnlock === 'function') window.submitTotpUnlock = submitTotpUnlock;
   } catch (_ww) { wwQuiet(_ww); }
-})();
-
-/** 欢迎页三按钮：在 runtime 末尾注册（goTo/createNewWallet 已挂 window），不依赖 wallet.dom-bind.js 是否加载成功 */
-(function wwWelcomeTapInlineRegister() {
-  var _wwWelDeb = 0;
-  function run(act) {
-    var n = Date.now();
-    if (n - _wwWelDeb < 400) return;
-    _wwWelDeb = n;
-    try {
-      if (typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
-    } catch (_f) {}
-    try {
-      if (typeof window.wwClearHtmlBootRouteIfDestChanges === 'function') {
-        window.wwClearHtmlBootRouteIfDestChanges('page-welcome');
-      }
-    } catch (_c) {}
-    try {
-      if (typeof tapHaptic === 'function') tapHaptic(12);
-    } catch (_h) {}
-    try {
-      if (act === 'create' && typeof window.createNewWallet === 'function') {
-        void window.createNewWallet();
-        return;
-      }
-      if (act === 'pin' && typeof window.goTo === 'function') {
-        window.goTo('page-password-restore');
-        return;
-      }
-      if (act === 'import' && typeof window.goTo === 'function') {
-        window.goTo('page-import');
-        return;
-      }
-    } catch (e) {
-      try {
-        if (typeof safeLog === 'function') safeLog('[wwWelcomeTapInline]', e);
-      } catch (_s) {}
-    }
-  }
-  try {
-    window.wwWelcomeTapInline = run;
-  } catch (_w) {}
-
-  function wwBindWelcomeButtonsById() {
-    var pairs = [
-      ['wwWelcomeBtnCreate', 'create'],
-      ['wwWelcomeBtnPin', 'pin'],
-      ['wwWelcomeBtnImport', 'import']
-    ];
-    for (var i = 0; i < pairs.length; i++) {
-      var id = pairs[i][0];
-      var act = pairs[i][1];
-      var el = document.getElementById(id);
-      if (!el) continue;
-      (function (a) {
-        el.addEventListener(
-          'click',
-          function (ev) {
-            try {
-              if (ev) {
-                ev.preventDefault();
-                ev.stopPropagation();
-              }
-            } catch (_e) {}
-            if (typeof window.wwWelcomeTapInline === 'function') window.wwWelcomeTapInline(a);
-          },
-          false
-        );
-      })(act);
-    }
-  }
-  try {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wwBindWelcomeButtonsById);
-    } else {
-      wwBindWelcomeButtonsById();
-    }
-  } catch (_b) {
-    wwQuiet(_b);
-  }
 })();
