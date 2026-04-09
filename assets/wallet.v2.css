@@ -951,7 +951,7 @@ body {
 .tab-bar {
   height: 76px; background: var(--bg2);
   border-top: 1px solid var(--border);
-  display: flex; align-items: center;
+  display: flex; align-items: flex-end;
   justify-content: space-around;
   padding-bottom: 12px; flex-shrink: 0;
   width: 100%; position: relative; z-index: 10;
@@ -964,9 +964,22 @@ body {
   border-radius: 10px; transition: all 0.2s;
 }
 .tab-item.active { color: var(--gold); }
-.tab-icon { font-size: 22px; }
-.tab-icon svg { width: 22px; height: 22px; display: block; }
+.tab-icon {
+  font-size: 20px;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.tab-icon svg { width: 22px; height: 22px; display: block; flex-shrink: 0; }
 .tab-item .tab-icon svg { color: inherit; }
+.tab-item > span:not(.tab-icon) {
+  line-height: 1.15;
+  white-space: nowrap;
+}
 #page-faq .faq-body { padding: 0 16px 32px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; }
 #page-faq .faq-block { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
 #page-faq .faq-block h3 { font-size: 15px; font-weight: 700; color: var(--gold); margin: 0 0 8px; }
