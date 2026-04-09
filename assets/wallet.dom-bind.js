@@ -60,7 +60,11 @@
   }
 
   function handleWwClick(ev) {
-    var coinHost = ev.target.closest('[data-coin]');
+    var raw = ev.target;
+    var root = raw && raw.nodeType === 1 ? raw : raw && raw.parentElement;
+    if (!root || typeof root.closest !== 'function') return;
+
+    var coinHost = root.closest('[data-coin]');
     if (coinHost && coinHost.getAttribute('data-coin')) {
       var coin = coinHost.getAttribute('data-coin');
       if (typeof selectTransferCoin === 'function') selectTransferCoin(coin);
@@ -68,7 +72,7 @@
       return;
     }
 
-    var el = ev.target.closest(
+    var el = root.closest(
       '[data-ww-go],[data-ww-go-tab],[data-ww-go-keyback],[data-ww-go-import-back],[data-ww-go-with-opts],[data-ww-fn],[data-ww-copy-from],[data-ww-load-trx]'
     );
     if (!el) return;
@@ -90,11 +94,14 @@
 
     if (el.hasAttribute('data-ww-go-with-opts')) {
       var page0 = el.getAttribute('data-ww-go-with-opts');
-      var raw = el.getAttribute('data-ww-go-opts') || '{}';
+      var rawOpts = el.getAttribute('data-ww-go-opts') || '{}';
       var opts0 = {};
       try {
-        opts0 = JSON.parse(raw);
+        opts0 = JSON.parse(rawOpts);
       } catch (_e) {}
+      if (el.getAttribute('data-ww-force-home') === '1' || el.getAttribute('data-ww-force-home') === 'true') {
+        opts0.forceHome = true;
+      }
       if (page0 && typeof window.goTo === 'function') window.goTo(page0, opts0);
       ev.preventDefault();
       return;
@@ -195,7 +202,6 @@
     bindFormSubmit('pageRestorePinForm', 'submitPageRestorePin');
     bindFormSubmit('pinUnlockForm', 'submitPinUnlock');
 
-    bindSelect('keyPageLang', 'switchLang');
     bindSelect('mnemonicLength', 'changeMnemonicLength');
     bindSelect('importPageLang', 'switchLang');
     bindSelect('importMnemonicLength', 'changeImportMnemonicLength');
@@ -243,6 +249,29 @@
         setTimeout(function () { wwMigrateLocalStorageToIdbOnce(); }, 0);
       }
     } catch (_mig) {}
+
+    /* 密钥页「暂时忽略验证」：捕获阶段绑定，不依赖 inline 与 wwSkipVerifyToHome 是否已挂到 window；先收起加载遮罩再 goTo */
+    var wwSkipBtn = document.getElementById('wwBtnSkipVerify');
+    if (wwSkipBtn) {
+      wwSkipBtn.addEventListener(
+        'click',
+        function () {
+          try {
+            if (typeof window.wwSkipVerifyToHome === 'function') {
+              window.wwSkipVerifyToHome();
+              return;
+            }
+          } catch (_sk) {}
+          try {
+            if (typeof hideWalletLoading === 'function') hideWalletLoading();
+          } catch (_h) {}
+          try {
+            if (typeof window.goTo === 'function') window.goTo('page-home', { forceHome: true });
+          } catch (_g) {}
+        },
+        true
+      );
+    }
 
     document.addEventListener('click', handleWwClick, false);
   }

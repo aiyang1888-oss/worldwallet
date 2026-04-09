@@ -1,4 +1,5 @@
 // wallet.addr.js — 地址系统：多语言/渲染/复制
+// 「万语」为展示/收款协议层字符串（ADDR_WORDS、wallet_* 键）；修改中段用字或前后缀不改变 ww_wallet 内 BIP39 助记词与 TRX/ETH/BTC 公链地址。
 
 var __wanYuInitLock = false;
 
@@ -311,6 +312,37 @@ function ensureNativeAddrInitialized() {
   initAddrWords();
 }
 
+/**
+ * 创建流程：先有链上身份前可能用空种子占过万语槽；TEMP→REAL 后须按新种子重算，否则 ensureNativeAddrInitialized 会因 ADDR_WORDS 非空直接 return。
+ */
+function wwClearWanYuAddrCacheForWalletChange() {
+  try {
+    if (typeof ADDR_WORDS === 'undefined') return;
+    var seed = '';
+    try {
+      seed = _wwWanYuSeedStr();
+    } catch (_e) {}
+    var fpSt = '';
+    try {
+      fpSt = localStorage.getItem('ww_wan_yu_wallet_fp') || '';
+    } catch (_e2) {}
+    if (seed && (!fpSt || fpSt !== seed)) {
+      ADDR_WORDS.length = 0;
+      __wanYuAddrInitialized = false;
+      try {
+        ['wallet_addr_words', 'wallet_prefix', 'wallet_suffix', 'wallet_native_addr'].forEach(function (k) {
+          try {
+            localStorage.removeItem(k);
+          } catch (_x) {}
+        });
+      } catch (_ls) {}
+    }
+  } catch (_er) {}
+}
+try {
+  window.wwClearWanYuAddrCacheForWalletChange = wwClearWanYuAddrCacheForWalletChange;
+} catch (_w) {}
+
 // 万语地址中段：10 个随机字符（每字独立抽取），语言与当前界面语言一致（中文=随机汉字）；不使用 WW_WORDS_EXTRA 等地名词库
 // SINGLE_CHARS.* 在 wallet.ui.js 中定义，此处仅作脚本解析顺序兜底
 var WW_ZH_ADDR_CHAR_FALLBACK =
@@ -445,15 +477,21 @@ function renderHomeAddrChip() {
   var chip = document.getElementById('homeAddrChip');
   var settingsAddrEl = document.getElementById('settingsAddr');
   if (!chip && !settingsAddrEl) return;
+  var rwView =
+    typeof window.wwGetChainViewWallet === 'function'
+      ? window.wwGetChainViewWallet()
+      : typeof REAL_WALLET !== 'undefined'
+        ? REAL_WALLET
+        : null;
   var isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
   var goldStyle = 'color:#C8A84B;font-weight:700;letter-spacing:0.5px;';
   var dimStyle = 'color:rgba(255,255,255,0.45);font-size:10px;';
   var baseChipStyle =
     'font-size:11px;letter-spacing:0.5px;color:#C8A84B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(100%,260px);text-align:center;display:block';
   if (isEn) {
-    var seed = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') + '|' + ((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : ''));
+    var seed = (typeof getNativeAddr === 'function' ? getNativeAddr() : '') + '|' + ((rwView && rwView.trxAddress) ? rwView.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : ''));
     var midGold = _wwGoldMiddleTenFromNavigator(seed);
-    var ca = String((REAL_WALLET && REAL_WALLET.trxAddress) ? REAL_WALLET.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '--'));
+    var ca = String((rwView && rwView.trxAddress) ? rwView.trxAddress : (typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '--'));
     var innerEn = '';
     if (ca.length > 14 && ca !== '--') {
       var pre = ca.slice(0, 5);
@@ -483,20 +521,58 @@ function renderHomeAddrChip() {
         chip.setAttribute('title', '点击复制地址');
       } catch (_c1) {}
     }
-    if (settingsAddrEl && REAL_WALLET && REAL_WALLET.ethAddress) {
-      settingsAddrEl.textContent = REAL_WALLET.ethAddress;
+    if (settingsAddrEl && rwView && rwView.ethAddress) {
+      settingsAddrEl.textContent = rwView.ethAddress;
       settingsAddrEl.style.cssText =
         'font-size:12px;color:var(--text-muted);line-height:1.7;word-break:break-all;text-align:center';
       try {
-        settingsAddrEl.setAttribute('data-ww-copy', REAL_WALLET.ethAddress);
+        settingsAddrEl.setAttribute('data-ww-copy', rwView.ethAddress);
         settingsAddrEl.setAttribute('title', '点击复制完整地址');
       } catch (_c2) {}
     }
+    try {
+      if (chip && chip.innerHTML) document.documentElement.classList.remove('ww-addr-pending');
+    } catch (_wpen) {}
     return;
   }
+  try {
+    if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
+  } catch (_ena) {}
   var prefix = _wanYuP8FromDomOrStorage(document.getElementById('addrPrefix'), 'wallet_prefix', '38294651');
   var suffix = _wanYuP8FromDomOrStorage(document.getElementById('addrSuffix'), 'wallet_suffix', '92847361');
   var midGold = ADDR_WORDS.length ? ADDR_WORDS.map(function (w) { return w.word; }).join('') : '';
+  /* 万语中段未就绪时勿留空芯片：CSS html.ww-addr-pending 会对 #homeAddrChip 设 visibility:hidden，易表现为「地址消失」 */
+  if (!midGold && rwView && (rwView.trxAddress || rwView.ethAddress)) {
+    var trxFb = String(rwView.trxAddress || rwView.ethAddress || '');
+    var fbTxt =
+      typeof wwFormatAddrChip === 'function'
+        ? wwFormatAddrChip(trxFb)
+        : trxFb.length > 12
+          ? trxFb.slice(0, 5) + '…' + trxFb.slice(-4)
+          : trxFb;
+    var innerFb = '<span style="' + goldStyle + '">' + _wwEsc(fbTxt) + '</span>';
+    if (chip) {
+      chip.innerHTML = innerFb;
+      chip.style.cssText = baseChipStyle;
+      try {
+        chip.setAttribute('data-ww-copy', trxFb);
+        chip.setAttribute('title', '点击复制链上地址');
+      } catch (_cfb) {}
+    }
+    if (settingsAddrEl) {
+      settingsAddrEl.innerHTML = innerFb;
+      settingsAddrEl.style.cssText =
+        baseChipStyle + ';max-width:100%;white-space:normal;word-break:break-word;line-height:1.65;padding:4px 0';
+      try {
+        settingsAddrEl.setAttribute('data-ww-copy', trxFb);
+        settingsAddrEl.setAttribute('title', '点击复制链上地址');
+      } catch (_cfs) {}
+    }
+    try {
+      document.documentElement.classList.remove('ww-addr-pending');
+    } catch (_wpfb) {}
+    return;
+  }
   var innerZh =
     '<span style="' +
     dimStyle +
@@ -532,6 +608,11 @@ function renderHomeAddrChip() {
       settingsAddrEl.setAttribute('title', '点击复制万语地址');
     } catch (_cs) {}
   }
+  try {
+    if (chip && (chip.innerHTML || '').replace(/<[^>]*>/g, '').trim().length > 0) {
+      document.documentElement.classList.remove('ww-addr-pending');
+    }
+  } catch (_wpzh) {}
 }
 
 function initAddrWords() {

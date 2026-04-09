@@ -647,19 +647,36 @@ body {
 .home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-left, 0px)) 22px max(18px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--border); }
 .home-backup-banner {
   display: none;
-  background: rgba(231, 76, 60, 0.16);
-  border: 1px solid rgba(231, 76, 60, 0.42);
-  color: #ffb4a8;
+  background: rgba(231, 76, 60, 0.14);
+  border: 1px solid rgba(231, 76, 60, 0.38);
+  color: #ffc8be;
   border-radius: 12px;
-  /* 右侧为首页头部绝对定位的通知/网格按钮预留空间（2×36px + gap），避免文案被遮挡 */
-  padding: 10px max(96px, calc(80px + env(safe-area-inset-right, 0px))) 10px 12px;
-  margin: 0 0 12px 0;
-  font-size: 12px;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: min(100%, calc(100vw - 32px), 360px);
+  margin: 0 auto 10px;
+  padding: 8px 12px;
+  font-size: 11px;
   font-weight: 600;
   text-align: center;
   cursor: pointer;
-  line-height: 1.45;
+  line-height: 1.38;
   user-select: none;
+}
+.home-backup-banner__title {
+  display: block;
+  margin-bottom: 4px;
+}
+.home-backup-banner__sub {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 200, 190, 0.92);
+  line-height: 1.45;
+}
+.home-backup-banner__sub br {
+  display: block;
+  line-height: inherit;
 }
 .home-backup-banner:active { opacity: 0.92; }
 .ww-quick-amt {

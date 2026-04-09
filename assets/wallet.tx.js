@@ -138,7 +138,7 @@ function wwEnsureWalletPublicLoaded() {
   } catch (_e) {}
 }
 
-/** 优先 REAL_WALLET，否则读 localStorage（避免 loadTxHistory 早退导致永远不请求链上） */
+/** 优先 REAL_WALLET，其次 TEMP_WALLET（助记词已生成未验证），再读 localStorage */
 function wwResolveTrxAddressForHistory() {
   try {
     if (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress) {
@@ -146,6 +146,12 @@ function wwResolveTrxAddressForHistory() {
       if (a.charAt(0) === 'T' && a.length >= 34) return a;
     }
   } catch (_e) {}
+  try {
+    if (typeof window !== 'undefined' && window.TEMP_WALLET && window.TEMP_WALLET.trxAddress) {
+      var ta = String(window.TEMP_WALLET.trxAddress).trim();
+      if (ta.charAt(0) === 'T' && ta.length >= 34) return ta;
+    }
+  } catch (_et) {}
   try {
     var raw = localStorage.getItem('ww_wallet');
     if (!raw) return '';

@@ -1,5 +1,13 @@
 // wallet.core.js — 钱包核心：创建/加密/存储/派生
 
+/**
+ * 助记词与链上地址关系（产品规则，实现须一致）：
+ * 1) 一套 BIP39 英文助记词 → 唯一一套 TRX/ETH/BTC 派生地址（createWallet / import 同源）。
+ * 2) 使用过程中仅修改「万语」展示串、前后缀或收款 UI，不改变已保存助记词与链上地址（见 wallet.addr.js，与 ww_wallet 分存）。
+ * 3) 用户重新生成助记词（新熵、或密钥页切换词数得到新助记词）→ 必须对应新的一套地址；旧钱包须显式清除/导入切换。
+ * 4) 助记词验证通过并写入 REAL_WALLET 后，本机以该助记词为真源贯穿备份/转账/解锁流程，不应在后台静默替换。
+ */
+
 /** 全局钱包状态；与 wallet.runtime.js 共用，勿在 wallet.ui.js 重复声明 */
 var REAL_WALLET = null;
 /** TRX 公链展示地址；wallet.addr.js 早于 runtime 加载，须在 core 声明并由 loadWallet 同步 */
@@ -150,6 +158,20 @@ function loadWallet() {
   try { if (typeof updateHomeBackupBanner === 'function') updateHomeBackupBanner(); } catch (_hb) {}
   try { if (typeof updateWalletSecurityScoreUI === 'function') updateWalletSecurityScoreUI(); } catch (_ws) {}
 }
+
+/** 仅公开字段；供 UI 展示与调试，不包含助记词/私钥 */
+function getRealWalletPublic() {
+  if (!REAL_WALLET) return null;
+  return {
+    ethAddress: REAL_WALLET.ethAddress,
+    trxAddress: REAL_WALLET.trxAddress,
+    btcAddress: REAL_WALLET.btcAddress || '',
+    createdAt: REAL_WALLET.createdAt,
+    backedUp: !!REAL_WALLET.backedUp,
+    hasEncrypted: !!REAL_WALLET.hasEncrypted
+  };
+}
+try { window.getRealWalletPublic = getRealWalletPublic; } catch (_g) {}
 
 
 /**
