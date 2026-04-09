@@ -150,16 +150,18 @@ try {
     <div class="page" id="page-home">
       
       <div class="home-header">
-        <div class="home-header__top-actions">
-          <div onclick="openSystemNotificationsPanel()" title="系统通知" class="home-header__icon-btn">🔔</div>
-          <div onclick="openReceivePage()" title="收款" class="home-header__icon-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
-              <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
-            </svg>
+        <div class="home-header__top-row">
+          <div id="homeBackupBanner" class="home-backup-banner" role="alert" onclick="goTo('page-settings')"><span class="home-backup-banner__line1">⚠️ 助记词未离线备份</span><span class="home-backup-banner__line2">链上已派生可用；丢机无备份不可恢复 · 去设置</span></div>
+          <div class="home-header__top-actions">
+            <div onclick="openSystemNotificationsPanel()" title="系统通知" class="home-header__icon-btn">🔔</div>
+            <div onclick="openReceivePage()" title="收款" class="home-header__icon-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/>
+              </svg>
+            </div>
           </div>
         </div>
-        <div id="homeBackupBanner" class="home-backup-banner" role="alert" onclick="goTo('page-settings')"><span class="home-backup-banner__title">⚠️ 尚未离线备份助记词</span><span class="home-backup-banner__sub">链上地址已派生，钱包可用；若丢机且无备份将无法恢复。<br />点此前往设置确认</span></div>
         <div class="home-greeting ww-balance-privacy-row"><span>总资产估值</span></div>
         <div class="home-balance" id="totalBalanceDisplay">$0.00</div>
         <div class="home-balance-sub" id="totalBalanceSub">≈ 0 CNY · 实时价格</div>
