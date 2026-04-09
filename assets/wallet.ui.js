@@ -2070,6 +2070,7 @@ function wwClassifyTransferRecipientAddr(s) {
   if (/^0x[a-fA-F0-9]{40}$/.test(t)) return 'erc';
   if (/^0x/i.test(t) && t.length >= 10) return 'erc_partial';
   if (/^T[1-9A-HJ-NP-Za-km-z]{10,}$/.test(t)) return 'trc';
+  if (typeof wwIsValidBtcAddress === 'function' && wwIsValidBtcAddress(t)) return 'btc';
   return 'unknown';
 }
 /** 按收款地址自动将 transferCoin 切到 USDT/TRX（Tron）或 ETH（并同步 COINS 中的余额）；无输入时不改当前币种 */
@@ -2081,6 +2082,7 @@ function wwApplyTransferCoinForRecipientAddr(rawAddr) {
   if (cls === 'erc' || cls === 'erc_partial') targetId = 'eth';
   else if (cls === 'ww') targetId = 'usdt';
   else if (cls === 'trc') targetId = (transferCoin && transferCoin.id === 'trx') ? 'trx' : 'usdt';
+  else if (cls === 'btc') targetId = 'btc';
   if (!targetId) return;
   var c = COINS.find(function (x) { return x && x.id === targetId; });
   if (!c) return;
@@ -4227,6 +4229,11 @@ function createGift() {
   var box = document.getElementById('hbKeywordResult');
   if (kwEl) kwEl.textContent = keyword;
   if (box) box.style.display = 'block';
+  var sentSt = document.getElementById('hbSentStatus');
+  if (sentSt) {
+    sentSt.style.display = 'block';
+    sentSt.textContent = '✓ 已发送 · 好友可凭口令领取';
+  }
 
   if (amtEl) amtEl.value = '';
   if (msgEl) msgEl.value = '';
