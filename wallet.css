@@ -29,12 +29,14 @@ html.ww-instant-route .page {
 }
 
 /* 与 head 中 data-ww-boot-page 同步的静态规则（避免再注入 <style>，首帧更早可用） */
-html[data-ww-boot-page] #page-welcome.page {
+/* 首帧目标为 page-welcome 时不得套用「藏欢迎页」，否则 data-ww-boot-page 未清除时按钮无法点击 */
+html[data-ww-boot-page]:not([data-ww-boot-page="page-welcome"]) #page-welcome.page {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
 }
+html[data-ww-boot-page="page-welcome"] #page-welcome.page,
 html[data-ww-boot-page="page-home"] #page-home.page,
 html[data-ww-boot-page="page-password-restore"] #page-password-restore.page,
 html[data-ww-boot-page="page-key"] #page-key.page,
