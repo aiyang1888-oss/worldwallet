@@ -4561,29 +4561,35 @@ function closeCoinPicker() { const _ovcoinPi2 = document.getElementById('coinPic
 
 function doSwap() {
   const amt = parseFloat(_safeEl('swapAmountIn').value)||0;
-  if(!amt) return;
+  if(!amt) {
+    if (typeof showToast === 'function') showToast('请输入兑换金额', 'warning');
+    return;
+  }
   const out = (_safeEl('swapAmountOut') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapAmountOut fallback */.textContent;
-
-  // 根据交易对选择 DEX
-  const isTronPair = ['trx','usdt'].includes(swapFrom.id) && ['trx','usdt'].includes(swapTo.id);
-  const isEthPair = ['eth','usdt'].includes(swapFrom.id) || ['eth','usdt'].includes(swapTo.id);
 
   // 显示确认弹窗
   const overlay = document.getElementById('swapConfirmOverlay');
   if(overlay) {
     _safeEl('swapConfirmFrom').textContent = amt + ' ' + swapFrom.name;
     _safeEl('swapConfirmTo').textContent = out + ' ' + swapTo.name;
-    _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (swapFrom.price/swapTo.price).toFixed(6) + ' ' + swapTo.name;
+    var pr = swapTo.price ? (swapFrom.price/swapTo.price) : 0;
+    _safeEl('swapConfirmRate').textContent = '1 ' + swapFrom.name + ' ≈ ' + (isFinite(pr) ? pr.toFixed(8) : '—') + ' ' + swapTo.name;
     overlay.classList.add('show');
   } else {
-    // 直接跳转 DEX
     openDex();
   }
+}
+
+function closeSwapConfirm() {
+  var o = document.getElementById('swapConfirmOverlay');
+  if (o) o.classList.remove('show');
 }
 
 function openDex() {
   const closeOverlay = document.getElementById('swapConfirmOverlay');
   if(closeOverlay) closeOverlay.classList.remove('show');
+
+  try { sessionStorage.setItem('ww_swap_pending', '1'); } catch (_s) {}
 
   const isTron = ['trx','usdt'].includes(swapFrom.id) && ['trx','usdt'].includes(swapTo.id);
   const COIN_ADDRS = {
