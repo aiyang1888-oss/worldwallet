@@ -1076,7 +1076,7 @@ window.addEventListener('load', () => {
 window.addEventListener('pageshow', function () {
   try { initMnemonicLengthSelectors(); } catch (_iml3) { wwQuiet(_iml3); }
 });
-// 硬刷新（Cmd+Shift+R 等）：尽量清掉「上次页面」记忆，回到欢迎；普通 Cmd+R 保留 ww_last_page 供下方恢复
+// 仅 URL ?reset=1 / ?hard=1 时清 ww_last_page 并标记硬重置；普通刷新保留 ww_last_page
 (function wwHardReloadForgetLastPage() {
   try {
     var u = new URL(location.href);
@@ -1093,55 +1093,38 @@ window.addEventListener('pageshow', function () {
       if (typeof history !== 'undefined' && history.replaceState) {
         history.replaceState(null, '', u.pathname + u.search);
       }
-      return;
-    }
-    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
-    if (!nav || nav.type !== 'reload') return;
-    var ts = typeof nav.transferSize === 'number' ? nav.transferSize : -1;
-    if (ts > 256) {
-      try {
-        sessionStorage.removeItem('ww_last_page');
-      } catch (e3) { wwQuiet(e3); }
-      try {
-        window._WW_HARD_RELOAD = true;
-      } catch (e4) { wwQuiet(e4); }
-      try {
-        u.hash = '';
-        if (typeof history !== 'undefined' && history.replaceState) {
-          history.replaceState(null, '', u.pathname + u.search);
-        }
-      } catch (_h) { wwQuiet(_h); }
     }
   } catch (e) { wwQuiet(e); }
 })();
-// 强刷后进入应用最开始的页面（欢迎页），不恢复 URL hash 深链
-// 勿对 #page-welcome 先 remove('active') 再 add：中间会有一帧「无任何 .page.active」→ .page 默认 opacity:0 → 欢迎页闪一下
-document.querySelectorAll('.page').forEach(p => {
-  if (p.id === 'page-welcome') return;
-  p.classList.remove('active');
-  p.style.display = '';
-});
-try {
-  if (typeof history !== 'undefined' && history.replaceState) {
-    var _u0 = new URL(location.href);
-    _u0.hash = '';
-    history.replaceState(null, '', _u0.pathname + _u0.search);
-  } else if (location.hash) {
-    location.hash = '';
-  }
-} catch (_rh0) { wwQuiet(_rh0); }
-const welcomePage = document.getElementById('page-welcome');
-if (welcomePage) {
-  welcomePage.classList.add('active');
-}
+// 仅硬重置时把 DOM 拉回欢迎并清 hash；普通进入/刷新由 head boot + wwEnsureInitialHashRoute 决定，避免 F5 仍强制欢迎盖住已恢复路由
 try {
   if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) {
-    document.documentElement.removeAttribute('data-ww-boot-page');
-    document.documentElement.classList.remove('ww-boot-route');
-    var _wwBootSt = document.querySelector('style[data-ww-boot-route]');
-    if (_wwBootSt && _wwBootSt.parentNode) _wwBootSt.parentNode.removeChild(_wwBootSt);
+    document.querySelectorAll('.page').forEach(function (p) {
+      if (p.id === 'page-welcome') return;
+      p.classList.remove('active');
+      p.style.display = '';
+    });
+    try {
+      if (typeof history !== 'undefined' && history.replaceState) {
+        var _u0 = new URL(location.href);
+        _u0.hash = '';
+        history.replaceState(null, '', _u0.pathname + _u0.search);
+      } else if (location.hash) {
+        location.hash = '';
+      }
+    } catch (_rh0) { wwQuiet(_rh0); }
+    var welcomePage = document.getElementById('page-welcome');
+    if (welcomePage) {
+      welcomePage.classList.add('active');
+    }
+    try {
+      document.documentElement.removeAttribute('data-ww-boot-page');
+      document.documentElement.classList.remove('ww-boot-route');
+      var _wwBootSt = document.querySelector('style[data-ww-boot-route]');
+      if (_wwBootSt && _wwBootSt.parentNode) _wwBootSt.parentNode.removeChild(_wwBootSt);
+    } catch (_wbr) { wwQuiet(_wbr); }
   }
-} catch (_wbr) { wwQuiet(_wbr); }
+} catch (_wwHr) { wwQuiet(_wwHr); }
 try {
   var _tbBoot = document.getElementById('tabBar');
   if (_tbBoot) _tbBoot.style.display = 'none';
