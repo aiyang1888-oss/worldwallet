@@ -1720,7 +1720,7 @@ function copySingle(text, el) {
 
 function showQR() { document.getElementById('qrOverlay').classList.add('show'); }
 
-let currentQRChain = 'native';
+/* let currentQRChain: wallet.ui.js */
 /* const QR_CHAIN_DATA: wallet.ui.js */
 
 function switchQRChain(chain) {
@@ -1790,7 +1790,7 @@ function hideQR() { document.getElementById('qrOverlay').classList.remove('show'
 // KEYWORDS_ZH 已迁移到 KW_ZH
 // KEYWORDS_EN 已迁移到 KW_EN
 // Must not reference KW_ZH here — const KW_ZH is declared later (TDZ).
-let currentKeyword = '举头望明月';
+/* let currentKeyword: wallet.ui.js */
 
 function getKeywords() {
   return (typeof LANG_KW!=='undefined' ? LANG_KW[currentLang] : null) || KW_ZH || [];
@@ -2247,7 +2247,7 @@ async function sendETH(toAddr, amount) {
 }
 
 // ══ 转账系统 ══
-let transferCoin = {id:'usdt', name:'USDT', chain:'TRC-20 · Tron', icon:'💚', bal:0, price:1};
+/* let transferCoin: wallet.ui.js */
 
 /* const WW_RECENT_ADDR_KEY: wallet.ui.js */
 function getRecentTransferAddrs() {
@@ -2393,7 +2393,7 @@ function transferSpeedHint(coinId, sp) {
   };
   return ((m[coinId] || m.usdt)[sp]) || m.usdt.normal;
 }
-let _wwTickerInterval = null;
+/* let _wwTickerInterval: wallet.ui.js */
 async function refreshHomePriceTicker() {
   try {
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd');
@@ -3969,8 +3969,8 @@ function updateGiftUI() {
 
 /* const LANG_KW: wallet.ui.js */
 
-let hbExpiry = 24;
-let hbType = 'normal';
+/* let hbExpiry: wallet.ui.js */
+/* let hbType: wallet.ui.js */
 
 /* const BLESSINGS: wallet.ui.js */
 
@@ -4222,7 +4222,7 @@ function submitClaim() {
   goTo('page-claimed');
 }
 
-let hbCount = 5;
+/* let hbCount: wallet.ui.js */
 function selectHbType(type) {
   hbType = type;
   const elN = document.getElementById('hbTypeNormal');
@@ -4270,7 +4270,7 @@ function hideHbSuccess() { document.getElementById('hbSuccessOverlay').style.dis
 
 
 /* const CURRENCIES: wallet.ui.js */
-let currencyIdx = 0;
+/* let currencyIdx: wallet.ui.js */
 function toggleCurrency() {
   currencyIdx = (currencyIdx+1) % CURRENCIES.length;
   const el = _safeEl('settingsCurrency'); if(!el) return;
@@ -5658,8 +5658,8 @@ function showToast(msg, type='info', duration=2500) {
 }
 
 // ── 余额查询 ──────────────────────────────────────────────────
-let priceCache = null;
-let priceCacheTime = 0;
+/* let priceCache: wallet.ui.js */
+/* let priceCacheTime: wallet.ui.js */
 
 function drawHomeBalanceChart(totalUsd) {
   const wrap = document.getElementById('homeBalanceChartWrap');
@@ -5847,9 +5847,9 @@ async function loadBalances() {
 
 
 // ── 加密资讯 ──────────────────────────────────────────────────
-let newsLoading = false;
-let newsCache = null;
-let newsCacheTime = 0;
+/* let newsLoading: wallet.ui.js */
+/* let newsCache: wallet.ui.js */
+/* let newsCacheTime: wallet.ui.js */
 
 async function loadNews() {
   // 备用新闻源列表（allorigins代理）

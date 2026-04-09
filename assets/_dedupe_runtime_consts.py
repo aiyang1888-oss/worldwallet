@@ -5,6 +5,7 @@ import re
 with open("wallet.ui.js", encoding="utf-8") as f:
     ui = f.read()
 ui_vars = set(re.findall(r"^var ([A-Za-z_$][\w$]*)\s*=", ui, re.M))
+ui_vars |= set(re.findall(r"if \(typeof ([A-Za-z_$][\w$]*) === 'undefined'\) var \1", ui))
 
 with open("wallet.runtime.js", encoding="utf-8") as f:
     lines = f.readlines()
