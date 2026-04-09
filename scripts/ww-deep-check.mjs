@@ -30,7 +30,7 @@ const DOM_BIND = {
     { id: 'pinUnlockForm', forbid: ['onsubmit'] },
   ],
   byId: [
-    { id: 'keyPageLang', forbid: ['onchange'] },
+    { id: 'importPageLang', forbid: ['onchange'] },
     { id: 'mnemonicLength', forbid: ['onchange'] },
     { id: 'hideZeroTokens', forbid: ['onchange'] },
     { id: 'txHistoryFilter', forbid: ['oninput'] },
