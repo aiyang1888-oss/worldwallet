@@ -1307,6 +1307,12 @@ function goTo(pageId, opts) {
   } catch (_wwBootClrUi) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
+    if (!opts.force && !opts.forceRoute) {
+      var _wwSamePgUi = document.querySelector('.page.active');
+      if (_wwSamePgUi && _wwSamePgUi.id === pageId) return;
+    }
+  } catch (_sameUi) {}
+  try {
     var curEl = document.querySelector('.page.active');
     var curId = curEl && curEl.id;
     if (curId && pageId === 'page-import' && curId !== 'page-import') {
