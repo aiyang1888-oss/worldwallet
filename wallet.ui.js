@@ -1153,6 +1153,20 @@ function goTo(pageId, opts) {
       } catch (_lw) {}
     }
   }
+  try {
+    var _wwBootPgUi = document.documentElement.getAttribute('data-ww-boot-page');
+    if (_wwBootPgUi && _wwBootPgUi !== pageId) {
+      document.documentElement.removeAttribute('data-ww-boot-page');
+      try {
+        document.documentElement.classList.remove('ww-boot-route');
+      } catch (_wb0u) {}
+      try {
+        var _wwBootStUi = document.querySelector('style[data-ww-boot-route="1"]');
+        if (!_wwBootStUi) _wwBootStUi = document.querySelector('style[data-ww-boot-route]');
+        if (_wwBootStUi && _wwBootStUi.parentNode) _wwBootStUi.parentNode.removeChild(_wwBootStUi);
+      } catch (_wb1u) {}
+    }
+  } catch (_wwBootClrUi) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
   try {
     var curEl = document.querySelector('.page.active');
