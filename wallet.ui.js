@@ -3802,11 +3802,21 @@ try {
  */
 function wwSkipVerifyToHome() {
   try {
-    if (typeof wwPromoteTempWalletForSkipVerify === 'function') wwPromoteTempWalletForSkipVerify();
-  } catch (_p) {}
+    wwClearHtmlBootRouteIfDestChanges('page-home');
+  } catch (_b) {}
   try {
     if (typeof hideWalletLoading === 'function') hideWalletLoading();
   } catch (_h) {}
+  try {
+    var _wloSkip = document.getElementById('walletLoadingOverlay');
+    if (_wloSkip) {
+      _wloSkip.classList.remove('show');
+      _wloSkip.style.pointerEvents = 'none';
+    }
+  } catch (_wl) {}
+  try {
+    if (typeof wwPromoteTempWalletForSkipVerify === 'function') wwPromoteTempWalletForSkipVerify();
+  } catch (_p) {}
   if (typeof wwNavigateHomeAfterCreateFlow === 'function') {
     wwNavigateHomeAfterCreateFlow({ mnemonicVerified: false, pageId: 'page-home' });
   }
