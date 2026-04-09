@@ -1725,6 +1725,14 @@ function wwGoToAssetsHome() {
     } catch (_e2) { wwQuiet(_e2); }
   }, 80);
 }
+/** 兑换页导航栏「记录」→ 兑换记录页（HTML onclick 引用） */
+function wwSwapShowRecords() {
+  try {
+    if (typeof goTo === 'function') goTo('page-swap-records');
+  } catch (_e) {
+    wwQuiet(_e);
+  }
+}
 function wwUpdateScrollTopBtn() {
   var btn = document.getElementById('wwScrollTopBtn');
   if (!btn) return;
