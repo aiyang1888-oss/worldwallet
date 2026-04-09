@@ -3430,35 +3430,78 @@ function updateSettingsPage() {
   }
 }
 
-function deleteWallet() {
+function wwPurgeLocalWalletStorage() {
+  try {
+    var keys = [];
+    var i, k, n;
+    for (i = 0; i < localStorage.length; i++) {
+      k = localStorage.key(i);
+      if (k && k.indexOf('ww_') === 0) keys.push(k);
+    }
+    for (i = 0; i < keys.length; i++) {
+      try {
+        localStorage.removeItem(keys[i]);
+      } catch (_e) {}
+    }
+  } catch (_e2) {}
+  try {
+    window._wwAfterPinUnlockContinue = null;
+  } catch (_ac) {}
+  try {
+    if (typeof wwClearSessionPin === 'function') wwClearSessionPin();
+  } catch (_s) {}
+  try {
+    if (typeof wwCleanupMemory === 'function') wwCleanupMemory();
+  } catch (_m) {}
+  REAL_WALLET = null;
+  try {
+    window.REAL_WALLET = null;
+  } catch (_w) {}
+  try {
+    currentMnemonicLength = 12;
+  } catch (_c) {}
+  try {
+    if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
+  } catch (_cp) {}
+}
+try {
+  window.wwPurgeLocalWalletStorage = wwPurgeLocalWalletStorage;
+} catch (_wp) {}
+
+function wwDeleteWalletFromSettings() {
   if (!window.confirm('⚠️ 确认删除钱包？请确保已备份助记词！')) return;
   if (!window.confirm('再次确认：删除后本机将无法恢复钱包数据！')) return;
-  try {
-    localStorage.removeItem('ww_wallet');
-    localStorage.removeItem('ww_hongbaos');
-    localStorage.removeItem('ww_pin');
-    try { localStorage.removeItem('ww_wallet_nickname'); } catch (_n) {}
-    try { localStorage.removeItem('ww_ref_install_credited'); } catch (_r) {}
-    try { localStorage.removeItem('ww_inapp_swap_ledger_v1'); } catch (_swapL) {}
-  } catch (_e) {}
-  REAL_WALLET = null;
-  try { window.REAL_WALLET = null; } catch (_w) {}
-  currentMnemonicLength = 12;
-  if (typeof goTo === 'function') goTo('page-welcome');
-  else {
-    document.querySelectorAll('.page').forEach(function (p) {
-      p.classList.remove('active');
-      p.style.display = 'none';
-    });
-    var wp = document.getElementById('page-welcome');
-    if (wp) {
-      wp.classList.add('active');
-      wp.style.display = 'flex';
+  function finish() {
+    wwPurgeLocalWalletStorage();
+    if (typeof goTo === 'function') goTo('page-welcome');
+    else {
+      document.querySelectorAll('.page').forEach(function (p) {
+        p.classList.remove('active');
+        p.style.display = 'none';
+      });
+      var wp = document.getElementById('page-welcome');
+      if (wp) {
+        wp.classList.add('active');
+        wp.style.display = 'flex';
+      }
+      var tb = document.getElementById('tabBar');
+      if (tb) tb.style.display = 'none';
     }
-    var tb = document.getElementById('tabBar');
-    if (tb) tb.style.display = 'none';
+    if (typeof showToast === 'function') showToast('✅ 钱包已删除', 'success');
   }
-  if (typeof showToast === 'function') showToast('✅ 钱包已删除', 'success');
+  if (typeof wwHasPinConfigured === 'function' && wwHasPinConfigured()) {
+    if (typeof wwEnsurePinThenForced === 'function') wwEnsurePinThenForced(finish);
+    else finish();
+  } else {
+    finish();
+  }
+}
+try {
+  window.wwDeleteWalletFromSettings = wwDeleteWalletFromSettings;
+} catch (_wd) {}
+
+function deleteWallet() {
+  wwDeleteWalletFromSettings();
 }
 
 /** 首次打开时请求浏览器通知权限（仅询问一次） */

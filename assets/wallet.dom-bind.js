@@ -1,10 +1,23 @@
-// wallet.dom-bind.js — CSP：表单/输入/遮罩由本文件绑定；wallet.html 勿再写重复的 onsubmit/oninput/onchange/onkeydown 或遮罩 onclick（否则会执行两次）
+// wallet.dom-bind.js — CSP：wallet.html 内联事件由同源脚本绑定（配合 data-ww-*）
 (function () {
   function wwCall(name) {
     try {
       var g = typeof window !== 'undefined' ? window : {};
-      if (typeof g[name] === 'function') return g[name].apply(g, Array.prototype.slice.call(arguments, 1));
-    } catch (_e) {}
+      if (typeof g[name] !== 'function') return undefined;
+      var ret = g[name].apply(g, Array.prototype.slice.call(arguments, 1));
+      if (ret != null && typeof ret.then === 'function' && typeof ret.catch === 'function') {
+        ret.catch(function (err) {
+          try {
+            if (typeof safeLog === 'function') safeLog('[wwCall async] ' + name, err);
+          } catch (_sl) {}
+        });
+      }
+      return ret;
+    } catch (_e) {
+      try {
+        if (typeof safeLog === 'function') safeLog('[wwCall] ' + name, _e);
+      } catch (_s) {}
+    }
     return undefined;
   }
 
@@ -59,12 +72,18 @@
     });
   }
 
-  function handleWwClick(ev) {
-    var raw = ev.target;
-    var root = raw && raw.nodeType === 1 ? raw : raw && raw.parentElement;
-    if (!root || typeof root.closest !== 'function') return;
+  /** PIN 输入框：仅保留数字并限制 6 位，避免粘贴/输入法带入非数字导致误报失败 */
+  function bindPinSixDigits(id) {
+    var n = document.getElementById(id);
+    if (!n) return;
+    n.addEventListener('input', function () {
+      var v = String(n.value || '').replace(/\D/g, '').slice(0, 6);
+      if (n.value !== v) n.value = v;
+    });
+  }
 
-    var coinHost = root.closest('[data-coin]');
+  function handleWwClick(ev) {
+    var coinHost = ev.target.closest('[data-coin]');
     if (coinHost && coinHost.getAttribute('data-coin')) {
       var coin = coinHost.getAttribute('data-coin');
       if (typeof selectTransferCoin === 'function') selectTransferCoin(coin);
@@ -72,7 +91,7 @@
       return;
     }
 
-    var el = root.closest(
+    var el = ev.target.closest(
       '[data-ww-go],[data-ww-go-tab],[data-ww-go-keyback],[data-ww-go-import-back],[data-ww-go-with-opts],[data-ww-fn],[data-ww-copy-from],[data-ww-load-trx]'
     );
     if (!el) return;
@@ -94,14 +113,11 @@
 
     if (el.hasAttribute('data-ww-go-with-opts')) {
       var page0 = el.getAttribute('data-ww-go-with-opts');
-      var rawOpts = el.getAttribute('data-ww-go-opts') || '{}';
+      var raw = el.getAttribute('data-ww-go-opts') || '{}';
       var opts0 = {};
       try {
-        opts0 = JSON.parse(rawOpts);
+        opts0 = JSON.parse(raw);
       } catch (_e) {}
-      if (el.getAttribute('data-ww-force-home') === '1' || el.getAttribute('data-ww-force-home') === 'true') {
-        opts0.forceHome = true;
-      }
       if (page0 && typeof window.goTo === 'function') window.goTo(page0, opts0);
       ev.preventDefault();
       return;
@@ -140,30 +156,26 @@
     if (el.hasAttribute('data-ww-fn')) {
       var fn = el.getAttribute('data-ww-fn');
       if (fn === 'deleteWalletRow' || fn === 'wwDeleteLocalWallet') {
-        if (!confirm('确定删除本机钱包？此操作会清空本地数据。')) return;
-        if (typeof window.wwPurgeLocalWalletStorage === 'function') window.wwPurgeLocalWalletStorage();
-        else {
+        if (typeof window.wwDeleteWalletFromSettings === 'function') {
+          window.wwDeleteWalletFromSettings();
+        } else if (confirm('确定删除本机钱包？此操作会清空本地数据。')) {
           try {
-            localStorage.removeItem('ww_wallet');
-            localStorage.removeItem('ww_pin');
-            localStorage.removeItem('ww_pin_hash');
-            localStorage.removeItem('ww_pin_device_salt_v1');
-            localStorage.removeItem('ww_hongbaos');
+            if (typeof window.wwPurgeLocalWalletStorage === 'function') window.wwPurgeLocalWalletStorage();
+            else {
+              localStorage.removeItem('ww_wallet');
+              localStorage.removeItem('ww_pin');
+              localStorage.removeItem('ww_hongbaos');
+            }
           } catch (_ls) {}
-          try {
-            window.REAL_WALLET = null;
-          } catch (_rw) {}
+          if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
+          if (typeof window.goTo === 'function') window.goTo('page-welcome');
+          wwCall('showToast', '钱包已删除', 'success');
         }
-        if (typeof window.goTo === 'function') window.goTo('page-welcome');
-        wwCall('showToast', '钱包已删除', 'success');
         ev.preventDefault();
         return;
       }
       if (fn === 'swapHistoryToast' || fn === 'wwSwapRecordsToast') {
-        if (typeof window.wwGoHomeScrollToTxSection === 'function') window.wwGoHomeScrollToTxSection();
-        else if (typeof window.showToast === 'function') {
-          window.showToast('应用内兑换与「给他人」占位在首页「最近交易」；链上成交后可点刷新', 'info', 4200);
-        }
+        if (typeof window.showToast === 'function') window.showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info');
         ev.preventDefault();
         return;
       }
@@ -179,41 +191,41 @@
         ev.preventDefault();
         return;
       }
-      if (typeof window[fn] === 'function') window[fn]();
-      ev.preventDefault();
+      if (typeof window[fn] === 'function') {
+        window[fn](el);
+        ev.preventDefault();
+      }
     }
   }
 
-  function initNavBackKeyboard() {
-    document.querySelectorAll('.nav-back,.pin-setup-cancel').forEach(function (el) {
-      if (el.getAttribute('tabindex') == null) el.setAttribute('tabindex', '0');
-      if (!el.getAttribute('role')) el.setAttribute('role', 'button');
-      if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', el.classList.contains('pin-setup-cancel') ? '取消' : '返回');
-      el.addEventListener('keydown', function (ev) {
-        if (ev.key !== 'Enter' && ev.key !== ' ') return;
-        ev.preventDefault();
-        el.click();
-      });
-    });
-  }
-
   function run() {
-    initNavBackKeyboard();
     bindFormSubmit('pageRestorePinForm', 'submitPageRestorePin');
     bindFormSubmit('pinUnlockForm', 'submitPinUnlock');
+    bindPinSixDigits('pinRestorePageInput');
+    bindPinSixDigits('pinUnlockInput');
+    bindPinSixDigits('pinInput');
+    bindPinSixDigits('pinConfirmInput');
+    bindPinSixDigits('pinVerifyInput');
 
+    bindInput('pinInput', 'wwOnPinSetupLen', false);
+    bindInput('pinConfirmInput', 'wwOnPinConfirmLen', false);
+
+    bindKeydownEnter('pinInput', 'goToPinConfirm');
+    bindKeydownEnter('pinConfirmInput', 'confirmPin');
+    bindKeydownEnter('pinVerifyInput', 'pinVerifyEnterWallet');
+
+    bindSelect('keyPageLang', 'switchLang');
     bindSelect('mnemonicLength', 'changeMnemonicLength');
-    bindSelect('importPageLang', 'switchLang');
-    bindSelect('importMnemonicLength', 'changeImportMnemonicLength');
     bindSelect('qrChainSelect', 'updateQRCode');
 
     bindChange('hideZeroTokens', 'onHideZeroTokensChange');
 
     bindInput('txHistoryFilter', 'applyTxHistoryFilter', false);
+    bindInput('qrReceiveAmount', 'updateQRCode', false);
     bindInput('transferAddr', 'detectAddrType', false);
     bindInput('transferAmount', 'calcTransferFee', false);
     bindInput('swapAmountIn', 'calcSwap', false);
-    bindInput('claimInput', 'onClaimInput', false);
+    bindInput('importPaste', 'syncImportGrid', true);
 
     var importGrid = document.getElementById('importGrid');
     if (importGrid) {
@@ -225,6 +237,7 @@
     }
 
     bindKeydownEnter('claimInput', 'submitClaim');
+    bindInput('claimInput', 'onClaimInput', false);
     bindKeydownEnter('totpUnlockInput', 'submitTotpUnlock');
     bindKeydownEnter('totpSetupVerifyInput', 'confirmTotpSetup');
 
@@ -244,13 +257,7 @@
       });
     }
 
-    try {
-      if (typeof wwMigrateLocalStorageToIdbOnce === 'function') {
-        setTimeout(function () { wwMigrateLocalStorageToIdbOnce(); }, 0);
-      }
-    } catch (_mig) {}
-
-    /* 密钥页「暂时忽略验证」：捕获阶段绑定，不依赖 inline 与 wwSkipVerifyToHome 是否已挂到 window；先收起加载遮罩再 goTo */
+    /* 密钥页「暂时忽略验证」：捕获阶段绑定；先提升 TEMP→REAL 再进首页（见 wallet.ui.js wwSkipVerifyToHome） */
     var wwSkipBtn = document.getElementById('wwBtnSkipVerify');
     if (wwSkipBtn) {
       wwSkipBtn.addEventListener(

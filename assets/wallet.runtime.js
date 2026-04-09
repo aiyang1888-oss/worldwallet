@@ -4619,18 +4619,27 @@ function toggleNetwork() {
 }
 
 function deleteWallet() {
-  if(!window.confirm('⚠️ 确认删除钱包？请确保已备份助记词！')) return;
-  if(!window.confirm('再次确认：删除后资产将永久丢失！')) return;
-  // 清除所有钱包数据
-  localStorage.removeItem('ww_wallet');
-  localStorage.removeItem('ww_hongbaos');
-  try { localStorage.removeItem('ww_ref_install_credited'); } catch (_x) {}
-  window.REAL_WALLET = null;
-  currentMnemonicLength = 12;
-  // 跳回欢迎页
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('page-welcome').classList.add('active');
-  showToast('✅ 钱包已删除', 'success');
+  if (typeof wwDeleteWalletFromSettings === 'function') return wwDeleteWalletFromSettings();
+  if (!window.confirm('⚠️ 确认删除钱包？请确保已备份助记词！')) return;
+  if (!window.confirm('再次确认：删除后资产将永久丢失！')) return;
+  if (typeof wwPurgeLocalWalletStorage === 'function') wwPurgeLocalWalletStorage();
+  else {
+    try {
+      localStorage.removeItem('ww_wallet');
+      localStorage.removeItem('ww_hongbaos');
+      try {
+        localStorage.removeItem('ww_ref_install_credited');
+      } catch (_x) {}
+    } catch (_e) {}
+    window.REAL_WALLET = null;
+    currentMnemonicLength = 12;
+  }
+  document.querySelectorAll('.page').forEach(function (p) {
+    p.classList.remove('active');
+  });
+  var _wp = document.getElementById('page-welcome');
+  if (_wp) _wp.classList.add('active');
+  if (typeof showToast === 'function') showToast('✅ 钱包已删除', 'success');
 }
 
 function markBackupDone() {
