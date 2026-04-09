@@ -176,7 +176,7 @@ body {
 
 /* ── 礼物页 · 礼金展示区与主按钮 ── */
 #page-hongbao > .key-content {
-  padding-top: 6px !important;
+  padding-top: 6px;
 }
 #page-hongbao .gift-hero {
   margin-bottom: 8px;
