@@ -145,17 +145,32 @@ try {
       }
     } catch (_invH) {}
     var boot = '';
+    var _wwNavReload = false;
+    var _wwSessLast = '';
+    try {
+      var _wwNavEnt = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      _wwNavReload = _wwNavEnt && _wwNavEnt.type === 'reload';
+    } catch (_wnr) {}
+    try {
+      _wwSessLast = (sessionStorage.getItem('ww_last_page') || '').trim();
+    } catch (_wsl) {}
     if (/^page-[a-z0-9-]+$/i.test(h)) {
       if (!_wwHasAddr && !_wwGuestHashOk[h]) boot = '';
       else boot = h;
     } else {
-      try {
-        var w = localStorage.getItem('ww_wallet');
-        if (w) {
-          var o = JSON.parse(w);
-          if (o && _wwObjHasValidAddr(o)) boot = 'page-home';
-        }
-      } catch (e1) {}
+      /* 刷新且无 #hash：用 session 上次页作首帧 boot，避免从导入等子页 F5 回到欢迎闪屏 */
+      if (_wwNavReload && _wwSessLast && /^page-[a-z0-9-]+$/i.test(_wwSessLast)) {
+        if (_wwHasAddr || !!_wwGuestHashOk[_wwSessLast]) boot = _wwSessLast;
+      }
+      if (!boot) {
+        try {
+          var w = localStorage.getItem('ww_wallet');
+          if (w) {
+            var o = JSON.parse(w);
+            if (o && _wwObjHasValidAddr(o)) boot = 'page-home';
+          }
+        } catch (e1) {}
+      }
     }
     if (boot === 'page-home') {
       try {
