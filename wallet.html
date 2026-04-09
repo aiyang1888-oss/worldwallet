@@ -696,11 +696,15 @@ try {
         <div class="nav-right"></div>
       </div>
       <div class="u14">
-        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">与转账页共用同一地址列表，数据仅保存在本机。点击条目跳转转账并填入地址；点「编辑」可改备注后保存。</p>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">与转账页共用同一地址列表，数据仅保存在本机。点击条目跳转转账并填入地址；点「编辑」可改备注或地址后保存。</p>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px">
-          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px">新增</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
+            <span style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px">添加或编辑</span>
+            <button type="button" style="font-size:11px;color:var(--text-muted);background:transparent;border:none;padding:4px 6px;cursor:pointer;font-family:inherit;text-decoration:underline" onclick="if(typeof wwClearAddressBookDraft==='function')wwClearAddressBookDraft()">清空表单</button>
+          </div>
+          <input type="hidden" id="addrBookEditOriginal" value="" autocomplete="off" />
           <input id="addrBookNickInput" type="text" autocomplete="off" placeholder="备注名" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit" />
-          <textarea id="addrBookAddrInput" rows="2" autocomplete="off" placeholder="收款地址" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+          <textarea id="addrBookAddrInput" rows="2" autocomplete="off" placeholder="收款地址（可修改）" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
           <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;cursor:pointer;font-family:inherit" onclick="if(typeof wwAddAddressBookFromSettings==='function')wwAddAddressBookFromSettings()">保存</button>
         </div>
         <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">已保存</div>
