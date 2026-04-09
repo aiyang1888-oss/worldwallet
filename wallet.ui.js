@@ -1404,11 +1404,11 @@ function goTo(pageId, opts) {
     if (!_wwAllowHomeUi && typeof wwWalletHasAnyChainAddress === 'function') {
       try {
         var _rwUi = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-        if (wwWalletHasAnyChainAddress(_rwUi)) _wwAllowHomeUi = true;
-        else {
-          var _lsUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-          if (wwWalletHasAnyChainAddress(_lsUi)) _wwAllowHomeUi = true;
+        var _lsUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+        if (typeof wwWalletHasValidPersistedAddress === 'function') {
+          if (wwWalletHasValidPersistedAddress(_rwUi) || wwWalletHasValidPersistedAddress(_lsUi)) _wwAllowHomeUi = true;
         }
+        if (!_wwAllowHomeUi && (wwWalletHasAnyChainAddress(_rwUi) || wwWalletHasAnyChainAddress(_lsUi))) _wwAllowHomeUi = true;
       } catch (_ah1) { wwQuiet(_ah1); }
     }
     if (!_wwAllowHomeUi) pageId = 'page-welcome';
