@@ -644,16 +644,25 @@ body {
 
 /* ── 首页 ── */
 .home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-left, 0px)) 22px max(18px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--border); }
-/* 铃铛/收款与备份横幅分行：避免绝对定位与横幅叠在同一区域 */
-.home-header__top-actions {
+/* 备份提示与铃铛/收款二维码同一行：左提示、右图标 */
+.home-header__top-row {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: flex-end;
   gap: 8px;
   width: 100%;
   box-sizing: border-box;
   margin-bottom: 10px;
   flex-shrink: 0;
+}
+.home-header__top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+  box-sizing: border-box;
 }
 .home-header__icon-btn {
   width: 36px;
