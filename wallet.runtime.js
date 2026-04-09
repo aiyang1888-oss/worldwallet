@@ -1182,7 +1182,6 @@ const TAB_MAP = {'tab-home':'page-home','tab-swap':'page-swap','tab-addr':'page-
 const WW_SEO_DEFAULT = { title: 'WorldToken — 全球多语言加密钱包', description: 'WorldToken：万语地址、TRX / ETH / USDT / BTC 多链，本地保管助记词与资产。' };
 const WW_PAGE_SEO = {
   'page-welcome': { title: '欢迎 — WorldToken 多语言钱包', description: '创建或导入钱包：万语地址与多链资产管理。' },
-  'page-create': { title: '创建钱包 — WorldToken', description: '生成 BIP39 助记词，派生 TRX、ETH、BTC 地址。' },
   'page-key': { title: '备份助记词 — WorldToken', description: '请安全抄写并离线保存助记词，勿截图或上传网络。' },
   'page-key-verify': { title: '验证助记词 — WorldToken', description: '按提示输入助记词以确认您已正确备份。' },
   'page-home': { title: '资产 — WorldToken', description: '查看余额、快捷转账、兑换与交易记录。' },
@@ -1800,7 +1799,7 @@ function renderKeyGrid() {
   const isEn = currentLang === 'en';
   const enMnemonic = REAL_WALLET && REAL_WALLET.enMnemonic;
   if (!enMnemonic) {
-    goTo('page-create');
+    goTo('page-welcome');
     return;
   }
   const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
