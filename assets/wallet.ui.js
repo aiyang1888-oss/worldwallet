@@ -5175,3 +5175,17 @@ if (document.readyState === 'loading') {
 } else {
   wwBindDataActionNav();
 }
+
+function wwPrefetchAllMnemonicWordlists() {
+  var langs = ['ja', 'ko', 'es', 'fr', 'de', 'it', 'ru', 'pt'];
+  for (var i = 0; i < langs.length; i++) {
+    if (typeof wwEnsureWordlistLoaded === 'function') {
+      wwEnsureWordlistLoaded(langs[i]).catch(function () {});
+    }
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', wwPrefetchAllMnemonicWordlists);
+} else {
+  setTimeout(wwPrefetchAllMnemonicWordlists, 0);
+}
