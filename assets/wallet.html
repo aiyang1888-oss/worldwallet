@@ -607,7 +607,7 @@ try {
           <p style="margin:12px 0 10px;font-size:11px;color:var(--text-muted);line-height:1.55">向合约 / DApp 授权后，对方可在额度内划扣代币。请确认合约地址可信。</p>
           <label for="transferApproveSpender" class="u5">授权对象地址</label>
           <input id="transferApproveSpender" type="text" inputmode="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="0x… 或 T…" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
-          <label for="transferApproveAmount" class="u5" style="display:block;margin-top:10px">额度（USDT）</label>
+          <label for="transferApproveAmount" class="u5" style="display:block;margin-top:10px">额度（TRC USDT）</label>
           <input id="transferApproveAmount" type="text" inputmode="decimal" autocomplete="off" placeholder="留空或填 max 表示无限" style="width:100%;box-sizing:border-box;margin-top:6px;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
           <button type="button" class="btn-secondary" id="transferApproveBtn" onclick="if(typeof wwDoTransferApprove==='function')wwDoTransferApprove()" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;font-size:14px;cursor:pointer">确认授权</button>
         </details>
