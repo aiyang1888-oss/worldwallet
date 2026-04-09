@@ -4974,41 +4974,55 @@ function getMnemonicFromGrid() {
 }
 
 // ── 二维码生成 ──────────────────────────────────────────────────
+function wwDrawQrCanvasPlaceholder(canvas, msg) {
+  try {
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#888888';
+    ctx.font = '11px system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(msg || '…', canvas.width / 2, canvas.height / 2);
+  } catch (_e) {}
+}
+
 function generateQRCode(text, canvasId) {
-  const canvas = document.getElementById(canvasId || 'qrCanvas');
-  if(!canvas) return;
-  loadQRCodeLib().then(function(){
-    if(typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-      QRCode.toCanvas(canvas, text || 'worldtoken', {
-        width: 130,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' }
-      }, function(err) {
-        if(err) console.error('QR error:', err);
-      });
-    } else {
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.alt = '';
-      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
-      img.style.width = '130px';
-      img.style.height = '130px';
-      canvas.parentNode.replaceChild(img, canvas);
-    }
-  }).catch(function(e){
-    console.error('QR lib:', e);
-    try {
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.alt = '';
-      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
-      img.style.width = '130px';
-      img.style.height = '130px';
-      canvas.parentNode.replaceChild(img, canvas);
-    } catch(e2) { console.error(e2); }
-  });
+  var id = canvasId || 'qrCanvas';
+  var container = document.getElementById('qrCodeContainer');
+  var canvas = document.getElementById(id);
+  if (container && (!canvas || canvas.tagName !== 'CANVAS')) {
+    container.innerHTML = '<canvas id="qrCanvas" width="130" height="130"></canvas>';
+    canvas = document.getElementById(id);
+  }
+  if (!canvas || canvas.tagName !== 'CANVAS') return;
+  var payload = String(text || '');
+  loadQRCodeLib()
+    .then(function () {
+      if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+        QRCode.toCanvas(
+          canvas,
+          payload,
+          {
+            width: 130,
+            margin: 1,
+            color: { dark: '#000000', light: '#ffffff' }
+          },
+          function (err) {
+            if (err) {
+              console.error('QR error:', err);
+              wwDrawQrCanvasPlaceholder(canvas, 'QR');
+            }
+          }
+        );
+      } else {
+        wwDrawQrCanvasPlaceholder(canvas, 'QR');
+      }
+    })
+    .catch(function (e) {
+      console.error('QR lib:', e);
+      wwDrawQrCanvasPlaceholder(canvas, 'QR');
+    });
 }
 
 // 更新二维码（当地址改变时调用）
@@ -5039,12 +5053,16 @@ function buildReceiveQrPayload(chain, addr, amountRaw) {
   return addr;
 }
 function updateQRCode() {
-  if(!REAL_WALLET) return;
-  const chain = document.getElementById('qrChainSelect')?.value || 'trx';
-  let addr = '';
-  if(chain === 'trx') addr = REAL_WALLET.trxAddress || '';
-  else if(chain === 'eth') addr = REAL_WALLET.ethAddress || '';
-  if(addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
+  var vwQ = typeof wwGetChainViewWallet === 'function' ? wwGetChainViewWallet() : null;
+  if (!vwQ && typeof REAL_WALLET !== 'undefined') vwQ = REAL_WALLET;
+  if (!vwQ || !(vwQ.trxAddress || vwQ.ethAddress)) return;
+  var sel = document.getElementById('qrChainSelect');
+  var chain = sel ? sel.value || 'trx' : 'trx';
+  var addr = '';
+  if (chain === 'trx') addr = vwQ.trxAddress || '';
+  else if (chain === 'eth') addr = vwQ.ethAddress || '';
+  if (addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
+  if (typeof updateQRDisplay === 'function') updateQRDisplay();
 }
 
 
