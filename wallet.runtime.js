@@ -7563,32 +7563,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 
 
 
-// ── 刷新恢复当前页 ────────────────────────────────────────────────
-(function() {
-  // 只有主要 Tab 页面才恢复；且必须已有本地钱包地址。
-  // 否则 goTo 会盖住默认的欢迎页、底栏隐藏，体感像「按钮全点不动」（sessionStorage 在 ?v= 测缓存时仍存在）。
-  var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings'];
-  try {
-    if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) return;
-    var last = sessionStorage.getItem('ww_last_page');
-    if (!last || !ALLOW_RESTORE.includes(last) || !document.getElementById(last)) return;
-    var hasWallet = typeof wwUserHasAnySavedChainAddress === 'function' && wwUserHasAnySavedChainAddress();
-    if (!hasWallet) {
-      try { sessionStorage.removeItem('ww_last_page'); } catch (_r) { wwQuiet(_r); }
-      return;
-    }
-    function wwDoRestoreLastPage() {
-      setTimeout(function () {
-        goTo(last);
-      }, 50);
-    }
-    if (typeof window.wwWhenWalletCssReady === 'function') {
-      window.wwWhenWalletCssReady(wwDoRestoreLastPage);
-    } else {
-      wwDoRestoreLastPage();
-    }
-  } catch (_) { wwQuiet(_); }
-})();
+/* 刷新恢复当前页：由 wallet.ui.js wwEnsureInitialHashRoute（ww_last_page + forceRoute）与 head boot 统一处理，勿重复 goTo */
 
 (function wwClearStaleServiceWorkerCaches() {
   if (!('serviceWorker' in navigator)) return;
