@@ -3875,7 +3875,7 @@ const lg=document.getElementById("welcomeLangGrid"); if(lg) lg.scrollTop=0;
     </div>
 
     <!-- 兑换确认弹窗 -->
-    <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this)this.classList.remove('show')">
+    <div class="overlay" id="swapConfirmOverlay" onclick="if(event.target===this)closeSwapConfirm()">
       <div class="overlay-sheet" style="padding:24px">
         <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px;text-align:center">确认兑换</div>
         <div style="background:var(--bg2);border-radius:14px;padding:16px;margin-bottom:16px">
