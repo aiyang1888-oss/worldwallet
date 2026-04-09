@@ -124,8 +124,16 @@
     });
   }
 
+  function wwDomEventTargetEl(ev) {
+    var t = ev && ev.target;
+    if (!t) return null;
+    if (t.nodeType === 3) return t.parentElement || null;
+    return t;
+  }
+
   function handleWwClick(ev) {
-    var coinHost = ev.target.closest('[data-coin]');
+    var _tg = wwDomEventTargetEl(ev);
+    var coinHost = _tg && _tg.closest && _tg.closest('[data-coin]');
     if (coinHost && coinHost.getAttribute('data-coin')) {
       var coin = coinHost.getAttribute('data-coin');
       if (typeof selectTransferCoin === 'function') selectTransferCoin(coin);
