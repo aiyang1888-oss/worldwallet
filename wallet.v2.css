@@ -135,6 +135,15 @@ body {
     top: 0 !important;
     padding-top: env(safe-area-inset-top, 0px);
   }
+  html[data-theme="light"] body {
+    background: var(--bg) !important;
+  }
+  html[data-theme="light"] {
+    background: var(--bg) !important;
+  }
+  [data-theme="light"] .phone {
+    background: var(--bg) !important;
+  }
 }
 
 /* 导入助记词：三列；词库已限制 ≤3 字，仍保留 min-width 与横向滚动以防极端机型裁切 */
