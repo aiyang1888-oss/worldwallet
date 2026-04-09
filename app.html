@@ -622,26 +622,6 @@ body {
         </div>
       </div>
     </div>
-    <!-- 创建页 -->
-    <div class="page" id="page-create">
-      <div class="nav-bar">
-        <div class="nav-back" onclick="goTo('page-welcome')">‹</div>
-        <div class="nav-title">设置钱包</div>
-      </div>
-      <div style="padding:20px;flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px">
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="(async function(btn){btn.disabled=true;try{const w=await createRealWallet();if(w&&currentLang==='en'){updateRealAddr();}if(w)goTo('page-key');}finally{btn.disabled=false;}})(this)">
-          <div style="font-size:36px;margin-bottom:12px">✨</div>
-          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">创建新钱包</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">生成全新密钥，用你的母语保存助记词</div>
-        </div>
-        <div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:20px;padding:28px 22px;cursor:pointer;text-align:center" onclick="goTo('page-import')">
-          <div style="font-size:36px;margin-bottom:12px">📥</div>
-          <div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:8px">导入已有钱包</div>
-          <div style="font-size:13px;color:var(--text-muted);line-height:1.6">输入助记词恢复钱包</div>
-        </div>
-      </div>
-    </div>
-
     <!-- 密钥页 -->
     <div class="page" id="page-key">
       <div class="nav-bar">
