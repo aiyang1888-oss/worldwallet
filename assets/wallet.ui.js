@@ -5129,3 +5129,50 @@ if (document.readyState === 'loading') {
 } else {
   wwBindDataActionNav();
 }
+
+function openSystemNotificationsPanel() {
+  var o = document.getElementById('systemNotifOverlay');
+  if (o) o.classList.add('show');
+  else if (typeof showToast === 'function') showToast('暂无系统通知', 'info');
+}
+
+function closeSystemNotificationsPanel() {
+  var o = document.getElementById('systemNotifOverlay');
+  if (o) o.classList.remove('show');
+}
+
+function closeSwapHistory() {
+  var el = document.getElementById('swapHistoryOverlay');
+  if (el) el.classList.remove('show');
+}
+
+function confirmSwapGo() {
+  if (typeof openDex === 'function') {
+    openDex();
+    return;
+  }
+  if (typeof doSwap === 'function') doSwap();
+}
+
+function wwDoTransferApprove() {
+  if (typeof showToast === 'function') {
+    showToast('请在钱包内完成授权（若页面无响应请刷新后重试）', 'info', 3200);
+  }
+}
+
+function saveReceiveQrImage() {
+  var q = document.getElementById('qrCanvas');
+  if (!q || !q.toDataURL) {
+    if (typeof showToast === 'function') showToast('二维码未就绪', 'warning');
+    return;
+  }
+  try {
+    var a = document.createElement('a');
+    a.download = 'worldwallet-receive.png';
+    a.href = q.toDataURL('image/png');
+    a.click();
+    if (typeof showToast === 'function') showToast('已触发保存', 'success');
+  } catch (e) {
+    if (typeof showToast === 'function') showToast(wwFmtUserError(e, '保存失败'), 'error');
+  }
+}
