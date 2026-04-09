@@ -159,17 +159,17 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
       disp.push(w);
       continue;
     }
-    cand = null;
+    var placed = false;
     for (L = 3; L <= n; L++) {
       cand = arr.slice(0, L).join('');
       if (!used[cand]) {
         used[cand] = true;
         disp.push(cand);
-        cand = null;
+        placed = true;
         break;
       }
     }
-    if (cand !== null) disp.push(arr.join(''));
+    if (!placed) disp.push(arr.join(''));
   }
   for (i = 0; i < nList; i++) {
     d = disp[i];
