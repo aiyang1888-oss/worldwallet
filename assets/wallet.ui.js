@@ -2316,7 +2316,7 @@ function wwGetTransferRecipientValidation(addr, coinId) {
   var a = String(addr || '').trim();
   var id = coinId || ((typeof transferCoin !== 'undefined' && transferCoin) ? transferCoin.id : 'usdt');
   if (!a) return { ok: false, message: '❌ 请输入收款地址' };
-  if (id === 'eth') {
+  if (id === 'eth' || id === 'usdt_eth') {
     if (/^T[1-9A-HJ-NP-Za-km-z]/.test(a) || (typeof wwIsWanYuTransferAddr === 'function' && wwIsWanYuTransferAddr(a))) {
       return { ok: false, message: WW_MSG_ADDR_WRONG };
     }
@@ -2424,7 +2424,7 @@ function wwApplyTransferCoinForRecipientAddr(rawAddr) {
   var cls = wwClassifyTransferRecipientAddr(rawAddr);
   if (cls === 'empty' || cls === 'unknown') return;
   var targetId = null;
-  if (cls === 'erc' || cls === 'erc_partial') targetId = 'eth';
+  if (cls === 'erc' || cls === 'erc_partial') targetId = 'usdt_eth';
   else if (cls === 'ww') targetId = 'usdt';
   else if (cls === 'trc') targetId = (transferCoin && transferCoin.id === 'trx') ? 'trx' : 'usdt';
   else if (cls === 'btc') targetId = 'btc';

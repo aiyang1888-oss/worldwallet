@@ -4221,6 +4221,12 @@ function checkTransferReady() {
 
 function calcTransferFee() {
   try {
+    var _ta0 = document.getElementById('transferAddr');
+    if (typeof wwApplyTransferCoinForRecipientAddr === 'function') {
+      wwApplyTransferCoinForRecipientAddr(_ta0 ? String(_ta0.value || '').trim() : '');
+    }
+  } catch (_e0) { wwQuiet(_e0); }
+  try {
     var uc = typeof COINS !== 'undefined' && COINS.find && COINS.find(function (c) { return c && c.id === transferCoin.id; });
     if (uc) { transferCoin.bal = uc.bal; transferCoin.price = uc.price; }
   } catch (_e) { wwQuiet(_e); }
@@ -4239,6 +4245,17 @@ function calcTransferFee() {
     var b = Number(transferCoin.bal) || 0;
     balEl.textContent = (isFinite(b) ? b : 0).toLocaleString(undefined, { maximumFractionDigits: 8 });
   }
+  var amtLbl = document.getElementById('transferAmountLabel');
+  if (amtLbl) {
+    if (transferCoin.id === 'eth') amtLbl.textContent = '金额（ETH · Ethereum）';
+    else if (transferCoin.id === 'trx') amtLbl.textContent = '金额（TRX · Tron）';
+    else if (transferCoin.id === 'btc') amtLbl.textContent = '金额（BTC · Bitcoin）';
+    else if (transferCoin.id === 'usdt_eth') amtLbl.textContent = '金额（USDT · ERC-20）';
+    else if (transferCoin.id === 'usdt') amtLbl.textContent = '金额（USDT · TRC-20）';
+    else amtLbl.textContent = '金额（' + (transferCoin.name || '') + '）';
+  }
+  var balSuf = document.getElementById('transferBalSuffix');
+  if (balSuf) balSuf.textContent = transferCoin.name || '';
   const usdToCny = 7.24;
   const cnyEl = document.getElementById('transferCNY');
   const feeEl = document.getElementById('transferFee');
@@ -4250,7 +4267,18 @@ function calcTransferFee() {
     if (actEl) actEl.textContent = '—';
     if (usdEl) usdEl.textContent = '$0.00';
     if (cnyEl) cnyEl.textContent = '0.00';
-    if (hintEl) hintEl.textContent = nf.line + ' · ' + nf.sub + ' · TRC-20 需能量/带宽';
+    if (hintEl) {
+      var _idleHint = (nf.line || '') + (nf.sub ? ' · ' + nf.sub : '');
+      if (transferCoin.id === 'usdt' || transferCoin.id === 'trx') {
+        hintEl.textContent = _idleHint + (_idleHint ? ' · ' : '') + 'TRC 需能量/带宽';
+      } else if (transferCoin.id === 'usdt_eth' || transferCoin.id === 'eth') {
+        hintEl.textContent = _idleHint + (_idleHint ? ' · ' : '') + 'Gas 以 ETH 支付';
+      } else if (transferCoin.id === 'btc') {
+        hintEl.textContent = _idleHint || '—';
+      } else {
+        hintEl.textContent = _idleHint || '—';
+      }
+    }
   } else {
     const feeNum = amt * 0.003;
     const fee = feeNum.toFixed(4);
@@ -4268,6 +4296,7 @@ function calcTransferFee() {
   const bal = Number(transferCoin.bal) || 0;
   if (amt > bal + 1e-10) shakeTransferAmountTooHigh();
   checkTransferReady();
+  try { if (typeof wwRefreshTransferRecipientFeedback === 'function') wwRefreshTransferRecipientFeedback(); } catch (_wh) { wwQuiet(_wh); }
   try { if (typeof wwUpdateTxSimulation === 'function') wwUpdateTxSimulation(); } catch (_ws) { wwQuiet(_ws); }
 }
 
@@ -5119,7 +5148,7 @@ function wwHomeAssetRowsMeta() {
   ];
 }
 
-/** 首页 #wwHomeAssetCardsMount 为空时注入 TRC USDT / ERC20 USDT / TRX / ETH / BTC（与 COINS 一致），供余额与「隐藏零余额」使用 */
+/** 首页 #wwHomeAssetCardsMount 为空时注入 USDT (TRC-20) / USDT (ERC-20) / TRX / ETH / BTC（与 COINS 一致），供余额与「隐藏零余额」使用 */
 function wwInitHomeAssetCardsFromCoins() {
   var mount = document.getElementById('wwHomeAssetCardsMount');
   if (!mount || mount.getAttribute('data-ww-asset-cards') === 'v2') return;
