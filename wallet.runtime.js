@@ -6259,31 +6259,8 @@ function renderNews(items) {
   });
 }
 
-
-// 切换助记词词数：从熵重新生成全新 BIP39 助记词（不截断旧词），并立即刷新网格
-async function changeMnemonicLength(n) {
-  const wordCount = parseInt(n, 10) || 12;
-  if (![12, 15, 18, 21, 24].includes(wordCount)) return;
-  currentMnemonicLength = wordCount;
-  // 同步下拉框
-  const sel = document.getElementById('mnemonicLength');
-  if (sel) {
-    sel.value = String(wordCount);
-    sel.selectedIndex = [12,15,18,21,24].indexOf(wordCount);
-  }
-  // 重新生成指定词数的钱包
-  showWalletLoading();
-  try {
-    await createRealWallet(wordCount);
-    if (typeof updateRealAddr === 'function') updateRealAddr();
-    if (typeof renderKeyGrid === 'function') renderKeyGrid();
-  } catch(e) {
-    if (typeof showToast === 'function') showToast('生成失败: ' + (e&&e.message||e), 'error');
-  } finally {
-    hideWalletLoading();
-  }
-}
-
+// 切换助记词词数（#mnemonicLength）：实现仅在 wallet.ui.js（TEMP_WALLET / _wwTempWalletByWordCount + createWallet）。
+// 切勿在此再定义 async function changeMnemonicLength，否则会覆盖 UI 版本并错误调用 createRealWallet（已保存钱包场景）。
 
 // ── 助记词验证 ──────────────────────────────────────────────
 var verifyAnswers = {}; // {position: correctWord}
