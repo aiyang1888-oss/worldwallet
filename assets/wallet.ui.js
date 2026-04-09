@@ -3510,9 +3510,88 @@ try {
   window.wwPurgeLocalWalletStorage = wwPurgeLocalWalletStorage;
 } catch (_wp) {}
 
-function wwDeleteWalletFromSettings() {
-  if (!window.confirm('⚠️ 确认删除钱包？请确保已备份助记词！')) return;
-  if (!window.confirm('再次确认：删除后本机将无法恢复钱包数据！')) return;
+/**
+ * 应用内系统风格确认框（与 overlay-sheet 一致，无浏览器「页面标题」栏）。
+ * @param {{title?:string,message?:string,cancelText?:string,confirmText?:string,destructive?:boolean}} opts
+ * @returns {Promise<boolean>}
+ */
+function wwShowSystemConfirm(opts) {
+  opts = opts || {};
+  return new Promise(function (resolve) {
+    var ov = document.getElementById('wwSystemConfirmOverlay');
+    var titleEl = document.getElementById('wwSystemConfirmTitle');
+    var msgEl = document.getElementById('wwSystemConfirmMessage');
+    var btnCancel = document.getElementById('wwSystemConfirmCancel');
+    var btnOk = document.getElementById('wwSystemConfirmOk');
+    if (!ov || !titleEl || !msgEl || !btnCancel || !btnOk) {
+      try {
+        resolve(window.confirm(String(opts.message || opts.title || '')));
+      } catch (_e) {
+        resolve(false);
+      }
+      return;
+    }
+    function done(v) {
+      ov.classList.remove('show');
+      document.removeEventListener('keydown', onKey);
+      ov.onclick = null;
+      btnCancel.onclick = null;
+      btnOk.onclick = null;
+      btnOk.className = 'btn-primary';
+      btnOk.style.background = '';
+      btnOk.style.color = '';
+      btnOk.style.boxShadow = '';
+      btnOk.style.border = '';
+      resolve(!!v);
+    }
+    function onKey(ev) {
+      if (ev.key === 'Escape') done(false);
+    }
+    titleEl.textContent = opts.title || '提示';
+    msgEl.textContent = opts.message || '';
+    btnCancel.textContent = opts.cancelText || '取消';
+    btnOk.textContent = opts.confirmText || '确定';
+    if (opts.destructive) {
+      btnOk.className = '';
+      btnOk.style.background = 'linear-gradient(135deg,#c0392b,#e74c3c)';
+      btnOk.style.color = '#fff';
+      btnOk.style.border = 'none';
+      btnOk.style.boxShadow = '0 4px 16px rgba(231,76,60,0.35)';
+    }
+    ov.onclick = function (e) {
+      if (e.target === ov) done(false);
+    };
+    btnCancel.onclick = function () {
+      done(false);
+    };
+    btnOk.onclick = function () {
+      done(true);
+    };
+    document.addEventListener('keydown', onKey);
+    ov.classList.add('show');
+  });
+}
+try {
+  window.wwShowSystemConfirm = wwShowSystemConfirm;
+} catch (_wsc) {}
+
+async function wwDeleteWalletFromSettings() {
+  var ok1 = await wwShowSystemConfirm({
+    title: '删除钱包',
+    message: '确认删除本机钱包？请确保已离线备份助记词；删除后需助记词才能恢复资产。',
+    cancelText: '取消',
+    confirmText: '继续',
+    destructive: false
+  });
+  if (!ok1) return;
+  var ok2 = await wwShowSystemConfirm({
+    title: '再次确认',
+    message: '将清空本机全部钱包数据，此操作不可撤销。确定删除吗？',
+    cancelText: '取消',
+    confirmText: '删除',
+    destructive: true
+  });
+  if (!ok2) return;
   function finish() {
     wwPurgeLocalWalletStorage();
     if (typeof goTo === 'function') goTo('page-welcome');
