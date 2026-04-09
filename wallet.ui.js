@@ -3186,6 +3186,67 @@ function updateHbPreview() {
 var CURRENCIES = ['CNY','USD','EUR','JPY','KRW'];
 var currencyIdx = 0;
 
+function wwGoConvertMnemonicFromSettings() {
+  if (typeof goTo === 'function') goTo('page-convert-mnemonic');
+}
+try {
+  window.wwGoConvertMnemonicFromSettings = wwGoConvertMnemonicFromSettings;
+} catch (_wGcm) {}
+
+/** 设置 → 转换助记词页：填充英文 BIP39 与中文词表对照（需已解密助记词） */
+function wwPopulateConvertMnemonicPage() {
+  var enEl = document.getElementById('wwConvertMnemonicEn');
+  var zhEl = document.getElementById('wwConvertMnemonicZh');
+  if (!enEl || !zhEl) return;
+  enEl.textContent = '';
+  zhEl.textContent = '';
+  function fillConvertMnemonic() {
+    var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (!rw) {
+      if (typeof showToast === 'function') showToast('未加载钱包', 'error');
+      if (typeof goTo === 'function') goTo('page-settings');
+      return;
+    }
+    var en = String(rw.enMnemonic || rw.mnemonic || '')
+      .trim()
+      .replace(/\s+/g, ' ');
+    if (!en) {
+      if (typeof showToast === 'function') showToast('无法读取助记词，请先解锁钱包或从备份页查看', 'warning', 3200);
+      if (typeof goTo === 'function') goTo('page-settings');
+      return;
+    }
+    enEl.textContent = en;
+    var zh = '';
+    try {
+      if (typeof mnemonicToLang === 'function') zh = mnemonicToLang(en, 'zh');
+      else if (typeof enWordsToLangKeyTableWords === 'function') {
+        var ew = en.split(/\s+/).filter(Boolean);
+        zh = enWordsToLangKeyTableWords(ew, 'zh').join(' ');
+      }
+    } catch (_m) {
+      zh = '';
+    }
+    zhEl.textContent = zh || '—';
+  }
+  try {
+    if (rw && rw.hasEncrypted && !(rw.enMnemonic || rw.mnemonic) && typeof wwUnsealWalletSensitive === 'function') {
+      void wwUnsealWalletSensitive()
+        .then(function () {
+          fillConvertMnemonic();
+        })
+        .catch(function () {
+          if (typeof showToast === 'function') showToast('解锁失败，无法显示助记词', 'error');
+          if (typeof goTo === 'function') goTo('page-settings');
+        });
+      return;
+    }
+  } catch (_u) {}
+  fillConvertMnemonic();
+}
+try {
+  window.wwPopulateConvertMnemonicPage = wwPopulateConvertMnemonicPage;
+} catch (_wPop) {}
+
 function updateSettingsPage() {
   try {
     if (typeof renderHomeAddrChip === 'function') renderHomeAddrChip();
