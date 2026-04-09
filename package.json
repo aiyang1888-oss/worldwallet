@@ -11,6 +11,7 @@
     "dup-fn:ui-rt": "node scripts/ww-duplicate-functions.mjs --ui-runtime-only",
     "wordlist:zh": "node scripts/ww-regen-zh-wordlist.mjs",
     "wordlist:verify": "node scripts/verify-zh-wordlist.mjs",
+    "wordlist:analyze-zh": "node scripts/analyze-zh-bip39-mapping.mjs",
     "wordlists:build": "node scripts/ww-build-wordlists.mjs",
     "test:ww": "node scripts/ww-deep-check.mjs",
     "test:ww:e2e": "node scripts/ww-puppeteer-smoke.mjs",
