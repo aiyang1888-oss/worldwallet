@@ -375,7 +375,15 @@ async function createNewWallet() {
 
 // 页面加载时恢复钱包（只恢复数据，不跳转）
 captureReferralFromUrl();
-loadWallet();
+(function wwDeferInitialLoadWallet() {
+  function run() {
+    try {
+      if (typeof loadWallet === 'function') loadWallet();
+    } catch (_lw) {}
+  }
+  if (typeof queueMicrotask === 'function') queueMicrotask(run);
+  else setTimeout(run, 0);
+})();
 try { initMnemonicLengthSelectors(); } catch (_iml) {}
 try {
   const _txList = document.getElementById('txHistoryList');

@@ -68,6 +68,8 @@ function updateRealAddr() {
 }
 
 function updateAddr() {
+  /* ADDR_WORDS 在 wallet.runtime.js 定义；wallet.ui.js 若早于 addr/runtime 调 loadWallet→updateAddr 会抛错并吞掉，导致万语永不刷新 */
+  if (typeof ADDR_WORDS === 'undefined') return;
   const a = ADDR_SAMPLES[currentLang]||ADDR_SAMPLES.zh;
   const isEn = currentLang==='en';
   // 只经 ensureNativeAddrInitialized 统一初始化，不在此处重新 initAddrWords()
@@ -497,6 +499,7 @@ function _wwGoldMiddleTenFromNavigator(seedStr) {
 }
 
 function renderHomeAddrChip() {
+  if (typeof ADDR_WORDS === 'undefined') return;
   var chip = document.getElementById('homeAddrChip');
   var settingsAddrEl = document.getElementById('settingsAddr');
   if (!chip && !settingsAddrEl) return;
@@ -1132,6 +1135,9 @@ function openHomeTransfer() {
 }
 
 function getNativeAddr() {
+  if (typeof ADDR_WORDS === 'undefined') {
+    return currentLang === 'en' && typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '';
+  }
   if(currentLang === 'en') return CHAIN_ADDR;
   try {
     var snap = localStorage.getItem('wallet_native_addr');
