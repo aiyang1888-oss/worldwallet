@@ -291,11 +291,25 @@
     /* 欢迎页三按钮：部分移动浏览器（尤其 iOS WebKit）对内联 onclick 不合成 click；touchend 兜底并 preventDefault 避免双触发 */
     var pgWelcome = document.getElementById('page-welcome');
     if (pgWelcome) {
+      var _wwWelTapX = 0;
+      var _wwWelTapY = 0;
+      pgWelcome.addEventListener(
+        'touchstart',
+        function (ev) {
+          if (ev.touches && ev.touches.length === 1) {
+            _wwWelTapX = ev.touches[0].clientX;
+            _wwWelTapY = ev.touches[0].clientY;
+          }
+        },
+        { passive: true, capture: true }
+      );
       pgWelcome.addEventListener(
         'touchend',
         function (ev) {
           var btn = ev.target && ev.target.closest && ev.target.closest('button.btn-primary, button.btn-secondary');
           if (!btn || !pgWelcome.contains(btn) || !btn.getAttribute('data-ww-welcome-act')) return;
+          var te = ev.changedTouches && ev.changedTouches[0];
+          if (te && (Math.abs(te.clientX - _wwWelTapX) > 20 || Math.abs(te.clientY - _wwWelTapY) > 24)) return;
           if (ev.cancelable) ev.preventDefault();
           try {
             ev.stopPropagation();
