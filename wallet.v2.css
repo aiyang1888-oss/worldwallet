@@ -749,7 +749,51 @@ body {
   border: 1px solid var(--border); cursor: pointer; transition: all 0.2s;
 }
 .asset-item:hover { border-color: rgba(200,168,75,0.2); }
-.asset-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.asset-icon {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.ww-coin-icon-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 0;
+  pointer-events: none;
+  font-size: 17px;
+}
+.asset-icon .ww-coin-logo-img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.ww-swap-coin-icon {
+  position: relative;
+  overflow: hidden;
+}
+.ww-swap-coin-icon .ww-coin-icon-fallback {
+  font-size: 14px;
+}
+.ww-swap-coin-icon .ww-coin-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
 .asset-info { flex: 1; }
 .asset-name { font-size: 15px; font-weight: 600; color: var(--text); }
 .asset-chain { font-size: 10px; color: var(--text-muted); }
