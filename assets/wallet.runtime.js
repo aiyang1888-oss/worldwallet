@@ -2474,7 +2474,19 @@ async function broadcastRealTransfer() {
   const coin = transferCoin.id;
   if(!addr || addr.length < 26){showToast('地址格式无效','error');return false;}
   if(coin==='eth' && !addr.match(/^0x[a-fA-F0-9]{40}$/)){showToast('以太坊地址格式错误','error');return false;}
-  if((coin==='usdt'||coin==='trx') && !addr.match(/^T[a-zA-Z0-9]{33}$/)){showToast('TRON地址格式错误','error');return false;}
+  if (coin === 'usdt') {
+    var _nk = transferCoin && transferCoin.usdtNet ? transferCoin.usdtNet : 'tron';
+    if (_nk === 'tron' && !addr.match(/^T[a-zA-Z0-9]{33}$/)) {
+      showToast('TRON 地址格式错误', 'error');
+      return false;
+    }
+    if (_nk !== 'tron' && !addr.match(/^0x[a-fA-F0-9]{40}$/)) {
+      showToast('EVM 收款地址应为 0x…', 'error');
+      return false;
+    }
+  } else if (coin === 'trx' && !addr.match(/^T[a-zA-Z0-9]{33}$/)) {
+    showToast('TRON地址格式错误','error');return false;
+  }
   if (typeof wwTransferWhitelistCheck === 'function' && !wwTransferWhitelistCheck(addr)) {
     showToast('❌ 收款地址未通过「转账白名单」校验。请在 设置 → 转账白名单 中添加该地址或关闭白名单。', 'error');
     return false;
@@ -2492,8 +2504,21 @@ async function broadcastRealTransfer() {
     let txHash = '';
 
     if(coin === 'usdt') {
-      // USDT TRC-20 转账
-      txHash = await sendUSDT_TRC20(addr, amt);
+      var _net = transferCoin && transferCoin.usdtNet ? transferCoin.usdtNet : 'tron';
+      var _meta = typeof wwGetUsdtMetaByKey === 'function' ? wwGetUsdtMetaByKey(_net) : null;
+      if (_meta && _meta.family === 'evm') {
+        if (!REAL_WALLET.privateKey || !REAL_WALLET.ethAddress) {
+          showToast('缺少以太坊私钥', 'error');
+          return false;
+        }
+        if (typeof wwErc20SendTransfer !== 'function') {
+          showToast('ERC20 模块未加载', 'error');
+          return false;
+        }
+        txHash = await wwErc20SendTransfer(addr, amt, REAL_WALLET.privateKey, _meta);
+      } else {
+        txHash = await sendUSDT_TRC20(addr, amt);
+      }
     } else if(coin === 'trx') {
       // TRX 转账：加载 TronWeb 后用 isAddress 校验（优于纯正则）
       await loadTronWeb();
@@ -2514,8 +2539,21 @@ async function broadcastRealTransfer() {
     if(txHash) {
       try { if (typeof wwRecordSpendAfterBroadcast === 'function') wwRecordSpendAfterBroadcast(amt); } catch (_rs) {}
       _safeEl('successTxHash') && ((_safeEl('successTxHash') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* successTxHash fallback */.textContent = txHash);
-      _safeEl('successTxLink') && (_safeEl('successTxLink').href =
-        coin==='eth' ? 'https://etherscan.io/tx/'+txHash : 'https://tronscan.org/#/transaction/'+txHash);
+      var _href = '';
+      if (coin === 'eth') {
+        _href = 'https://etherscan.io/tx/' + txHash;
+      } else if (coin === 'usdt') {
+        var _mn = transferCoin && transferCoin.usdtNet ? transferCoin.usdtNet : 'tron';
+        var _mm = typeof wwGetUsdtMetaByKey === 'function' ? wwGetUsdtMetaByKey(_mn) : null;
+        if (_mm && _mm.family === 'evm' && typeof wwExplorerTxUrlForChain === 'function') {
+          _href = wwExplorerTxUrlForChain(_mm.chainId, txHash);
+        } else {
+          _href = 'https://tronscan.org/#/transaction/' + txHash;
+        }
+      } else {
+        _href = 'https://tronscan.org/#/transaction/' + txHash;
+      }
+      _safeEl('successTxLink') && (_safeEl('successTxLink').href = _href);
       return true;
     }
   } catch(e) {
@@ -2528,25 +2566,29 @@ async function broadcastRealTransfer() {
 }
 
 async function sendUSDT_TRC20(toAddr, amount) {
+  if (typeof wwTrc20SendTransfer === 'function' && typeof WW_USDT_NETWORK_META !== 'undefined' && WW_USDT_NETWORK_META.tron) {
+    return wwTrc20SendTransfer(toAddr, amount, WW_USDT_NETWORK_META.tron);
+  }
   await loadTronWeb();
   const tw = new TronWeb({ fullHost: TRON_GRID });
   tw.setPrivateKey(REAL_WALLET.trxPrivateKey || REAL_WALLET.privateKey);
-  if(!Number.isFinite(amount) || amount <= 0 || amount > 1e8) { throw new Error('金额范围错误'); }
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 1e8) {
+    throw new Error('金额范围错误');
+  }
   const amtSun = Math.floor(amount * 1e6);
-  if(amtSun <= 0 || amtSun > 1e14) { throw new Error('精度错误'); }
+  if (amtSun <= 0 || amtSun > 1e14) {
+    throw new Error('精度错误');
+  }
   const tx = await tw.transactionBuilder.triggerSmartContract(
     USDT_TRC20,
     'transfer(address,uint256)',
-    { feeLimit: (typeof getTronFeeLimitUsdt==='function' ? getTronFeeLimitUsdt() : 20000000) },
-    [
-      { type: 'address', value: toAddr },
-      { type: 'uint256', value: amtSun }
-    ],
-    REAL_WALLET.trxAddress // Base58格式，TronWeb自动处理
+    { feeLimit: typeof getTronFeeLimitUsdt === 'function' ? getTronFeeLimitUsdt() : 20000000 },
+    [{ type: 'address', value: toAddr }, { type: 'uint256', value: amtSun }],
+    REAL_WALLET.trxAddress
   );
   const signed = await tw.trx.sign(tx.transaction);
   const result = await tw.trx.sendRawTransaction(signed);
-  if(result.result) return result.txid;
+  if (result.result) return result.txid;
   throw new Error(result.message || 'USDT 广播失败');
 }
 
@@ -2594,6 +2636,153 @@ async function sendETH(toAddr, amount) {
   await tx.wait(1);
   return tx.hash;
 }
+
+// ── USDT：Tron / EVM 多主网选择、余额同步、approve ─────────────────
+function wwInitTransferUsdtNetworkSelect() {
+  var sel = document.getElementById('transferUsdtNetwork');
+  if (!sel || sel.getAttribute('data-ww-init') === '1') return;
+  var order = ['tron', 'eth', 'polygon', 'bsc'];
+  var html = '';
+  for (var i = 0; i < order.length; i++) {
+    var k = order[i];
+    var m = typeof WW_USDT_NETWORK_META !== 'undefined' ? WW_USDT_NETWORK_META[k] : null;
+    if (!m) continue;
+    html += '<option value="' + k + '">' + m.label + '</option>';
+  }
+  sel.innerHTML = html;
+  var stored = 'tron';
+  try {
+    stored = localStorage.getItem('ww_transfer_usdt_net') || 'tron';
+  } catch (_e) {}
+  if (order.indexOf(stored) >= 0) sel.value = stored;
+  sel.setAttribute('data-ww-init', '1');
+  sel.onchange = function () {
+    try {
+      localStorage.setItem('ww_transfer_usdt_net', sel.value);
+    } catch (_e2) {}
+    wwSyncTransferCoinUsdtNet(sel.value);
+    if (typeof calcTransferFee === 'function') calcTransferFee();
+  };
+}
+
+function wwSyncTransferCoinUsdtNet(key) {
+  if (typeof transferCoin === 'undefined' || !transferCoin || transferCoin.id !== 'usdt') return;
+  var meta = typeof wwGetUsdtMetaByKey === 'function' ? wwGetUsdtMetaByKey(key) : null;
+  if (!meta) return;
+  transferCoin.usdtNet = key;
+  transferCoin.chain = meta.label;
+  transferCoin._usdtMeta = meta;
+  var bal = 0;
+  if (key === 'tron') {
+    try {
+      if (window._wwLastTrxPack && window._wwLastTrxPack.usdtBal != null) {
+        bal = Number(window._wwLastTrxPack.usdtBal) || 0;
+      } else if (typeof COINS !== 'undefined' && COINS.find) {
+        var cu = COINS.find(function (c) {
+          return c && c.id === 'usdt';
+        });
+        bal = cu ? Number(cu.bal) || 0 : 0;
+      }
+    } catch (_b1) {
+      bal = 0;
+    }
+  } else if (window._wwUsdtEvmBals && window._wwUsdtEvmBals[key] != null) {
+    bal = Number(window._wwUsdtEvmBals[key]) || 0;
+  }
+  transferCoin.bal = bal;
+  var lbl = document.getElementById('transferAmountLabel');
+  if (lbl) lbl.textContent = '金额（USDT · ' + meta.label + '）';
+  var rowHint = document.getElementById('transferUsdtNetHint');
+  if (rowHint) {
+    if (meta.family === 'evm') {
+      rowHint.style.display = 'block';
+      rowHint.textContent =
+        'ERC-20 转账需消耗 ' +
+        (meta.nativeSymbol || 'ETH') +
+        ' 作为 Gas；请确保该主网地址内有足够 ' +
+        (meta.nativeSymbol || 'ETH') +
+        '。';
+    } else {
+      rowHint.style.display = 'none';
+      rowHint.textContent = '';
+    }
+  }
+}
+
+function wwInitTransferUsdtNetworkUi() {
+  if (typeof transferCoin === 'undefined' || !transferCoin || transferCoin.id !== 'usdt') return;
+  wwInitTransferUsdtNetworkSelect();
+  var sel = document.getElementById('transferUsdtNetwork');
+  var k = sel && sel.value ? sel.value : 'tron';
+  try {
+    var st = localStorage.getItem('ww_transfer_usdt_net');
+    if (st && sel) sel.value = st;
+    k = sel && sel.value ? sel.value : k;
+  } catch (_e) {}
+  wwSyncTransferCoinUsdtNet(k);
+}
+
+async function wwDoTransferApprove() {
+  if (!REAL_WALLET) {
+    showToast('请先导入钱包', 'warning');
+    return;
+  }
+  if (typeof transferCoin === 'undefined' || !transferCoin || transferCoin.id !== 'usdt') {
+    showToast('请在资产页选择 USDT 后进入转账', 'info');
+    return;
+  }
+  var meta =
+    transferCoin._usdtMeta ||
+    (typeof wwGetUsdtMetaByKey === 'function' ? wwGetUsdtMetaByKey(transferCoin.usdtNet || 'tron') : null);
+  if (!meta) return;
+  var spInp = document.getElementById('transferApproveSpender');
+  var amInp = document.getElementById('transferApproveAmount');
+  var spender = spInp ? String(spInp.value || '').trim() : '';
+  var amtRaw = amInp ? String(amInp.value || '').trim() : '';
+  if (!spender) {
+    showToast('请填写授权对象地址', 'error');
+    return;
+  }
+  if (meta.family === 'evm') {
+    if (!spender.match(/^0x[a-fA-F0-9]{40}$/)) {
+      showToast('EVM 授权对象应为 0x 地址', 'error');
+      return;
+    }
+    if (!REAL_WALLET.privateKey) {
+      showToast('缺少以太坊私钥', 'error');
+      return;
+    }
+    try {
+      showToast('正在广播授权…', 'info', 2000);
+      await wwErc20SendApprove(
+        spender,
+        /^(max)$/i.test(amtRaw) || amtRaw === '' ? 'max' : amtRaw,
+        REAL_WALLET.privateKey,
+        meta
+      );
+      showToast('授权已上链', 'success');
+      if (typeof loadBalances === 'function') loadBalances();
+    } catch (e) {
+      showToast('授权失败：' + (e && e.message ? e.message : e), 'error');
+    }
+  } else {
+    if (!spender.match(/^T[1-9A-HJ-NP-Za-km-z]{33}$/)) {
+      showToast('请填写 Tron 合约地址（T…）', 'error');
+      return;
+    }
+    try {
+      showToast('正在广播授权…', 'info', 2000);
+      await wwTrc20SendApprove(spender, /^(max)$/i.test(amtRaw) || amtRaw === '' ? 'max' : amtRaw, meta);
+      showToast('授权已上链', 'success');
+      if (typeof loadBalances === 'function') loadBalances();
+    } catch (e2) {
+      showToast('授权失败：' + (e2 && e2.message ? e2.message : e2), 'error');
+    }
+  }
+}
+try {
+  window.wwDoTransferApprove = wwDoTransferApprove;
+} catch (_wd) {}
 
 // ══ 转账系统 ══
 /* let transferCoin: wallet.ui.js */
