@@ -4907,7 +4907,7 @@ function renderSwapUI() {
   (_safeEl('swapToName') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToName fallback */.textContent=t.name;
   (_safeEl('swapToChain') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapToChain fallback */.textContent=t.chain;
   const rateRaw = swapFrom.price / swapTo.price;
-  const rate = t.id === 'trx' ? rateRaw.toFixed(2) : rateRaw.toFixed(swapTo.price > 100 ? 6 : 4);
+  const rate = t.id === 'trx' ? rateRaw.toFixed(2) : rateRaw.toFixed(t.price > 100 ? 6 : 4);
   (_safeEl('swapRate') || {textContent:'',style:{},classList:{add:()=>{},remove:()=>{}}}) /* swapRate fallback */.textContent=`1 ${f.name} ≈ ${rate} ${t.name}`;
 }
 
