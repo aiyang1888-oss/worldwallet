@@ -617,6 +617,13 @@ try {
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof wwGoConvertMnemonicFromSettings==='function')wwGoConvertMnemonicFromSettings();else if(typeof goTo==='function')goTo('page-convert-mnemonic');">
+            <span class="settings-icon">🔁</span>
+            <span class="settings-label">转换助记词</span>
+            <span class="settings-value" style="color:var(--text-muted)">英↔中文词表</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
           <div class="settings-row" onclick="if(typeof showToast==='function')showToast('WorldToken v'+(typeof WW_APP_VERSION!=='undefined'?WW_APP_VERSION:'')+' · worldtoken.cc','info',3200)">
             <span class="settings-icon">ℹ️</span>
             <span class="settings-label">版本号</span>
