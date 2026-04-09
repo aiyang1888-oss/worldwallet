@@ -2385,9 +2385,39 @@ function wwClearAddressBookDraft() {
 function renderAddressBookSettingsList() {
   const box = document.getElementById('addrBookSettingsList');
   if (!box) return;
-  const list = getTransferContacts();
+  const searchEl = document.getElementById('addrBookListSearch');
+  const q = searchEl ? String(searchEl.value || '').trim().toLowerCase() : '';
+  const all = getTransferContacts();
+  const total = all.length;
+  const countEl = document.getElementById('addrBookListCount');
+  if (countEl) {
+    if (!total) {
+      countEl.textContent = '共 0 条';
+    } else if (q) {
+      const n = all.filter(function (c) {
+        var nick = (c.nick || '').toLowerCase();
+        var addr = (c.addr || '').toLowerCase();
+        return nick.indexOf(q) >= 0 || addr.indexOf(q) >= 0;
+      }).length;
+      countEl.textContent = '显示 ' + n + ' / ' + total + ' 条';
+    } else {
+      countEl.textContent = '共 ' + total + ' 条';
+    }
+  }
+  let list = all;
+  if (q) {
+    list = all.filter(function (c) {
+      var nick = (c.nick || '').toLowerCase();
+      var addr = (c.addr || '').toLowerCase();
+      return nick.indexOf(q) >= 0 || addr.indexOf(q) >= 0;
+    });
+  }
+  if (!total) {
+    box.innerHTML = '<div class="addr-book-settings-empty">暂无条目，请在下方「添加或编辑」中保存</div>';
+    return;
+  }
   if (!list.length) {
-    box.innerHTML = '<div class="addr-book-settings-empty">暂无条目，请在下方添加常用收款地址</div>';
+    box.innerHTML = '<div class="addr-book-settings-empty">无匹配条目，请调整搜索关键词</div>';
     return;
   }
   box.innerHTML = '';
