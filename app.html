@@ -616,7 +616,7 @@ body {
       <!-- 按钮区 -->
       <div style="width:100%;flex-shrink:0;margin-top:40px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%">
-          <button class="btn-primary" onclick="goTo('page-create')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
+          <button class="btn-primary" onclick="(async function(btn){btn.disabled=true;try{const w=await createRealWallet();if(w&&currentLang==='en'){updateRealAddr();}if(w)goTo('page-key');}finally{btn.disabled=false;}})(this)" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">🚀 创建新钱包</button>
           <button class="btn-secondary" id="btnContinue" style="display:none;padding:14px 0;font-size:15px;width:72%;max-width:260px;margin-top:0" onclick="updateAddr();document.getElementById('tabBar').style.display='flex';setTimeout(loadBalances,500);goTo('page-home')">→ 继续使用钱包</button>
           <button class="btn-secondary" onclick="goTo('page-import')" style="padding:14px 0;font-size:15px;width:72%;max-width:260px">📥 导入已有钱包</button>
         </div>
