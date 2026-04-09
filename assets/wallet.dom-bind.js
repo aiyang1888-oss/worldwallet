@@ -9,14 +9,14 @@
         ret.catch(function (err) {
           try {
             if (typeof safeLog === 'function') safeLog('[wwCall async] ' + name, err);
-          } catch (_sl) { wwQuiet(_sl); }
+          } catch (_sl) {}
         });
       }
       return ret;
     } catch (_e) {
       try {
         if (typeof safeLog === 'function') safeLog('[wwCall] ' + name, _e);
-      } catch (_s) { wwQuiet(_s); }
+      } catch (_s) {}
     }
     return undefined;
   }
@@ -117,7 +117,7 @@
       var opts0 = {};
       try {
         opts0 = JSON.parse(raw);
-      } catch (_e) { wwQuiet(_e); }
+      } catch (_e) {}
       if (page0 && typeof window.goTo === 'function') window.goTo(page0, opts0);
       ev.preventDefault();
       return;
@@ -166,7 +166,7 @@
               localStorage.removeItem('ww_pin');
               localStorage.removeItem('ww_hongbaos');
             }
-          } catch (_ls) { wwQuiet(_ls); }
+          } catch (_ls) {}
           if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
           if (typeof window.goTo === 'function') window.goTo('page-welcome');
           wwCall('showToast', '钱包已删除', 'success');
@@ -175,8 +175,7 @@
         return;
       }
       if (fn === 'swapHistoryToast' || fn === 'wwSwapRecordsToast') {
-        if (typeof window.wwSwapShowRecords === 'function') window.wwSwapShowRecords();
-        else if (typeof window.showToast === 'function') window.showToast('暂无兑换记录', 'info');
+        if (typeof window.showToast === 'function') window.showToast('兑换在 SunSwap 完成，本页不保存历史记录', 'info');
         ev.preventDefault();
         return;
       }
@@ -216,7 +215,6 @@
     bindKeydownEnter('pinVerifyInput', 'pinVerifyEnterWallet');
 
     bindSelect('keyPageLang', 'switchLang');
-    bindSelect('importPageLang', 'switchLang');
     bindSelect('mnemonicLength', 'changeMnemonicLength');
     bindSelect('qrChainSelect', 'updateQRCode');
 
@@ -226,6 +224,7 @@
     bindInput('qrReceiveAmount', 'updateQRCode', false);
     bindInput('transferAddr', 'detectAddrType', false);
     bindInput('transferAmount', 'calcTransferFee', false);
+    bindInput('addrBookListSearch', 'renderAddressBookSettingsList', false);
     bindInput('swapAmountIn', 'calcSwap', false);
     bindInput('importPaste', 'syncImportGrid', true);
 
@@ -268,24 +267,66 @@
           try {
             if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
             if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
-          } catch (_pe) { wwQuiet(_pe); }
+          } catch (_pe) {}
           try {
             if (typeof window.wwSkipVerifyToHome === 'function') {
               window.wwSkipVerifyToHome();
               return;
             }
-          } catch (_sk) { wwQuiet(_sk); }
+          } catch (_sk) {}
           try {
             if (typeof hideWalletLoading === 'function') hideWalletLoading();
-          } catch (_h) { wwQuiet(_h); }
+          } catch (_h) {}
           try {
             if (typeof window.goTo === 'function') window.goTo('page-home', { forceHome: true, instant: true });
-          } catch (_g) { wwQuiet(_g); }
+          } catch (_g) {}
           try {
             if (typeof window.goTab === 'function') setTimeout(function () { window.goTab('tab-home'); }, 0);
-          } catch (_gt) { wwQuiet(_gt); }
+          } catch (_gt) {}
         },
         true
+      );
+    }
+
+    /* 欢迎页三按钮：部分移动浏览器（尤其 iOS WebKit）对内联 onclick 不合成 click；touchend 兜底并 preventDefault 避免双触发 */
+    var pgWelcome = document.getElementById('page-welcome');
+    if (pgWelcome) {
+      var _wwWelTapX = 0;
+      var _wwWelTapY = 0;
+      pgWelcome.addEventListener(
+        'touchstart',
+        function (ev) {
+          if (ev.touches && ev.touches.length === 1) {
+            _wwWelTapX = ev.touches[0].clientX;
+            _wwWelTapY = ev.touches[0].clientY;
+          }
+        },
+        { passive: true, capture: true }
+      );
+      pgWelcome.addEventListener(
+        'touchend',
+        function (ev) {
+          var btn = ev.target && ev.target.closest && ev.target.closest('button.btn-primary, button.btn-secondary');
+          if (!btn || !pgWelcome.contains(btn) || !btn.getAttribute('data-ww-welcome-act')) return;
+          var te = ev.changedTouches && ev.changedTouches[0];
+          if (te && (Math.abs(te.clientX - _wwWelTapX) > 20 || Math.abs(te.clientY - _wwWelTapY) > 24)) return;
+          if (ev.cancelable) ev.preventDefault();
+          try {
+            ev.stopPropagation();
+          } catch (_sp) {}
+          try {
+            if (typeof tapHaptic === 'function') tapHaptic(12);
+          } catch (_th) {}
+          var act = btn.getAttribute('data-ww-welcome-act');
+          if (act === 'create') {
+            if (typeof window.createNewWallet === 'function') void window.createNewWallet();
+          } else if (act === 'pin') {
+            if (typeof window.goTo === 'function') window.goTo('page-password-restore');
+          } else if (act === 'import') {
+            if (typeof window.goTo === 'function') window.goTo('page-import');
+          }
+        },
+        { capture: true, passive: false }
       );
     }
 
