@@ -26,6 +26,27 @@ function parseUsdFromBalanceTxt(txt) {
   var n = parseFloat(String(txt).replace(/[$,\s]/g, ''));
   return isFinite(n) ? n : 0;
 }
+
+/** 首页链上/行情请求单路超时（ms）；并行时墙钟≈最慢一路，目标整体 <1s */
+var WW_HOME_NET_MS = 480;
+var WW_HOME_NET_MS_TRX = 580;
+var WW_HOME_NET_MS_BTC = 360;
+
+/**
+ * Promise 在 ms 内未完成则返回 fallback（用于避免 TronGrid / mempool 慢请求拖满首屏）。
+ */
+function wwRaceMs(promiseOrThenable, ms, fallback) {
+  return Promise.race([
+    Promise.resolve(promiseOrThenable).catch(function () {
+      return fallback;
+    }),
+    new Promise(function (resolve) {
+      setTimeout(function () {
+        resolve(fallback);
+      }, ms);
+    })
+  ]);
+}
 function cancelHomeBalanceAnim() {
   if (window._homeBalanceAnimRaf) {
     cancelAnimationFrame(window._homeBalanceAnimRaf);
@@ -37,7 +58,7 @@ function animateHomeUsdTo(targetUsd, fmtUsdFn) {
   var el = document.getElementById('totalBalanceDisplay');
   var from = parseUsdFromBalanceTxt(el ? el.textContent : '');
   if (!isFinite(from)) from = 0;
-  var dur = 560;
+  var dur = 160;
   var t0 = null;
   function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
   function tick(now) {
@@ -6164,8 +6185,14 @@ function drawHomeBalanceChart(totalUsd) {
   if(foot) foot.innerHTML = '<span>' + days[0] + '</span><span>' + days[6] + '</span>';
 }
 
+function wwPricesFallbackFromCache() {
+  if (priceCache) return priceCache;
+  return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
+}
+
 async function getPrices() {
-  if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
+  /* 延长缓存：减少冷启动时 CoinGecko 往返 */
+  if (priceCache && Date.now() - priceCacheTime < 15 * 60 * 1000) return priceCache;
   try {
     /* 一次请求含 24h 涨跌，供首页同步（避免 loadBalances 再打第二遍 CoinGecko） */
     const res = await fetch(
@@ -6373,14 +6400,37 @@ async function loadBalances() {
     const ethAddr = REAL_WALLET.ethAddress;
     const btcAddr = REAL_WALLET.btcAddress || '';
 
-    /* 价格 + 各链余额 + 能量卡片：并行，总耗时≈最慢一路而非相加 */
-    const [prices, trxPack, ethBal, btcBal] = await Promise.all([
-      getPrices(),
-      wwFetchTrxAccountBalancesForHome(trxAddr),
-      wwFetchEthBalanceForHome(ethAddr),
-      wwFetchBtcBalanceForHome(btcAddr),
-      typeof loadTrxResource === 'function' ? loadTrxResource() : Promise.resolve()
+    /* 价格 + 三链余额并行 + 单路超时；墙钟≈最慢一路，目标 <1s。能量条/次要 UI 延后，避免抢带宽 */
+    const [pricesRaw, trxRaw, ethRaw, btcRaw] = await Promise.all([
+      wwRaceMs(getPrices(), WW_HOME_NET_MS, wwPricesFallbackFromCache()),
+      wwRaceMs(wwFetchTrxAccountBalancesForHome(trxAddr), WW_HOME_NET_MS_TRX, null),
+      wwRaceMs(wwFetchEthBalanceForHome(ethAddr), WW_HOME_NET_MS, null),
+      wwRaceMs(wwFetchBtcBalanceForHome(btcAddr), WW_HOME_NET_MS_BTC, null)
     ]);
+    const prices = pricesRaw || wwPricesFallbackFromCache();
+    const trxPack =
+      trxRaw === null ? window._wwLastTrxPack || { trxBal: 0, usdtBal: 0 } : trxRaw;
+    let ethBal = ethRaw === null ? (typeof window._wwLastKnownEthBal === 'number' ? window._wwLastKnownEthBal : 0) : ethRaw;
+    let btcBal = btcRaw === null ? (typeof window._wwLastKnownBtcBal === 'number' ? window._wwLastKnownBtcBal : 0) : btcRaw;
+    try {
+      window._wwLastTrxPack = { trxBal: trxPack.trxBal, usdtBal: trxPack.usdtBal };
+      window._wwLastKnownEthBal = ethBal;
+      window._wwLastKnownBtcBal = btcBal;
+    } catch (_k) {}
+    if (btcRaw === null && btcAddr) {
+      setTimeout(function () {
+        wwFetchBtcBalanceForHome(btcAddr).then(function (b) {
+          try {
+            window._wwLastKnownBtcBal = b;
+            var fmt = function (n) {
+              return n >= 1 ? n.toLocaleString('en', { maximumFractionDigits: 2 }) : n.toFixed(4);
+            };
+            var el = document.getElementById('balBtc');
+            if (el) el.textContent = fmt(b);
+          } catch (_b2) {}
+        });
+      }, 0);
+    }
 
     try {
       window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
@@ -6438,17 +6488,19 @@ async function loadBalances() {
     animateHomeUsdTo(total, fmtUsd);
     window._lastTotalUsd = total;
     drawHomeBalanceChart(total);
-    if(typeof drawPortfolioPieChart==='function') drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd);
-    if(typeof refreshHomePriceTicker==='function') refreshHomePriceTicker();
     // 动态汇率（从价格接口获取，fallback 7.2）
-  const cnyRate = window._cnyRate || 7.2;
-  set('totalBalanceSub', '≈ ' + (total * cnyRate).toFixed(0) + ' CNY · 实时价格');
-  // 尝试获取实时汇率
-  if(!window._cnyRate) {
-    fetch('https://api.exchangerate-api.com/v4/latest/USD')
-      .then(r=>r.json()).then(d=>{ window._cnyRate = d.rates?.CNY || 7.2; })
-      .catch(()=>{});
-  }
+    const cnyRate = window._cnyRate || 7.2;
+    set('totalBalanceSub', '≈ ' + (total * cnyRate).toFixed(0) + ' CNY · 实时价格');
+    if (!window._cnyRate) {
+      fetch('https://api.exchangerate-api.com/v4/latest/USD')
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (d) {
+          window._cnyRate = d.rates && d.rates.CNY ? d.rates.CNY : 7.2;
+        })
+        .catch(function () {});
+    }
 
     // ── 同步 COINS 余额（兑换页使用）──
     COINS.forEach(coin => {
@@ -6457,7 +6509,25 @@ async function loadBalances() {
       else if(coin.id === 'eth') { coin.bal = ethBal; coin.price = prices.eth || 2500; }
       else if(coin.id === 'btc') { coin.bal = btcBal; coin.price = prices.btc || 60000; }
     });
-    renderSwapUI(); calcSwap();
+    /* 饼图/行情条/兑换 UI 延后一帧，避免阻塞首屏 commit */
+    var _u = usdtUsd, _t = trxUsd, _e = ethUsd, _b = btcUsd;
+    requestAnimationFrame(function () {
+      try {
+        if (typeof drawPortfolioPieChart === 'function') drawPortfolioPieChart(_u, _t, _e, _b);
+      } catch (_p) {}
+      try {
+        if (typeof refreshHomePriceTicker === 'function') refreshHomePriceTicker();
+      } catch (_r) {}
+      try {
+        renderSwapUI();
+        calcSwap();
+      } catch (_s) {}
+    });
+    setTimeout(function () {
+      try {
+        if (typeof loadTrxResource === 'function') loadTrxResource();
+      } catch (_tr) {}
+    }, 0);
 
     try {
       var chgU = document.getElementById('chgUsdt');
