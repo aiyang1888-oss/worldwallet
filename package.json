@@ -32,6 +32,7 @@
   "devDependencies": {
     "acorn": "^8.16.0",
     "acorn-walk": "^8.3.5",
+    "clean-css": "^5.3.3",
     "terser": "^5.46.1"
   }
 }

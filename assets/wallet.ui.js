@@ -2309,6 +2309,15 @@ function wwGetTransferRecipientValidation(addr, coinId) {
     if (!/^0x[a-fA-F0-9]{40}$/.test(a)) {
       return { ok: false, message: WW_MSG_ADDR_WRONG };
     }
+    try {
+      if (typeof wwValidateEvmAddressChecksum === 'function') {
+        wwValidateEvmAddressChecksum(a);
+      } else if (typeof ethers !== 'undefined' && ethers.utils && typeof ethers.utils.getAddress === 'function') {
+        ethers.utils.getAddress(a);
+      }
+    } catch (eChk) {
+      return { ok: false, message: (eChk && eChk.message) || WW_MSG_ADDR_WRONG };
+    }
     if (typeof wwIsTransferToSelfForCoin === 'function' && wwIsTransferToSelfForCoin(a, id)) {
       return { ok: false, message: WW_MSG_TRANSFER_SELF };
     }
@@ -2338,6 +2347,15 @@ function wwGetTransferRecipientValidation(addr, coinId) {
       }
       if (!/^0x[a-fA-F0-9]{40}$/.test(a)) {
         return { ok: false, message: WW_MSG_ADDR_WRONG };
+      }
+      try {
+        if (typeof wwValidateEvmAddressChecksum === 'function') {
+          wwValidateEvmAddressChecksum(a);
+        } else if (typeof ethers !== 'undefined' && ethers.utils && typeof ethers.utils.getAddress === 'function') {
+          ethers.utils.getAddress(a);
+        }
+      } catch (eChk2) {
+        return { ok: false, message: (eChk2 && eChk2.message) || WW_MSG_ADDR_WRONG };
       }
       if (typeof wwIsTransferToSelfForCoin === 'function' && wwIsTransferToSelfForCoin(a, id)) {
         return { ok: false, message: WW_MSG_TRANSFER_SELF };
@@ -4295,7 +4313,10 @@ document.getElementById = function(id) {
 // _safeEl moved to top of script
 
 // ── Toast 提示系统（替换 alert）──────────────────────────────
-/** 将 Error / 字符串规范为可读提示（链上 / 网络 / 用户输入） */
+/**
+ * 将 Error / 字符串规范为可读提示（链上 / 网络 / 用户输入）。
+ * 另见 wallet.runtime.js 顶部 `wwFmtUserErr`：在 runtime 内优先委托本函数。
+ */
 function wwFmtUserError(err) {
   if (err == null) return '未知错误';
   if (typeof err === 'string') return err;
@@ -4309,6 +4330,7 @@ function wwFmtUserError(err) {
   return m;
 }
 
+/** 结构化调试日志（可选）；swap/转账等路径可调用以便排查 */
 function wwLog(tag, detail) {
   try {
     if (typeof console !== 'undefined' && console.log) {
