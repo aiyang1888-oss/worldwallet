@@ -296,18 +296,7 @@ function openWordEditor(idx) {
 // 每语言 2048 词，索引对应 BIP39，支持双向转换
 // ═══════════════════════════════════════════════════════
 // WT_WORDLISTS loaded from wordlists.js
-
-
-// 英文词 → 索引（BIP39标准索引）
-const EN_WORD_INDEX = {};
-WT_WORDLISTS.en.forEach((w, i) => EN_WORD_INDEX[w] = i);
-
-// 各语言词 → 索引
-const WT_LANG_INDEX = {};
-Object.keys(WT_WORDLISTS).forEach(lang => {
-  WT_LANG_INDEX[lang] = {};
-  WT_WORDLISTS[lang].forEach((w, i) => WT_LANG_INDEX[lang][w] = i);
-});
+// EN_WORD_INDEX / WT_LANG_INDEX：由 wallet.ui.js 初始化
 
 /**
  * 英文助记词 → 目标语言助记词
