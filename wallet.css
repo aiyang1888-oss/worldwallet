@@ -1111,6 +1111,7 @@ body {
 #totpSetupOverlay:not(.show),
 #pinSetupOverlay:not(.show),
 #wanYuCustomizeOverlay:not(.show),
+#wwSystemConfirmOverlay:not(.show),
 #systemNotifOverlay:not(.show),
 #qrOverlay:not(.show),
 #transferConfirmOverlay:not(.show) {
