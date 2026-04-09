@@ -141,7 +141,7 @@
       return;
     }
 
-    var el = ev.target.closest(
+    var el = _tg && _tg.closest && _tg.closest(
       '[data-ww-go],[data-ww-go-tab],[data-ww-go-keyback],[data-ww-go-import-back],[data-ww-go-with-opts],[data-ww-fn],[data-ww-copy-from],[data-ww-load-trx]'
     );
     if (!el) return;
