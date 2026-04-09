@@ -3676,6 +3676,24 @@ try {
 } catch (_wn) {}
 
 /**
+ * 「暂时忽略验证」：先提升 TEMP→REAL 并落盘，再走与验证通过相同的首页路由（dom-bind / 线上入口依赖此函数）。
+ */
+function wwSkipVerifyToHome() {
+  try {
+    if (typeof wwPromoteTempWalletForSkipVerify === 'function') wwPromoteTempWalletForSkipVerify();
+  } catch (_p) {}
+  try {
+    if (typeof hideWalletLoading === 'function') hideWalletLoading();
+  } catch (_h) {}
+  if (typeof wwNavigateHomeAfterCreateFlow === 'function') {
+    wwNavigateHomeAfterCreateFlow({ mnemonicVerified: false, pageId: 'page-home' });
+  }
+}
+try {
+  window.wwSkipVerifyToHome = wwSkipVerifyToHome;
+} catch (_wsk) {}
+
+/**
  * 验证通过后的统一导航（内部走 wwNavigateHomeAfterCreateFlow）。
  */
 function wwAfterMnemonicVerifiedNavigate(pageId) {

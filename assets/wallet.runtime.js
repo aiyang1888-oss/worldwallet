@@ -1388,7 +1388,18 @@ function closeTotpUnlock() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  if (pageId === 'page-home' && typeof wwWalletHasAnyChainAddress === 'function') {
+  /* 与 wallet.ui.js 一致：forceHome 时不改道；未验证前 TEMP 有地址也应能进首页（runtime 此前只查 REAL 会把「暂时忽略验证」打回欢迎页） */
+  if (
+    pageId === 'page-home' &&
+    !opts.forceHome &&
+    typeof wwWalletHasAnyChainAddressIncludingTemp === 'function'
+  ) {
+    if (!wwWalletHasAnyChainAddressIncludingTemp()) pageId = 'page-welcome';
+  } else if (
+    pageId === 'page-home' &&
+    !opts.forceHome &&
+    typeof wwWalletHasAnyChainAddress === 'function'
+  ) {
     var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
     if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
   }
