@@ -339,11 +339,16 @@ async function createWallet(forcedWordCount) {
 
 async function createNewWallet() {
   try { window._wwInFirstRun = true; } catch (_fr0) {}
+  try {
+    window._wwTempWalletByWordCount = {};
+  } catch (_c0) {}
   showWalletLoading();
   try {
     var w = await createWallet(12);
     window.TEMP_WALLET = w;
-    goTo('page-key', { skipKeyRegen: true });
+    if (typeof wwPutTempWalletInWordCountCache === 'function') wwPutTempWalletInWordCountCache(w);
+    if (typeof syncKeyPageLangSelect === 'function') syncKeyPageLangSelect();
+    if (typeof startVerify === 'function') startVerify();
   } catch (e) {
     if (typeof showToast === 'function')
       showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
