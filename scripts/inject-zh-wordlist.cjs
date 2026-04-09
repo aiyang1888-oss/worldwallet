@@ -41,12 +41,7 @@ for (; i < s.length; i++) {
     }
   }
 }
-const enMarker = '\n  en:';
-const enPos = s.indexOf(enMarker, arrStart);
-if (enPos === -1 || enPos < i) {
-  console.error('[inject-zh-wordlist] expected', JSON.stringify(enMarker), 'after zh array');
-  process.exit(1);
-}
-const newS = s.slice(0, keyStart) + 'zh: ' + JSON.stringify(zh) + ',' + s.slice(enPos);
+/** `wordlists.js` 中 `en` 可在 `zh` 前或后；仅替换 `zh: [...]` 整段 */
+const newS = s.slice(0, keyStart) + 'zh: ' + JSON.stringify(zh) + s.slice(i);
 fs.writeFileSync(wlPath, newS, 'utf8');
 console.log('[inject-zh-wordlist] OK — WT_WORDLISTS.zh ← zh-cn.json (2048)');
