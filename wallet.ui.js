@@ -759,7 +759,7 @@ var WW_PAGE_SEO = {
   'page-swoosh': { title: '处理中 — WorldToken', description: '交易正在提交。' },
   'page-transfer-success': { title: '转账成功 — WorldToken', description: '转账已提交，可查看摘要与分享。' },
   'page-settings': { title: '设置 — WorldToken', description: 'PIN、两步验证、备份与隐私相关选项。' },
-  'page-convert-mnemonic': { title: '转换助记词 — WorldToken', description: '同一钱包英文 BIP39 与中文词表对照，便于与其他钱包互导入。' },
+  'page-convert-mnemonic': { title: '转换助记词 — WorldToken', description: '选择助记词语言，按 BIP39 索引映射显示对应词表，便于与其他钱包互导入。' },
   'page-swap': { title: '兑换 — WorldToken', description: 'USDT（TRC-20）兑换为 TRX，跳转 SunSwap。' },
   'page-swap-records': { title: '兑换记录 — WorldToken', description: '历史兑换与路由记录。' },
   'page-password-restore': { title: 'PIN 解锁 — WorldToken', description: '使用本机 PIN 解锁并进入钱包。' },
