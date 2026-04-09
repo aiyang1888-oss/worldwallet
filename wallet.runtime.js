@@ -1642,6 +1642,13 @@ function goTo(pageId, opts) {
       p.style.display = '';
     });
   } catch (_wwPgAct) { wwQuiet(_wwPgAct); }
+  try {
+    if (typeof hideWalletLoading === 'function') {
+      if (pageId === 'page-welcome' || pageId === 'page-import' || pageId === 'page-password-restore') {
+        hideWalletLoading();
+      }
+    }
+  } catch (_hwlGo) { wwQuiet(_hwlGo); }
   var _tbGo = document.getElementById('tabBar');
   if (_tbGo) {
     if (pageId === 'page-home') {

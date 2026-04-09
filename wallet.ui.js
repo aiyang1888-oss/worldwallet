@@ -4990,6 +4990,9 @@ try {
       w.querySelectorAll('button[data-ww-welcome-act]').forEach(function (b) {
         b.style.setProperty('pointer-events', 'auto', 'important');
       });
+      try {
+        if (typeof hideWalletLoading === 'function') hideWalletLoading();
+      } catch (_hwl) {}
     } catch (_e3) {
       wwQuiet(_e3);
     }
