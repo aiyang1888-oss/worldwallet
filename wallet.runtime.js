@@ -5070,6 +5070,10 @@ function openDex() {
 
   try { sessionStorage.setItem('ww_swap_pending', '1'); } catch (_s) {}
 
+  var recip = '';
+  try { recip = String(window._wwSwapRecipientAddr || '').trim(); } catch (_r) {}
+  try { delete window._wwSwapRecipientAddr; } catch (_r2) {}
+
   const isTron = ['trx','usdt'].includes(swapFrom.id) && ['trx','usdt'].includes(swapTo.id);
   const COIN_ADDRS = {
     trx: 'T9yD14Nj9j7xAB4dbGeiX9h8unkKHxuWwb', // TRX
@@ -5078,16 +5082,23 @@ function openDex() {
   };
 
   if(isTron) {
-    // SunSwap (Tron DEX)
+    // SunSwap (Tron DEX)；recipient 由界面传入时在 URL 中携带（若前端忽略则不影响打开）
     const fromAddr = COIN_ADDRS[swapFrom.id] || '';
     const toAddr = COIN_ADDRS[swapTo.id] || '';
-    window.open(`https://sunswap.com/#/v3?inputCurrency=${fromAddr}&outputCurrency=${toAddr}`, '_blank');
+    let url = `https://sunswap.com/#/v3?inputCurrency=${fromAddr}&outputCurrency=${toAddr}`;
+    if (recip) url += '&recipient=' + encodeURIComponent(recip);
+    window.open(url, '_blank');
+    if (recip && typeof showToast === 'function') {
+      showToast('已打开 SunSwap，请在页面确认收款地址为 ' + recip.slice(0, 6) + '…' + recip.slice(-4), 'info', 3800);
+    }
   } else {
     // Uniswap
     const UNISWAP_TOKENS = { usdt:'0xdAC17F958D2ee523a2206206994597C13D831ec7', eth:'ETH', btc:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' };
     const inToken = UNISWAP_TOKENS[swapFrom.id] || swapFrom.id.toUpperCase();
     const outToken = UNISWAP_TOKENS[swapTo.id] || swapTo.id.toUpperCase();
-    window.open(`https://app.uniswap.org/swap?inputCurrency=${inToken}&outputCurrency=${outToken}`, '_blank');
+    let u = `https://app.uniswap.org/swap?inputCurrency=${inToken}&outputCurrency=${outToken}`;
+    if (recip) u += '&recipient=' + encodeURIComponent(recip);
+    window.open(u, '_blank');
   }
 }
 
