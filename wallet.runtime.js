@@ -3884,7 +3884,7 @@ function drawPortfolioPieChart(trcUsdtUsd, ercUsdtUsd, trxUsd, ethUsd, btcUsd) {
   const leg = document.getElementById('portfolioPieLegend');
   if(!card || !c || !leg) return;
   const parts = [
-    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
+    { v: Number(trcUsdtUsd) || 0, c: '#26a17b', l: 'USDT (TRC-20)' },
     { v: Number(ercUsdtUsd) || 0, c: '#3d9a72', l: 'USDT (ERC-20)' },
     { v: Number(trxUsd) || 0, c: '#ff4d4d', l: 'TRX' },
     { v: Number(ethUsd) || 0, c: '#627eea', l: 'ETH' },
@@ -5868,7 +5868,7 @@ function wwUsdFromTxRow(tx) {
   try { amtN = Math.abs(parseFloat(String(tx.amount || '0').replace(/[^0-9.+-]/g, ''))); } catch (e) { amtN = 0; }
   var cg = window._wwLastCgUsd || {};
   var c = String(tx.coin || '').toUpperCase();
-  if (c === 'USDT' || c === 'TRC USDT') return amtN * (parseFloat(cg.usdt) || 1);
+  if (c === 'USDT' || c === 'TRC USDT' || c === 'USDT (TRC-20)') return amtN * (parseFloat(cg.usdt) || 1);
   if (c === 'TRX') return amtN * (parseFloat(cg.trx) || 0.12);
   if (c === 'ETH') return amtN * (parseFloat(cg.eth) || 2000);
   if (c === 'BTC') return amtN * (parseFloat(cg.btc) || 60000);
