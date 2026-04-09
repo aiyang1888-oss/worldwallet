@@ -759,7 +759,7 @@ var WW_PAGE_SEO = {
   'page-swoosh': { title: '处理中 — WorldToken', description: '交易正在提交。' },
   'page-transfer-success': { title: '转账成功 — WorldToken', description: '转账已提交，可查看摘要与分享。' },
   'page-settings': { title: '设置 — WorldToken', description: 'PIN、两步验证、备份与隐私相关选项。' },
-  'page-convert-mnemonic': { title: '转换助记词 — WorldToken', description: '同一钱包英文 BIP39 与中文词表对照，便于与其他钱包互导入。' },
+  'page-convert-mnemonic': { title: '转换助记词 — WorldToken', description: '选择助记词语言，按 BIP39 索引映射显示对应词表，便于与其他钱包互导入。' },
   'page-swap': { title: '兑换 — WorldToken', description: 'USDT（TRC-20）兑换为 TRX，跳转 SunSwap。' },
   'page-swap-records': { title: '兑换记录 — WorldToken', description: '历史兑换与路由记录。' },
   'page-password-restore': { title: 'PIN 解锁 — WorldToken', description: '使用本机 PIN 解锁并进入钱包。' },
@@ -3198,13 +3198,126 @@ try {
   window.wwGoConvertMnemonicFromSettings = wwGoConvertMnemonicFromSettings;
 } catch (_wGcm) {}
 
-/** 设置 → 转换助记词页：填充英文 BIP39 与中文词表对照（需已解密助记词） */
+/** 转换助记词页：下拉展示名（与 WW_KEY_PAGE_LANGS 对齐） */
+var WW_CONVERT_LANG_OPTION_LABELS = {
+  zh: '中文（地名等词表）',
+  en: 'English（BIP39 原文）',
+  ja: '日本語',
+  ko: '한국어',
+  es: 'Español',
+  fr: 'Français',
+  ar: 'العربية',
+  ru: 'Русский',
+  pt: 'Português',
+  hi: 'हिन्दी'
+};
+
+function wwFillConvertMnemonicLangSelect() {
+  var sel = document.getElementById('wwConvertMnemonicLang');
+  if (!sel) return;
+  var prev = sel.value;
+  sel.innerHTML = '';
+  var langs = typeof WW_KEY_PAGE_LANGS !== 'undefined' ? WW_KEY_PAGE_LANGS : ['zh', 'en'];
+  var i;
+  var lg;
+  var wl;
+  var opt;
+  for (i = 0; i < langs.length; i++) {
+    lg = langs[i];
+    wl = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(lg) : lg === 'en' ? 'en' : 'zh';
+    try {
+      if (typeof WT_WORDLISTS === 'undefined' || !WT_WORDLISTS[wl] || WT_WORDLISTS[wl].length !== 2048) continue;
+    } catch (_skip) {
+      continue;
+    }
+    opt = document.createElement('option');
+    opt.value = lg;
+    opt.textContent = WW_CONVERT_LANG_OPTION_LABELS[lg] || wl + ' · ' + lg;
+    sel.appendChild(opt);
+  }
+  if (!sel.options.length) {
+    opt = document.createElement('option');
+    opt.value = 'en';
+    opt.textContent = 'English（BIP39）';
+    sel.appendChild(opt);
+  }
+  try {
+    var saved = localStorage.getItem('ww_convert_mnemonic_ui_lang');
+    if (saved && sel.querySelector('option[value="' + saved + '"]')) sel.value = saved;
+    else if (typeof keyMnemonicLang === 'string' && sel.querySelector('option[value="' + keyMnemonicLang + '"]'))
+      sel.value = keyMnemonicLang;
+    else if (prev && sel.querySelector('option[value="' + prev + '"]')) sel.value = prev;
+    else sel.selectedIndex = 0;
+  } catch (_sv) {
+    sel.selectedIndex = 0;
+  }
+}
+
+function wwOnConvertMnemonicLangChange() {
+  try {
+    var sel = document.getElementById('wwConvertMnemonicLang');
+    if (sel && sel.value) localStorage.setItem('ww_convert_mnemonic_ui_lang', sel.value);
+  } catch (_ls) {}
+  wwRenderConvertMnemonicOutput();
+}
+try {
+  window.wwOnConvertMnemonicLangChange = wwOnConvertMnemonicLangChange;
+} catch (_wOcc) {}
+
+/** 按当前下拉的界面语言，将缓存的英文词数组映射为词表并写入展示区 */
+function wwRenderConvertMnemonicOutput() {
+  var out = document.getElementById('wwConvertMnemonicOut');
+  var title = document.getElementById('wwConvertMnemonicLangTitle');
+  var sel = document.getElementById('wwConvertMnemonicLang');
+  var words = typeof window._wwConvertMnemonicEnWordsArr !== 'undefined' ? window._wwConvertMnemonicEnWordsArr : null;
+  if (!out) return;
+  if (!words || !words.length) {
+    out.textContent = '';
+    if (title) title.textContent = '所选语言';
+    return;
+  }
+  var uiLang = sel && sel.value ? sel.value : 'zh';
+  var wlKey = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(uiLang) : uiLang === 'en' ? 'en' : 'zh';
+  var disp = words;
+  try {
+    if (typeof enWordsToLangKeyTableWords === 'function') disp = enWordsToLangKeyTableWords(words.slice(), wlKey);
+  } catch (_e) {
+    disp = words;
+  }
+  out.textContent = disp.join(' ');
+  if (title) {
+    var lab = WW_CONVERT_LANG_OPTION_LABELS[uiLang] || wlKey;
+    title.textContent = '当前词表（' + lab + '）';
+  }
+}
+
+/** 设置 → 转换助记词页：英文 BIP39 真源 + 语言下拉映射（需已解密助记词） */
 function wwPopulateConvertMnemonicPage() {
   var enEl = document.getElementById('wwConvertMnemonicEn');
-  var zhEl = document.getElementById('wwConvertMnemonicZh');
-  if (!enEl || !zhEl) return;
+  var outEl = document.getElementById('wwConvertMnemonicOut');
+  if (!enEl || !outEl) return;
   enEl.textContent = '';
-  zhEl.textContent = '';
+  outEl.textContent = '';
+  window._wwConvertMnemonicEnWordsArr = null;
+  var title = document.getElementById('wwConvertMnemonicLangTitle');
+  if (title) title.textContent = '所选语言';
+
+  function bindConvertControlsOnce() {
+    var sel = document.getElementById('wwConvertMnemonicLang');
+    if (sel && !sel._wwConvertBound) {
+      sel._wwConvertBound = true;
+      sel.addEventListener('change', function () {
+        wwOnConvertMnemonicLangChange();
+      });
+    }
+  }
+
+  function finishPopulate() {
+    wwFillConvertMnemonicLangSelect();
+    bindConvertControlsOnce();
+    wwRenderConvertMnemonicOutput();
+  }
+
   function fillConvertMnemonic() {
     var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
     if (!rw) {
@@ -3212,27 +3325,37 @@ function wwPopulateConvertMnemonicPage() {
       if (typeof goTo === 'function') goTo('page-settings');
       return;
     }
-    var en = String(rw.enMnemonic || rw.mnemonic || '')
+    var raw = String(rw.enMnemonic || rw.mnemonic || '')
       .trim()
       .replace(/\s+/g, ' ');
-    if (!en) {
+    if (!raw) {
       if (typeof showToast === 'function') showToast('无法读取助记词，请先解锁钱包或从备份页查看', 'warning', 3200);
       if (typeof goTo === 'function') goTo('page-settings');
       return;
     }
-    enEl.textContent = en;
-    var zh = '';
-    try {
-      if (typeof mnemonicToLang === 'function') zh = mnemonicToLang(en, 'zh');
-      else if (typeof enWordsToLangKeyTableWords === 'function') {
-        var ew = en.split(/\s+/).filter(Boolean);
-        zh = enWordsToLangKeyTableWords(ew, 'zh').join(' ');
-      }
-    } catch (_m) {
-      zh = '';
+    var first = raw.split(/\s+/)[0] || '';
+    var enStr = raw;
+    if (first && !/^[a-zA-Z]+$/.test(first) && typeof mnemonicFromLang === 'function') {
+      try {
+        var srcWl =
+          rw.mnemonicWordlistKey ||
+          (typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : 'zh');
+        var toEn = mnemonicFromLang(raw, srcWl);
+        var fw = (toEn && toEn.split(/\s+/)[0]) || '';
+        if (fw && /^[a-zA-Z]+$/.test(fw)) enStr = String(toEn).trim().replace(/\s+/g, ' ');
+      } catch (_me) {}
     }
-    zhEl.textContent = zh || '—';
+    var enWords = enStr.split(/\s+/).filter(Boolean);
+    if (!enWords.length) {
+      if (typeof showToast === 'function') showToast('助记词格式无效', 'error');
+      if (typeof goTo === 'function') goTo('page-settings');
+      return;
+    }
+    window._wwConvertMnemonicEnWordsArr = enWords;
+    enEl.textContent = enWords.join(' ');
+    finishPopulate();
   }
+
   try {
     var rw0 = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
     if (

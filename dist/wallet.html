@@ -620,7 +620,7 @@ try {
           <div class="settings-row" onclick="if(typeof wwGoConvertMnemonicFromSettings==='function')wwGoConvertMnemonicFromSettings();else if(typeof goTo==='function')goTo('page-convert-mnemonic');">
             <span class="settings-icon">🔁</span>
             <span class="settings-label">转换助记词</span>
-            <span class="settings-value" style="color:var(--text-muted)">英↔中文词表</span>
+            <span class="settings-value" style="color:var(--text-muted)">多语言词表</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
@@ -655,7 +655,7 @@ try {
       </div>
     </div>
 
-    <!-- 转换助记词（英 BIP39 ↔ 中文词表对照，entropy 相同） -->
+    <!-- 转换助记词：选语言 → 按 BIP39 索引映射为对应词表词条（熵不变） -->
     <div class="page" id="page-convert-mnemonic">
       <div class="nav-bar">
         <div class="nav-leading">
@@ -665,14 +665,19 @@ try {
         <div class="nav-right"></div>
       </div>
       <div class="u14" style="padding:16px 18px 28px">
-        <p style="font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">同一钱包仅有一套熵；标准<strong style="color:var(--text)">英文 BIP39</strong> 与本应用<strong style="color:var(--text)">中文（地名）词表</strong>按索引一一对应，可与其他支持 BIP39 的钱包互导入。请勿截图或外传。</p>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:14px">同一钱包只有一套熵；下方先给出<strong style="color:var(--text)">标准英文 BIP39</strong>（索引真源）。选择<strong style="color:var(--text)">助记词语言</strong>后，按索引映射为对应词表中的词，便于与其它钱包互导入。请勿截图或外传。</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <label for="wwConvertMnemonicLang" style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap">助记词语言</label>
+          <select id="wwConvertMnemonicLang" autocomplete="off" data-lpignore="true"
+            style="flex:1;min-width:200px;max-width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:var(--bg3);color:var(--gold);font-size:13px;outline:none;cursor:pointer;font-family:inherit"></select>
+        </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-          <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:10px">英文 BIP39</div>
-          <div id="wwConvertMnemonicEn" style="font-size:12px;line-height:1.7;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px">英文 BIP39（索引真源）</div>
+          <div id="wwConvertMnemonicEn" style="font-size:12px;line-height:1.75;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
         </div>
         <div style="background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px">
-          <div style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:10px">中文词表（地名）</div>
-          <div id="wwConvertMnemonicZh" style="font-size:12px;line-height:1.7;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
+          <div id="wwConvertMnemonicLangTitle" style="font-size:12px;font-weight:600;color:var(--gold);margin-bottom:10px">所选语言</div>
+          <div id="wwConvertMnemonicOut" style="font-size:13px;line-height:1.75;color:var(--text);word-break:break-word;user-select:none;-webkit-user-select:none"></div>
         </div>
       </div>
     </div>
