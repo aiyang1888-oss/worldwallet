@@ -109,6 +109,36 @@ try {
       var WW_DEV_BOOT_PAGE = '';
       if (!h && WW_DEV_BOOT_PAGE && /^page-[a-z0-9-]+$/i.test(WW_DEV_BOOT_PAGE)) boot = WW_DEV_BOOT_PAGE;
     } catch (_devBoot) {}
+    /* 无链上地址时：禁止用 #hash 首帧 boot 到底栏/资产/设置等，否则先闪该页再被 goTo 拉回欢迎 */
+    var _wwHasAddr = false;
+    try {
+      var _wCk = localStorage.getItem('ww_wallet');
+      var _oCk = _wCk ? JSON.parse(_wCk) : null;
+      _wwHasAddr = !!(_oCk && (_oCk.trxAddress || _oCk.ethAddress || _oCk.btcAddress));
+    } catch (_a0) {}
+    if (!_wwHasAddr && boot && boot !== 'page-welcome') {
+      var _wwGuestHashOk = {
+        'page-import': 1,
+        'page-key': 1,
+        'page-key-verify': 1,
+        'page-password-restore': 1,
+        'page-verify-success': 1,
+        'page-recovery-test': 1,
+        'page-convert-mnemonic': 1
+      };
+      if (!_wwGuestHashOk[boot]) {
+        try {
+          var _uGh = new URL(location.href);
+          if (_uGh.hash) {
+            _uGh.hash = '';
+            if (typeof history !== 'undefined' && history.replaceState) {
+              history.replaceState(null, '', _uGh.pathname + _uGh.search);
+            }
+          }
+        } catch (_gh) {}
+        boot = 'page-welcome';
+      }
+    }
     if (!boot || boot === 'page-welcome') {
       releaseWelcomeGuard();
       /* 与有钱包时 boot 首页对称：显式锁定欢迎页，避免首帧在 wallet.css 生效前其它 .page 与欢迎页叠层闪一下 */
