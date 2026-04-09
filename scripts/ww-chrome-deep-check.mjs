@@ -193,7 +193,7 @@ async function main() {
     try {
       let got;
       if (pid === 'page-key') {
-        // 同步读取：skipKeyRegen 会异步 renderKeyGrid，无 TEMP/REAL 助记词时会 goTo('page-create')，晚于微任务则误判
+        // 同步读取：skipKeyRegen 会异步 renderKeyGrid，无 TEMP/REAL 助记词时会 goTo('page-welcome')，晚于微任务则误判
         got = await page.evaluate(() => {
           if (typeof goTo !== 'function') throw new Error('goTo 未定义');
           goTo('page-key', { skipKeyRegen: true });
@@ -224,7 +224,7 @@ async function main() {
   // --- 欢迎页三按钮 ---
   const welcomeClicks = [];
   const scenarios = [
-    { name: '创建新钱包', sel: 'button.btn-primary[onclick*="page-create"]', expect: 'page-create' },
+    { name: '创建新钱包', sel: 'button.btn-primary[onclick*="createNewWallet"]', expect: 'page-key-verify' },
     // 无本地钱包时 goTo(PIN) 会重定向到欢迎页（与 runtime 一致）
     { name: 'PIN 解锁钱包', sel: 'button.btn-secondary[onclick*="page-password-restore"]', expect: 'page-welcome' },
     { name: '导入已有钱包', sel: 'button.btn-secondary[onclick*="page-import"]', expect: 'page-import' },
@@ -234,7 +234,7 @@ async function main() {
     await new Promise((r) => setTimeout(r, 150));
     try {
       await page.click(s.sel);
-      await new Promise((r) => setTimeout(r, 400));
+      await new Promise((r) => setTimeout(r, s.name === '创建新钱包' ? 1200 : 400));
       const got = await activeId();
       const ok = got === s.expect;
       welcomeClicks.push({ ...s, got, ok });
@@ -243,19 +243,6 @@ async function main() {
       welcomeClicks.push({ ...s, got: null, ok: false, err: e.message });
       issues.push(`欢迎页「${s.name}」点击失败: ${e.message}`);
     }
-  }
-
-  // --- 创建页返回 ---
-  let backFromCreateOk = false;
-  try {
-    await page.evaluate(() => goTo('page-create'));
-    await new Promise((r) => setTimeout(r, 300));
-    await page.click('#page-create .nav-back');
-    await new Promise((r) => setTimeout(r, 300));
-    backFromCreateOk = (await activeId()) === 'page-welcome';
-    if (!backFromCreateOk) issues.push('创建页 nav-back: 预期回到 page-welcome');
-  } catch (e) {
-    issues.push(`创建页返回: ${e.message}`);
   }
 
   // --- 底栏 goTab（先进入设置使底栏显示） ---
