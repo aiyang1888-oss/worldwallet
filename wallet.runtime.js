@@ -5062,6 +5062,7 @@ function doSwap() {
 function closeSwapConfirm() {
   var o = document.getElementById('swapConfirmOverlay');
   if (o) o.classList.remove('show');
+  try { delete window._wwSwapRecipientAddr; } catch (_c) {}
 }
 
 function openDex() {
@@ -5088,9 +5089,6 @@ function openDex() {
     let url = `https://sunswap.com/#/v3?inputCurrency=${fromAddr}&outputCurrency=${toAddr}`;
     if (recip) url += '&recipient=' + encodeURIComponent(recip);
     window.open(url, '_blank');
-    if (recip && typeof showToast === 'function') {
-      showToast('已打开 SunSwap，请在页面确认收款地址为 ' + recip.slice(0, 6) + '…' + recip.slice(-4), 'info', 3800);
-    }
   } else {
     // Uniswap
     const UNISWAP_TOKENS = { usdt:'0xdAC17F958D2ee523a2206206994597C13D831ec7', eth:'ETH', btc:'0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' };
