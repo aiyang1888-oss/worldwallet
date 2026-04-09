@@ -874,6 +874,11 @@ body {
 }
 .ww-scroll-top-btn.ww-show { display: flex; }
 .ww-scroll-top-btn:active { transform: scale(0.93); }
+@media (max-width: 768px) {
+  .ww-scroll-top-btn {
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .ww-scroll-top-btn { transition: none; }
 }
