@@ -1324,6 +1324,41 @@ function wwWalletSnapIdForCache() {
   }
 }
 
+/**
+ * 无有效会话 PIN、且本地为加密包 + 已配 PIN：应先走 PIN 解锁流程（与 wallet.html head boot 一致，避免首页闪屏）
+ */
+function wwNeedsPinUnlockBeforeHome() {
+  try {
+    if (typeof wwGetSessionPin === 'function' && wwGetSessionPin()) return false;
+  } catch (_s0) {}
+  try {
+    if (window.wwSessionPinBridge && typeof window.wwSessionPinBridge.get === 'function' && window.wwSessionPinBridge.get()) {
+      return false;
+    }
+  } catch (_s1) {}
+  var d = null;
+  try {
+    d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+  } catch (_e) {
+    return false;
+  }
+  if (!wwWalletHasAnyChainAddress(d)) return false;
+  if (!d.encrypted) return false;
+  try {
+    if (typeof wwHasPinConfigured === 'function') return wwHasPinConfigured();
+  } catch (_h) {}
+  try {
+    if (localStorage.getItem('ww_pin_hash') || localStorage.getItem('ww_pin_set') === '1') return true;
+    var pl = localStorage.getItem('ww_unlock_pin') || localStorage.getItem('ww_pin') || '';
+    return !!(pl && /^\d{6}$/.test(String(pl)));
+  } catch (_p) {
+    return false;
+  }
+}
+try {
+  window.wwNeedsPinUnlockBeforeHome = wwNeedsPinUnlockBeforeHome;
+} catch (_wn) {}
+
 function goTo(pageId, opts) {
   opts = opts || {};
   /* 首帧路由清理见 wallet.runtime.js 的 goTo（运行时覆盖本函数） */
