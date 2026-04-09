@@ -1336,10 +1336,12 @@ function wwGetChainViewWallet() {
 
 function wwWalletHasAnyChainAddressIncludingTemp() {
   try {
-    return (
-      wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null) ||
-      wwWalletHasAnyChainAddress(typeof window !== 'undefined' && window.TEMP_WALLET ? window.TEMP_WALLET : null)
-    );
+    var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    var tw = typeof window !== 'undefined' && window.TEMP_WALLET ? window.TEMP_WALLET : null;
+    if (typeof wwWalletHasValidPersistedAddress === 'function') {
+      return wwWalletHasValidPersistedAddress(rw) || wwWalletHasValidPersistedAddress(tw);
+    }
+    return wwWalletHasAnyChainAddress(rw) || wwWalletHasAnyChainAddress(tw);
   } catch (_e2) {
     return false;
   }
@@ -1401,16 +1403,6 @@ function goTo(pageId, opts) {
         _wwAllowHomeUi = true;
       }
     } catch (_ah0) { wwQuiet(_ah0); }
-    if (!_wwAllowHomeUi && typeof wwWalletHasAnyChainAddress === 'function') {
-      try {
-        var _rwUi = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-        var _lsUi = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-        if (typeof wwWalletHasValidPersistedAddress === 'function') {
-          if (wwWalletHasValidPersistedAddress(_rwUi) || wwWalletHasValidPersistedAddress(_lsUi)) _wwAllowHomeUi = true;
-        }
-        if (!_wwAllowHomeUi && (wwWalletHasAnyChainAddress(_rwUi) || wwWalletHasAnyChainAddress(_lsUi))) _wwAllowHomeUi = true;
-      } catch (_ah1) { wwQuiet(_ah1); }
-    }
     if (!_wwAllowHomeUi) pageId = 'page-welcome';
     else {
       try {
