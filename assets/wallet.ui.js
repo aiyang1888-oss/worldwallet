@@ -364,8 +364,7 @@ async function createNewWallet() {
     var w = await createWallet(12);
     window.TEMP_WALLET = w;
     wwPutTempWalletInWordCountCache(w);
-    if (typeof syncKeyPageLangSelect === 'function') syncKeyPageLangSelect();
-    if (typeof startVerify === 'function') startVerify();
+    if (typeof goTo === 'function') goTo('page-key', { skipKeyRegen: true });
   } catch (e) {
     if (typeof showToast === 'function')
       showToast(typeof formatWalletCreateError === 'function' ? formatWalletCreateError(e) : (e && e.message) || '创建失败', 'error');
