@@ -4811,8 +4811,21 @@ function openPinSettingsDialog() {
       wwEnsureInitialHashRoute();
       wwApplyHashRoute();
     } catch (_wb) { wwQuiet(_wb); }
+    /* 与 runtime wwDeferFirstRoutePaint 一致：勿同步 remove，否则与 goTo 同一帧触发 .page opacity 过渡 → 资产页扇动 */
     try {
-      document.documentElement.classList.remove('ww-first-route-pending');
+      if (document.documentElement.classList.contains('ww-first-route-pending')) {
+        document.documentElement.classList.add('ww-instant-route');
+        requestAnimationFrame(function () {
+          try {
+            document.documentElement.classList.remove('ww-first-route-pending');
+          } catch (_e) { wwQuiet(_e); }
+          requestAnimationFrame(function () {
+            try {
+              document.documentElement.classList.remove('ww-instant-route');
+            } catch (_e2) { wwQuiet(_e2); }
+          });
+        });
+      }
     } catch (_wwFp) { wwQuiet(_wwFp); }
   })();
 })();

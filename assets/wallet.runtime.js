@@ -64,11 +64,33 @@ function cancelHomeBalanceAnim() {
     window._homeBalanceAnimRaf = 0;
   }
 }
+/** 首屏 goTo 后延迟摘掉 ww-first-route-pending，并短暂加 ww-instant-route，避免 .page 的 opacity 过渡被当成「扇动」 */
+function wwDeferFirstRoutePaint() {
+  try {
+    if (!document.documentElement.classList.contains('ww-first-route-pending')) return;
+    document.documentElement.classList.add('ww-instant-route');
+    requestAnimationFrame(function () {
+      try {
+        document.documentElement.classList.remove('ww-first-route-pending');
+      } catch (_e) { wwQuiet(_e); }
+      requestAnimationFrame(function () {
+        try {
+          document.documentElement.classList.remove('ww-instant-route');
+        } catch (_e2) { wwQuiet(_e2); }
+      });
+    });
+  } catch (_e) { wwQuiet(_e); }
+}
 function animateHomeUsdTo(targetUsd, fmtUsdFn) {
   cancelHomeBalanceAnim();
   var el = document.getElementById('totalBalanceDisplay');
   var from = parseUsdFromBalanceTxt(el ? el.textContent : '');
   if (!isFinite(from)) from = 0;
+  /* 与快照/链上几乎一致时跳过 160ms 数字插值，减轻总资产区域轻微扇动 */
+  if (Math.abs(targetUsd - from) < 0.02) {
+    if (el) el.textContent = fmtUsdFn(targetUsd);
+    return;
+  }
   var dur = 160;
   var t0 = null;
   function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
@@ -1447,11 +1469,7 @@ function wwUserHasAnySavedChainAddress() {
 
 function goTo(pageId, opts) {
   opts = opts || {};
-  try {
-    if (document.documentElement.classList.contains('ww-first-route-pending')) {
-      document.documentElement.classList.remove('ww-first-route-pending');
-    }
-  } catch (_wwFpp) { wwQuiet(_wwFpp); }
+  /* ww-first-route-pending 在成功切换路由后由 wwDeferFirstRoutePaint 延迟摘掉（见 wallet.ui 首屏 IIFE），勿在此处同步移除以免触发 .page 过渡 */
   /* 与 wallet.ui.js 一致：forceHome 时不改道；首屏须认 localStorage，避免 REAL 未注入时被送回欢迎页 */
   if (pageId === 'page-home' && !opts.forceHome && !wwUserHasAnySavedChainAddress()) {
     pageId = 'page-welcome';
@@ -1484,7 +1502,10 @@ function goTo(pageId, opts) {
   try {
     if (!opts.force && !opts.forceRoute) {
       var _wwSamePg = document.querySelector('.page.active');
-      if (_wwSamePg && _wwSamePg.id === pageId) return;
+      if (_wwSamePg && _wwSamePg.id === pageId) {
+        wwDeferFirstRoutePaint();
+        return;
+      }
     }
   } catch (_samePg) { wwQuiet(_samePg); }
   try {
@@ -1502,6 +1523,7 @@ function goTo(pageId, opts) {
       const _wwGoFallback=document.getElementById('page-home');
       if(_wwGoFallback)return goTo('page-home',opts);
     }
+    wwDeferFirstRoutePaint();
     return;
   }
   /* 先点亮目标页再熄灭其它页：避免先 strip 全部 .active 时出现一帧「无 active」→ .page 的 opacity 过渡造成资产页扇动 */
@@ -1695,6 +1717,7 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
       }
     }
   } catch (e) { wwQuiet(e); }
+  wwDeferFirstRoutePaint();
 }
 
 
@@ -6470,7 +6493,15 @@ function drawHomeBalanceChart(totalUsd) {
   const foot = document.getElementById('homeBalanceChartFoot');
   if(!wrap || !svg) return;
   const t = Number(totalUsd);
-  if(!t || t <= 0 || !isFinite(t)) { wrap.style.display = 'none'; return; }
+  if(!t || t <= 0 || !isFinite(t)) {
+    try { window._wwHomeChartLastUsd = null; } catch (_z) { wwQuiet(_z); }
+    wrap.style.display = 'none';
+    return;
+  }
+  try {
+    if (window._wwHomeChartLastUsd != null && Math.abs(t - window._wwHomeChartLastUsd) < 1e-6) return;
+    window._wwHomeChartLastUsd = t;
+  } catch (_ch) { wwQuiet(_ch); }
   wrap.style.display = 'block';
   const days = ['6天前','5天前','4天前','3天前','2天前','昨天','今天'];
   const seed = Math.abs(Math.sin((t % 1000) * 13.37));
