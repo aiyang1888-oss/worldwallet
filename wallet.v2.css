@@ -532,8 +532,8 @@ body {
 /* ── 首页 ── */
 .home-header { background: var(--bg2); padding: 18px max(18px, env(safe-area-inset-left, 0px)) 22px max(18px, env(safe-area-inset-right, 0px)); border-bottom: 1px solid var(--border); }
 .home-header__top-row {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   width: 100%;
@@ -542,18 +542,19 @@ body {
   flex-shrink: 0;
 }
 .home-header__top-actions {
+  grid-column: 2;
+  justify-self: end;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
-  margin-left: auto;
   margin-bottom: 0;
   box-sizing: border-box;
 }
 .home-backup-banner {
+  grid-column: 1;
   display: none;
-  flex: 1;
   min-width: 0;
   background: rgba(231, 76, 60, 0.16);
   border: 1px solid rgba(231, 76, 60, 0.42);
