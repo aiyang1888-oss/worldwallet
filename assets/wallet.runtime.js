@@ -6092,112 +6092,132 @@ async function changeMnemonicLength(n) {
 var verifyAnswers = {}; // {position: correctWord}
 
 function startVerify() {
-  // 直接用 REAL_WALLET.words（由 renderKeyGrid 设置的当前显示词）
-  let words;
-  if(REAL_WALLET && REAL_WALLET.words && REAL_WALLET.words.length >= 12) {
-    words = REAL_WALLET.words.slice();
-  } else {
-    // fallback：从当前语言演示词库随机取词（词数优先 currentMnemonicLength，不依赖可能被恢复的下拉框）
-    var nPick = 12;
-    if ([12, 15, 18, 21, 24].includes(currentMnemonicLength)) {
-      nPick = currentMnemonicLength;
-    } else {
-      var _selV = document.getElementById('mnemonicLength');
-      if (_selV && _selV.value) {
-        var _pv = parseInt(_selV.value, 10);
-        if ([12, 15, 18, 21, 24].includes(_pv)) nPick = _pv;
-      }
+  var tw = window.TEMP_WALLET;
+  var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+  const enMnemonic =
+    (tw && (tw.mnemonic || tw.enMnemonic)) ||
+    (rw && (rw.enMnemonic || rw.mnemonic));
+  if (!enMnemonic) {
+    if (typeof showToast === 'function') {
+      showToast('无法读取有效助记词，请返回密钥页确认已展示助记词，或解锁钱包后再试', 'error', 3200);
     }
-    var _wlK = typeof getMnemonicWordlistLang === 'function' ? getMnemonicWordlistLang(currentLang) : (currentLang === 'en' ? 'en' : 'zh');
-    const pool = (typeof WT_WORDLISTS !== 'undefined' && WT_WORDLISTS[_wlK] && WT_WORDLISTS[_wlK].length)
-      ? WT_WORDLISTS[_wlK]
-      : (SAMPLE_KEYS[currentLang] || SAMPLE_KEYS.zh);
-    const indices = [];
-    while(indices.length < nPick) {
-      const idx = Math.floor(Math.random() * pool.length);
-      if(!indices.includes(idx)) indices.push(idx);
+    return;
+  }
+  const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
+  if (!enWords.length || ![12, 15, 18, 21, 24].includes(enWords.length)) {
+    if (typeof showToast === 'function') {
+      showToast('无法读取有效助记词，请返回密钥页确认已展示助记词，或解锁钱包后再试', 'error', 3200);
     }
-    words = indices.map(i => pool[i]);
-    if(!REAL_WALLET) window.REAL_WALLET = {};
-    REAL_WALLET.words = words;
-    REAL_WALLET.mnemonic = words.join(' ');
-    saveWallet(REAL_WALLET);
+    return;
+  }
+  var wlKey = wwResolveMnemonicWordlistKey();
+  var words =
+    wlKey === 'en'
+      ? enWords.slice()
+      : typeof enWordsToLangKeyTableWords === 'function'
+        ? enWordsToLangKeyTableWords(enWords, wlKey)
+        : enWords.slice();
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    wwEnsureRealWalletFromTempForVerify(window.TEMP_WALLET, enMnemonic, words);
   }
   verifyAnswers = {};
-  
-  // 随机选3个位置验证（词数与密钥页一致）
   const wc = words.length;
   const positions = [];
-  while(positions.length < 3) {
+  while (positions.length < 3) {
     const p = Math.floor(Math.random() * wc);
-    if(!positions.includes(p)) positions.push(p);
+    if (!positions.includes(p)) positions.push(p);
   }
-  positions.sort((a,b) => a-b);
-  
-  // 生成题目
+  positions.sort((a, b) => a - b);
   const container = _safeEl('verifyQuestions');
   container.innerHTML = '';
-  positions.forEach(pos => {
+  positions.forEach(function (pos) {
     verifyAnswers[pos] = words[pos];
     const div = document.createElement('div');
-    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px';
-    div.innerHTML = `
-      <div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ${pos+1} 词</div>
-      <input type="text" id="verify_${pos}" placeholder="请输入第 ${pos+1} 个词" autocomplete="off" autocorrect="off" autocapitalize="off"
-        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit"
-        onkeydown="if(event.key==='Enter')checkVerify()">
-    `;
+    div.style.cssText =
+      'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px';
+    div.innerHTML =
+      '<div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ' +
+      (pos + 1) +
+      ' 词</div>' +
+      '<input type="text" id="verify_' +
+      pos +
+      '" placeholder="请输入第 ' +
+      (pos + 1) +
+      ' 个词" autocomplete="off" autocorrect="off" autocapitalize="off"' +
+      ' style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit"' +
+      ' onkeydown="if(event.key===\'Enter\')checkVerify()">';
     container.appendChild(div);
   });
-  
   _safeEl('verifyError').style.display = 'none';
   goTo('page-key-verify');
-  setTimeout(() => {
+  setTimeout(function () {
     const first = document.querySelector('#verifyQuestions input');
-    if(first) first.focus();
+    if (first) first.focus();
   }, 300);
 }
 
 function checkVerify() {
   let allCorrect = true;
-  Object.keys(verifyAnswers).forEach(pos => {
+  Object.keys(verifyAnswers).forEach(function (pos) {
     const input = document.getElementById('verify_' + pos);
-    const val = input ? input.value.trim().toLowerCase() : '';
-    const correct = verifyAnswers[pos].toLowerCase();
-    if(val !== correct) {
+    const val = _wwNormalizeVerifyWord(input ? input.value : '');
+    const correct = _wwNormalizeVerifyWord(verifyAnswers[pos]);
+    if (val !== correct) {
       allCorrect = false;
-      if(input) input.style.color = '#ff6060';
+      if (input) input.style.color = '#ff6060';
     } else {
-      if(input) input.style.color = '#4ac84a';
+      if (input) input.style.color = '#4ac84a';
     }
   });
-  
-  if(allCorrect) {
+  if (allCorrect) {
     _safeEl('verifyError').style.display = 'none';
-    if (typeof markBackupDone === 'function') markBackupDone();
-    updateAddr();
-    // wallet.html 精简版无 page-verify-success；完整版（如 app.html）可保留独立成功页
-    if (document.getElementById('page-verify-success')) {
-      goTo('page-verify-success');
-    } else {
-      var hasPin = false;
+    var hasPin = false;
+    try {
+      hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+    } catch (_p0) {}
+    if (hasPin) {
       try {
-        hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
-      } catch (_p0) {}
-      if (hasPin) { try { window._wwInFirstRun = false; } catch (_frV) {} }
-      showToast('✅ 验证通过！钱包已安全创建', 'success');
-      goTo('page-home');
-      setTimeout(function() {
-        if (!hasPin && typeof openPinSettingsDialog === 'function') {
-          if (typeof showToast === 'function') showToast('为保障资产安全，请设置 6 位数字 PIN', 'info', 3500);
-          openPinSettingsDialog();
-        }
-      }, 450);
+        window._wwInFirstRun = false;
+      } catch (_frV) {}
     }
+    try {
+      if (
+        typeof wwWalletHasAnyChainAddress === 'function' &&
+        !wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null) &&
+        window.TEMP_WALLET &&
+        window.TEMP_WALLET.mnemonic
+      ) {
+        var twF = window.TEMP_WALLET;
+        var enM = String(twF.mnemonic || twF.enMnemonic || '')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+        if (enM.length && [12, 15, 18, 21, 24].indexOf(enM.length) >= 0) {
+          var wlKeyF = typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : 'en';
+          var dispF =
+            wlKeyF === 'en'
+              ? enM.slice()
+              : typeof enWordsToLangKeyTableWords === 'function'
+                ? enWordsToLangKeyTableWords(enM.slice(), wlKeyF)
+                : enM.slice();
+          wwEnsureRealWalletFromTempForVerify(twF, enM.join(' '), dispF);
+        }
+      }
+    } catch (_fv) {}
+    if (typeof wwAfterMnemonicVerifiedNavigate === 'function') {
+      wwAfterMnemonicVerifiedNavigate('page-home');
+    }
+    setTimeout(function () {
+      if (typeof showToast === 'function') showToast('✅ 验证通过！钱包已安全创建', 'success');
+    }, 0);
   } else {
     _safeEl('verifyError').style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
-    if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
+    if (vroot) {
+      vroot.classList.remove('wt-shake-wrong');
+      void vroot.offsetWidth;
+      vroot.classList.add('wt-shake-wrong');
+    }
   }
 }
 
