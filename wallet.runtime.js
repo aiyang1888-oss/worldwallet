@@ -1096,6 +1096,37 @@ window.addEventListener('load', () => {
 window.addEventListener('pageshow', function () {
   try { initMnemonicLengthSelectors(); } catch (_iml3) {}
 });
+// 硬刷新（Cmd+Shift+R 等）：尽量清掉「上次页面」记忆，回到欢迎；普通 Cmd+R 保留 ww_last_page 供下方恢复
+(function wwHardReloadForgetLastPage() {
+  try {
+    var u = new URL(location.href);
+    if (u.searchParams.get('reset') === '1' || u.searchParams.get('hard') === '1') {
+      try {
+        sessionStorage.removeItem('ww_last_page');
+      } catch (e) {}
+      try {
+        window._WW_HARD_RELOAD = true;
+      } catch (e2) {}
+      u.searchParams.delete('reset');
+      u.searchParams.delete('hard');
+      if (typeof history !== 'undefined' && history.replaceState) {
+        history.replaceState(null, '', u.pathname + u.search + u.hash);
+      }
+      return;
+    }
+    var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+    if (!nav || nav.type !== 'reload') return;
+    var ts = typeof nav.transferSize === 'number' ? nav.transferSize : -1;
+    if (ts > 256) {
+      try {
+        sessionStorage.removeItem('ww_last_page');
+      } catch (e3) {}
+      try {
+        window._WW_HARD_RELOAD = true;
+      } catch (e4) {}
+    }
+  } catch (e) {}
+})();
 // 强刷后进入应用最开始的页面（欢迎页），不恢复 URL hash 深链
 document.querySelectorAll('.page').forEach(p => {
   p.classList.remove('active');
