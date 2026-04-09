@@ -6569,17 +6569,7 @@ function formatTimeAgo(ts) {
   return '刚刚';
 }
 
-
-
-// ── 安全 getElementById（防止 null 导致崩溃）──────────────────────
-/* const _origGetEl: wallet.ui.js */
-document.getElementById = function(id) {
-  const el = _origGetEl(id);
-  return el; // 返回真实元素或 null，调用处自行处理
-};
-
-// 批量修复：确保所有已知缺失 id 有默认处理
-// _safeEl moved to top of script
+/* getElementById 安全封装仅在 wallet.ui.js 注册一份；此处若再覆盖且 _origGetEl 未就绪会整页瘫痪 */
 
 // ── Toast 提示系统（替换 alert）──────────────────────────────
 function showToast(msg, type='info', duration=2500) {
