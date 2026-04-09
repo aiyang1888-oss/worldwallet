@@ -2191,34 +2191,48 @@ async function runBatchTransfer() {
   if(okCount > 0) goTo('page-home');
 }
 
+/** 返回 null 表示加载中或未知，不得当作 0 用于「隐藏零余额」（runtime 后加载须覆盖 wallet.ui.js 同名函数） */
 function parseAssetDisplayBalance(balId) {
   const el = document.getElementById(balId);
-  if(!el) return 0;
-  const t = (el.textContent || '').replace(/,/g,'').trim();
-  if(t === '--' || t === '...' || !t) return 0;
+  if (!el) return null;
+  const t = (el.textContent || '').replace(/,/g, '').trim();
+  if (t === '--' || t === '...' || !t) return null;
   const n = parseFloat(t);
-  return isNaN(n) ? 0 : n;
+  return isNaN(n) ? null : n;
 }
 
 function applyHideZeroTokens() {
-  let hide = false;
-  try { hide = localStorage.getItem('ww_hide_zero_tokens') === '1'; } catch(e) {}
+  let storedHide = false;
+  try { storedHide = localStorage.getItem('ww_hide_zero_tokens') === '1'; } catch (e) {}
   const cb = document.getElementById('hideZeroTokens');
-  if(cb) cb.checked = hide;
-  const rows = [
-    { id: 'assetRowUsdt', balId: 'balUsdt' },
-  ];
-  rows.forEach(function(row) {
+  if (cb) cb.checked = storedHide;
+  const hide = cb ? !!cb.checked : false;
+  var hydrated = typeof window !== 'undefined' && window._wwHomeBalancesHydrated;
+  const hideZeros = hide && hydrated;
+  var rows =
+    typeof wwHomeAssetRowsMeta === 'function'
+      ? wwHomeAssetRowsMeta()
+      : [
+          { id: 'assetRowUsdt', balId: 'balUsdt' },
+          { id: 'assetRowTrx', balId: 'balTrx' },
+          { id: 'assetRowEth', balId: 'balEth' },
+          { id: 'assetRowBtc', balId: 'balBtc' },
+        ];
+  rows.forEach(function (row) {
     const el = document.getElementById(row.id);
-    if(!el) return;
+    if (!el) return;
     const v = parseAssetDisplayBalance(row.balId);
-    el.style.display = (hide && v <= 1e-12) ? 'none' : '';
+    if (v === null) {
+      el.style.display = '';
+      return;
+    }
+    el.style.display = hideZeros && v <= 1e-12 ? 'none' : '';
   });
 }
 
 function onHideZeroTokensChange() {
   const cb = document.getElementById('hideZeroTokens');
-  try { localStorage.setItem('ww_hide_zero_tokens', cb && cb.checked ? '1' : '0'); } catch(e) {}
+  try { localStorage.setItem('ww_hide_zero_tokens', cb && cb.checked ? '1' : '0'); } catch (e) {}
   applyHideZeroTokens();
 }
 
@@ -6140,11 +6154,18 @@ function wwApplyHomeBalanceSnapRecord(h) {
   }
   setEl('balUsdt', h.balUsdt);
   setEl('valUsdt', h.valUsdt);
-  if (h.chgUsdt != null) {
-    setEl('chgUsdt', h.chgUsdt);
-    var chgEl = document.getElementById('chgUsdt');
+  setEl('balTrx', h.balTrx);
+  setEl('valTrx', h.valTrx);
+  setEl('balEth', h.balEth);
+  setEl('valEth', h.valEth);
+  setEl('balBtc', h.balBtc);
+  setEl('valBtc', h.valBtc);
+  function pinSnapChg(chgId, txt) {
+    if (txt == null) return;
+    setEl(chgId, txt);
+    var chgEl = document.getElementById(chgId);
     if (chgEl) {
-      if (String(h.chgUsdt).indexOf('-') === 0) {
+      if (String(txt).indexOf('-') === 0) {
         chgEl.classList.remove('up');
         chgEl.classList.add('down');
       } else {
@@ -6153,6 +6174,10 @@ function wwApplyHomeBalanceSnapRecord(h) {
       }
     }
   }
+  pinSnapChg('chgUsdt', h.chgUsdt);
+  pinSnapChg('chgTrx', h.chgTrx);
+  pinSnapChg('chgEth', h.chgEth);
+  pinSnapChg('chgBtc', h.chgBtc);
   if (typeof h.totalUsd === 'number' && isFinite(h.totalUsd)) {
     window._lastTotalUsd = h.totalUsd;
     if (typeof drawHomeBalanceChart === 'function' && h.totalUsd > 0) drawHomeBalanceChart(h.totalUsd);
