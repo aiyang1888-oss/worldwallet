@@ -288,12 +288,38 @@
       );
     }
 
-    /* 欢迎页三按钮：内联 onclick 已移除；捕获阶段 click 覆盖桌面鼠标；touch/pointer 兜底移动端 */
+    /* 欢迎页三按钮：内联 onclick 已移除；捕获阶段 click 覆盖桌面；touch/pointer 兜底移动端。
+       移动 Chrome 常把 target 指到按钮内文本节点 → 无 .closest；须归一化到元素或 elementFromPoint。 */
     var pgWelcome = document.getElementById('page-welcome');
     if (pgWelcome) {
       var _wwWelTapX = 0;
       var _wwWelTapY = 0;
       var _wwWelLastActAt = 0;
+      function _wwWelcomeTargetEl(ev) {
+        var t = ev && ev.target;
+        if (!t) return null;
+        if (t.nodeType === 3) return t.parentElement || null;
+        return t;
+      }
+      function _wwWelcomeBtnFromEvent(ev) {
+        var el = _wwWelcomeTargetEl(ev);
+        if (el && typeof el.closest === 'function') {
+          var b = el.closest('button[data-ww-welcome-act]');
+          if (b && pgWelcome.contains(b)) return b;
+        }
+        var te = ev.changedTouches && ev.changedTouches[0];
+        if (te && typeof document.elementFromPoint === 'function') {
+          var x = te.clientX;
+          var y = te.clientY;
+          var under = document.elementFromPoint(x, y);
+          if (under && under.nodeType === 3) under = under.parentElement;
+          if (under && typeof under.closest === 'function') {
+            b = under.closest('button[data-ww-welcome-act]');
+            if (b && pgWelcome.contains(b)) return b;
+          }
+        }
+        return null;
+      }
       function _wwRunWelcomeAct(btn) {
         if (!btn || !pgWelcome.contains(btn) || !btn.getAttribute('data-ww-welcome-act')) return;
         var _now = Date.now();
