@@ -230,7 +230,7 @@
     var owner =
       (typeof REAL_WALLET !== 'undefined' && REAL_WALLET && REAL_WALLET.trxAddress) ||
       (typeof tw.defaultAddress !== 'undefined' && tw.defaultAddress && tw.defaultAddress.base58);
-    if (!owner) throw new Error('缺少 Tron 收款/发送地址（REAL_WALLET.trxAddress）');
+    if (!owner) throw new Error('缺少 Tron 发送地址（REAL_WALLET.trxAddress）');
     if (typeof tw.isAddress === 'function' && !tw.isAddress(String(toAddr || '').trim())) {
       throw new Error('收款地址不是有效的 Tron 地址');
     }
