@@ -247,8 +247,8 @@ body {
 }
 #page-hongbao .gift-preview-panel {
   position: relative;
-  border-radius: 19px;
-  padding: 30px 20px 28px;
+  border-radius: 17px;
+  padding: 14px 16px 12px;
   text-align: center;
   overflow: hidden;
   z-index: 1;
