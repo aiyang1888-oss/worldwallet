@@ -23,11 +23,15 @@ alwaysApply: true
    - `git add / commit / push` — 提交推送
    - `bash scripts/telegram-notify-working.sh "..."` — Telegram 通知
 
-3. **完成代码修改后，必须按顺序自动执行**：
+3. **完成代码修改后，必须按顺序自动执行**（每次修改完毕，无需询问）：
    ```bash
    node --check dist/wallet.ui.js && node --check dist/wallet.runtime.js
-   git -C dist add -A && git -C dist commit -m "<说明>" && git -C dist push
+   git add -A && git commit -m "<说明>"
+   git push origin HEAD
    bash scripts/telegram-notify-working.sh "<说明>"
    ```
+   > post-commit hook 会自动 push，但仍显式执行 `git push origin HEAD` 以确保成功。
 
 4. **不要在 terminal 命令前停下来等待**；直接 run，观察输出，若失败再修复。
+
+5. **每次任务结束时必须推送**，哪怕只改了一行，都要 commit + push，不允许留未提交修改。
