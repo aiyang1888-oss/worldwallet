@@ -2786,7 +2786,7 @@ async function refreshHomePriceTicker() {
       return x < 10 ? x.toFixed(4) : x.toLocaleString('en', { maximumFractionDigits: 2 });
     };
     const ust = fmt(ustNum);
-    const html = 'USDT <strong>$' + ust + '</strong>';
+    const html = 'TRC USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
     if(a) a.innerHTML = html;
@@ -2852,7 +2852,7 @@ function wwCheckPriceAlertsAfterTicker(d) {
       { key: 'btc', name: 'BTC', get: function (z) { return z.bitcoin && z.bitcoin.usd; } },
       { key: 'eth', name: 'ETH', get: function (z) { return z.ethereum && z.ethereum.usd; } },
       { key: 'trx', name: 'TRX', get: function (z) { return z.tron && z.tron.usd; } },
-      { key: 'usdt', name: 'USDT', get: function (z) { return z.tether && z.tether.usd; } }
+      { key: 'usdt', name: 'TRC USDT', get: function (z) { return z.tether && z.tether.usd; } }
     ];
     var prev = window._wwAlertPricePrev || {};
     map.forEach(function (m) {
@@ -2881,7 +2881,7 @@ function updateYieldFarmTracker(parts, total) {
     el.innerHTML = '<div style="color:var(--text-muted);font-size:11px">暂无持仓估值，无法估算质押收益。</div>';
     return;
   }
-  var apy = { USDT: 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'TRC USDT': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var estYr = 0;
   var rows = [];
   parts.forEach(function (p) {
@@ -3173,7 +3173,7 @@ function updateCrossChainSwapCompare() {
 }
 
 var WW_LENDING_MARKETS = [
-  { asset: 'USDT', chain: 'TRON', supplyApy: '3.8%', borrowApr: '5.2%', color: '#26a17b' },
+  { asset: 'TRC USDT', chain: 'TRON', supplyApy: '3.8%', borrowApr: '5.2%', color: '#26a17b' },
   { asset: 'USDC', chain: 'Ethereum', supplyApy: '4.1%', borrowApr: '5.9%', color: '#2775ca' },
   { asset: 'ETH', chain: 'Ethereum', supplyApy: '2.4%', borrowApr: '3.6%', color: '#627eea' },
   { asset: 'TRX', chain: 'TRON', supplyApy: '1.9%', borrowApr: '4.0%', color: '#ff0013' }
@@ -3227,7 +3227,7 @@ function wwPerpPopulate() {
   var sum = 0;
   list.forEach(function (x) { sum += parseFloat(x.uPnl) || 0; });
   if (pnlEl) {
-    pnlEl.textContent = list.length ? (sum >= 0 ? '+' : '') + sum.toFixed(2) + ' USDT' : '—';
+    pnlEl.textContent = list.length ? (sum >= 0 ? '+' : '') + sum.toFixed(2) + ' TRC USDT' : '—';
     pnlEl.style.color = sum >= 0 ? '#26a17b' : '#e5484d';
   }
   if (cntEl) cntEl.textContent = String(list.length);
@@ -3244,7 +3244,7 @@ function wwPerpPopulate() {
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="font-weight:700;font-size:15px">' + p.symbol + '-PERP</span>' +
       '<span style="font-size:12px;padding:3px 8px;border-radius:8px;background:var(--bg3)">' + p.side + ' · ' + p.leverage + 'x</span></div>' +
       '<div style="font-size:12px;color:var(--text-muted);line-height:1.7">开仓价 <b style="color:var(--text)">' + (p.entry > 20 ? p.entry.toFixed(2) : p.entry.toFixed(5)) + '</b> · 数量 ' + p.size +
-      '<br/>未实现 <b style="color:' + col + '">' + (parseFloat(p.uPnl) >= 0 ? '+' : '') + p.uPnl + '</b> USDT</div></div>';
+      '<br/>未实现 <b style="color:' + col + '">' + (parseFloat(p.uPnl) >= 0 ? '+' : '') + p.uPnl + '</b> TRC USDT</div></div>';
   }).join('');
 }
 
@@ -3273,7 +3273,7 @@ function wwOptionsPopulate() {
   var timeVal = S * vol * Math.sqrt(t) * 0.4;
   var unit = intrinsic + timeVal;
   var total = unit * qty;
-  if (prem) prem.textContent = (total < 0.01 ? total.toFixed(6) : total.toFixed(2)) + ' USDT';
+  if (prem) prem.textContent = (total < 0.01 ? total.toFixed(6) : total.toFixed(2)) + ' TRC USDT';
   if (ex) ex.textContent = '现货参考 ' + (u === 'TRX' ? S.toFixed(5) : S.toLocaleString(undefined, { maximumFractionDigits: 2 })) + ' USD · 简化波动率模型，非 Deribit / 链上期权报价。';
 }
 
@@ -3288,7 +3288,7 @@ function wwYieldAggPopulate() {
   var box = document.getElementById('wwYieldAggTable');
   if (!box) return;
   var assets = [
-    { sym: 'USDT', base: 4.2 },
+    { sym: 'TRC USDT', base: 4.2 },
     { sym: 'USDC', base: 4.0 },
     { sym: 'ETH', base: 2.8 },
     { sym: 'TRX', base: 1.5 }
@@ -3379,7 +3379,7 @@ function wwLiquidationPopulate() {
 }
 
 var WW_LAUNCHPAD_PROJECTS = [
-  { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 USDT', status: '即将开始' },
+  { name: 'DemoLayer', chain: 'ETH', date: '2026-04-18', allocation: '500 TRC USDT', status: '即将开始' },
   { name: 'TronBoost', chain: 'TRON', date: '2026-04-22', allocation: '2,000 TRX', status: '白名单' },
   { name: 'MetaVault', chain: 'BSC', date: '2026-05-01', allocation: 'TBD', status: '筹备中' }
 ];
@@ -3495,11 +3495,11 @@ function wwAutoRebalanceLoad() {
 function wwAutoRebalancePortfolioParts() {
   var u = parseFloat((document.getElementById('valUsdt') || {}).textContent.replace(/[^0-9.\-]/g, '')) || 0;
   var total = u;
-  if (total <= 0) return { total: 0, parts: [{ k: 'USDT', p: 0 }] };
+  if (total <= 0) return { total: 0, parts: [{ k: 'TRC USDT', p: 0 }] };
   return {
     total: total,
     parts: [
-      { k: 'USDT', p: 100 }
+      { k: 'TRC USDT', p: 100 }
     ]
   };
 }
@@ -3510,7 +3510,7 @@ function wwAutoRebalancePopulate() {
   if (!body) return;
   var th = parseInt((document.getElementById('wwAutoRebalThreshold') || {}).value || '8', 10);
   if (!isFinite(th) || th < 1) th = 8;
-  var target = { USDT: 100 };
+  var target = { 'TRC USDT': 100 };
   var data = wwAutoRebalancePortfolioParts();
   if (!data.total) {
     body.innerHTML = '<div style="color:var(--text-muted);font-size:13px">暂无估值数据，请返回首页刷新余额后再试。</div>';
@@ -3544,7 +3544,7 @@ function wwSentimentHash(s) {
 function wwSentimentPopulate() {
   var box = document.getElementById('wwSentimentList');
   if (!box) return;
-  var coins = ['USDT'];
+  var coins = ['TRC USDT'];
   var els = ['chgUsdt'];
   var out = [];
   for (var i = 0; i < coins.length; i++) {
@@ -3738,7 +3738,7 @@ function drawPortfolioPieChart(usdtUsd, trxUsd, ethUsd, btcUsd) {
   if(!card || !c || !leg) return;
   void trxUsd; void ethUsd; void btcUsd;
   const parts = [
-    { v: Number(usdtUsd) || 0, c: '#26a17b', l: 'USDT' },
+    { v: Number(usdtUsd) || 0, c: '#26a17b', l: 'TRC USDT' },
   ];
   const total = parts.reduce(function(a, p) { return a + p.v; }, 0);
   try { window._wwLastPortfolioParts = parts; window._wwLastPortfolioTotal = total; } catch (_wp) { wwQuiet(_wp); }
@@ -4201,7 +4201,7 @@ function selectTransferCoin(id) {
   // 从 COINS 读取实时余额和价格
   const coinData = COINS.find(c=>c.id===id);
   const map = {
-    usdt:{id:'usdt',name:'USDT',chain:'TRC-20 · Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
+    usdt:{id:'usdt',name:'TRC USDT',chain:'TRC-20 · Tron',icon:'💚',logoUrl:WW_COIN_LOGO_URL.usdt,bg:'rgba(38,161,123,0.15)',bal:coinData&&coinData.id==='usdt'?coinData.bal:0,price:coinData&&coinData.id==='usdt'?coinData.price:1},
     trx:{id:'trx',name:'TRX',chain:'Tron',icon:'🔴',logoUrl:WW_COIN_LOGO_URL.trx,bg:'rgba(255,80,80,0.12)',bal:coinData&&coinData.id==='trx'?coinData.bal:0,price:coinData&&coinData.id==='trx'?coinData.price:0.12},
     eth:{id:'eth',name:'ETH',chain:'Ethereum',icon:'🔷',logoUrl:WW_COIN_LOGO_URL.eth,bg:'rgba(100,100,255,0.12)',bal:coinData&&coinData.id==='eth'?coinData.bal:0,price:coinData&&coinData.id==='eth'?coinData.price:2500},
     btc:{id:'btc',name:'BTC',chain:'Bitcoin',icon:'🟠',logoUrl:WW_COIN_LOGO_URL.btc,bg:'rgba(255,165,0,0.12)',bal:coinData&&coinData.id==='btc'?coinData.bal:0,price:coinData&&coinData.id==='btc'?coinData.price:60000},
@@ -4539,7 +4539,7 @@ function createHongbao() {
   // 更新UI
   _kwRoot.textContent = currentKeyword;
   document.getElementById('kwBlessingText').textContent = blessing;
-  document.getElementById('kwAmtText').textContent = amount + ' USDT';
+  document.getElementById('kwAmtText').textContent = amount + ' TRC USDT';
   document.getElementById('kwCntText').textContent = '共' + count + '份礼物';
   document.getElementById('kwExpText').textContent = '有效期' + hbExpiry + '小时';
   document.getElementById('kwShareKeyword').textContent = currentKeyword;
@@ -4724,12 +4724,12 @@ function updateHbPreview() {
   const amount = parseFloat(document.getElementById('hbAmount')?.value)||0;
   const per = document.getElementById('hbPerPerson');
   const tl = document.getElementById('hbTypeLabel');
-  if(per) per.textContent = hbType==='lucky' ? '随机金额' : (hbCount>0?(amount/hbCount).toFixed(2)+' USDT':'- USDT');
+  if(per) per.textContent = hbType==='lucky' ? '随机金额' : (hbCount>0?(amount/hbCount).toFixed(2)+' TRC USDT':'- TRC USDT');
   if(tl) tl.textContent = hbType==='lucky' ? '随机金额' : '每人金额';
 }
 function sendHongbao() {
   const amount = document.getElementById('hbAmount').value;
-  document.getElementById('hbSuccessDesc').innerHTML = amount+' USDT · '+hbCount+'份礼物';
+  document.getElementById('hbSuccessDesc').innerHTML = amount+' TRC USDT · '+hbCount+'份礼物';
   document.getElementById('hbSuccessKeyword').textContent = currentKeyword;
   document.getElementById('hbSuccessOverlay').style.display = 'flex';
 }
@@ -4950,7 +4950,7 @@ function wwSetCoinIconElement(el, coin) {
 }
 
 const COINS = [
-  {id:'usdt', name:'USDT', chain:'TRC-20', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
+  {id:'usdt', name:'TRC USDT', chain:'TRC-20 · Tron', icon:'💚', logoUrl: WW_COIN_LOGO_URL.usdt, bg:'rgba(38,161,123,0.15)', bal:0, price:1},
   {id:'btc',  name:'BTC',  chain:'Bitcoin', icon:'🟠', logoUrl: WW_COIN_LOGO_URL.btc, bg:'rgba(255,165,0,0.12)', bal:0, price:60000},
   {id:'eth',  name:'ETH',  chain:'Ethereum', icon:'🔷', logoUrl: WW_COIN_LOGO_URL.eth, bg:'rgba(100,100,255,0.12)', bal:0, price:2500},
   {id:'trx',  name:'TRX',  chain:'Tron', icon:'🔴', logoUrl: WW_COIN_LOGO_URL.trx, bg:'rgba(255,80,80,0.12)', bal:0, price:0.12},
@@ -5714,7 +5714,7 @@ function wwUsdFromTxRow(tx) {
   try { amtN = Math.abs(parseFloat(String(tx.amount || '0').replace(/[^0-9.+-]/g, ''))); } catch (e) { amtN = 0; }
   var cg = window._wwLastCgUsd || {};
   var c = String(tx.coin || '').toUpperCase();
-  if (c === 'USDT') return amtN * (parseFloat(cg.usdt) || 1);
+  if (c === 'USDT' || c === 'TRC USDT') return amtN * (parseFloat(cg.usdt) || 1);
   if (c === 'TRX') return amtN * (parseFloat(cg.trx) || 0.12);
   if (c === 'ETH') return amtN * (parseFloat(cg.eth) || 2000);
   if (c === 'BTC') return amtN * (parseFloat(cg.btc) || 60000);
@@ -6095,7 +6095,7 @@ function wwYieldOptimizerPopulate() {
     body.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px">—</div>';
     return;
   }
-  var apy = { USDT: 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
+  var apy = { 'TRC USDT': 4.2, TRX: 4.8, ETH: 3.6, BTC: 2.9 };
   var top = null;
   var bestA = 0;
   parts.forEach(function (p) {
@@ -6105,9 +6105,9 @@ function wwYieldOptimizerPopulate() {
   hint.innerHTML = '当前组合参考总市值约 <b style="color:var(--text)">$' + total.toFixed(2) + '</b>。' +
     (top ? ' 占比最高的可优化资产侧重：<b style="color:var(--gold)">' + top + '</b>（参考 APY ' + bestA.toFixed(1) + '%）。' : '');
   var strategies = [
-    { n: '稳定币理财 / 货币市场', apy: '3.5–5%', fit: 'USDT', note: '适合大额 USDT，注意合约与平台信用风险' },
+    { n: '稳定币理财 / 货币市场', apy: '3.5–5%', fit: 'TRC USDT', note: '适合大额 TRC USDT，注意合约与平台信用风险' },
     { n: '原生链质押（ETH / TRX）', apy: '3–6%', fit: 'ETH,TRX', note: '流动性质押或节点委托，需解锁期与罚没规则' },
-    { n: '流动性挖矿（AMM）', apy: '变动大', fit: 'USDT,ETH', note: '无常损失与智能合约风险较高' }
+    { n: '流动性挖矿（AMM）', apy: '变动大', fit: 'TRC USDT,ETH', note: '无常损失与智能合约风险较高' }
   ];
   body.innerHTML = strategies.map(function (s) {
     var ok = parts.some(function (p) { return p.v > 0 && s.fit.indexOf(p.l) >= 0; });
@@ -6290,7 +6290,7 @@ async function loadTxHistory() {
           txs.push({
             icon: isOut ? '📤' : '📥',
             type: isOut ? '转出' : '转入',
-            coin: 'USDT',
+            coin: 'TRC USDT',
             amount: (isOut?'-':'+') + amt,
             addr: isOut ? tx.to : tx.from,
             time: new Date(tx.block_timestamp).toLocaleDateString('zh-CN'),
@@ -6381,7 +6381,7 @@ function loadHbRecords() {
             <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${typeLabel} · ${timeAgo}${expired?' · 已过期':''}</div>
           </div>
           <div class="u6">
-            <div style="font-size:14px;font-weight:600;color:var(--gold)">${hb.totalAmount} USDT</div>
+            <div style="font-size:14px;font-weight:600;color:var(--gold)">${hb.totalAmount} TRC USDT</div>
             <div style="font-size:11px;color:${statusColor}">${statusText}</div>
           </div>
         </div>
@@ -6394,7 +6394,7 @@ function loadHbRecords() {
           ${hb.claimed.map((cl, i) => `
           <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);padding:2px 0">
             <span>第 ${i+1} 个：${cl.addr.slice(0,8)}...${cl.addr.slice(-4)}</span>
-            <span style="color:var(--gold)">+${parseFloat(cl.amount).toFixed(2)} USDT</span>
+            <span style="color:var(--gold)">+${parseFloat(cl.amount).toFixed(2)} TRC USDT</span>
           </div>`).join('')}
         </div>` : ''}
       </div>
