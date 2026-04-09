@@ -51,7 +51,36 @@ function animateHomeUsdTo(targetUsd, fmtUsdFn) {
   window._homeBalanceAnimRaf = requestAnimationFrame(tick);
 }
 
-function loadTronWeb(){return new Promise(r=>{if(window.TronWeb){r();return;}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';s.onload=r;document.head.appendChild(s);});}
+/** 加载 TronWeb（CDN）；失败/超时也必须 resolve，否则 await 会永久卡住「正在生成钱包…」 */
+function loadTronWeb() {
+  if (typeof window !== 'undefined' && window.TronWeb) return Promise.resolve();
+  return new Promise(function (resolve) {
+    var done = false;
+    function finish() {
+      if (done) return;
+      done = true;
+      resolve();
+    }
+    var timer = setTimeout(finish, 12000);
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';
+    s.onload = function () {
+      clearTimeout(timer);
+      finish();
+    };
+    s.onerror = function () {
+      clearTimeout(timer);
+      finish();
+    };
+    try {
+      document.head.appendChild(s);
+    } catch (_e) {
+      clearTimeout(timer);
+      finish();
+    }
+  });
+}
 var _qrLoadPromise=null;
 function loadQRCodeLib(){
   if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
