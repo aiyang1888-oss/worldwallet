@@ -107,6 +107,8 @@ function build(tree) {
         const raw = co.name;
         if (!raw || shouldSkipCounty(raw)) continue;
         if (add(raw)) continue;
+        // 「城区」去后缀得「城」；若市简称已以「城」结尾（如晋城），会拼成「晋城城」等伪词
+        if (raw === '城区') continue;
         const disambig = (cityShort || '') + stripDistrictSuffix(raw);
         if (ulen(disambig) >= 2 && ulen(disambig) <= 3) add(disambig);
       }
