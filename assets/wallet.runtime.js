@@ -15,10 +15,28 @@ if ('serviceWorker' in navigator) {
 function tapHaptic(ms) {
   try { if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(ms === undefined ? 12 : ms); } catch (e) { wwQuiet(e); }
 }
+/** Text 节点无 .closest；点按钮文字/emoji 时 ev.target 常为文本 → closest 抛错会打断整次 click（含欢迎页三按钮 onclick） */
+function wwClickTargetElement(ev) {
+  try {
+    var t = ev && ev.target;
+    if (!t) return null;
+    if (t.nodeType === 3) return t.parentElement || null;
+    return t;
+  } catch (_e) {
+    return null;
+  }
+}
 document.addEventListener('click', function(ev) {
-  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
-  if (!el) return;
-  tapHaptic(12);
+  try {
+    var t = wwClickTargetElement(ev);
+    var el = t && t.closest && t.closest('.tab-item,.quick-btn,#homeCopyBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
+    if (!el) return;
+    /* 欢迎页按钮由 wwWelcomeTapInline 自带触觉反馈，避免重复；亦勿与文本节点 bug 叠加 */
+    if (typeof el.closest === 'function' && el.closest('#page-welcome')) return;
+    tapHaptic(12);
+  } catch (_th0) {
+    wwQuiet(_th0);
+  }
 }, true);
 
 document.addEventListener('click', function (ev) {

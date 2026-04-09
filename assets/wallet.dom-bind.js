@@ -124,8 +124,16 @@
     });
   }
 
+  function wwDomEventTargetEl(ev) {
+    var t = ev && ev.target;
+    if (!t) return null;
+    if (t.nodeType === 3) return t.parentElement || null;
+    return t;
+  }
+
   function handleWwClick(ev) {
-    var coinHost = ev.target.closest('[data-coin]');
+    var _tg = wwDomEventTargetEl(ev);
+    var coinHost = _tg && _tg.closest && _tg.closest('[data-coin]');
     if (coinHost && coinHost.getAttribute('data-coin')) {
       var coin = coinHost.getAttribute('data-coin');
       if (typeof selectTransferCoin === 'function') selectTransferCoin(coin);
@@ -133,7 +141,7 @@
       return;
     }
 
-    var el = ev.target.closest(
+    var el = _tg && _tg.closest && _tg.closest(
       '[data-ww-go],[data-ww-go-tab],[data-ww-go-keyback],[data-ww-go-import-back],[data-ww-go-with-opts],[data-ww-fn],[data-ww-copy-from],[data-ww-load-trx]'
     );
     if (!el) return;
@@ -294,7 +302,8 @@
     var tabBar = document.getElementById('tabBar');
     if (tabBar) {
       tabBar.addEventListener('click', function (e) {
-        var item = e.target.closest('.tab-item');
+        var _tb = wwDomEventTargetEl(e);
+        var item = _tb && _tb.closest && _tb.closest('.tab-item');
         if (!item || !tabBar.contains(item)) return;
         if (typeof window.goTab === 'function') window.goTab(item.id);
       });
