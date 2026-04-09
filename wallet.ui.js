@@ -2763,7 +2763,7 @@ async function refreshHomePriceTicker() {
         usdt: d.tether && d.tether.usd
       });
     } catch (_cg) { wwQuiet(_cg); }
-    const html = 'TRC USDT <strong>$' + ust + '</strong>';
+    const html = 'USDT (TRC-20) <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
     if(a) a.innerHTML = html;
