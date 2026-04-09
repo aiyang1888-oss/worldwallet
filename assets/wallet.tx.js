@@ -704,6 +704,17 @@ async function loadTxHistory() {
       return o;
     });
     try { window._wwTxHistoryCache = forUi; } catch (_c2) {}
+    try {
+      if (typeof getPrices === 'function') {
+        var _whPr = await getPrices();
+        window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
+          usdt: _whPr.usdt,
+          trx: _whPr.trx,
+          eth: _whPr.eth,
+          btc: _whPr.btc
+        });
+      }
+    } catch (_cgw) {}
     try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(forUi); } catch (_wh) {}
     renderTxHistoryFromCache();
     wwPersistTxHistorySnap(forUi);

@@ -252,6 +252,14 @@ async function loadBalances() {
         : Promise.resolve({ eth: 0, trx: 0, usdt: 0, btc: 0, totalUsd: 0 }),
       getPrices()
     ]);
+    try {
+      window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
+        usdt: prices.usdt,
+        trx: prices.trx,
+        eth: prices.eth,
+        btc: prices.btc
+      });
+    } catch (_cg) {}
 
     const usdtBal = bal.usdt;
     const trxBal = bal.trx;
@@ -422,6 +430,17 @@ async function loadTxHistory() {
       return;
     }
     try { window._wwTxHistoryCache = txs; } catch (_c2) {}
+    try {
+      if (typeof getPrices === 'function') {
+        var _whPr = await getPrices();
+        window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
+          usdt: _whPr.usdt,
+          trx: _whPr.trx,
+          eth: _whPr.eth,
+          btc: _whPr.btc
+        });
+      }
+    } catch (_cgw) {}
     try { if (typeof wwCheckWhaleTxHistory === 'function') wwCheckWhaleTxHistory(txs); } catch (_wh) {}
     renderTxHistoryFromCache();
 

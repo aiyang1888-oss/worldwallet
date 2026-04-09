@@ -2683,9 +2683,9 @@ async function refreshHomePriceTicker() {
     };
     const ust = fmt(d.tether && d.tether.usd);
     try {
-      window._wwLastCgUsd = {
+      window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
         usdt: d.tether && d.tether.usd
-      };
+      });
     } catch (_cg) {}
     const html = 'USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
@@ -7646,6 +7646,14 @@ async function loadBalances() {
       ethR = { ethBal: 0, usdtErc: 0 };
       btcBalNum = 0;
     }
+    try {
+      window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
+        usdt: prices.usdt,
+        trx: prices.trx,
+        eth: prices.eth,
+        btc: prices.btc
+      });
+    } catch (_cgusd) {}
 
     let usdtBal = (trxR.usdtTrc || 0) + (ethR.usdtErc || 0);
     let trxBal = trxR.trxBal || 0;

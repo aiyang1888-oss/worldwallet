@@ -2768,9 +2768,9 @@ async function refreshHomePriceTicker() {
     };
     const ust = fmt(d.tether && d.tether.usd);
     try {
-      window._wwLastCgUsd = {
+      window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
         usdt: d.tether && d.tether.usd
-      };
+      });
     } catch (_cg) {}
     const html = 'USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
@@ -6111,6 +6111,14 @@ async function loadBalances() {
 
   try {
     const [prices] = await Promise.all([getPrices()]);
+    try {
+      window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
+        usdt: prices.usdt,
+        trx: prices.trx,
+        eth: prices.eth,
+        btc: prices.btc
+      });
+    } catch (_cgusd) {}
     
     // 查询 TRX 余额（TronGrid 免费 API）；无 TRX 地址则跳过
     const trxAddr = REAL_WALLET.trxAddress;

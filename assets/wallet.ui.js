@@ -2232,9 +2232,9 @@ async function refreshHomePriceTicker() {
     };
     const ust = fmt(d.tether && d.tether.usd);
     try {
-      window._wwLastCgUsd = {
+      window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
         usdt: d.tether && d.tether.usd
-      };
+      });
     } catch (_cg) {}
     const html = 'USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
