@@ -3229,7 +3229,13 @@ function wwPopulateConvertMnemonicPage() {
     zhEl.textContent = zh || '—';
   }
   try {
-    if (rw && rw.hasEncrypted && !(rw.enMnemonic || rw.mnemonic) && typeof wwUnsealWalletSensitive === 'function') {
+    var rw0 = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+    if (
+      rw0 &&
+      rw0.hasEncrypted &&
+      !(rw0.enMnemonic || rw0.mnemonic) &&
+      typeof wwUnsealWalletSensitive === 'function'
+    ) {
       void wwUnsealWalletSensitive()
         .then(function () {
           fillConvertMnemonic();
