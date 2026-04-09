@@ -75,6 +75,26 @@ try {
       document.documentElement.classList.remove('ww-hide-welcome-until-ready');
     } catch (e) {}
   }
+  /** 与 wallet.ui.js wwWalletHasValidPersistedAddress 一致：占位串不得触发「有钱包→资产页」首帧 */
+  function _wwAddrLooksValid(s) {
+    try {
+      if (s == null) return false;
+      var t = String(s).trim();
+      if (!t || t === '--') return false;
+      if (/^0x[0-9a-fA-F]{40}$/.test(t)) return true;
+      if (/^T[1-9A-HJ-NP-Za-km-z]{30,52}$/.test(t)) return true;
+      if (t.length >= 26 && (/^(bc1|[13])[a-zA-HJ-NP-Za-km-z0-9]{24,}$/.test(t) || /^bc1[a-z0-9]{25,90}$/i.test(t))) return true;
+      return false;
+    } catch (_e) {
+      return false;
+    }
+  }
+  function _wwObjHasValidAddr(o) {
+    return !!(
+      o &&
+      (_wwAddrLooksValid(o.ethAddress) || _wwAddrLooksValid(o.trxAddress) || _wwAddrLooksValid(o.btcAddress))
+    );
+  }
   try {
     if (window._WW_HARD_RELOAD) {
       releaseWelcomeGuard();
@@ -91,7 +111,7 @@ try {
         var w = localStorage.getItem('ww_wallet');
         if (w) {
           var o = JSON.parse(w);
-          if (o && (o.trxAddress || o.ethAddress || o.btcAddress)) boot = 'page-home';
+          if (o && _wwObjHasValidAddr(o)) boot = 'page-home';
         }
       } catch (e1) {}
     }
