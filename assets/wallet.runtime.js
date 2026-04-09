@@ -21,6 +21,17 @@ document.addEventListener('click', function(ev) {
   tapHaptic(12);
 }, true);
 
+document.addEventListener('click', function (ev) {
+  try {
+    var ab = document.getElementById('transferAddrBook');
+    var box = document.getElementById('transferAddrBox');
+    if (!ab || ab.style.display === 'none' || !box) return;
+    var t = ev.target;
+    if (box.contains(t)) return;
+    if (typeof hideTransferAddrBook === 'function') hideTransferAddrBook();
+  } catch (_hab) {}
+}, true);
+
 function parseUsdFromBalanceTxt(txt) {
   if (!txt) return 0;
   var n = parseFloat(String(txt).replace(/[$,\s]/g, ''));
@@ -1566,6 +1577,9 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
     try { if(typeof wwGaslessPopulate==='function') wwGaslessPopulate(); } catch(_gsp) {}
     try { if(typeof wwGasManagerRender==='function') setTimeout(wwGasManagerRender, 30); } catch(_wg) {}
   }
+  if (pageId === 'page-address-book') {
+    try { if (typeof renderAddressBookSettingsList === 'function') renderAddressBookSettingsList(); } catch (_ab) {}
+  }
   if(pageId==='page-swap') { if(typeof renderSwapUI==='function'){renderSwapUI();calcSwap();} setTimeout(loadSwapPrices, 200); }
   if(pageId==='page-hongbao') { if(typeof updateGiftUI==='function') updateGiftUI(); }
   if(MAIN_PAGES.includes(pageId)) updateAddr();
@@ -2619,14 +2633,16 @@ function saveTransferContact(addr, nick) {
   let list = getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== a.toLowerCase());
   list.unshift({ addr: a, nick: n });
   setTransferContacts(list);
-  renderTransferContactsList();
+  if (typeof wwRefreshAddressBookLists === 'function') wwRefreshAddressBookLists();
+  else renderTransferContactsList();
   showToast('已保存联系人', 'success');
 }
 function removeTransferContact(addr) {
   const t = (addr || '').trim().toLowerCase();
   if(!t) return;
   setTransferContacts(getTransferContacts().filter(c => c.addr.trim().toLowerCase() !== t));
-  renderTransferContactsList();
+  if (typeof wwRefreshAddressBookLists === 'function') wwRefreshAddressBookLists();
+  else renderTransferContactsList();
 }
 function toggleContactAddForm() {
   const f = document.getElementById('transferContactAddForm');
@@ -3836,6 +3852,70 @@ function updateTransferAddrBook() {
   }
   box.style.display = 'block';
 }
+
+/** 转账页「地址簿」按钮：展示全部联系人 + 最近地址（与输入联想共用 #transferAddrBook） */
+function openTransferAddrBookPicker() {
+  const box = document.getElementById('transferAddrBook');
+  if (!box) return;
+  const contacts = getTransferContacts();
+  const recent = getRecentTransferAddrs();
+  const contactSet = new Set(contacts.map(function (c) { return c.addr.trim().toLowerCase(); }));
+  const matchedRecent = recent.filter(function (a) { return !contactSet.has(a.toLowerCase()); });
+  box.innerHTML = '';
+  const appendHdr = function (lbl) {
+    const h = document.createElement('div');
+    h.className = 'transfer-addr-dd-hdr';
+    h.textContent = lbl;
+    box.appendChild(h);
+  };
+  const addContactItems = function (list) {
+    list.forEach(function (item) {
+      const div = document.createElement('div');
+      div.className = 'transfer-addr-dd-item';
+      const span = document.createElement('span');
+      span.className = 'contact-nick-mark';
+      span.textContent = item.nick + ' · ';
+      div.appendChild(span);
+      div.appendChild(document.createTextNode(addrBookShort(item.addr)));
+      div.title = item.addr;
+      div.onmousedown = function (e) { e.preventDefault(); pickTransferAddrFromBookRaw(item.addr); };
+      box.appendChild(div);
+    });
+  };
+  const addRecentItems = function (list) {
+    list.forEach(function (addr) {
+      const div = document.createElement('div');
+      div.className = 'transfer-addr-dd-item recent-item';
+      const ico = document.createElement('span');
+      ico.className = 'recent-ico';
+      ico.textContent = '⏳ ';
+      div.appendChild(ico);
+      div.appendChild(document.createTextNode(addr));
+      div.title = '最近转账: ' + addr;
+      div.onmousedown = function (e) { e.preventDefault(); pickTransferAddrFromBookRaw(addr); };
+      box.appendChild(div);
+    });
+  };
+  if (!contacts.length && !matchedRecent.length) {
+    const empty = document.createElement('div');
+    empty.className = 'transfer-addr-dd-empty';
+    empty.textContent = '暂无地址，请在设置 → 地址簿中添加';
+    box.appendChild(empty);
+    box.style.display = 'block';
+    return;
+  }
+  if (contacts.length) {
+    appendHdr('联系人');
+    addContactItems(contacts.slice(0, 24));
+  }
+  if (matchedRecent.length) {
+    appendHdr('最近转账');
+    addRecentItems(matchedRecent.slice(0, 12));
+  }
+  box.style.display = 'block';
+}
+try { window.openTransferAddrBookPicker = openTransferAddrBookPicker; } catch (_opab) {}
+
 function shakeTransferAmountTooHigh() {
   const el = document.getElementById('transferAmountBox');
   if(!el) return;
@@ -3876,6 +3956,7 @@ function detectAddrType() {
       box.style.borderColor = 'rgba(200,168,75,0.4)';
     }
     calcTransferFee();
+    try { if (typeof updateTransferAddrBook === 'function') updateTransferAddrBook(); } catch (_uab) {}
     return;
   }
 
@@ -3889,6 +3970,7 @@ function detectAddrType() {
     if (box) box.style.borderColor = 'var(--border)';
     if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed'; }
     calcTransferFee();
+    try { if (typeof updateTransferAddrBook === 'function') updateTransferAddrBook(); } catch (_uab2) {}
     return;
   }
 
@@ -3922,6 +4004,7 @@ function detectAddrType() {
   }
 
   calcTransferFee();
+  try { if (typeof updateTransferAddrBook === 'function') updateTransferAddrBook(); } catch (_uab3) {}
 }
 
 function checkTransferReady() {
