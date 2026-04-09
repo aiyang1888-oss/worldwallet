@@ -108,6 +108,7 @@ function wwRebuildWordlistIndexes() {
   });
 }
 
+/** 仅索引映射，不截断；中文展示词若异常，见 wallet.ui.js wwNormalizeZhWordlistForDisplay（或核对 zh-cn.json 是否经 verify-zh-wordlist）。 */
 function wwMapEnWordsToLangWords(enWords, wlKey) {
   if (!wlKey || wlKey === 'en') return enWords.slice();
   var tab = WT_WORDLISTS[wlKey];
