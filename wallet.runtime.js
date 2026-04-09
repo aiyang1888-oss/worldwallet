@@ -2080,29 +2080,81 @@ function switchQRChain(chain) {
 }
 
 function updateQRDisplay() {
-  const isEn = currentLang==='en';
+  const isEn = currentLang === 'en';
   const p1 = document.getElementById('qrPart1');
   const p2 = document.getElementById('qrPart2');
-  if(!p1) return;
-  if(isEn) {
-    p1.innerHTML = '<span style="color:var(--text-muted);font-size:11px">'+CHAIN_ADDR+'</span>';
-    if(p2) p2.style.display = 'none';
+  const p3 = document.getElementById('qrPart3');
+  if (!p1) return;
+  var vwQr = typeof wwGetChainViewWallet === 'function' ? wwGetChainViewWallet() : null;
+  const sel = document.getElementById('qrChainSelect');
+  const chain = (sel && sel.value) || 'trx';
+  const isEth = chain === 'eth';
+  var pubRaw = '--';
+  if (isEth) {
+    pubRaw = vwQr && vwQr.ethAddress ? vwQr.ethAddress : '--';
   } else {
-    // 用万语地址，带高亮
-    const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    let html = '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">'+prefix+'</span>';
-    if(ADDR_WORDS.length) {
-      ADDR_WORDS.forEach(w => {
+    pubRaw = vwQr && vwQr.trxAddress ? vwQr.trxAddress : typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '--';
+  }
+  const pubEsc = String(pubRaw).replace(/</g, '&lt;');
+  const pubAttr = String(pubRaw || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;');
+  const badge = isEth ? 'ETH' : 'TRX';
+  const col = isEth ? '#aaaaff' : '#ff9a9a';
+  if (isEn) {
+    p1.innerHTML =
+      '<span data-ww-copy="' +
+      pubAttr +
+      '" title="Tap to copy" style="color:var(--text-muted);font-size:11px;word-break:break-all;cursor:pointer">' +
+      pubEsc +
+      '</span>';
+    if (p2) p2.style.display = 'none';
+    if (p3) p3.style.display = 'none';
+  } else {
+    const prefix = (document.getElementById('addrPrefix') && document.getElementById('addrPrefix').textContent || '')
+      .replace(/\D/g, '')
+      .substring(0, 8);
+    const suffix = (document.getElementById('addrSuffix') && document.getElementById('addrSuffix').textContent || '')
+      .replace(/\D/g, '')
+      .substring(0, 8);
+    let html =
+      '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">' + prefix + '</span>';
+    if (typeof ADDR_WORDS !== 'undefined' && ADDR_WORDS.length) {
+      ADDR_WORDS.forEach(function (w) {
         html += w.custom
-          ? '<span style="color:#f0d070;font-size:13px;font-weight:700">'+w.word+'</span>'
-          : '<span style="color:#8888bb;font-size:12px">'+w.word+'</span>';
+          ? '<span style="color:#f0d070;font-size:13px;font-weight:700">' + w.word + '</span>'
+          : '<span style="color:#8888bb;font-size:12px">' + w.word + '</span>';
       });
     }
-    html += '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">'+suffix+'</span>';
+    html += '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">' + suffix + '</span>';
     p1.innerHTML = html;
-    p1.style.cssText = 'text-align:center;display:block;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-    if(p2) p2.style.display = 'none';
+    p1.style.cssText =
+      'text-align:center;display:block;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+    try {
+      var natCopy = typeof getNativeAddr === 'function' ? getNativeAddr() : '';
+      if (natCopy) {
+        p1.setAttribute('data-ww-copy', natCopy);
+        p1.setAttribute('title', '点击复制万语地址');
+      } else {
+        p1.removeAttribute('data-ww-copy');
+        p1.removeAttribute('title');
+      }
+    } catch (_q1) {}
+    if (p2) {
+      p2.innerHTML =
+        '<div style="text-align:center;margin-top:8px"><span style="font-size:10px;color:var(--text-muted);letter-spacing:0.5px">' +
+        badge +
+        ' · 公链地址</span></div><div style="text-align:center;margin-top:4px"><span data-ww-copy="' +
+        pubAttr +
+        '" title="点击复制完整地址" style="color:' +
+        col +
+        ';font-size:11px;font-family:monospace;word-break:break-all;line-height:1.45;cursor:pointer">' +
+        pubEsc +
+        '</span></div>';
+      p2.style.display = 'block';
+    }
+    if (p3) p3.style.display = 'none';
   }
 }
 
@@ -5099,41 +5151,55 @@ function getMnemonicFromGrid() {
 }
 
 // ── 二维码生成 ──────────────────────────────────────────────────
+function wwDrawQrCanvasPlaceholder(canvas, msg) {
+  try {
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#888888';
+    ctx.font = '11px system-ui,sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(msg || '…', canvas.width / 2, canvas.height / 2);
+  } catch (_e) {}
+}
+
 function generateQRCode(text, canvasId) {
-  const canvas = document.getElementById(canvasId || 'qrCanvas');
-  if(!canvas) return;
-  loadQRCodeLib().then(function(){
-    if(typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-      QRCode.toCanvas(canvas, text || 'worldtoken', {
-        width: 130,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' }
-      }, function(err) {
-        if(err) console.error('QR error:', err);
-      });
-    } else {
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.alt = '';
-      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
-      img.style.width = '130px';
-      img.style.height = '130px';
-      canvas.parentNode.replaceChild(img, canvas);
-    }
-  }).catch(function(e){
-    console.error('QR lib:', e);
-    try {
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.decoding = 'async';
-      img.alt = '';
-      img.src = 'https://chart.googleapis.com/chart?chs=130x130&cht=qr&chl=' + encodeURIComponent(text) + '&choe=UTF-8';
-      img.style.width = '130px';
-      img.style.height = '130px';
-      canvas.parentNode.replaceChild(img, canvas);
-    } catch(e2) { console.error(e2); }
-  });
+  var id = canvasId || 'qrCanvas';
+  var container = document.getElementById('qrCodeContainer');
+  var canvas = document.getElementById(id);
+  if (container && (!canvas || canvas.tagName !== 'CANVAS')) {
+    container.innerHTML = '<canvas id="qrCanvas" width="130" height="130"></canvas>';
+    canvas = document.getElementById(id);
+  }
+  if (!canvas || canvas.tagName !== 'CANVAS') return;
+  var payload = String(text || '');
+  loadQRCodeLib()
+    .then(function () {
+      if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+        QRCode.toCanvas(
+          canvas,
+          payload,
+          {
+            width: 130,
+            margin: 1,
+            color: { dark: '#000000', light: '#ffffff' }
+          },
+          function (err) {
+            if (err) {
+              console.error('QR error:', err);
+              wwDrawQrCanvasPlaceholder(canvas, 'QR');
+            }
+          }
+        );
+      } else {
+        wwDrawQrCanvasPlaceholder(canvas, 'QR');
+      }
+    })
+    .catch(function (e) {
+      console.error('QR lib:', e);
+      wwDrawQrCanvasPlaceholder(canvas, 'QR');
+    });
 }
 
 // 更新二维码（当地址改变时调用）
@@ -5164,12 +5230,16 @@ function buildReceiveQrPayload(chain, addr, amountRaw) {
   return addr;
 }
 function updateQRCode() {
-  if(!REAL_WALLET) return;
-  const chain = document.getElementById('qrChainSelect')?.value || 'trx';
-  let addr = '';
-  if(chain === 'trx') addr = REAL_WALLET.trxAddress || '';
-  else if(chain === 'eth') addr = REAL_WALLET.ethAddress || '';
-  if(addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
+  var vwQ = typeof wwGetChainViewWallet === 'function' ? wwGetChainViewWallet() : null;
+  if (!vwQ && typeof REAL_WALLET !== 'undefined') vwQ = REAL_WALLET;
+  if (!vwQ || !(vwQ.trxAddress || vwQ.ethAddress)) return;
+  var sel = document.getElementById('qrChainSelect');
+  var chain = sel ? sel.value || 'trx' : 'trx';
+  var addr = '';
+  if (chain === 'trx') addr = vwQ.trxAddress || '';
+  else if (chain === 'eth') addr = vwQ.ethAddress || '';
+  if (addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
+  if (typeof updateQRDisplay === 'function') updateQRDisplay();
 }
 
 
