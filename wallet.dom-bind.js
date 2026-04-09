@@ -251,6 +251,36 @@
       });
     }
 
+    /* 密钥页「暂时忽略验证」：捕获阶段绑定；先提升 TEMP→REAL 再进首页（见 wallet.ui.js wwSkipVerifyToHome） */
+    var wwSkipBtn = document.getElementById('wwBtnSkipVerify');
+    if (wwSkipBtn) {
+      wwSkipBtn.addEventListener(
+        'click',
+        function (ev) {
+          try {
+            if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+            if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+          } catch (_pe) {}
+          try {
+            if (typeof window.wwSkipVerifyToHome === 'function') {
+              window.wwSkipVerifyToHome();
+              return;
+            }
+          } catch (_sk) {}
+          try {
+            if (typeof hideWalletLoading === 'function') hideWalletLoading();
+          } catch (_h) {}
+          try {
+            if (typeof window.goTo === 'function') window.goTo('page-home', { forceHome: true, instant: true });
+          } catch (_g) {}
+          try {
+            if (typeof window.goTab === 'function') setTimeout(function () { window.goTab('tab-home'); }, 0);
+          } catch (_gt) {}
+        },
+        true
+      );
+    }
+
     document.addEventListener('click', handleWwClick, false);
   }
 
