@@ -224,7 +224,7 @@ async function main() {
   // --- 欢迎页三按钮 ---
   const welcomeClicks = [];
   const scenarios = [
-    { name: '创建新钱包', sel: 'button.btn-primary[onclick*="createNewWallet"]', expect: 'page-key-verify' },
+    { name: '创建新钱包', sel: 'button.btn-primary[onclick*="createNewWallet"]', expect: 'page-key' },
     // 无本地钱包时 goTo(PIN) 会重定向到欢迎页（与 runtime 一致）
     { name: 'PIN 解锁钱包', sel: 'button.btn-secondary[onclick*="page-password-restore"]', expect: 'page-welcome' },
     { name: '导入已有钱包', sel: 'button.btn-secondary[onclick*="page-import"]', expect: 'page-import' },
