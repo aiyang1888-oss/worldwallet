@@ -3449,7 +3449,12 @@ function updateSettingsPage() {
   var spv = document.getElementById('settingsPinValue');
   if (spv) {
     var pinSet = false;
-    try { pinSet = !!(localStorage.getItem('ww_pin') || '').trim(); } catch (_pp) {}
+    try {
+      pinSet = typeof wwHasPinConfigured === 'function' && wwHasPinConfigured();
+    } catch (_pp) { pinSet = false; }
+    if (!pinSet) {
+      try { pinSet = !!(localStorage.getItem('ww_pin') || '').trim(); } catch (_pp2) {}
+    }
     spv.textContent = pinSet ? '已设置' : '未设置';
     spv.style.color = pinSet ? 'var(--green,#26a17b)' : 'var(--text-muted)';
   }
