@@ -1407,22 +1407,32 @@ function closeTotpUnlock() {
   try { if (typeof wwRefreshAntiPhishOnPinUnlock === 'function') wwRefreshAntiPhishOnPinUnlock(); } catch (_ap2) {}
 }
 
+/**
+ * 是否应视为「已有钱包可进首页 / 显示底栏」：含 TEMP、已注入的 REAL，以及尚未注入时 localStorage 里的公开地址。
+ * 首屏 goTo 常早于 loadWallet()，仅查 REAL 会导致底栏 display:none，需点进子页再返回才出现。
+ */
+function wwUserHasAnySavedChainAddress() {
+  try {
+    if (typeof wwWalletHasAnyChainAddressIncludingTemp === 'function' && wwWalletHasAnyChainAddressIncludingTemp()) {
+      return true;
+    }
+  } catch (_a) {}
+  try {
+    if (typeof wwWalletHasAnyChainAddress === 'function') {
+      var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+      if (wwWalletHasAnyChainAddress(rw)) return true;
+      var ls = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+      if (wwWalletHasAnyChainAddress(ls)) return true;
+    }
+  } catch (_b) {}
+  return false;
+}
+
 function goTo(pageId, opts) {
   opts = opts || {};
-  /* 与 wallet.ui.js 一致：forceHome 时不改道；未验证前 TEMP 有地址也应能进首页（runtime 此前只查 REAL 会把「暂时忽略验证」打回欢迎页） */
-  if (
-    pageId === 'page-home' &&
-    !opts.forceHome &&
-    typeof wwWalletHasAnyChainAddressIncludingTemp === 'function'
-  ) {
-    if (!wwWalletHasAnyChainAddressIncludingTemp()) pageId = 'page-welcome';
-  } else if (
-    pageId === 'page-home' &&
-    !opts.forceHome &&
-    typeof wwWalletHasAnyChainAddress === 'function'
-  ) {
-    var _rwGo = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
-    if (!wwWalletHasAnyChainAddress(_rwGo)) pageId = 'page-welcome';
+  /* 与 wallet.ui.js 一致：forceHome 时不改道；首屏须认 localStorage，避免 REAL 未注入时被送回欢迎页 */
+  if (pageId === 'page-home' && !opts.forceHome && !wwUserHasAnySavedChainAddress()) {
+    pageId = 'page-welcome';
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _pwStoreRt = null;
@@ -1462,11 +1472,7 @@ function goTo(pageId, opts) {
   var _tbGo = document.getElementById('tabBar');
   if (_tbGo) {
     if (pageId === 'page-home') {
-      _tbGo.style.display =
-        typeof wwWalletHasAnyChainAddress === 'function' &&
-        wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null)
-          ? 'flex'
-          : 'none';
+      _tbGo.style.display = wwUserHasAnySavedChainAddress() ? 'flex' : 'none';
     } else {
       _tbGo.style.display = MAIN_PAGES.includes(pageId) ? 'flex' : 'none';
     }
@@ -1560,10 +1566,10 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
   if(pageId==='page-swap') setTimeout(loadSwapPrices, 100);
   if(pageId==='page-hb-records') loadHbRecords();
   if(pageId==='page-home') {
-    // 有钱包时显示导航栏
-    if(REAL_WALLET && REAL_WALLET.ethAddress) {
-      document.getElementById('tabBar').style.display = 'flex';
-    }
+    try {
+      var _tbFix = document.getElementById('tabBar');
+      if (_tbFix && wwUserHasAnySavedChainAddress()) _tbFix.style.display = 'flex';
+    } catch (_tbf) {}
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
@@ -7105,7 +7111,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) return;
     var last = sessionStorage.getItem('ww_last_page');
     if (!last || !ALLOW_RESTORE.includes(last) || !document.getElementById(last)) return;
-    var hasWallet = typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET);
+    var hasWallet = typeof wwUserHasAnySavedChainAddress === 'function' && wwUserHasAnySavedChainAddress();
     if (!hasWallet) {
       try { sessionStorage.removeItem('ww_last_page'); } catch (_r) {}
       return;
