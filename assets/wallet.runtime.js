@@ -6490,7 +6490,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   if (typeof caches === 'undefined' || !caches.keys) return;
   caches.keys().then(function(names) {
     names.forEach(function(name) {
-      if (name !== 'worldtoken-v202604060428') caches.delete(name);
+      if (name !== 'worldtoken-v202604091200') caches.delete(name);
     });
   });
 })();
