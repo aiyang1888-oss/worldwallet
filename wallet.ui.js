@@ -1292,6 +1292,35 @@ function wwWalletHasAnyChainAddress(rw) {
   }
 }
 
+/** 持久化 ww_wallet 是否含「可识别的」链上地址（排除占位/短串，避免首屏误判进资产页） */
+function wwWalletHasValidPersistedAddress(d) {
+  try {
+    if (!d || typeof d !== 'object') return false;
+    function ethOk(a) {
+      return typeof a === 'string' && /^0x[0-9a-fA-F]{40}$/.test(a.trim());
+    }
+    function trxOk(a) {
+      if (typeof a !== 'string') return false;
+      var s = a.trim();
+      return s.length >= 30 && s.length <= 52 && /^T[1-9A-HJ-NP-Za-km-z]+$/.test(s);
+    }
+    function btcOk(a) {
+      if (typeof a !== 'string') return false;
+      var s = a.trim();
+      if (s.length < 26) return false;
+      return /^(bc1|[13])[a-zA-HJ-NP-Za-km-z0-9]{24,}$/.test(s) || /^bc1[a-z0-9]{25,90}$/i.test(s);
+    }
+    return ethOk(d.ethAddress || '') || trxOk(d.trxAddress || '') || btcOk(d.btcAddress || '');
+  } catch (_e2) {
+    return false;
+  }
+}
+try {
+  window.wwWalletHasValidPersistedAddress = wwWalletHasValidPersistedAddress;
+} catch (_wwV) {
+  wwQuiet(_wwV);
+}
+
 /** REAL 已有任意链地址则用 REAL；否则（助记词已生成未验证）用 TEMP_WALLET 作首页/余额预览 */
 function wwGetChainViewWallet() {
   try {
