@@ -1,6 +1,6 @@
 <!-- worldtoken.cc v20260405 -->
 <!DOCTYPE html>
-<html lang="zh" class="ww-addr-pending ww-hide-welcome-until-ready ww-first-route-pending">
+<html lang="zh" class="ww-addr-pending ww-first-route-pending">
 <head>
 
 
@@ -13,7 +13,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <style id="ww-firstpaint-guard">
-/* 任意脚本执行前：欢迎页不参与首帧；无钱包时下方脚本会移除 ww-hide-welcome-until-ready */
+/* ww-hide-welcome-until-ready 仅由 head boot 在「先进非欢迎页」时动态添加，避免无钱包首访先藏欢迎再放开造成闪屏 */
 html.ww-hide-welcome-until-ready #page-welcome.page {
   display: none !important;
   opacity: 0 !important;
@@ -118,6 +118,9 @@ try {
       releaseWelcomeGuard();
       return;
     }
+    try {
+      document.documentElement.classList.add('ww-hide-welcome-until-ready');
+    } catch (_hw) {}
     document.documentElement.setAttribute('data-ww-boot-page', boot);
     try {
       document.documentElement.classList.add('ww-boot-route');
