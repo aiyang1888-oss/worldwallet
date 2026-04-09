@@ -321,6 +321,9 @@ function syncNativeAddrDisplaysToAllViews() {
     const suc2 = _safeEl('successFromPart2');
     if (suc1) { suc1.textContent = addr; suc1.style.cssText = 'font-size:10px;font-weight:700;color:#f0d070;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;display:block'; }
     if (suc2) suc2.style.display = 'none';
+    try {
+      if (typeof updateQRDisplay === 'function') updateQRDisplay();
+    } catch (_qr) {}
   }, 50);
 }
 
@@ -1215,6 +1218,17 @@ function wwFormatAddrChip(raw) {
   if (s.length <= 14) return s;
   return s.slice(0, 8) + '…' + s.slice(-4);
 }
+
+/** P2PKH / P2SH / P2WPKH / P2TR 常见格式（启发式校验，非全节点校验） */
+function wwIsValidBtcAddress(a) {
+  var s = String(a || '').trim();
+  if (!s) return false;
+  if (/^bc1p[a-z0-9]{58,120}$/i.test(s)) return true;
+  if (/^bc1[a-z0-9]{25,120}$/i.test(s)) return true;
+  if (/^[13][a-km-zA-HJ-NP-Z1-9]{24,34}$/.test(s)) return true;
+  return false;
+}
+try { window.wwIsValidBtcAddress = wwIsValidBtcAddress; } catch (_wi) {}
 
 function copyNative() {
   const addr = getNativeAddr();
