@@ -553,6 +553,18 @@ try {
           <div id="transferWanYuTrcHint" style="display:none;font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.45" aria-live="polite"></div>
         </div>
 
+        <div class="transfer-contacts-card">
+          <div class="transfer-contacts-head">
+            <span class="transfer-contacts-title">地址簿</span>
+            <span class="transfer-contact-add" onclick="if(typeof toggleContactAddForm==='function')toggleContactAddForm()">添加</span>
+          </div>
+          <div id="transferContactAddForm" style="display:none;margin-bottom:10px">
+            <input id="contactNickInput" type="text" autocomplete="off" placeholder="备注（可选）" style="width:100%;box-sizing:border-box;margin-bottom:8px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit" />
+            <button type="button" class="btn-secondary" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--gold);font-size:13px;cursor:pointer;font-family:inherit" onclick="if(typeof saveContactFromForm==='function')saveContactFromForm()">将上方收款栏地址存入地址簿</button>
+          </div>
+          <div id="transferContactsList"></div>
+        </div>
+
         <div id="transferAmountBox" style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px" id="transferAmountLabel">金额（USDT · TRC-20）</div>
           <input id="transferAmount" type="number" placeholder="0.00" style="width:100%;box-sizing:border-box;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;font-size:26px;font-weight:700;color:var(--text);outline:none;text-align:right" />
@@ -634,6 +646,13 @@ try {
             <span class="settings-icon">🔁</span>
             <span class="settings-label">转换助记词</span>
             <span class="settings-value" style="color:var(--text-muted)">多语言词表</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" onclick="if(typeof goTo==='function')goTo('page-address-book')">
+            <span class="settings-icon">📇</span>
+            <span class="settings-label">地址簿</span>
+            <span class="settings-value" style="color:var(--text-muted)">常用收款</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
