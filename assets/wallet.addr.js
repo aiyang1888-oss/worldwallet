@@ -1342,7 +1342,10 @@ function wwDeriveTronBase58FromWanYuNorm(norm) {
       if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
         return TronWeb.address.fromHex('41' + ethHex.slice(2));
       }
-      return 'T' + ethHex.slice(2, 35);
+      if (typeof wwTrxBase58FromEthAddressHex === 'function') {
+        return wwTrxBase58FromEthAddressHex(ethHex);
+      }
+      return '';
     } catch (_e2) {
       continue;
     }

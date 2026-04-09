@@ -311,13 +311,12 @@ async function createWallet(forcedWordCount) {
   var trxAddr = '';
   try {
     if (typeof loadTronWeb === 'function') await loadTronWeb();
-    if (typeof TronWeb !== 'undefined') {
+    if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
       trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
-    } else {
-      trxAddr = 'T' + trxWallet.address.slice(2, 35);
     }
-  } catch (_e2) {
-    trxAddr = 'T' + trxWallet.address.slice(2, 35);
+  } catch (_e2) {}
+  if (!trxAddr && typeof wwTrxBase58FromEthAddressHex === 'function') {
+    trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
   }
   return {
     mnemonic: mnemonic,
@@ -2016,7 +2015,13 @@ function wwGetTransferRecipientValidation(addr, coinId) {
       return { ok: true, message: '' };
     }
     if (/^T/.test(a)) {
-      if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a)) {
+      var trxFmtOk = /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a);
+      if (!trxFmtOk && typeof TronWeb !== 'undefined' && typeof TronWeb.isAddress === 'function') {
+        try {
+          trxFmtOk = !!TronWeb.isAddress(a);
+        } catch (_ti) {}
+      }
+      if (!trxFmtOk) {
         return { ok: false, message: WW_MSG_ADDR_WRONG };
       }
       if (typeof wwIsTransferToSelfForCoin === 'function' && wwIsTransferToSelfForCoin(a, id)) {
@@ -3511,12 +3516,15 @@ function wwEnsureRealWalletFromTempForVerify(tw, enMnemonicStr, displayWordsForR
       var wallet = ethers.Wallet.fromMnemonic(m);
       var trxWallet = ethers.Wallet.fromMnemonic(m, "m/44'/195'/0'/0/0");
       var btcWallet = ethers.Wallet.fromMnemonic(m, "m/44'/0'/0'/0/0");
-      var trxAddr = 'T' + trxWallet.address.slice(2, 35);
+      var trxAddr = '';
       try {
         if (typeof TronWeb !== 'undefined' && TronWeb.address && typeof TronWeb.address.fromHex === 'function') {
           trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
         }
       } catch (_trx) {}
+      if (!trxAddr && typeof wwTrxBase58FromEthAddressHex === 'function') {
+        trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
+      }
       tw.eth = { address: wallet.address, privateKey: wallet.privateKey };
       tw.trx = { address: trxAddr, privateKey: trxWallet.privateKey };
       tw.btc = { address: btcWallet.address, privateKey: btcWallet.privateKey };

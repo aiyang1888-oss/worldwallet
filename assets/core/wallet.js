@@ -21,6 +21,59 @@ var DERIVE_PATHS = {
   btc: "m/44'/0'/0'/0/0"
 };
 
+/** Base58 字母表（与 Bitcoin / Tron 一致） */
+var WW_TRX_B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+/**
+ * 任意字节缓冲区 → Base58（含前导 0x00 → 多个首字符）。
+ */
+function wwBase58EncodeBytes(input) {
+  var bytes = ethers.utils.arrayify(input);
+  if (!bytes.length) return '';
+  var digits = [0];
+  var i;
+  var j;
+  var carry;
+  for (i = 0; i < bytes.length; i++) {
+    carry = bytes[i];
+    for (j = 0; j < digits.length; j++) {
+      carry += digits[j] << 8;
+      digits[j] = carry % 58;
+      carry = (carry / 58) | 0;
+    }
+    while (carry) {
+      digits.push(carry % 58);
+      carry = (carry / 58) | 0;
+    }
+  }
+  var string = '';
+  for (var k = 0; k < bytes.length && bytes[k] === 0; k++) {
+    string += WW_TRX_B58[0];
+  }
+  for (var q = digits.length - 1; q >= 0; q--) {
+    string += WW_TRX_B58[digits[q]];
+  }
+  return string;
+}
+
+/**
+ * 无 TronWeb 时：ETH 格式 20 字节公钥哈希 + Tron 主网前缀 0x41 → Base58Check，与 TronWeb.address.fromHex('41'+hex) 一致。
+ * 旧实现用 T+十六进制切片，含字符 0、长度错误，转账页正则判为「地址有误」。
+ */
+function wwTrxBase58FromEthAddressHex(ethAddr0x) {
+  try {
+    var h = String(ethAddr0x || '').replace(/^0x/i, '');
+    if (h.length !== 40) return '';
+    var payload = ethers.utils.arrayify('0x41' + h);
+    var hash2 = ethers.utils.sha256(ethers.utils.sha256(payload));
+    var chk = ethers.utils.arrayify(hash2).slice(0, 4);
+    var full = ethers.utils.concat([payload, chk]);
+    return wwBase58EncodeBytes(full);
+  } catch (_e) {
+    return '';
+  }
+}
+
 /**
  * 生成新钱包
  * @param {number} wordCount - 助记词词数 (12/15/18/21/24)
@@ -81,13 +134,14 @@ function deriveAddress(mnemonic) {
   var trxWallet = ethers.Wallet.fromMnemonic(mnemonic, DERIVE_PATHS.trx);
   var btcWallet = ethers.Wallet.fromMnemonic(mnemonic, DERIVE_PATHS.btc);
 
-  // TRX 地址转换
-  var trxAddr = 'T' + trxWallet.address.slice(2, 35);
+  // TRX：优先 TronWeb；否则本地 Base58Check（勿再用 T+hex 伪地址，否则转账校验失败）
+  var trxAddr = '';
   try {
-    if (typeof TronWeb !== 'undefined') {
+    if (typeof TronWeb !== 'undefined' && TronWeb.address && TronWeb.address.fromHex) {
       trxAddr = TronWeb.address.fromHex('41' + trxWallet.address.slice(2));
     }
   } catch (e) {}
+  if (!trxAddr) trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
 
   var btcAddr = '';
   try {
