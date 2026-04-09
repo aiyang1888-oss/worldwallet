@@ -3,6 +3,7 @@
  * 实时推送 AI 自动化流程的执行进度
  */
 
+const path = require('path');
 const axios = require('axios');
 
 class TelegramNotifier {

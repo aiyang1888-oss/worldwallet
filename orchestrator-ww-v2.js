@@ -36,6 +36,18 @@ try {
   generateSecurityDashboard = () => '';
 }
 
+// ── NEW: Telegram notifier (optional — missing token/file is non-fatal) ──
+let notifier = null;
+try {
+  const TelegramNotifier = require('./telegram-notifier');
+  notifier = new TelegramNotifier(
+    process.env.TG_BOT_TOKEN || '',
+    process.env.TG_CHAT_ID   || ''
+  );
+} catch (e) {
+  console.warn('[WW] ⚠️  telegram-notifier.js not loaded:', e.message);
+}
+
 const PROJECT_ROOT = __dirname;
 const AI_TASKS_DIR = path.join(PROJECT_ROOT, 'ai-tasks');
 const LOGS_DIR     = path.join(PROJECT_ROOT, 'logs');
@@ -362,6 +374,16 @@ ${JSON.stringify(scoutResult, null, 2)}
       // 6-e. Generate dashboard
       generateSecurityDashboard(latest, trend, bugs);
       console.log('   ✓ SECURITY_DASHBOARD.md 已生成');
+
+      // 6-f. Telegram security score notification
+      try {
+        if (notifier && typeof notifier.sendSecurityScore === 'function') {
+          await notifier.sendSecurityScore(latest);
+          console.log('   ✓ Telegram 安全评分通知已发送');
+        }
+      } catch (tgErr) {
+        console.warn('[WW] ⚠️  Telegram security score notification failed (non-fatal):', tgErr.message);
+      }
     } catch (err) {
       // Non-fatal: log warning, do not throw
       console.warn('[WW] ⚠️  Security pipeline error (non-fatal):', err.message);

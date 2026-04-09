@@ -1,0 +1,7 @@
+{
+  "mode": "Security Audit Mode — read-only",
+  "total_issues": 0,
+  "issues": [],
+  "approved_for_fix": false,
+  "reason": "Operational Mode active — all edits are disabled"
+}

@@ -38,14 +38,22 @@ function appendTrend(record) {
     }
 
     const entry = {
-      date:   record.date   != null ? record.date   : new Date().toISOString(),
+      date:   record.date   != null ? record.date   : new Date().toISOString().split('T')[0],
       score:  record.score  != null ? record.score  : 0,
       high:   record.high   != null ? record.high   : 0,
       medium: record.medium != null ? record.medium : 0,
       low:    record.low    != null ? record.low    : 0,
     };
 
-    data.push(entry);
+    // Same calendar day: replace last row instead of duplicating (multiple runs/day)
+    const last = data[data.length - 1];
+    const entryDate = typeof entry.date === 'string' ? entry.date.split('T')[0] : '';
+    const lastDate  = last && typeof last.date === 'string' ? last.date.split('T')[0] : '';
+    if (last && entryDate && lastDate && entryDate === lastDate) {
+      data[data.length - 1] = entry;
+    } else {
+      data.push(entry);
+    }
 
     if (data.length > MAX_RECORDS) {
       data = data.slice(data.length - MAX_RECORDS);

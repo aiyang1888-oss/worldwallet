@@ -1,0 +1,18 @@
+请按以下任务修复代码：
+
+# Fix Tasks (with suggestions)
+
+## Task 1
+- File: src/index.js
+- Line: 16
+- Severity: HIGH
+- Issue: addBalance() 没有验证 amount > 0，允许负数
+- Suggestion: Add validation: if (amount <= 0) throw new Error("Amount must be > 0")
+- Deadline: 2026-04-11
+
+
+规则：
+1. 先修 HIGH
+2. 每项说明修改文件/位置/原因
+3. 不改无关代码
+4. 给出变更摘要

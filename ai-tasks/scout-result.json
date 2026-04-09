@@ -1,15 +1,5 @@
 {
-  "bugs_found": [
-    {
-      "id": "BUG-001",
-      "file": "src/index.js",
-      "line": 16,
-      "severity": "high",
-      "description": "addBalance() 没有验证 amount > 0，允许负数",
-      "test_failure": "test should NOT allow negative balance fails",
-      "fix_suggestion": "Add validation: if (amount <= 0) throw new Error(\"Amount must be > 0\")"
-    }
-  ],
-  "test_status": "1 test failed",
-  "confidence": "high"
+  "bugs_found": [],
+  "test_status": "all tests passed",
+  "confidence": "medium"
 }

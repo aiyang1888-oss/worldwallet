@@ -3,7 +3,8 @@
 const fs   = require('fs');
 const path = require('path');
 
-const OUTPUT_FILE = path.join(process.cwd(), 'SECURITY_DASHBOARD.md');
+// Project root = parent of ai-system/ so dashboard path is stable when cwd differs
+const OUTPUT_FILE = path.join(__dirname, '..', 'SECURITY_DASHBOARD.md');
 
 /**
  * generateSecurityDashboard(latest, trend, issues)
@@ -49,7 +50,7 @@ function generateSecurityDashboard(latest, trend, issues) {
     issuesSection = iArr.slice(0, 5).map((issue, idx) => {
       const severity = issue.severity || issue.level || issue.grade || '';
       const location = issue.location || issue.file  || issue.path  || '';
-      const message  = issue.message  || issue.desc  || issue.title || JSON.stringify(issue);
+      const message  = issue.message || issue.description || issue.desc || issue.title || JSON.stringify(issue);
       const parts    = [`${idx + 1}.`];
       if (severity) parts.push(`**[${severity}]**`);
       if (location) parts.push(`\`${location}\``);
