@@ -1303,6 +1303,12 @@ function goTo(pageId, opts) {
     }
   }
   try {
+    if (!opts.force && !opts.forceRoute) {
+      var _wwSamePgUi = document.querySelector('.page.active');
+      if (_wwSamePgUi && _wwSamePgUi.id === pageId) return;
+    }
+  } catch (_sameUi) {}
+  try {
     wwClearHtmlBootRouteIfDestChanges(pageId);
   } catch (_wwBootClrUi) {}
   try { sessionStorage.setItem('ww_last_page', pageId); } catch(_) {}
