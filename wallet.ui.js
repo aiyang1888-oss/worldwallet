@@ -294,11 +294,13 @@ try {
 function wwClearHtmlBootRouteIfDestChanges(destPageId) {
   try {
     var b = document.documentElement.getAttribute('data-ww-boot-page');
-    if (!b) return;
-    document.documentElement.removeAttribute('data-ww-boot-page');
-    try {
-      document.documentElement.classList.remove('ww-boot-route');
-    } catch (_w0) { wwQuiet(_w0); }
+    if (b) {
+      document.documentElement.removeAttribute('data-ww-boot-page');
+      try {
+        document.documentElement.classList.remove('ww-boot-route');
+      } catch (_w0) { wwQuiet(_w0); }
+    }
+    /* 属性已丢但 head 注入 style 仍在时，仍会 pointer-events:none 挡欢迎页；一律卸下 */
     try {
       var _sts = document.querySelectorAll('style[data-ww-boot-route]');
       for (var _si = 0; _si < _sts.length; _si++) {
