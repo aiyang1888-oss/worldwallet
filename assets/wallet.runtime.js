@@ -5337,7 +5337,25 @@ function setSwapCoin(target, coin) {
   calcSwap();
 }
 
+function wwInitSwapSlippageSelect() {
+  var sel = _safeEl('swapSlippagePct');
+  if (!sel || sel.getAttribute('data-ww-slip-init') === '1') return;
+  try {
+    var s = localStorage.getItem('ww_swap_slippage_pct');
+    if (s != null && s !== '') sel.value = s;
+  } catch (_e) {}
+  sel.setAttribute('data-ww-slip-init', '1');
+}
+
+function wwOnSwapSlippageChange() {
+  try {
+    localStorage.setItem('ww_swap_slippage_pct', String(wwGetSwapSlippagePct()));
+  } catch (_e) {}
+  calcSwap();
+}
+
 function renderSwapUI() {
+  wwInitSwapSlippageSelect();
   const f=swapFrom, t=swapTo;
   var sfi = _safeEl('swapFromIcon');
   if (sfi) {
@@ -8123,7 +8141,10 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
     if (typeof doImportWallet === 'function') window.doImportWallet = doImportWallet;
     if (typeof doSwap === 'function') window.doSwap = doSwap;
     if (typeof closeSwapConfirm === 'function') window.closeSwapConfirm = closeSwapConfirm;
+    if (typeof confirmSwapGo === 'function') window.confirmSwapGo = confirmSwapGo;
     if (typeof openDex === 'function') window.openDex = openDex;
+    if (typeof wwSwapShowRecords === 'function') window.wwSwapShowRecords = wwSwapShowRecords;
+    if (typeof closeSwapHistory === 'function') window.closeSwapHistory = closeSwapHistory;
     if (typeof openCoinPicker === 'function') window.openCoinPicker = openCoinPicker;
     if (typeof closeCoinPicker === 'function') window.closeCoinPicker = closeCoinPicker;
     if (typeof swapCoins === 'function') window.swapCoins = swapCoins;

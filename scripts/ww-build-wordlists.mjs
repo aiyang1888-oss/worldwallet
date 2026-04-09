@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 生成 dist/wordlists.js（仅内嵌 en + 中文地名 zh）与 dist/wordlists/*.json（其余语种懒加载）。
- * 依赖：node_modules/bip39；de/ru 自 bitcoin/bips PR 提交 raw。
+ * 英文等自 bitcoinjs/bip39 raw；de/ru 自 bitcoin/bips PR 提交。
  */
 import fs from 'fs';
 import path from 'path';
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 const distWl = path.join(root, 'dist', 'wordlists');
-const bip39Root = path.join(root, 'node_modules', 'bip39', 'src', 'wordlists');
+const BIP39_RAW = 'https://raw.githubusercontent.com/bitcoinjs/bip39/master/src/wordlists';
 
 function readJson(p) {
   return JSON.parse(fs.readFileSync(p, 'utf8'));
@@ -45,7 +45,13 @@ async function fetchText(url) {
   return r.text();
 }
 
-const en = readJson(path.join(bip39Root, 'english.json'));
+async function fetchJson(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error('fetch ' + url + ' ' + r.status);
+  return r.json();
+}
+
+const en = await fetchJson(BIP39_RAW + '/english.json');
 const zh = readJson(path.join(distWl, 'zh-cn.json'));
 if (en.length !== 2048 || zh.length !== 2048) throw new Error('en/zh must be 2048');
 
@@ -58,7 +64,9 @@ const copyMap = {
   pt: 'portuguese.json'
 };
 for (const [lang, file] of Object.entries(copyMap)) {
-  writeJson(path.join(distWl, lang + '.json'), readJson(path.join(bip39Root, file)));
+  const data = await fetchJson(BIP39_RAW + '/' + file);
+  if (data.length !== 2048) throw new Error('bad length ' + lang);
+  writeJson(path.join(distWl, lang + '.json'), data);
 }
 
 const germanTxt = await fetchText(

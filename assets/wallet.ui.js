@@ -2172,6 +2172,22 @@ function wwGetTransferRecipientValidation(addr, coinId) {
     return { ok: true, message: '' };
   }
   if (id === 'usdt' || id === 'trx') {
+    var usdtNet =
+      id === 'usdt' && typeof transferCoin !== 'undefined' && transferCoin && transferCoin.usdtNet
+        ? transferCoin.usdtNet
+        : 'tron';
+    if (id === 'usdt' && usdtNet && usdtNet !== 'tron') {
+      if (/^T[1-9A-HJ-NP-Za-km-z]/.test(a) || (typeof wwIsWanYuTransferAddr === 'function' && wwIsWanYuTransferAddr(a))) {
+        return { ok: false, message: WW_MSG_ADDR_WRONG };
+      }
+      if (!/^0x[a-fA-F0-9]{40}$/.test(a)) {
+        return { ok: false, message: WW_MSG_ADDR_WRONG };
+      }
+      if (typeof wwIsTransferToSelfForCoin === 'function' && wwIsTransferToSelfForCoin(a, id)) {
+        return { ok: false, message: WW_MSG_TRANSFER_SELF };
+      }
+      return { ok: true, message: '' };
+    }
     if (/^0x/i.test(a)) {
       return { ok: false, message: WW_MSG_ADDR_WRONG };
     }
