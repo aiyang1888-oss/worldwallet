@@ -1760,6 +1760,19 @@ try {
 <script src="core/key-derivation-cache.js"></script>
 <script src="core/wallet.js"></script>
 <script src="wordlists.js"></script>
+<!-- 先于 wallet.core：若 core 未加载/缓存异常，后续 catch 内调用 wwQuiet 否则会 ReferenceError -->
+<script>
+(function () {
+  if (typeof window.wwQuiet === 'function') return;
+  window.wwQuiet = function wwQuietStub(e, hint) {
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('WW_DEBUG') === '1' && typeof console !== 'undefined' && console.debug) {
+        console.debug('[wwQuiet]', hint || '', e);
+      }
+    } catch (_q) {}
+  };
+})();
+</script>
 <script src="wallet.core.js"></script>
 <script src="wallet.token.js"></script>
 <script src="core/session-key-cache.js"></script>
