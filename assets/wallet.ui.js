@@ -4781,6 +4781,72 @@ function openPinSettingsDialog() {
 
 /* 时钟、闲置锁、活动重置、SEO/离线、余额隐私与滚动顶按钮由 wallet.runtime.js 统一初始化，避免与下文重复注册定时器与监听器 */
 
+/** 主样式表就绪后再跑首帧 goTo，避免 wallet.css 晚于本脚本执行时布局/主题闪一下 */
+function wwWhenWalletCssReady(fn) {
+  try {
+    if (typeof fn !== 'function') return;
+    var link = document.getElementById('ww-wallet-css');
+    if (!link) {
+      try {
+        link = document.querySelector('link[rel~="stylesheet"][href*="wallet.css"]');
+      } catch (_q) {}
+    }
+    if (!link) {
+      setTimeout(function () {
+        fn();
+      }, 0);
+      return;
+    }
+    var done = false;
+    function fire() {
+      if (done) return;
+      done = true;
+      try {
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(function () {
+            fn();
+          });
+        } else {
+          setTimeout(function () {
+            fn();
+          }, 0);
+        }
+      } catch (_f) {
+        setTimeout(function () {
+          fn();
+        }, 0);
+      }
+    }
+    try {
+      if (link.sheet) {
+        fire();
+        return;
+      }
+    } catch (_s) {}
+    function onEnd() {
+      try {
+        link.removeEventListener('load', onEnd);
+        link.removeEventListener('error', onEnd);
+      } catch (_r) {}
+      fire();
+    }
+    link.addEventListener('load', onEnd);
+    link.addEventListener('error', onEnd);
+    try {
+      if (link.sheet) fire();
+    } catch (_s2) {}
+    setTimeout(fire, 4000);
+  } catch (_e) {
+    if (typeof wwQuiet === 'function') wwQuiet(_e);
+    setTimeout(function () {
+      fn();
+    }, 0);
+  }
+}
+try {
+  window.wwWhenWalletCssReady = wwWhenWalletCssReady;
+} catch (_wwCssFn) {}
+
 (function () {
   var WW_GUEST_HASH_OK = {
     'page-welcome': 1,
@@ -4867,11 +4933,13 @@ function openPinSettingsDialog() {
   window.addEventListener('hashchange', function () {
     wwApplyHashRoute();
   });
-  (function wwBootHashRoutesNow() {
+  wwWhenWalletCssReady(function wwBootHashRoutesAfterCss() {
     try {
       wwEnsureInitialHashRoute();
       wwApplyHashRoute();
-    } catch (_wb) { wwQuiet(_wb); }
+    } catch (_wb) {
+      wwQuiet(_wb);
+    }
     /* 与 runtime wwDeferFirstRoutePaint 一致：勿同步 remove，否则与 goTo 同一帧触发 .page opacity 过渡 → 资产页扇动 */
     try {
       if (document.documentElement.classList.contains('ww-first-route-pending')) {
@@ -4879,16 +4947,22 @@ function openPinSettingsDialog() {
         requestAnimationFrame(function () {
           try {
             document.documentElement.classList.remove('ww-first-route-pending');
-          } catch (_e) { wwQuiet(_e); }
+          } catch (_e) {
+            wwQuiet(_e);
+          }
           requestAnimationFrame(function () {
             try {
               document.documentElement.classList.remove('ww-instant-route');
-            } catch (_e2) { wwQuiet(_e2); }
+            } catch (_e2) {
+              wwQuiet(_e2);
+            }
           });
         });
       }
-    } catch (_wwFp) { wwQuiet(_wwFp); }
-  })();
+    } catch (_wwFp) {
+      wwQuiet(_wwFp);
+    }
+  });
 })();
 
     if ('serviceWorker' in navigator) {

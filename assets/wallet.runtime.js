@@ -7568,7 +7568,16 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
       try { sessionStorage.removeItem('ww_last_page'); } catch (_r) { wwQuiet(_r); }
       return;
     }
-    setTimeout(function() { goTo(last); }, 50);
+    function wwDoRestoreLastPage() {
+      setTimeout(function () {
+        goTo(last);
+      }, 50);
+    }
+    if (typeof window.wwWhenWalletCssReady === 'function') {
+      window.wwWhenWalletCssReady(wwDoRestoreLastPage);
+    } else {
+      wwDoRestoreLastPage();
+    }
   } catch (_) { wwQuiet(_); }
 })();
 
