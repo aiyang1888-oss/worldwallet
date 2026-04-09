@@ -22,9 +22,9 @@ if [[ ! -f "$ROOT_DIR/dist/wallet.runtime.js" ]]; then
 fi
 
 echo "[1/4] 语法检查…"
-node -c "$ROOT_DIR/dist/wallet.runtime.js"
-node -c "$ROOT_DIR/dist/wallet.addr.js"
-node -c "$ROOT_DIR/dist/wallet.ui.js"
+node --check "$ROOT_DIR/dist/wallet.runtime.js"
+node --check "$ROOT_DIR/dist/wallet.addr.js"
+node --check "$ROOT_DIR/dist/wallet.ui.js"
 
 echo "[2/4] 更新 Service Worker 缓存版本（dist/sw.js）…"
 if [[ -f "$ROOT_DIR/dist/sw.js" ]] && grep -q 'worldtoken-v' "$ROOT_DIR/dist/sw.js" 2>/dev/null; then

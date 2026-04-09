@@ -14,7 +14,10 @@
     "test:urls": "cat LOCAL_TEST.md",
     "telegram:cursor": "node scripts/telegram-cursor-control.mjs",
     "telegram:launchagent:install": "bash scripts/install-telegram-launchagent.sh",
-    "telegram:launchagent:uninstall": "bash scripts/uninstall-telegram-launchagent.sh"
+    "telegram:launchagent:uninstall": "bash scripts/uninstall-telegram-launchagent.sh",
+    "deploy": "bash scripts/deploy-auto.sh",
+    "deploy:dry": "DRY_RUN=1 bash scripts/deploy-auto.sh",
+    "launchagent:auto-deploy:install": "bash scripts/install-auto-deploy-launchagent.sh"
   },
   "dependencies": {
     "axios": "^1.14.0",

@@ -1,10 +1,10 @@
 #!/bin/sh
-# auto-commit-push.sh — 检测未提交改动，自动 commit + push
-# 由 LaunchAgent 每 60 秒调用一次
+# auto-commit-push.sh — 检测未提交改动，npm run build（dist→assets）后 commit + push
+# 由 LaunchAgent 定时调用；环境变量 AUTO_BUILD=0 可跳过构建（仅提交已有改动）
 
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
 
-REPO="/Users/daxiang/Desktop/Projects/WorldWallet"
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO" || exit 1
 
 # 有未暂存改动才处理
@@ -13,16 +13,10 @@ if [ -z "$STATUS" ]; then
   exit 0
 fi
 
-# 同步 dist/ → assets/（如有差异）
-for f in wallet.ui.js wallet.runtime.js wallet.addr.js wallet.tx.js wallet.core.js wallet.css wallet.v2.css wallet.dom-bind.js wallet.html index.html app.html; do
-  src="dist/$f"
-  dst="assets/$f"
-  if [ -f "$src" ] && [ -f "$dst" ]; then
-    if ! cmp -s "$src" "$dst"; then
-      cp "$src" "$dst"
-    fi
-  fi
-done
+# 全量同步 dist/ → assets/（与 package.json build 一致，避免手工 cp 列表分叉）
+if [ "${AUTO_BUILD:-1}" != "0" ] && command -v npm >/dev/null 2>&1 && [ -f "$REPO/dist/wallet.runtime.js" ]; then
+  npm run build --silent 2>/dev/null || npm run build
+fi
 
 git add -A
 

@@ -18,12 +18,6 @@ SCRIPT="${ROOT_DIR}/scripts/auto-commit-push.sh"
 
 mkdir -p "$LOG_DIR"
 
-# 使用带完整 build 的包装脚本（若存在）；否则退回原 auto-commit-push
-WRAPPER="${ROOT_DIR}/scripts/auto-commit-push-with-build.sh"
-if [[ ! -f "$WRAPPER" ]]; then
-  WRAPPER="$SCRIPT"
-fi
-
 cat > "$PLIST_DST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -36,7 +30,7 @@ cat > "$PLIST_DST" <<EOF
   <key>ProgramArguments</key>
   <array>
     <string>/bin/sh</string>
-    <string>${WRAPPER}</string>
+    <string>${SCRIPT}</string>
   </array>
   <key>StartInterval</key>
   <integer>300</integer>
