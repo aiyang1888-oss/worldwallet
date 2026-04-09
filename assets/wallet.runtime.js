@@ -1615,6 +1615,9 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
   }
   if(pageId==='page-transfer') {
     if(typeof initTransferFeeSpeedUI==='function') initTransferFeeSpeedUI();
+    try {
+      if (typeof wwInitTransferUsdtNetworkUi === 'function') wwInitTransferUsdtNetworkUi();
+    } catch (_wtn) {}
     calcTransferFee();
     renderTransferContactsList();
     try { if(typeof wwMevToggleInit==='function') wwMevToggleInit(); } catch(_wm) {}
@@ -3952,6 +3955,20 @@ function getNetworkFeeEstimateLines(coinId) {
   if(coinId === 'trx') return trxMap[sp] || trxMap.normal;
   if(coinId === 'eth') return ethMap[sp] || ethMap.normal;
   if(coinId === 'btc') return btcMap[sp] || btcMap.normal;
+  if (
+    coinId === 'usdt' &&
+    typeof transferCoin !== 'undefined' &&
+    transferCoin &&
+    transferCoin.usdtNet &&
+    transferCoin.usdtNet !== 'tron'
+  ) {
+    var gLine = typeof window !== 'undefined' && window._wwLastUsdtGasLine ? window._wwLastUsdtGasLine : '';
+    var sym = transferCoin._usdtMeta && transferCoin._usdtMeta.nativeSymbol ? transferCoin._usdtMeta.nativeSymbol : 'ETH';
+    if (gLine) {
+      return { line: gLine, sub: '链上 Gas 以实际打包为准 · 需 ' + sym + ' 支付' };
+    }
+    return { line: '≈ … ' + sym + ' · Gas 估算中', sub: '填写有效 0x 收款与金额后自动估算' };
+  }
   return usdtMap[sp] || usdtMap.normal;
 }
 
