@@ -1993,7 +1993,8 @@ function wwGetTransferRecipientValidation(addr, coinId) {
     if (/^0x|^T[1-9A-HJ-NP-Za-km-z]/i.test(a) || (typeof wwIsWanYuTransferAddr === 'function' && wwIsWanYuTransferAddr(a))) {
       return { ok: false, message: WW_MSG_ADDR_WRONG };
     }
-    if (!/^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}$/.test(a)) {
+    var btcOk = typeof wwIsValidBtcAddress === 'function' ? wwIsValidBtcAddress(a) : /^(bc1|[13])[a-km-zA-HJ-NP-Z0-9]{25,90}$/i.test(a);
+    if (!btcOk) {
       return { ok: false, message: WW_MSG_ADDR_WRONG };
     }
     if (typeof wwIsTransferToSelfForCoin === 'function' && wwIsTransferToSelfForCoin(a, id)) {
