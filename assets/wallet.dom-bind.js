@@ -288,7 +288,7 @@
       );
     }
 
-    /* 欢迎页三按钮：部分 WebKit/Chrome 对内联 onclick 不合成 click；touchend + pointerup（非 mouse）兜底 */
+    /* 欢迎页三按钮：内联 onclick 已移除；捕获阶段 click 覆盖桌面鼠标；touch/pointer 兜底移动端 */
     var pgWelcome = document.getElementById('page-welcome');
     if (pgWelcome) {
       var _wwWelTapX = 0;
@@ -311,6 +311,40 @@
           if (typeof window.goTo === 'function') window.goTo('page-import');
         }
       }
+      function _wwForceWelcomeInteractive() {
+        try {
+          if (typeof window.wwFixWelcomeBootIfGuest === 'function') window.wwFixWelcomeBootIfGuest();
+        } catch (_fw) {}
+      }
+      _wwForceWelcomeInteractive();
+      try {
+        requestAnimationFrame(_wwForceWelcomeInteractive);
+      } catch (_r0) {}
+      try {
+        setTimeout(_wwForceWelcomeInteractive, 0);
+      } catch (_r1) {}
+      try {
+        setTimeout(_wwForceWelcomeInteractive, 120);
+      } catch (_r2) {}
+      pgWelcome.addEventListener(
+        'click',
+        function (ev) {
+          if (ev.button !== 0 && ev.button != null) return;
+          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
+          if (!btn || !pgWelcome.contains(btn)) return;
+          try {
+            ev.preventDefault();
+          } catch (_pe) {}
+          try {
+            ev.stopPropagation();
+          } catch (_ps) {}
+          try {
+            ev.stopImmediatePropagation();
+          } catch (_si) {}
+          _wwRunWelcomeAct(btn);
+        },
+        true
+      );
       pgWelcome.addEventListener(
         'touchstart',
         function (ev) {
@@ -325,7 +359,6 @@
         'pointerdown',
         function (ev) {
           if (!ev.isPrimary) return;
-          if (ev.pointerType === 'mouse') return;
           _wwWelTapX = ev.clientX;
           _wwWelTapY = ev.clientY;
         },
@@ -334,8 +367,8 @@
       pgWelcome.addEventListener(
         'touchend',
         function (ev) {
-          var btn = ev.target && ev.target.closest && ev.target.closest('button.btn-primary, button.btn-secondary');
-          if (!btn || !btn.getAttribute('data-ww-welcome-act')) return;
+          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
+          if (!btn) return;
           var te = ev.changedTouches && ev.changedTouches[0];
           if (te && (Math.abs(te.clientX - _wwWelTapX) > 20 || Math.abs(te.clientY - _wwWelTapY) > 24)) return;
           if (ev.cancelable) ev.preventDefault();
@@ -351,8 +384,8 @@
         function (ev) {
           if (!ev.isPrimary) return;
           if (ev.pointerType === 'mouse') return;
-          var btn = ev.target && ev.target.closest && ev.target.closest('button.btn-primary, button.btn-secondary');
-          if (!btn || !btn.getAttribute('data-ww-welcome-act')) return;
+          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
+          if (!btn) return;
           if (Math.abs(ev.clientX - _wwWelTapX) > 20 || Math.abs(ev.clientY - _wwWelTapY) > 24) return;
           if (ev.cancelable) ev.preventDefault();
           try {

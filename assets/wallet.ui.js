@@ -4961,14 +4961,14 @@ try {
       return false;
     }
   }
-  /** 无有效地址却在欢迎页时，清 head 注入的 boot 遮罩，避免 pointer-events:none 卡死三按钮 */
+  /** 欢迎页为当前 active 时强制卸下 boot 遮罩（勿因「有地址」提前 return，异常态也会卡 pointer-events） */
   function wwFixWelcomeBootIfGuest() {
     try {
-      var d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
-      var has = typeof wwWalletHasValidPersistedAddress === 'function' && wwWalletHasValidPersistedAddress(d);
-      if (has) return;
       var w = document.getElementById('page-welcome');
       if (!w || !w.classList.contains('active')) return;
+      try {
+        if (typeof wwClearHtmlBootRouteIfDestChanges === 'function') wwClearHtmlBootRouteIfDestChanges('page-welcome');
+      } catch (_c0) {}
       document.documentElement.removeAttribute('data-ww-boot-page');
       try {
         document.documentElement.classList.remove('ww-boot-route');
@@ -4978,7 +4978,10 @@ try {
           if (st.parentNode) st.parentNode.removeChild(st);
         });
       } catch (_e2) {}
-      w.style.pointerEvents = 'auto';
+      w.style.setProperty('pointer-events', 'auto', 'important');
+      w.querySelectorAll('button[data-ww-welcome-act]').forEach(function (b) {
+        b.style.setProperty('pointer-events', 'auto', 'important');
+      });
     } catch (_e3) {
       wwQuiet(_e3);
     }

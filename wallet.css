@@ -485,12 +485,15 @@ body {
   overflow: hidden;
 }
 #page-welcome button.btn-primary,
-#page-welcome button.btn-secondary {
+#page-welcome button.btn-secondary,
+#page-welcome button[data-ww-welcome-act] {
   touch-action: manipulation;
   position: relative;
   z-index: 6;
   -webkit-user-select: none;
   user-select: none;
+  pointer-events: auto !important;
+  cursor: pointer;
 }
 #welcomeLangGrid {
   display: grid;
