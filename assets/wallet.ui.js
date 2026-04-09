@@ -142,10 +142,34 @@ var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star'
 // ═══════════════════════════════════════════════════════
 // WT_WORDLISTS loaded from wordlists.js
 
-/** 词表文件中的 zh 可能含 4 字以上地名；展示侧压缩为「同索引全局唯一、尽量 3 字起前缀」，并保留 WT_ZH_ORIGINAL 供导入旧备份时解析。
- * 注：enWordsToLangKeyTableWords / mnemonicToLang 仅按 BIP39 索引取 WT_WORDLISTS.zh[i]，本身不截断；截断只发生在本函数。
- * dist/wordlists/zh-cn.json 现由 generate-zh-cn-wordlist 保证每条 2～3 字，此路径下本函数为恒等映射，快路径避免长词分支的边界情况。 */
+/** 词表文件中的 zh 可能含 4 字以上地名；展示侧压缩为「同索引全局唯一」的可辨地名，并保留 WT_ZH_ORIGINAL 供导入旧备份时解析。
+ * 注：wordlists.js 的 wwMapEnWordsToLangWords、runtime 的 enWordsToLangKeyTableWords 仅按 BIP39 索引取 WT_WORDLISTS.zh[i]，本身不截断；
+ * 若出现「锡林浩」类伪词，来自本函数对长名从短到长取前缀时切断「浩特」等专名；已改为先去行政后缀、再优先取长前缀（3～全长）。 */
 var WT_ZH_ORIGINAL = [];
+
+/** 展示用：去掉常见行政区划后缀，便于得到「锡林浩特」而非在「锡林浩特市」上取前三字「锡林浩」。 */
+function wwStripZhPlaceSuffixForDisplay(s) {
+  var t = String(s || '').trim();
+  if (!t) return '';
+  var out = t
+    .replace(/特别行政区$/, '')
+    .replace(/自治区$/, '')
+    .replace(/自治州$/, '')
+    .replace(/自治县$/, '')
+    .replace(/自治旗$/, '')
+    .replace(/市辖区$/, '')
+    .replace(/林区$/, '')
+    .replace(/特区$/, '')
+    .replace(/新区$/, '')
+    .replace(/市$/, '')
+    .replace(/区$/, '')
+    .replace(/县$/, '')
+    .replace(/旗$/, '')
+    .replace(/盟$/, '')
+    .replace(/州$/, '')
+    .replace(/省$/, '');
+  return out || t;
+}
 
 function wwNormalizeZhWordlistForDisplay(origArr) {
   if (!origArr || !origArr.length) return origArr ? origArr.slice() : [];
@@ -158,18 +182,26 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   var nList = origArr.length;
   var used = {};
   var disp = [];
-  var i, j, w, arr, n, L, cand, d, hit, guard;
+  var i, j, raw, base, arr, n, L, cand, d, hit, guard;
   for (i = 0; i < nList; i++) {
-    w = String(origArr[i] || '');
-    arr = Array.from(w);
+    raw = String(origArr[i] || '');
+    arr = Array.from(raw);
     n = arr.length;
     if (n <= 3) {
-      used[w] = true;
-      disp.push(w);
+      used[raw] = true;
+      disp.push(raw);
+      continue;
+    }
+    base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
+    arr = Array.from(base);
+    n = arr.length;
+    if (n <= 3) {
+      used[base] = true;
+      disp.push(base);
       continue;
     }
     var placed = false;
-    for (L = 3; L <= n; L++) {
+    for (L = n; L >= 3; L--) {
       cand = arr.slice(0, L).join('');
       if (!used[cand]) {
         used[cand] = true;
@@ -182,7 +214,9 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   }
   for (i = 0; i < nList; i++) {
     d = disp[i];
-    arr = Array.from(String(origArr[i] || ''));
+    raw = String(origArr[i] || '');
+    base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
+    arr = Array.from(base);
     for (guard = 0; guard < 24; guard++) {
       hit = false;
       for (j = 0; j < nList; j++) {
@@ -203,7 +237,9 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   used = {};
   for (i = 0; i < nList; i++) {
     d = disp[i];
-    arr = Array.from(String(origArr[i] || ''));
+    raw = String(origArr[i] || '');
+    base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
+    arr = Array.from(base);
     guard = 0;
     while (used[d] && guard++ < 40) {
       L = Array.from(d).length + 1;
