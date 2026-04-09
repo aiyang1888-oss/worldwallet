@@ -3993,6 +3993,7 @@ function detectAddrType() {
   }
 
   calcTransferFee();
+  try { if (typeof updateTransferAddrBook === 'function') updateTransferAddrBook(); } catch (_uab3) {}
 }
 
 function checkTransferReady() {
