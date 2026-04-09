@@ -1,4 +1,5 @@
-/* 占位 Service Worker：本地开发/冒烟测试避免 404；生产可替换为真实缓存策略 */
+/* Service Worker：本地开发避免 404；部署时脚本会将 worldtoken-v 后数字替换为 UTC 时间戳以刷新缓存 */
+/* worldtoken-v202604090000 */
 self.addEventListener('install', function (e) {
   e.waitUntil(self.skipWaiting());
 });
