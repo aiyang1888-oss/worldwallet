@@ -3433,7 +3433,7 @@ function updateSettingsPage() {
 function wwPurgeLocalWalletStorage() {
   try {
     var keys = [];
-    var i, k, n;
+    var i, k;
     for (i = 0; i < localStorage.length; i++) {
       k = localStorage.key(i);
       if (k && k.indexOf('ww_') === 0) keys.push(k);
