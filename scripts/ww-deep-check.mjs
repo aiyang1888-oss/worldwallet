@@ -143,6 +143,8 @@ const SKIP = new Set([
   'String', 'parseFloat', 'Math', 'history', 'location', 'encodeURIComponent',
   'decodeURIComponent', 'setTimeout', 'parseInt', 'Number', 'Date', 'JSON',
   'Array', 'Object', 'RegExp', 'Error', 'console', 'navigator', 'fetch',
+  // try/catch 与 console.error 等（非全局函数名）
+  'catch', 'error', 'function',
   // DOM / 存储 常见方法名（内联 onclick 里会出现，非全局函数）
   'getElementById', 'querySelector', 'querySelectorAll', 'stopPropagation', 'preventDefault',
   'removeItem', 'getItem', 'setItem', 'focus', 'blur', 'click', 'open', 'closest', 'contains',
