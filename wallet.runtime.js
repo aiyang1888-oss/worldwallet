@@ -1474,6 +1474,13 @@ function goTo(pageId, opts) {
   if (pageId === 'page-home' && !opts.forceHome && !wwUserHasAnySavedChainAddress()) {
     pageId = 'page-welcome';
   }
+  if (pageId === 'page-home' && !opts.forceHome) {
+    try {
+      if (typeof wwNeedsPinUnlockBeforeHome === 'function' && wwNeedsPinUnlockBeforeHome()) {
+        pageId = 'page-password-restore';
+      }
+    } catch (_npu) { wwQuiet(_npu); }
+  }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _pwStoreRt = null;
     try {

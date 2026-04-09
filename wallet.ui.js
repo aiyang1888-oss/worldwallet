@@ -1324,6 +1324,41 @@ function wwWalletSnapIdForCache() {
   }
 }
 
+/**
+ * 无有效会话 PIN、且本地为加密包 + 已配 PIN：应先走 PIN 解锁流程（与 wallet.html head boot 一致，避免首页闪屏）
+ */
+function wwNeedsPinUnlockBeforeHome() {
+  try {
+    if (typeof wwGetSessionPin === 'function' && wwGetSessionPin()) return false;
+  } catch (_s0) {}
+  try {
+    if (window.wwSessionPinBridge && typeof window.wwSessionPinBridge.get === 'function' && window.wwSessionPinBridge.get()) {
+      return false;
+    }
+  } catch (_s1) {}
+  var d = null;
+  try {
+    d = JSON.parse(localStorage.getItem('ww_wallet') || '{}');
+  } catch (_e) {
+    return false;
+  }
+  if (!wwWalletHasAnyChainAddress(d)) return false;
+  if (!d.encrypted) return false;
+  try {
+    if (typeof wwHasPinConfigured === 'function') return wwHasPinConfigured();
+  } catch (_h) {}
+  try {
+    if (localStorage.getItem('ww_pin_hash') || localStorage.getItem('ww_pin_set') === '1') return true;
+    var pl = localStorage.getItem('ww_unlock_pin') || localStorage.getItem('ww_pin') || '';
+    return !!(pl && /^\d{6}$/.test(String(pl)));
+  } catch (_p) {
+    return false;
+  }
+}
+try {
+  window.wwNeedsPinUnlockBeforeHome = wwNeedsPinUnlockBeforeHome;
+} catch (_wn) {}
+
 function goTo(pageId, opts) {
   opts = opts || {};
   /* 首帧路由清理见 wallet.runtime.js 的 goTo（运行时覆盖本函数） */
@@ -1346,6 +1381,11 @@ function goTo(pageId, opts) {
       } catch (_ah1) { wwQuiet(_ah1); }
     }
     if (!_wwAllowHomeUi) pageId = 'page-welcome';
+    else {
+      try {
+        if (typeof wwNeedsPinUnlockBeforeHome === 'function' && wwNeedsPinUnlockBeforeHome()) pageId = 'page-password-restore';
+      } catch (_nu) { wwQuiet(_nu); }
+    }
   }
   if (pageId === 'page-password-restore' && typeof wwWalletHasAnyChainAddress === 'function') {
     var _pwStore = null;
@@ -4928,7 +4968,13 @@ try {
       hasWallet = wwWalletHasAnyChainAddress(_d);
     } catch (_e) { wwQuiet(_e); }
     if (typeof goTo !== 'function') return;
-    goTo(hasWallet ? 'page-home' : 'page-welcome');
+    var _dest = hasWallet ? 'page-home' : 'page-welcome';
+    try {
+      if (hasWallet && typeof wwNeedsPinUnlockBeforeHome === 'function' && wwNeedsPinUnlockBeforeHome()) {
+        _dest = 'page-password-restore';
+      }
+    } catch (_destE) { wwQuiet(_destE); }
+    goTo(_dest);
   }
   window.addEventListener('hashchange', function () {
     wwApplyHashRoute();
