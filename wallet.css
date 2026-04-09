@@ -200,6 +200,16 @@ body {
     top: 0 !important;
     padding-top: env(safe-area-inset-top, 0px);
   }
+  /* 浅色主题下避免 body 与壳层异色露边（原 [data-theme="light"] body 为 #e4e4ea） */
+  html[data-theme="light"] body {
+    background: var(--bg) !important;
+  }
+  html[data-theme="light"] {
+    background: var(--bg) !important;
+  }
+  [data-theme="light"] .phone {
+    background: var(--bg) !important;
+  }
 }
 
 /* iOS：输入框字号小于 16px 时聚焦会强制缩放页面，关键表单区统一 16px */
