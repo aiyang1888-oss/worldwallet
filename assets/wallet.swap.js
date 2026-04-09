@@ -34,6 +34,12 @@
     return !!(metaByCoinId(fromId) && metaByCoinId(toId));
   }
 
+  /** 界面 COINS.id（如 usdt 对应 TRC 展示）→ 主网 Uniswap 模块内 id（ERC20 USDT = usdt_eth） */
+  function uiCoinIdToEvmSwapModuleId(uiId) {
+    if (uiId === 'usdt') return 'usdt_eth';
+    return uiId;
+  }
+
   /**
    * @returns {Promise<{ amountOutHuman: string, bestFee: number }|null>}
    */
@@ -119,6 +125,7 @@
     quoteEvmBestAmountOutWei: quoteEvmBestAmountOutWei,
     isEvmSwapPair: isEvmSwapPair,
     metaByCoinId: metaByCoinId,
+    uiCoinIdToEvmSwapModuleId: uiCoinIdToEvmSwapModuleId,
     /** 报价轮询间隔（毫秒），默认 3000；runtime 的 goTo(page-swap) 会启动 */
     quotePollIntervalMs: 3000
   };

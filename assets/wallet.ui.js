@@ -5147,6 +5147,80 @@ function closeSwapHistory() {
 }
 
 function confirmSwapGo() {
+  var sf = typeof swapFrom !== 'undefined' ? swapFrom : null;
+  var st = typeof swapTo !== 'undefined' ? swapTo : null;
+  var recipEvm = '';
+  try {
+    recipEvm = String(window._wwSwapRecipientAddr || '').trim();
+  } catch (_r) {}
+  var amtStr = '';
+  try {
+    var ain = typeof _safeEl === 'function' ? _safeEl('swapAmountIn') : document.getElementById('swapAmountIn');
+    if (ain && ain.value !== undefined && ain.value !== null) amtStr = String(ain.value).trim();
+  } catch (_a) {}
+  var amtNum = parseFloat(amtStr);
+  var slip = 0.5;
+  try {
+    if (typeof wwGetSwapSlippagePct === 'function') {
+      var sp = wwGetSwapSlippagePct();
+      if (typeof sp === 'number' && isFinite(sp) && sp > 0 && sp <= 50) slip = sp;
+    }
+  } catch (_s) {}
+
+  try {
+    if (
+      sf &&
+      st &&
+      typeof wwSwapExecEvm !== 'undefined' &&
+      wwSwapExecEvm &&
+      typeof wwSwapExecEvm.canRun === 'function' &&
+      typeof wwSwapExecEvm.run === 'function' &&
+      wwSwapExecEvm.canRun(sf, st)
+    ) {
+      if (!isFinite(amtNum) || amtNum <= 0) {
+        if (typeof showToast === 'function') showToast('请输入兑换金额', 'warning');
+        return;
+      }
+      if (typeof closeSwapConfirm === 'function') closeSwapConfirm();
+      var recipArg = null;
+      if (recipEvm && /^0x[a-fA-F0-9]{40}$/.test(recipEvm)) recipArg = recipEvm;
+      var runP = wwSwapExecEvm.run({
+        swapFrom: sf,
+        swapTo: st,
+        amountInStr: amtStr,
+        slippagePct: slip,
+        recipientEvm: recipArg,
+        onProgress: function (phase) {
+          try {
+            if (typeof showToast === 'function' && phase === 'approve') showToast('正在授权代币…', 'info', 2200);
+          } catch (_p) {}
+        }
+      });
+      if (runP && typeof runP.then === 'function') {
+        runP
+          .then(function (hash) {
+            try {
+              if (typeof showToast === 'function') {
+                showToast('链上兑换已提交 ' + String(hash).slice(0, 12) + '…', 'success', 4200);
+              }
+            } catch (_t) {}
+            try {
+              if (typeof loadBalances === 'function') loadBalances();
+            } catch (_l) {}
+          })
+          .catch(function (e) {
+            var msg = e && e.message ? String(e.message) : String(e);
+            if (typeof showToast === 'function') showToast(msg, 'error', 5200);
+          });
+      }
+      return;
+    }
+  } catch (_ex) {
+    try {
+      if (typeof wwQuiet === 'function') wwQuiet(_ex);
+    } catch (_q) {}
+  }
+
   if (typeof openDex === 'function') {
     openDex();
     return;

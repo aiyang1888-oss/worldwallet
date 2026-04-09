@@ -39,8 +39,17 @@
 
   function recordSwapGasSample(gasUsedBn) {
     try {
-      if (!gasUsedBn || !gasUsedBn.toNumber) return;
-      var n = gasUsedBn.toNumber();
+      if (!gasUsedBn) return;
+      var n = 0;
+      try {
+        if (typeof gasUsedBn === 'number' && isFinite(gasUsedBn)) {
+          n = gasUsedBn;
+        } else if (gasUsedBn.toNumber && gasUsedBn.bitLength && gasUsedBn.bitLength() <= 53) {
+          n = gasUsedBn.toNumber();
+        } else if (gasUsedBn.toString) {
+          n = parseInt(String(gasUsedBn.toString()), 10);
+        }
+      } catch (_n) { void _n; }
       if (!isFinite(n) || n <= 0) return;
       var raw = localStorage.getItem('ww_swap_gas_avg_v1');
       var arr = raw ? JSON.parse(raw) : [];
@@ -53,6 +62,13 @@
       }, 0);
       localStorage.setItem('ww_swap_gas_avg_last_v1', String(Math.round(sum / arr.length)));
     } catch (_e) { void _e; }
+  }
+
+  function moduleCoinIds(mod, fromUi, toUi) {
+    var mapFn = mod && mod.uiCoinIdToEvmSwapModuleId;
+    var f = typeof mapFn === 'function' ? mapFn(fromUi) : fromUi === 'usdt' ? 'usdt_eth' : fromUi;
+    var t = typeof mapFn === 'function' ? mapFn(toUi) : toUi === 'usdt' ? 'usdt_eth' : toUi;
+    return { fromId: f, toId: t };
   }
 
   var ROUTER_ABI = [
@@ -118,9 +134,13 @@
     var mod = global.wwSwapModule;
     var ethers = global.ethers;
     if (!mod || !ethers) throw new Error('模块未就绪');
-    var fromId = opts.swapFrom && opts.swapFrom.id;
-    var toId = opts.swapTo && opts.swapTo.id;
-    if (!fromId || !toId || !mod.isEvmSwapPair(fromId, toId)) throw new Error('不支持的交易对');
+    var fromUi = opts.swapFrom && opts.swapFrom.id;
+    var toUi = opts.swapTo && opts.swapTo.id;
+    if (!fromUi || !toUi) throw new Error('不支持的交易对');
+    var _mc = moduleCoinIds(mod, fromUi, toUi);
+    var fromId = _mc.fromId;
+    var toId = _mc.toId;
+    if (!mod.isEvmSwapPair(fromId, toId)) throw new Error('不支持的交易对');
     var amountInStr = String(opts.amountInStr || '').trim();
     var slipRaw = Number(opts.slippagePct);
     var slip = isFinite(slipRaw) && slipRaw > 0 && slipRaw <= 50 ? slipRaw : 0.5;
@@ -267,9 +287,9 @@
     try {
       var mod = global.wwSwapModule;
       if (!mod || typeof ethers === 'undefined') return false;
-      if (!swapFrom || !swapTo) return false;
-      if (swapFrom.family !== 'evm' || swapTo.family !== 'evm') return false;
-      if (!mod.isEvmSwapPair(swapFrom.id, swapTo.id)) return false;
+      if (!swapFrom || !swapTo || !swapFrom.id || !swapTo.id) return false;
+      var ids = moduleCoinIds(mod, swapFrom.id, swapTo.id);
+      if (!mod.isEvmSwapPair(ids.fromId, ids.toId)) return false;
       var rw = global.REAL_WALLET;
       if (!rw || !rw.privateKey || !rw.ethAddress) return false;
       return true;
