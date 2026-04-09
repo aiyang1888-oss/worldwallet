@@ -1021,8 +1021,9 @@ window.addEventListener('pageshow', function () {
       } catch (e2) {}
       u.searchParams.delete('reset');
       u.searchParams.delete('hard');
+      u.hash = '';
       if (typeof history !== 'undefined' && history.replaceState) {
-        history.replaceState(null, '', u.pathname + u.search + u.hash);
+        history.replaceState(null, '', u.pathname + u.search);
       }
       return;
     }
@@ -1036,6 +1037,12 @@ window.addEventListener('pageshow', function () {
       try {
         window._WW_HARD_RELOAD = true;
       } catch (e4) {}
+      try {
+        u.hash = '';
+        if (typeof history !== 'undefined' && history.replaceState) {
+          history.replaceState(null, '', u.pathname + u.search);
+        }
+      } catch (_h) {}
     }
   } catch (e) {}
 })();
@@ -1057,6 +1064,14 @@ const welcomePage = document.getElementById('page-welcome');
 if (welcomePage) {
   welcomePage.classList.add('active');
 }
+try {
+  if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) {
+    document.documentElement.removeAttribute('data-ww-boot-page');
+    document.documentElement.classList.remove('ww-boot-route');
+    var _wwBootSt = document.querySelector('style[data-ww-boot-route]');
+    if (_wwBootSt && _wwBootSt.parentNode) _wwBootSt.parentNode.removeChild(_wwBootSt);
+  }
+} catch (_wbr) {}
 try {
   var _tbBoot = document.getElementById('tabBar');
   if (_tbBoot) _tbBoot.style.display = 'none';
@@ -6614,6 +6629,7 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
   // 否则 goTo 会盖住默认的欢迎页、底栏隐藏，体感像「按钮全点不动」（sessionStorage 在 ?v= 测缓存时仍存在）。
   var ALLOW_RESTORE = ['page-home','page-addr','page-swap','page-settings'];
   try {
+    if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) return;
     var last = sessionStorage.getItem('ww_last_page');
     if (!last || !ALLOW_RESTORE.includes(last) || !document.getElementById(last)) return;
     var hasWallet = typeof wwWalletHasAnyChainAddress === 'function' && wwWalletHasAnyChainAddress(REAL_WALLET);

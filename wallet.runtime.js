@@ -1109,8 +1109,9 @@ window.addEventListener('pageshow', function () {
       } catch (e2) {}
       u.searchParams.delete('reset');
       u.searchParams.delete('hard');
+      u.hash = '';
       if (typeof history !== 'undefined' && history.replaceState) {
-        history.replaceState(null, '', u.pathname + u.search + u.hash);
+        history.replaceState(null, '', u.pathname + u.search);
       }
       return;
     }
@@ -1124,6 +1125,12 @@ window.addEventListener('pageshow', function () {
       try {
         window._WW_HARD_RELOAD = true;
       } catch (e4) {}
+      try {
+        u.hash = '';
+        if (typeof history !== 'undefined' && history.replaceState) {
+          history.replaceState(null, '', u.pathname + u.search);
+        }
+      } catch (_h) {}
     }
   } catch (e) {}
 })();
