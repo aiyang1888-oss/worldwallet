@@ -7,12 +7,6 @@ on:
       - 'dist/**'
       - 'scripts/**'
       - '.github/workflows/build-verify.yml'
-  push:
-    branches: [main]
-    paths:
-      - 'dist/**'
-      - 'scripts/**'
-      - '.github/workflows/build-verify.yml'
 
 concurrency:
   group: build-verify-${{ github.ref }}
