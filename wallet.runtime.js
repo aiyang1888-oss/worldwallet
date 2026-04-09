@@ -4763,6 +4763,58 @@ const COINS = [
   {id:'bnb',  name:'BNB',  chain:'BNB Chain', icon:'🟡', bg:'rgba(255,215,0,0.12)', bal:0, price:312},
 ];
 
+function wwHomeAssetRowsMeta() {
+  return [
+    { id: 'assetRowUsdt', balId: 'balUsdt' },
+    { id: 'assetRowTrx', balId: 'balTrx' },
+    { id: 'assetRowEth', balId: 'balEth' },
+    { id: 'assetRowBtc', balId: 'balBtc' }
+  ];
+}
+
+/** 首页 #wwHomeAssetCardsMount 为空时注入 USDT/TRX/ETH/BTC 四行（与 COINS 一致），供余额与「隐藏零余额」使用 */
+function wwInitHomeAssetCardsFromCoins() {
+  var mount = document.getElementById('wwHomeAssetCardsMount');
+  if (!mount || mount.getAttribute('data-ww-asset-cards') === '1') return;
+  var order = ['usdt', 'trx', 'eth', 'btc'];
+  var suf = { usdt: 'Usdt', trx: 'Trx', eth: 'Eth', btc: 'Btc' };
+  var html = '';
+  for (var i = 0; i < order.length; i++) {
+    var cid = order[i];
+    var coin = COINS.find(function (c) { return c.id === cid; });
+    if (!coin) continue;
+    var s = suf[cid];
+    if (!s) continue;
+    html +=
+      '<div class="asset-item" id="assetRow' +
+      s +
+      '">' +
+      '<div class="asset-icon" style="background:' +
+      coin.bg +
+      '">' +
+      coin.icon +
+      '</div>' +
+      '<div class="asset-info"><div class="asset-name">' +
+      coin.name +
+      '</div><div class="asset-chain">' +
+      coin.chain +
+      '</div></div>' +
+      '<div class="asset-right">' +
+      '<div class="asset-amount" id="bal' +
+      s +
+      '">--</div>' +
+      '<div class="asset-value" id="val' +
+      s +
+      '">$--</div>' +
+      '<div class="asset-change up" id="chg' +
+      s +
+      '">--</div>' +
+      '</div></div>';
+  }
+  mount.innerHTML = html;
+  mount.setAttribute('data-ww-asset-cards', '1');
+}
+
 let swapFrom = COINS.find(c => c.id === 'usdt') || COINS[0];
 let swapTo   = COINS.find(c => c.id === 'trx') || COINS[1];
 let pickerTarget = 'from';
