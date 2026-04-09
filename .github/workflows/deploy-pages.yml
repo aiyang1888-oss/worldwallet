@@ -9,6 +9,7 @@ on:
     branches: [main]
     paths:
       - 'assets/**'
+      - 'dist/**'
       - 'scripts/sync-assets.sh'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
