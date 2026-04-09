@@ -255,7 +255,11 @@
     if (wwSkipBtn) {
       wwSkipBtn.addEventListener(
         'click',
-        function () {
+        function (ev) {
+          try {
+            if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+            if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
+          } catch (_pe) {}
           try {
             if (typeof window.wwSkipVerifyToHome === 'function') {
               window.wwSkipVerifyToHome();
@@ -266,8 +270,11 @@
             if (typeof hideWalletLoading === 'function') hideWalletLoading();
           } catch (_h) {}
           try {
-            if (typeof window.goTo === 'function') window.goTo('page-home', { forceHome: true });
+            if (typeof window.goTo === 'function') window.goTo('page-home', { forceHome: true, instant: true });
           } catch (_g) {}
+          try {
+            if (typeof window.goTab === 'function') setTimeout(function () { window.goTab('tab-home'); }, 0);
+          } catch (_gt) {}
         },
         true
       );

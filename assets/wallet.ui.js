@@ -3732,6 +3732,18 @@ function wwNavigateHomeAfterCreateFlow(options) {
       }
     }
   } catch (_hf) {}
+  /* 创建流程结束进首页：显式选中底栏「资产」并滚回顶部，避免仍停留在 #page-key 视觉或 Tab 未对齐 */
+  if (pid === 'page-home') {
+    setTimeout(function () {
+      try {
+        if (typeof goTab === 'function') goTab('tab-home');
+      } catch (_gtb) {}
+      try {
+        var _phNav = document.getElementById('page-home');
+        if (_phNav) _phNav.scrollTop = 0;
+      } catch (_sc) {}
+    }, 0);
+  }
 }
 try {
   window.wwNavigateHomeAfterCreateFlow = wwNavigateHomeAfterCreateFlow;
