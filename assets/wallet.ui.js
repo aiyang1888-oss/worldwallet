@@ -1,14 +1,20 @@
 // wallet.ui.js — UI：导航/Toast/页面/设置/PIN/红包
 // 包含全局变量和初始化代码
 
-/*! WorldToken wallet.runtime.js — split from wallet.html; refactor incrementally. */
-
 // Service Worker / Cache 清理由 wallet.runtime.js 在 load 后 idle 执行，避免与首屏抢主线程
 
 document.addEventListener('click', function(ev) {
-  var el = ev.target.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeTransferBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
-  if (!el) return;
-  tapHaptic(12);
+  try {
+    var t = ev && ev.target;
+    if (t && t.nodeType === 3) t = t.parentElement;
+    var el = t && t.closest && t.closest('.tab-item,.quick-btn,#homeCopyAddrBtn,#homeTransferBtn,#balRefreshBtn,.btn-primary,.btn-secondary');
+    if (!el) return;
+    tapHaptic(12);
+  } catch (_uiTap) {
+    try {
+      if (typeof wwQuiet === 'function') wwQuiet(_uiTap);
+    } catch (__q) {}
+  }
 }, true);
 
 var _qrLoadPromise=null;
@@ -4984,6 +4990,9 @@ try {
       w.querySelectorAll('button[data-ww-welcome-act]').forEach(function (b) {
         b.style.setProperty('pointer-events', 'auto', 'important');
       });
+      try {
+        if (typeof hideWalletLoading === 'function') hideWalletLoading();
+      } catch (_hwl) {}
     } catch (_e3) {
       wwQuiet(_e3);
     }
