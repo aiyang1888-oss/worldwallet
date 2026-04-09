@@ -806,8 +806,6 @@ function getTargetMnemonicWordCount() {
   try {
     const activePage = document.querySelector('.page.active');
     const aid = activePage && activePage.id;
-    // 「设置钱包」里创建新钱包：固定 12 词，不沿用密钥页曾选过的 15/18/24（否则会生成错误词数）
-    if (aid === 'page-create') return 12;
   } catch (e) {}
   let n = typeof currentMnemonicLength === 'number' ? currentMnemonicLength : 12;
   if (![12, 15, 18, 21, 24].includes(n)) n = 12;
@@ -1661,7 +1659,7 @@ function renderKeyGrid() {
   const isEn = currentLang === 'en';
   const enMnemonic = REAL_WALLET && REAL_WALLET.enMnemonic;
   if (!enMnemonic) {
-    goTo('page-create');
+    goTo('page-welcome');
     return;
   }
   const enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
