@@ -5021,12 +5021,18 @@ try {
   function wwApplyHashRoute() {
     var pid = wwHashToPageId();
     if (!pid || typeof goTo !== 'function') return;
+    var _wwHashReload = false;
+    try {
+      var _wwNavH = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+      _wwHashReload = _wwNavH && _wwNavH.type === 'reload';
+    } catch (_wh) {}
+    var _hashOpts = _wwHashReload ? { forceRoute: true } : {};
     if (!wwGuestHashAllowed(pid)) {
       wwStripLocationHash();
       goTo('page-welcome');
       return;
     }
-    goTo(pid);
+    goTo(pid, _hashOpts);
   }
   /** 首次加载：hash 为空或指向不存在的 id 时，按 localStorage 钱包状态落到首页或欢迎页 */
   function wwEnsureInitialHashRoute() {
@@ -5066,6 +5072,37 @@ try {
       } catch (_pinH) { wwQuiet(_pinH); }
       return;
     }
+    try {
+      var _wwSessReload = false;
+      try {
+        var _wwNavS = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+        _wwSessReload = _wwNavS && _wwNavS.type === 'reload';
+      } catch (_ns) {}
+      var _sessRestore = '';
+      try {
+        _sessRestore = (sessionStorage.getItem('ww_last_page') || '').trim();
+      } catch (_sr0) {}
+      if (_sessRestore && document.getElementById(_sessRestore)) {
+        if (wwGuestHashAllowed(_sessRestore)) {
+          try {
+            if (
+              _wwPinBeforeMain[_sessRestore] &&
+              typeof wwNeedsPinUnlockBeforeHome === 'function' &&
+              wwNeedsPinUnlockBeforeHome()
+            ) {
+              if (typeof goTo === 'function') {
+                goTo('page-password-restore', _wwSessReload ? { forceRoute: true } : {});
+              }
+              return;
+            }
+          } catch (_pinS) { wwQuiet(_pinS); }
+          if (typeof goTo === 'function') {
+            goTo(_sessRestore, _wwSessReload ? { forceRoute: true } : {});
+          }
+          return;
+        }
+      }
+    } catch (_sessR) { wwQuiet(_sessR); }
     try {
       if (typeof window !== 'undefined' && window._WW_HARD_RELOAD) {
         if (typeof goTo === 'function') goTo('page-welcome');
