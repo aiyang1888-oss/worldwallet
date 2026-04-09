@@ -175,18 +175,23 @@ function wwNormalizeZhWordlistForDisplay(origArr) {
   if (!origArr || !origArr.length) return origArr ? origArr.slice() : [];
   var si;
   for (si = 0; si < origArr.length; si++) {
-    var raw = String(origArr[si] || '');
-    var base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
-    if (Array.from(raw).length > 3 || Array.from(base).length > 3) break;
+    if (Array.from(String(origArr[si] || '')).length > 3) break;
   }
   if (si >= origArr.length) return origArr.slice();
 
   var nList = origArr.length;
   var used = {};
   var disp = [];
-  var i, j, w, raw, base, arr, n, L, cand, d, hit, guard;
+  var i, j, raw, base, arr, n, L, cand, d, hit, guard;
   for (i = 0; i < nList; i++) {
     raw = String(origArr[i] || '');
+    arr = Array.from(raw);
+    n = arr.length;
+    if (n <= 3) {
+      used[raw] = true;
+      disp.push(raw);
+      continue;
+    }
     base = wwStripZhPlaceSuffixForDisplay(raw) || raw;
     arr = Array.from(base);
     n = arr.length;
