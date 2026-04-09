@@ -1546,8 +1546,8 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
     if(typeof updateHomeChainStrip==='function') updateHomeChainStrip();
     if(typeof updateHomeBackupBanner==='function') updateHomeBackupBanner();
     if(typeof drawHomeBalanceChart==='function' && window._lastTotalUsd > 0) drawHomeBalanceChart(window._lastTotalUsd);
-    if(REAL_WALLET && REAL_WALLET.trxAddress && typeof loadTrxResource==='function') setTimeout(loadTrxResource, 400);
-    if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 200);
+    /* loadTrxResource 已并入 loadBalances 并行请求，避免重复打 TronGrid */
+    if(typeof refreshHomePriceTicker==='function') setTimeout(refreshHomePriceTicker, 0);
   }
   if(pageId==='page-transfer') {
     if(typeof initTransferFeeSpeedUI==='function') initTransferFeeSpeedUI();
@@ -1568,8 +1568,8 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
     typeof wwWalletHasAnyChainAddress === 'function' &&
     wwWalletHasAnyChainAddress(typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null)
   ) {
-    setTimeout(loadTxHistory, 500);
-    setTimeout(loadBalances, 500);
+    setTimeout(loadTxHistory, 0);
+    setTimeout(loadBalances, 0);
   }
   if (pageId === 'page-password-restore') {
     var _priRt = document.getElementById('pinRestorePageInput');
@@ -2681,18 +2681,24 @@ function transferSpeedHint(coinId, sp) {
 /* let _wwTickerInterval: wallet.ui.js */
 async function refreshHomePriceTicker() {
   try {
-    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd');
-    const d = await r.json();
+    var ustNum = null;
+    if (window._wwLastCgUsd && typeof window._wwLastCgUsd.usdt === 'number' && isFinite(window._wwLastCgUsd.usdt)) {
+      ustNum = window._wwLastCgUsd.usdt;
+    } else {
+      const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=usd');
+      const d = await r.json();
+      ustNum = d.tether && d.tether.usd;
+      try {
+        window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
+          usdt: ustNum
+        });
+      } catch (_cg) {}
+    }
     const fmt = function(x) {
       if(x === undefined || x === null || !isFinite(x)) return '—';
       return x < 10 ? x.toFixed(4) : x.toLocaleString('en', { maximumFractionDigits: 2 });
     };
-    const ust = fmt(d.tether && d.tether.usd);
-    try {
-      window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
-        usdt: d.tether && d.tether.usd
-      });
-    } catch (_cg) {}
+    const ust = fmt(ustNum);
     const html = 'USDT <strong>$' + ust + '</strong>';
     const a = document.getElementById('wwTickerTextA');
     const b = document.getElementById('wwTickerTextB');
@@ -2701,7 +2707,11 @@ async function refreshHomePriceTicker() {
     if(!_wwTickerInterval) {
       _wwTickerInterval = setInterval(function() { refreshHomePriceTicker(); }, 90000);
     }
-    try { if (typeof wwCheckPriceAlertsAfterTicker === 'function') wwCheckPriceAlertsAfterTicker(d); } catch (_pa) {}
+    try {
+      if (typeof wwCheckPriceAlertsAfterTicker === 'function') {
+        wwCheckPriceAlertsAfterTicker({ tether: { usd: ustNum } });
+      }
+    } catch (_pa) {}
   } catch(e) {}
 }
 
@@ -6157,20 +6167,90 @@ function drawHomeBalanceChart(totalUsd) {
 async function getPrices() {
   if(priceCache && Date.now() - priceCacheTime < 5*60*1000) return priceCache;
   try {
-    // CoinGecko 免费价格 API（无需 key）
-    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd');
+    /* 一次请求含 24h 涨跌，供首页同步（避免 loadBalances 再打第二遍 CoinGecko） */
+    const res = await fetch(
+      'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd&include_24hr_change=true'
+    );
     const data = await res.json();
     priceCache = {
       usdt: data.tether?.usd || 1,
       trx: data.tron?.usd || 0.12,
       eth: data.ethereum?.usd || 3200,
       btc: data.bitcoin?.usd || 60000,
+      chgUsdt: data.tether && data.tether.usd_24h_change,
+      chgTrx: data.tron && data.tron.usd_24h_change,
+      chgEth: data.ethereum && data.ethereum.usd_24h_change,
+      chgBtc: data.bitcoin && data.bitcoin.usd_24h_change
     };
     priceCacheTime = Date.now();
     return priceCache;
   } catch(e) {
     return { usdt: 1, trx: 0.12, eth: 3200, btc: 60000 };
   }
+}
+
+/** 首页并行拉取：TRX 账户 + USDT TRC20 */
+async function wwFetchTrxAccountBalancesForHome(trxAddr) {
+  var out = { trxBal: 0, usdtBal: 0 };
+  if (!trxAddr) return out;
+  try {
+    var base = typeof wwTronGridBase === 'function' ? wwTronGridBase() : 'https://api.trongrid.io';
+    var hdr = typeof wwTronHeaders === 'function' ? wwTronHeaders() : {};
+    var trxRes = await fetch(base + '/v1/accounts/' + encodeURIComponent(trxAddr), { headers: hdr });
+    var trxData = await trxRes.json();
+    if (trxData.data && trxData.data[0]) {
+      out.trxBal = (trxData.data[0].balance || 0) / 1e6;
+      var trc20 = trxData.data[0].trc20 || [];
+      var usdtToken = trc20.find(function (t) {
+        return Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
+      });
+      if (usdtToken) out.usdtBal = parseInt(Object.values(usdtToken)[0], 10) / 1e6;
+    }
+  } catch (e) {
+    console.log('TRX query failed:', e);
+  }
+  return out;
+}
+
+async function wwFetchEthBalanceForHome(ethAddr) {
+  if (!ethAddr) return 0;
+  try {
+    if (typeof wwFetchEthJsonRpc === 'function') {
+      var ethRes = await wwFetchEthJsonRpc({
+        jsonrpc: '2.0',
+        method: 'eth_getBalance',
+        params: [ethAddr, 'latest'],
+        id: 1
+      });
+      var ethData = await ethRes.json();
+      if (ethData.result) return parseInt(ethData.result, 16) / 1e18;
+    } else {
+      var ethRes2 = await fetch('https://eth.llamarpc.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_getBalance', params: [ethAddr, 'latest'], id: 1 })
+      });
+      var ethData2 = await ethRes2.json();
+      if (ethData2.result) return parseInt(ethData2.result, 16) / 1e18;
+    }
+  } catch (e) {
+    console.log('ETH query failed:', e);
+  }
+  return 0;
+}
+
+async function wwFetchBtcBalanceForHome(btcAddr) {
+  if (!btcAddr) return 0;
+  try {
+    var btcRes = await fetch('https://mempool.space/api/address/' + encodeURIComponent(btcAddr));
+    var btcData = await btcRes.json();
+    var funded = (btcData.chain_stats && btcData.chain_stats.funded_txo_sum) || 0;
+    var spent = (btcData.chain_stats && btcData.chain_stats.spent_txo_sum) || 0;
+    return (funded - spent) / 1e8;
+  } catch (e) {
+    console.log('BTC query skipped');
+  }
+  return 0;
 }
 
 /** 与 wallet.html 内联首屏脚本共用：上次成功拉取的余额快照，避免每次进首页先被「同步中…」清空 */
@@ -6289,7 +6369,19 @@ async function loadBalances() {
   }
 
   try {
-    const [prices] = await Promise.all([getPrices()]);
+    const trxAddr = REAL_WALLET.trxAddress;
+    const ethAddr = REAL_WALLET.ethAddress;
+    const btcAddr = REAL_WALLET.btcAddress || '';
+
+    /* 价格 + 各链余额 + 能量卡片：并行，总耗时≈最慢一路而非相加 */
+    const [prices, trxPack, ethBal, btcBal] = await Promise.all([
+      getPrices(),
+      wwFetchTrxAccountBalancesForHome(trxAddr),
+      wwFetchEthBalanceForHome(ethAddr),
+      wwFetchBtcBalanceForHome(btcAddr),
+      typeof loadTrxResource === 'function' ? loadTrxResource() : Promise.resolve()
+    ]);
+
     try {
       window._wwLastCgUsd = Object.assign({}, window._wwLastCgUsd || {}, {
         usdt: prices.usdt,
@@ -6298,60 +6390,13 @@ async function loadBalances() {
         btc: prices.btc
       });
     } catch (_cgusd) {}
-    
-    // 查询 TRX 余额（TronGrid 免费 API）；无 TRX 地址则跳过
-    const trxAddr = REAL_WALLET.trxAddress;
-    const ethAddr = REAL_WALLET.ethAddress;
-    
-    let usdtBal = 0, trxBal = 0, ethBal = 0;
 
-    // TRX 余额
-    if (trxAddr) {
-      try {
-        const trxRes = await fetch(`https://api.trongrid.io/v1/accounts/${trxAddr}`, {
-          headers: { 'TRON-PRO-API-KEY': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' } // 建议在 trongrid.io 申请免费 key
-        });
-        const trxData = await trxRes.json();
-        if(trxData.data && trxData.data[0]) {
-          trxBal = (trxData.data[0].balance || 0) / 1e6;
-          // USDT TRC-20 余额
-          const trc20 = trxData.data[0].trc20 || [];
-          const usdtToken = trc20.find(t => Object.keys(t)[0] === 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t');
-          if(usdtToken) usdtBal = parseInt(Object.values(usdtToken)[0]) / 1e6;
-        }
-      } catch(e) { console.log('TRX query failed:', e); }
-    }
-
-    // ETH 余额（公共 RPC）
-    if (ethAddr) {
-      try {
-        const ethRes = await fetch('https://eth.llamarpc.com', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({jsonrpc:'2.0',method:'eth_getBalance',params:[ethAddr,'latest'],id:1})
-        });
-        const ethData = await ethRes.json();
-        if(ethData.result) ethBal = parseInt(ethData.result, 16) / 1e18;
-      } catch(e) { console.log('ETH query failed:', e); }
-    }
+    let usdtBal = trxPack.usdtBal;
+    let trxBal = trxPack.trxBal;
 
     // 更新UI
     const fmt = (n) => n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(4);
     const fmtUsd = (n) => '$' + (n >= 1 ? n.toLocaleString('en',{maximumFractionDigits:2}) : n.toFixed(2));
-
-    // BTC 余额（BlockCypher 免费API，从助记词派生BTC地址）
-    let btcBal = 0, btcAddr = '';
-    try {
-      // 从 ETH 地址派生 BTC 地址（简化：用 Blockchain.info 查询）
-      // 由于BTC地址派生复杂，暂时尝试查询（如有BTC地址）
-      if(REAL_WALLET.btcAddress) {
-        btcAddr = REAL_WALLET.btcAddress;
-        // BTC 余额查询（使用 mempool.space，更稳定）
-        const btcRes = await fetch(`https://mempool.space/api/address/${btcAddr}`);
-        const btcData = await btcRes.json();
-        btcBal = ((btcData.chain_stats?.funded_txo_sum || 0) - (btcData.chain_stats?.spent_txo_sum || 0)) / 1e8;
-      }
-    } catch(e) { console.log('BTC query skipped'); }
 
     const usdtUsd = usdtBal * prices.usdt;
     const trxUsd = trxBal * prices.trx;
@@ -6369,13 +6414,9 @@ async function loadBalances() {
     set('balBtc', fmt(btcBal));
     set('valBtc', fmtUsd(btcUsd));
     try {
-      const r2 = await fetch(
-        'https://api.coingecko.com/api/v3/simple/price?ids=tether,tron,ethereum,bitcoin&vs_currencies=usd&include_24hr_change=true'
-      );
-      const d2 = await r2.json();
-      const fmtChg = (v) => (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+      const fmtChg = (v) => (v > 0 ? '+' : '') + Number(v).toFixed(2) + '%';
       function applyChgLine(chgId, changeVal) {
-        if (changeVal === undefined || changeVal === null) return;
+        if (changeVal === undefined || changeVal === null || !isFinite(Number(changeVal))) return;
         const txt = fmtChg(changeVal);
         const el = document.getElementById(chgId);
         if (!el) return;
@@ -6388,10 +6429,10 @@ async function loadBalances() {
           el.classList.add('up');
         }
       }
-      applyChgLine('chgUsdt', d2.tether && d2.tether.usd_24h_change);
-      applyChgLine('chgTrx', d2.tron && d2.tron.usd_24h_change);
-      applyChgLine('chgEth', d2.ethereum && d2.ethereum.usd_24h_change);
-      applyChgLine('chgBtc', d2.bitcoin && d2.bitcoin.usd_24h_change);
+      applyChgLine('chgUsdt', prices.chgUsdt);
+      applyChgLine('chgTrx', prices.chgTrx);
+      applyChgLine('chgEth', prices.chgEth);
+      applyChgLine('chgBtc', prices.chgBtc);
     } catch (e) {}
     if(tbd) tbd.classList.remove('home-balance--loading');
     animateHomeUsdTo(total, fmtUsd);
@@ -6450,7 +6491,6 @@ async function loadBalances() {
     if(btn) btn.textContent = '刷新';
     window._wwHomeBalancesHydrated = true;
     if(typeof applyHideZeroTokens==='function') applyHideZeroTokens();
-    if(typeof loadTrxResource==='function') loadTrxResource();
   } catch(e) {
     console.error('Balance load error:', e);
     window._wwHomeBalancesHydrated = false;
@@ -6696,7 +6736,7 @@ async function _resumeWalletAfterUnlock() {
   updateAddr();
   const tb = document.getElementById('tabBar');
   if(tb) tb.style.display = 'flex';
-  setTimeout(loadBalances, 500);
+  setTimeout(loadBalances, 0);
   if(window._wwUnlockPreservePage) {
     window._wwUnlockPreservePage = false;
     window._wwForceIdleLock = false;
