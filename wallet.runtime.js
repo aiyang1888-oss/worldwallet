@@ -86,12 +86,22 @@ function loadQRCodeLib(){
   if(typeof QRCode!=='undefined'&&QRCode.toCanvas)return Promise.resolve();
   if(_qrLoadPromise)return _qrLoadPromise;
   _qrLoadPromise=new Promise(function(res,rej){
-    var s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js';
-    s.async=true;
-    s.onload=function(){res();};
-    s.onerror=function(){_qrLoadPromise=null;rej(new Error('qrcode load failed'));};
-    document.head.appendChild(s);
+    var urls=['lib/qrcode.min.js','assets/lib/qrcode.min.js'];
+    var i=0;
+    function next(){
+      if(typeof QRCode!=='undefined'&&QRCode.toCanvas){res();return;}
+      if(i>=urls.length){_qrLoadPromise=null;rej(new Error('qrcode load failed'));return;}
+      var s=document.createElement('script');
+      s.src=urls[i++];
+      s.async=true;
+      s.onload=function(){
+        if(typeof QRCode!=='undefined'&&QRCode.toCanvas)res();
+        else next();
+      };
+      s.onerror=function(){next();};
+      document.head.appendChild(s);
+    }
+    next();
   });
   return _qrLoadPromise;
 }
@@ -1922,26 +1932,100 @@ function updateQRDisplay() {
   const isEn = currentLang==='en';
   const p1 = document.getElementById('qrPart1');
   const p2 = document.getElementById('qrPart2');
-  if(!p1) return;
-  if(isEn) {
-    p1.innerHTML = '<span style="color:var(--text-muted);font-size:11px">'+CHAIN_ADDR+'</span>';
-    if(p2) p2.style.display = 'none';
+  const p3 = document.getElementById('qrPart3');
+  if (!p1) return;
+  var vwQr = typeof wwGetChainViewWallet === 'function' ? wwGetChainViewWallet() : null;
+  var sel = document.getElementById('qrChainSelect');
+  var chain = (sel && sel.value) || 'trx';
+  var isEth = chain === 'eth';
+  var pubRaw = '--';
+  if (isEth) pubRaw = vwQr && vwQr.ethAddress ? vwQr.ethAddress : '--';
+  else pubRaw = vwQr && vwQr.trxAddress ? vwQr.trxAddress : typeof CHAIN_ADDR !== 'undefined' ? CHAIN_ADDR : '--';
+  var pubEsc = String(pubRaw).replace(/</g, '&lt;');
+  var pubAttr = typeof wwEscAttr === 'function'
+    ? wwEscAttr(pubRaw)
+    : String(pubRaw || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  var badge = isEth ? 'ETH' : 'TRX';
+  var col = isEth ? '#aaaaff' : '#ff9a9a';
+
+  if (isEn) {
+    var wanyuEn = typeof getNativeAddr === 'function' ? String(getNativeAddr() || '') : '';
+    var wanyuEsc = wanyuEn.replace(/</g, '&lt;');
+    var wanyuAttr = typeof wwEscAttr === 'function' ? wwEscAttr(wanyuEn) : pubAttr;
+    p1.innerHTML =
+      '<div style="font-size:10px;color:var(--text-muted);margin-bottom:6px;text-align:center">Wanyu</div>' +
+      '<div style="text-align:center"><span data-ww-copy="' +
+      wanyuAttr +
+      '" title="Copy" style="color:var(--gold-light);font-size:11px;word-break:break-all;cursor:pointer">' +
+      wanyuEsc +
+      '</span></div>';
+    if (p2) {
+      p2.innerHTML =
+        '<div style="font-size:10px;color:var(--text-muted);margin-top:10px;margin-bottom:6px;text-align:center">' +
+        badge +
+        ' · On-chain</div>' +
+        '<div style="text-align:center"><span data-ww-copy="' +
+        pubAttr +
+        '" title="Tap to copy" style="color:' +
+        col +
+        ';font-size:11px;font-family:monospace;word-break:break-all;cursor:pointer">' +
+        pubEsc +
+        '</span></div>';
+      p2.style.display = 'block';
+    }
   } else {
-    // 用万语地址，带高亮
-    const prefix = (document.getElementById('addrPrefix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    const suffix = (document.getElementById('addrSuffix')?.textContent || '').replace(/\D/g,'').substring(0,8);
-    let html = '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">'+prefix+'</span>';
-    if(ADDR_WORDS.length) {
-      ADDR_WORDS.forEach(w => {
-        html += w.custom
-          ? '<span style="color:#f0d070;font-size:13px;font-weight:700">'+w.word+'</span>'
-          : '<span style="color:#8888bb;font-size:12px">'+w.word+'</span>';
+    var apEl = document.getElementById('addrPrefix');
+    var asEl = document.getElementById('addrSuffix');
+    var prefix = (apEl && apEl.textContent ? String(apEl.textContent) : '').replace(/\D/g, '').substring(0, 8);
+    var suffix = (asEl && asEl.textContent ? String(asEl.textContent) : '').replace(/\D/g, '').substring(0, 8);
+    var htmlZh =
+      '<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;text-align:center">万语地址</div>' +
+      '<div style="text-align:center;line-height:1.45">' +
+      '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">' +
+      prefix +
+      '</span>';
+    if (typeof ADDR_WORDS !== 'undefined' && ADDR_WORDS.length) {
+      ADDR_WORDS.forEach(function (w) {
+        htmlZh += w.custom
+          ? '<span style="color:#f0d070;font-size:13px;font-weight:700">' + w.word + '</span>'
+          : '<span style="color:#8888bb;font-size:12px">' + w.word + '</span>';
       });
     }
-    html += '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">'+suffix+'</span>';
-    p1.innerHTML = html;
-    p1.style.cssText = 'text-align:center;display:block;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-    if(p2) p2.style.display = 'none';
+    htmlZh +=
+      '<span style="color:var(--text-muted);font-family:monospace;font-size:11px">' +
+      suffix +
+      '</span></div>';
+    p1.innerHTML = htmlZh;
+    p1.style.cssText =
+      'text-align:center;display:block;margin-bottom:12px;white-space:normal;word-break:break-word';
+    try {
+      var natCopy = typeof getNativeAddr === 'function' ? getNativeAddr() : '';
+      if (natCopy) {
+        p1.setAttribute('data-ww-copy', natCopy);
+        p1.setAttribute('title', '点击复制万语地址');
+      } else {
+        p1.removeAttribute('data-ww-copy');
+        p1.removeAttribute('title');
+      }
+    } catch (_q1) {}
+    if (p2) {
+      p2.innerHTML =
+        '<div style="font-size:10px;color:var(--text-muted);margin-bottom:8px;text-align:center">' +
+        badge +
+        ' · 公链地址</div>' +
+        '<div style="text-align:center"><span data-ww-copy="' +
+        pubAttr +
+        '" title="点击复制完整地址" style="color:' +
+        col +
+        ';font-size:11px;font-family:monospace;word-break:break-all;line-height:1.45;cursor:pointer">' +
+        pubEsc +
+        '</span></div>';
+      p2.style.display = 'block';
+    }
+  }
+  if (p3) {
+    p3.innerHTML = '';
+    p3.style.display = 'none';
   }
 }
 
@@ -5104,13 +5188,18 @@ function buildReceiveQrPayload(chain, addr, amountRaw) {
 function updateQRCode() {
   var vwQ = typeof wwGetChainViewWallet === 'function' ? wwGetChainViewWallet() : null;
   if (!vwQ && typeof REAL_WALLET !== 'undefined') vwQ = REAL_WALLET;
-  if (!vwQ || !(vwQ.trxAddress || vwQ.ethAddress)) return;
+  if (!vwQ) return;
+  if (typeof wwWalletHasAnyChainAddress === 'function' && !wwWalletHasAnyChainAddress(vwQ)) return;
   var sel = document.getElementById('qrChainSelect');
   var chain = sel ? sel.value || 'trx' : 'trx';
   var addr = '';
   if (chain === 'trx') addr = vwQ.trxAddress || '';
   else if (chain === 'eth') addr = vwQ.ethAddress || '';
   if (addr) generateQRCode(buildReceiveQrPayload(chain, addr), 'qrCanvas');
+  else {
+    var c = document.getElementById('qrCanvas');
+    if (c) wwDrawQrCanvasPlaceholder(c, '…');
+  }
   if (typeof updateQRDisplay === 'function') updateQRDisplay();
 }
 
