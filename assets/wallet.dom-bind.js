@@ -288,12 +288,38 @@
       );
     }
 
-    /* 欢迎页三按钮：内联 onclick 已移除；捕获阶段 click 覆盖桌面鼠标；touch/pointer 兜底移动端 */
+    /* 欢迎页三按钮：内联 onclick 已移除；捕获阶段 click 覆盖桌面；touch/pointer 兜底移动端。
+       移动 Chrome 常把 target 指到按钮内文本节点 → 无 .closest；须归一化到元素或 elementFromPoint。 */
     var pgWelcome = document.getElementById('page-welcome');
     if (pgWelcome) {
       var _wwWelTapX = 0;
       var _wwWelTapY = 0;
       var _wwWelLastActAt = 0;
+      function _wwWelcomeTargetEl(ev) {
+        var t = ev && ev.target;
+        if (!t) return null;
+        if (t.nodeType === 3) return t.parentElement || null;
+        return t;
+      }
+      function _wwWelcomeBtnFromEvent(ev) {
+        var el = _wwWelcomeTargetEl(ev);
+        if (el && typeof el.closest === 'function') {
+          var b = el.closest('button[data-ww-welcome-act]');
+          if (b && pgWelcome.contains(b)) return b;
+        }
+        var te = ev.changedTouches && ev.changedTouches[0];
+        if (te && typeof document.elementFromPoint === 'function') {
+          var x = te.clientX;
+          var y = te.clientY;
+          var under = document.elementFromPoint(x, y);
+          if (under && under.nodeType === 3) under = under.parentElement;
+          if (under && typeof under.closest === 'function') {
+            b = under.closest('button[data-ww-welcome-act]');
+            if (b && pgWelcome.contains(b)) return b;
+          }
+        }
+        return null;
+      }
       function _wwRunWelcomeAct(btn) {
         if (!btn || !pgWelcome.contains(btn) || !btn.getAttribute('data-ww-welcome-act')) return;
         var _now = Date.now();
@@ -330,8 +356,18 @@
         'click',
         function (ev) {
           if (ev.button !== 0 && ev.button != null) return;
-          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
-          if (!btn || !pgWelcome.contains(btn)) return;
+          var el = _wwWelcomeTargetEl(ev);
+          var btn = el && typeof el.closest === 'function' ? el.closest('button[data-ww-welcome-act]') : null;
+          if (!btn || !pgWelcome.contains(btn)) {
+            if (typeof document.elementFromPoint === 'function' && ev.clientX != null && ev.clientY != null) {
+              var u = document.elementFromPoint(ev.clientX, ev.clientY);
+              if (u && u.nodeType === 3) u = u.parentElement;
+              if (u && typeof u.closest === 'function') {
+                btn = u.closest('button[data-ww-welcome-act]');
+              }
+            }
+            if (!btn || !pgWelcome.contains(btn)) return;
+          }
           try {
             ev.preventDefault();
           } catch (_pe) {}
@@ -367,10 +403,11 @@
       pgWelcome.addEventListener(
         'touchend',
         function (ev) {
-          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
+          var btn = _wwWelcomeBtnFromEvent(ev);
           if (!btn) return;
           var te = ev.changedTouches && ev.changedTouches[0];
           if (te && (Math.abs(te.clientX - _wwWelTapX) > 20 || Math.abs(te.clientY - _wwWelTapY) > 24)) return;
+          /* 仅在已识别按钮后 preventDefault，避免误挡合成 click；有按钮时由本逻辑执行动作 */
           if (ev.cancelable) ev.preventDefault();
           try {
             ev.stopPropagation();
@@ -384,8 +421,16 @@
         function (ev) {
           if (!ev.isPrimary) return;
           if (ev.pointerType === 'mouse') return;
-          var btn = ev.target && ev.target.closest && ev.target.closest('button[data-ww-welcome-act]');
-          if (!btn) return;
+          var el = _wwWelcomeTargetEl(ev);
+          var btn = el && typeof el.closest === 'function' ? el.closest('button[data-ww-welcome-act]') : null;
+          if (!btn || !pgWelcome.contains(btn)) {
+            if (typeof document.elementFromPoint === 'function') {
+              var up = document.elementFromPoint(ev.clientX, ev.clientY);
+              if (up && up.nodeType === 3) up = up.parentElement;
+              if (up && typeof up.closest === 'function') btn = up.closest('button[data-ww-welcome-act]');
+            }
+          }
+          if (!btn || !pgWelcome.contains(btn)) return;
           if (Math.abs(ev.clientX - _wwWelTapX) > 20 || Math.abs(ev.clientY - _wwWelTapY) > 24) return;
           if (ev.cancelable) ev.preventDefault();
           try {
