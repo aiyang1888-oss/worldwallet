@@ -3837,6 +3837,7 @@ function updateSettingsPage() {
   }
 }
 
+/** 清除本应用全部用户数据与缓存：localStorage(ww_* 与 wallet_* 展示键)、sessionStorage、IndexedDB(WorldWalletKV)、Cache Storage、内存 IDB/密钥缓存、万语 ADDR_WORDS；并重置 REAL_WALLET。 */
 function wwPurgeLocalWalletStorage() {
   try {
     var keys = [];
@@ -3850,7 +3851,65 @@ function wwPurgeLocalWalletStorage() {
         localStorage.removeItem(keys[i]);
       } catch (_e) { wwQuiet(_e); }
     }
+    var extraLs = ['wallet_addr_words', 'wallet_prefix', 'wallet_suffix', 'wallet_native_addr'];
+    for (i = 0; i < extraLs.length; i++) {
+      try {
+        localStorage.removeItem(extraLs[i]);
+      } catch (_el) { wwQuiet(_el); }
+    }
   } catch (_e2) { wwQuiet(_e2); }
+  try {
+    var ssKeys = [];
+    for (i = 0; i < sessionStorage.length; i++) {
+      k = sessionStorage.key(i);
+      if (k) ssKeys.push(k);
+    }
+    for (i = 0; i < ssKeys.length; i++) {
+      try {
+        sessionStorage.removeItem(ssKeys[i]);
+      } catch (_ss) { wwQuiet(_ss); }
+    }
+  } catch (_e3) { wwQuiet(_e3); }
+  try {
+    if (typeof indexedDB !== 'undefined' && indexedDB.deleteDatabase) {
+      indexedDB.deleteDatabase('WorldWalletKV');
+    }
+  } catch (_idb) { wwQuiet(_idb); }
+  try {
+    if (typeof caches !== 'undefined' && caches.keys) {
+      caches.keys().then(function (cks) {
+        cks.forEach(function (name) {
+          try {
+            caches.delete(name);
+          } catch (_cd) { wwQuiet(_cd); }
+        });
+      }).catch(function () {});
+    }
+  } catch (_ca) { wwQuiet(_ca); }
+  try {
+    if (typeof window.wwIdbCache !== 'undefined' && window.wwIdbCache && typeof window.wwIdbCache.clear === 'function') {
+      window.wwIdbCache.clear();
+    }
+  } catch (_ic) { wwQuiet(_ic); }
+  try {
+    if (typeof window.wwKeyDerivationCache !== 'undefined' && window.wwKeyDerivationCache && typeof window.wwKeyDerivationCache.clear === 'function') {
+      window.wwKeyDerivationCache.clear();
+    }
+  } catch (_kc) { wwQuiet(_kc); }
+  try {
+    if (typeof window.wwSessionKeyCache !== 'undefined' && window.wwSessionKeyCache && typeof window.wwSessionKeyCache.clear === 'function') {
+      window.wwSessionKeyCache.clear();
+    }
+  } catch (_sc) { wwQuiet(_sc); }
+  try {
+    if (typeof ADDR_WORDS !== 'undefined' && ADDR_WORDS) ADDR_WORDS.length = 0;
+  } catch (_aw) { wwQuiet(_aw); }
+  try {
+    if (typeof __wanYuAddrInitialized !== 'undefined') __wanYuAddrInitialized = false;
+  } catch (_wy) { wwQuiet(_wy); }
+  try {
+    if (typeof window.wwClearWanYuAddrCacheForWalletChange === 'function') window.wwClearWanYuAddrCacheForWalletChange();
+  } catch (_wc) { wwQuiet(_wc); }
   try {
     window._wwAfterPinUnlockContinue = null;
   } catch (_ac) { wwQuiet(_ac); }
@@ -3865,14 +3924,28 @@ function wwPurgeLocalWalletStorage() {
     window.REAL_WALLET = null;
   } catch (_w) { wwQuiet(_w); }
   try {
+    window.TEMP_WALLET = null;
+    window._tempWalletMnemonic = null;
+    window._tempWalletAddresses = null;
+    window._wwTempWalletByWordCount = null;
+  } catch (_tw) { wwQuiet(_tw); }
+  try {
     currentMnemonicLength = 12;
   } catch (_c) { wwQuiet(_c); }
+  try {
+    priceCache = null;
+    priceCacheTime = 0;
+    newsCache = null;
+    newsCacheTime = 0;
+    newsLoading = false;
+  } catch (_pm) { wwQuiet(_pm); }
   try {
     if (typeof clearPublishedWallet === 'function') clearPublishedWallet();
   } catch (_cp) { wwQuiet(_cp); }
 }
 try {
   window.wwPurgeLocalWalletStorage = wwPurgeLocalWalletStorage;
+  window.wwClearAllUserCaches = wwPurgeLocalWalletStorage;
 } catch (_wp) { wwQuiet(_wp); }
 
 /**
