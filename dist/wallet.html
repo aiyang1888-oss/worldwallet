@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0">
 <!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
 <meta name="wt-tron-api-key" content="">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <style id="ww-firstpaint-guard">
 /* ww-hide-welcome-until-ready 仅由 head boot 在「先进非欢迎页」时动态添加，避免无钱包首访先藏欢迎再放开造成闪屏 */
@@ -327,8 +327,7 @@ try {
 <link rel="manifest" href="manifest.json">
 
 
-<!-- QR Code Generator -->
-<!-- qrcode: on-demand loadQRCodeLib() -->
+<!-- QR Code Generator：主入口同步加载 lib/qrcode.min.js；runtime 内 loadQRCodeLib() 仍作兜底 -->
 <!-- ethers.js for real BIP39 wallet generation -->
 <!-- ethers.js - 钱包派生库，约800KB -->
 
@@ -1740,6 +1739,7 @@ try {
 <!-- wt-pad-0095 -->
 <!-- wt-pad-0096 -->
 <script src="lib/ethers.umd.min.js"></script>
+<script src="lib/qrcode.min.js"></script>
 <!-- globals.js disabled to fix var conflict -->
 <script src="js/api-config.js"></script>
 <script src="wallet.swap.js"></script>
