@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
  * 从 scripts/pcas-code.json（modood/Administrative-divisions-of-China）生成
- * 2048 个唯一中文地名：省级 → 地级 → 县级 → 镇级补足；**每条 2～3 个 Unicode 字符**
- *（避免 UI 截断为伪词如「齐齐哈」、且与真实地名一致）。
- * 输出 dist/wordlists/zh-cn.json（与 BIP39 英文词索引 0..2047 对齐）。
+ * WT_WORDLISTS.zh：2048 个唯一中文地名，与标准 BIP39 英文词 **按索引 0..2047 一一对应**。
+ *
+ * 收录顺序（行政层级 + 树遍历顺序，见 build / collect*）：
+ * 1) 省级简称（含自治区/直辖市短名）
+ * 2) 地级简称（市/盟/州去后缀）
+ * 3) 县级专名（过滤园区/街道等），必要时「市简称+县专名」消歧且总长 2～3 字
+ * 4) 不足 2048 时：镇名去「镇」、去后缀县名、乡名等补足
+ *
+ * 每条 **2～3 个 Unicode 字符**。输出 dist/wordlists/zh-cn.json。
+ * 流水线见 scripts/README-wordlists.md、`npm run wordlist:zh`。
  */
 const fs = require('fs');
 const path = require('path');

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * 用 dist/wordlists/zh-cn.json（2048 词，与 BIP39 英文索引对齐）
- * 替换 dist/wordlists.js 中的 WT_WORDLISTS.zh 数组。
- * 使用括号深度匹配，避免正则误判字符串内的 ]。
- * 注入前运行 verify-zh-wordlist（2～3 字、无重复），避免长地名经展示归一化后出现「锡林浩」类伪词。
+ * 【遗留】仅当 dist/wordlists.js 为「手写巨型单文件」且含 `zh: [...]` 时使用。
+ * 当前标准流程：npm run wordlist:zh（generate → verify → ww-build-wordlists.mjs 整页重写）。
+ *
+ * 用 dist/wordlists/zh-cn.json 替换 dist/wordlists.js 中的 WT_WORDLISTS.zh 数组。
+ * 注入前会运行 verify-zh-wordlist。
  */
 const fs = require('fs');
 const path = require('path');

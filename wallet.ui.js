@@ -149,6 +149,7 @@ var EN_HOME_MID_WORDS = ['oak','ash','elm','bay','sky','sea','sun','moon','star'
 // WT_WORDLISTS loaded from wordlists.js
 
 /** 词表文件中的 zh 可能含 4 字以上地名；展示侧压缩为「同索引全局唯一」的可辨地名，并保留 WT_ZH_ORIGINAL 供导入旧备份时解析。
+ * 新区表由 `npm run wordlist:zh` 自 pcas 生成，条目为 2～3 字，通常不经压缩即可展示（见 scripts/README-wordlists.md）。
  * 注：wordlists.js 的 wwMapEnWordsToLangWords、runtime 的 enWordsToLangKeyTableWords 仅按 BIP39 索引取 WT_WORDLISTS.zh[i]，本身不截断；
  * 若出现「锡林浩」类伪词，来自本函数对长名从短到长取前缀时切断「浩特」等专名；已改为先去行政后缀、再优先取长前缀（3～全长）。 */
 var WT_ZH_ORIGINAL = [];
@@ -473,7 +474,15 @@ async function createWallet(forcedWordCount) {
   var mnemonic = ethers.utils.entropyToMnemonic(ethers.utils.randomBytes(entropyBytes));
   var wallet = ethers.Wallet.fromMnemonic(mnemonic);
   var trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-  var btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
+  var btcHd = ethers.Wallet.fromMnemonic(mnemonic, "m/84'/0'/0'/0/0");
+  var btcSegwit = '';
+  try {
+    if (typeof wwDeriveBtcNativeSegwitAddress === 'function') btcSegwit = wwDeriveBtcNativeSegwitAddress(mnemonic);
+  } catch (_bs) {
+    try {
+      if (typeof wwQuiet === 'function') wwQuiet(_bs);
+    } catch (_q1) {}
+  }
   var trxAddr = '';
   try {
     if (typeof loadTronWeb === 'function') await loadTronWeb();
@@ -495,10 +504,10 @@ async function createWallet(forcedWordCount) {
     wordCount: nWords,
     eth: { address: wallet.address, privateKey: wallet.privateKey },
     trx: { address: trxAddr, privateKey: trxWallet.privateKey },
-    btc: { address: btcWallet.address, privateKey: btcWallet.privateKey },
+    btc: { address: btcSegwit || '', privateKey: btcHd.privateKey },
     ethAddress: wallet.address,
     trxAddress: trxAddr,
-    btcAddress: btcWallet.address,
+    btcAddress: btcSegwit || '',
     privateKey: wallet.privateKey,
     trxPrivateKey: trxWallet.privateKey,
     createdAt: Date.now()
@@ -4369,7 +4378,13 @@ function wwEnsureRealWalletFromTempForVerify(tw, enMnemonicStr, displayWordsForR
     if (!tw.eth || !tw.eth.address) {
       var wallet = ethers.Wallet.fromMnemonic(m);
       var trxWallet = ethers.Wallet.fromMnemonic(m, "m/44'/195'/0'/0/0");
-      var btcWallet = ethers.Wallet.fromMnemonic(m, "m/44'/0'/0'/0/0");
+      var btcHd = ethers.Wallet.fromMnemonic(m, "m/84'/0'/0'/0/0");
+      var btcSeg = '';
+      try {
+        if (typeof wwDeriveBtcNativeSegwitAddress === 'function') btcSeg = wwDeriveBtcNativeSegwitAddress(m);
+      } catch (_bseg) {
+        wwQuiet(_bseg);
+      }
       var trxAddr = '';
       try {
         if (typeof TronWeb !== 'undefined' && TronWeb.address && typeof TronWeb.address.fromHex === 'function') {
@@ -4381,10 +4396,10 @@ function wwEnsureRealWalletFromTempForVerify(tw, enMnemonicStr, displayWordsForR
       }
       tw.eth = { address: wallet.address, privateKey: wallet.privateKey };
       tw.trx = { address: trxAddr, privateKey: trxWallet.privateKey };
-      tw.btc = { address: btcWallet.address, privateKey: btcWallet.privateKey };
+      tw.btc = { address: btcSeg || '', privateKey: btcHd.privateKey };
       tw.ethAddress = wallet.address;
       tw.trxAddress = trxAddr;
-      tw.btcAddress = btcWallet.address;
+      tw.btcAddress = btcSeg || '';
       tw.privateKey = wallet.privateKey;
       tw.trxPrivateKey = trxWallet.privateKey;
     }
@@ -4744,6 +4759,11 @@ async function _resumeWalletAfterUnlock() {
     } catch (e) {
       console.error('[unlock decrypt]', e);
     }
+  }
+  try {
+    if (typeof wwUpgradeStoredBtcAddressIfLegacy === 'function') wwUpgradeStoredBtcAddressIfLegacy();
+  } catch (_ubtc) {
+    wwQuiet(_ubtc);
   }
   try { if (typeof wwSealWalletSensitive === 'function') await wwSealWalletSensitive(); } catch (_se) { wwQuiet(_se); }
   updateAddr();
