@@ -7781,11 +7781,13 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 
 (function(){
   function run(){
-    if(window._wwPaintBoot) return;
-    window._wwPaintBoot = true;
+    /* 勿与 wallet.ui.js 的 _wwPaintBoot 共用：ui 先注册 load 会占住标志，导致本段双 rAF 永远不跑，首页资产卡片无法初始化 */
+    if(window._wwRuntimeHomeCardBoot) return;
+    window._wwRuntimeHomeCardBoot = true;
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
         try { if(typeof updateHomeChainStrip==='function') updateHomeChainStrip(); } catch (e) { wwQuiet(e); }
+        try { if(typeof wwInitHomeAssetCardsFromCoins==='function') wwInitHomeAssetCardsFromCoins(); } catch (e) { wwQuiet(e); }
       });
     });
   }

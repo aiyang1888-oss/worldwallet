@@ -143,6 +143,16 @@ var WW_HOME_NET_MS_TRX = 580;
 var WW_HOME_NET_MS_BTC = 360;
 /** 同一会话内两次完整链上余额拉取的最小间隔（降 429 / 限流） */
 var WW_HOME_CHAIN_FETCH_MIN_MS = 12000;
+/** 链上余额内存缓存 TTL（与最小间隔配合，减少重复打公网） */
+var WW_HOME_API_CACHE_TTL_MS = 7 * 60 * 1000;
+/** { wid, at, wall, trxPack, ethBal, btcBal, usdtErcBal } */
+var _wwHomeBalNet = { wid: '', at: 0, wall: 0, trxPack: null, ethBal: 0, btcBal: 0, usdtErcBal: 0 };
+
+function wwDelay(ms) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, ms);
+  });
+}
 
 /**
  * Promise 在 ms 内未完成则返回 fallback（用于避免 TronGrid / mempool 慢请求拖满首屏）。
@@ -206,7 +216,7 @@ function animateHomeUsdTo(targetUsd, fmtUsdFn) {
   window._homeBalanceAnimRaf = requestAnimationFrame(tick);
 }
 
-/** 加载 TronWeb（CDN）；失败/超时也必须 resolve，否则 await 会永久卡住「正在生成钱包…」 */
+/** 加载 TronWeb（优先本地 lib/，与 CSP 一致）；失败/超时也必须 resolve，否则 await 会永久卡住「正在生成钱包…」 */
 function loadTronWeb() {
   if (typeof window !== 'undefined' && window.TronWeb) return Promise.resolve();
   return new Promise(function (resolve) {
@@ -217,23 +227,38 @@ function loadTronWeb() {
       resolve();
     }
     var timer = setTimeout(finish, 12000);
-    var s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://cdn.jsdelivr.net/npm/tronweb@5.3.2/dist/TronWeb.js';
-    s.onload = function () {
-      clearTimeout(timer);
-      finish();
-    };
-    s.onerror = function () {
-      clearTimeout(timer);
-      finish();
-    };
-    try {
-      document.head.appendChild(s);
-    } catch (_e) {
-      clearTimeout(timer);
-      finish();
+    var urls = ['lib/TronWeb.js', 'assets/lib/TronWeb.js'];
+    var i = 0;
+    function tryNext() {
+      if (typeof window !== 'undefined' && window.TronWeb) {
+        clearTimeout(timer);
+        finish();
+        return;
+      }
+      if (i >= urls.length) {
+        clearTimeout(timer);
+        finish();
+        return;
+      }
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = urls[i++];
+      s.onload = function () {
+        if (typeof window !== 'undefined' && window.TronWeb) {
+          clearTimeout(timer);
+          finish();
+        } else tryNext();
+      };
+      s.onerror = function () {
+        tryNext();
+      };
+      try {
+        document.head.appendChild(s);
+      } catch (_e) {
+        tryNext();
+      }
     }
+    tryNext();
   });
 }
 var _qrLoadPromise=null;
@@ -1935,8 +1960,15 @@ if(pageId==='page-import') { initImportGrid(); var _impErrGo = document.getEleme
 async function resolveENS(name) {
   if (!name.endsWith('.eth')) return name;
   try {
-    const provider = new ethers.providers.JsonRpcProvider('https://eth.llamarpc.com');
-    const addr = await provider.resolveName(name);
+    var p =
+      typeof wwGetEthProvider === 'function'
+        ? wwGetEthProvider()
+        : new ethers.providers.JsonRpcProvider(
+            typeof WW_ETH_RPC_URLS !== 'undefined' && WW_ETH_RPC_URLS.length
+              ? WW_ETH_RPC_URLS[0]
+              : 'https://cloudflare-eth.com'
+          );
+    const addr = await p.resolveName(name);
     return addr || name;
   } catch(e) { return name; }
 }
@@ -6790,14 +6822,23 @@ async function getPrices() {
   }
 }
 
-/** 首页并行拉取：TRX 账户 + USDT TRC20 */
+/** 首页拉取：TRX 账户 + USDT TRC20（走 TronGrid 重试，降 429） */
 async function wwFetchTrxAccountBalancesForHome(trxAddr) {
   var out = { trxBal: 0, usdtBal: 0 };
   if (!trxAddr) return out;
   try {
-    var base = typeof wwTronGridBase === 'function' ? wwTronGridBase() : 'https://api.trongrid.io';
-    var hdr = typeof wwTronHeaders === 'function' ? wwTronHeaders() : {};
-    var trxRes = await fetch(base + '/v1/accounts/' + encodeURIComponent(trxAddr), { headers: hdr });
+    var trxRes;
+    if (typeof wwFetchTronAccountV1 === 'function') {
+      trxRes = await wwFetchTronAccountV1(trxAddr);
+    } else {
+      var base = typeof wwTronGridBase === 'function' ? wwTronGridBase() : 'https://api.trongrid.io';
+      var hdr = typeof wwTronHeaders === 'function' ? wwTronHeaders() : {};
+      var u = base + '/v1/accounts/' + encodeURIComponent(trxAddr);
+      trxRes =
+        typeof wwFetchRetry === 'function'
+          ? await wwFetchRetry(u, { method: 'GET', headers: hdr })
+          : await fetch(u, { headers: hdr });
+    }
     var trxData = await trxRes.json();
     if (trxData.data && trxData.data[0]) {
       out.trxBal = (trxData.data[0].balance || 0) / 1e6;
@@ -6872,13 +6913,23 @@ async function wwFetchErc20UsdtBalanceForHome(ethAddr) {
   return 0;
 }
 
+/** 主网 BTC 地址（非 ETH hex）；addr.js 未加载时亦有启发式 */
+function wwIsBtcLikeMainnetAddr(s) {
+  var a = String(s || '').trim();
+  if (!a) return false;
+  if (/^0x[0-9a-fA-F]{40}$/.test(a)) return false;
+  if (typeof wwIsValidBtcAddress === 'function') return wwIsValidBtcAddress(a);
+  return /^(bc1|[13])[a-km-zA-HJ-NP-Z1-9]{24,90}$/i.test(a);
+}
+
 async function wwFetchBtcBalanceForHome(btcAddr) {
   if (!btcAddr) return 0;
   var a = String(btcAddr).trim();
-  if (/^0x[0-9a-fA-F]{40}$/.test(a)) return 0;
-  if (typeof wwIsValidBtcAddress === 'function' && !wwIsValidBtcAddress(a)) return 0;
+  if (!wwIsBtcLikeMainnetAddr(a)) return 0;
   try {
-    var btcRes = await fetch('https://mempool.space/api/address/' + encodeURIComponent(a));
+    var u = 'https://mempool.space/api/address/' + encodeURIComponent(a);
+    var btcRes =
+      typeof wwFetchRetry === 'function' ? await wwFetchRetry(u, { method: 'GET' }, 4) : await fetch(u);
     if (!btcRes.ok) return 0;
     var btcData = await btcRes.json();
     var funded = (btcData.chain_stats && btcData.chain_stats.funded_txo_sum) || 0;
@@ -7781,11 +7832,13 @@ try { initBalancePrivacyToggle(); initScrollTopBtn(); initTabSwipeGesture(); } c
 
 (function(){
   function run(){
-    if(window._wwPaintBoot) return;
-    window._wwPaintBoot = true;
+    /* 勿与 wallet.ui.js 的 _wwPaintBoot 共用：ui 先注册 load 会占住标志，导致本段双 rAF 永远不跑，首页资产卡片无法初始化 */
+    if(window._wwRuntimeHomeCardBoot) return;
+    window._wwRuntimeHomeCardBoot = true;
     requestAnimationFrame(function(){
       requestAnimationFrame(function(){
         try { if(typeof updateHomeChainStrip==='function') updateHomeChainStrip(); } catch (e) { wwQuiet(e); }
+        try { if(typeof wwInitHomeAssetCardsFromCoins==='function') wwInitHomeAssetCardsFromCoins(); } catch (e) { wwQuiet(e); }
       });
     });
   }
