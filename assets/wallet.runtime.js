@@ -141,6 +141,8 @@ function parseUsdFromBalanceTxt(txt) {
 var WW_HOME_NET_MS = 480;
 var WW_HOME_NET_MS_TRX = 580;
 var WW_HOME_NET_MS_BTC = 360;
+/** 同一会话内两次完整链上余额拉取的最小间隔（降 429 / 限流） */
+var WW_HOME_CHAIN_FETCH_MIN_MS = 12000;
 
 /**
  * Promise 在 ms 内未完成则返回 fallback（用于避免 TronGrid / mempool 慢请求拖满首屏）。
@@ -835,6 +837,97 @@ function _saveWalletPlainPublicOnly(w) {
   } catch (e) { wwQuiet(e); }
 }
 
+/**
+ * 旧版错误地把 ETH 格式地址当作 BTC 存储；与有效 Bitcoin 地址互斥。
+ */
+function wwIsLegacyWwBtcStoredAddress(addr) {
+  return /^0x[0-9a-fA-F]{40}$/.test(String(addr || '').trim());
+}
+
+/**
+ * 仅更新 ww_wallet 中的 btcAddress，保留 encrypted 等其余字段。
+ * 避免无会话 PIN 时走 saveWallet → _saveWalletPlainPublicOnly 整包覆盖导致密文丢失。
+ */
+function wwMergePersistBtcAddressInStorage() {
+  try {
+    if (typeof REAL_WALLET === 'undefined' || !REAL_WALLET || !REAL_WALLET.btcAddress) return;
+    var raw = localStorage.getItem('ww_wallet');
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    o.btcAddress = REAL_WALLET.btcAddress;
+    localStorage.setItem('ww_wallet', JSON.stringify(o));
+  } catch (e) {
+    wwQuiet(e);
+  }
+}
+
+function wwResolvePinForPersist() {
+  var pin = (typeof _pin !== 'undefined' && _pin) ? String(_pin) : '';
+  if (!pin && typeof wwGetSessionPin === 'function') pin = wwGetSessionPin() || '';
+  if (!pin) {
+    try {
+      pin = localStorage.getItem('ww_pin') || localStorage.getItem('ww_unlock_pin') || '';
+    } catch (_p) {
+      wwQuiet(_p);
+    }
+  }
+  return pin ? String(pin) : '';
+}
+
+/**
+ * 若当前存储的 BTC 地址为旧版 0x… 占位符，则用助记词派生 BIP84 原生隔离见证（bc1…）并写回 localStorage。
+ * 依赖明文助记词（解锁会话 / wwUnsealWalletSensitive 之后）。
+ */
+function wwUpgradeStoredBtcAddressIfLegacy() {
+  try {
+    if (typeof REAL_WALLET === 'undefined' || !REAL_WALLET) return false;
+    if (REAL_WALLET.btcAddr && !REAL_WALLET.btcAddress) {
+      REAL_WALLET.btcAddress = REAL_WALLET.btcAddr;
+    }
+    var cur = REAL_WALLET.btcAddress || REAL_WALLET.btcAddr || '';
+    if (!wwIsLegacyWwBtcStoredAddress(cur)) return false;
+    // BIP39 派生须英文助记词串
+    var m = REAL_WALLET.enMnemonic || REAL_WALLET.mnemonic;
+    if (!m || typeof wwDeriveBtcNativeSegwitAddress !== 'function') return false;
+    var next = wwDeriveBtcNativeSegwitAddress(m);
+    if (!next || next === cur) return false;
+    REAL_WALLET.btcAddress = next;
+    try {
+      delete REAL_WALLET.btcAddr;
+    } catch (_d) {
+      void _d;
+    }
+    var pin = wwResolvePinForPersist();
+    if (pin && typeof saveWalletSecure === 'function') {
+      saveWalletSecure(REAL_WALLET, pin).catch(function (e) {
+        wwQuiet(e);
+        wwMergePersistBtcAddressInStorage();
+      });
+    } else {
+      wwMergePersistBtcAddressInStorage();
+    }
+    try {
+      console.log('[ww] BTC address upgraded:', next);
+    } catch (_lg) {
+      void _lg;
+    }
+    try {
+      if (typeof updateAddr === 'function') updateAddr();
+    } catch (_ua) {
+      wwQuiet(_ua);
+    }
+    return true;
+  } catch (e) {
+    wwQuiet(e);
+    return false;
+  }
+}
+try {
+  window.wwUpgradeStoredBtcAddressIfLegacy = wwUpgradeStoredBtcAddressIfLegacy;
+} catch (_wwUp) {
+  wwQuiet(_wwUp);
+}
+
 /* loadWallet 定义在 wallet.core.js（含万语地址初始化与移除 html.ww-addr-pending）；勿在此重复声明，否则会覆盖核心实现导致异常 */
 
 /* const WW_REF_INVITES_KEY: wallet.ui.js */
@@ -1024,7 +1117,7 @@ async function createRealWallet(forcedWordCount) {
   }
   if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
-  let mnemonic, wallet, trxWallet, btcWallet, trxAddr;
+  let mnemonic, wallet, trxWallet, trxAddr;
   try {
     const nWords = (typeof forcedWordCount === 'number' && [12, 15, 18, 21, 24].includes(forcedWordCount))
       ? forcedWordCount
@@ -1040,7 +1133,6 @@ async function createRealWallet(forcedWordCount) {
   await walletCreateYield();
   try {
     trxWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/195'/0'/0/0");
-    btcWallet = ethers.Wallet.fromMnemonic(mnemonic, "m/44'/0'/0'/0/0");
   } catch (e) {
     console.error('[WorldToken] 钱包创建失败:', e);
     throw new Error(formatWalletCreateError(e));
@@ -1057,13 +1149,19 @@ async function createRealWallet(forcedWordCount) {
   }
   if (typeof setWalletCreateStep === 'function') 
   await walletCreateYield();
+  var btcSegwit = '';
+  try {
+    if (typeof wwDeriveBtcNativeSegwitAddress === 'function') btcSegwit = wwDeriveBtcNativeSegwitAddress(mnemonic);
+  } catch (_bd) {
+    wwQuiet(_bd);
+  }
   const w = {
     mnemonic: mnemonic,
     enMnemonic: mnemonic,
     words: mnemonic.split(' '),
     ethAddress: wallet.address,
     trxAddress: trxAddr,
-    btcAddress: btcWallet.address,
+    btcAddress: btcSegwit || '',
     privateKey: wallet.privateKey,
     trxPrivateKey: trxWallet.privateKey,
     createdAt: Date.now()
@@ -1111,13 +1209,13 @@ async function restoreWallet(mnemonic) {
     if (!trxAddr && typeof wwTrxBase58FromEthAddressHex === 'function') {
       trxAddr = wwTrxBase58FromEthAddressHex(trxWallet.address);
     }
-    // BTC 地址（m/44'/0'/0'/0/0）
-    let btcAddr2 = '';
+    // BTC：BIP84 原生隔离见证 m/84'/0'/0'/0/0 → bc1…（见 js/btc-segwit.js）
+    var btcAddr2 = '';
     try {
-      const btcWallet = ethers.Wallet.fromMnemonic(enMnemonicStr, "m/44'/0'/0'/0/0");
-      // 简化：用 ETH 地址格式存储 BTC 未压缩公钥（实际BTC地址需更多处理）
-      btcAddr2 = btcWallet.address; // 暂用ETH格式，后续可升级
-    } catch (e) { wwQuiet(e); }
+      if (typeof wwDeriveBtcNativeSegwitAddress === 'function') btcAddr2 = wwDeriveBtcNativeSegwitAddress(enMnemonicStr);
+    } catch (e) {
+      wwQuiet(e);
+    }
     const w = {
       mnemonic: enMnemonicStr,
       enMnemonic: enMnemonicStr,           // 真实英文BIP39助记词
@@ -1128,7 +1226,7 @@ async function restoreWallet(mnemonic) {
       trxAddress: trxAddr,
       privateKey: wallet.privateKey,       // ETH private key
       trxPrivateKey: trxWallet.privateKey,  // TRX private key
-      btcAddress: btcAddr2,                 // BTC address (simplified)
+      btcAddress: btcAddr2,
       createdAt: Date.now()
     };
     window.REAL_WALLET = w;
@@ -6776,14 +6874,18 @@ async function wwFetchErc20UsdtBalanceForHome(ethAddr) {
 
 async function wwFetchBtcBalanceForHome(btcAddr) {
   if (!btcAddr) return 0;
+  var a = String(btcAddr).trim();
+  if (/^0x[0-9a-fA-F]{40}$/.test(a)) return 0;
+  if (typeof wwIsValidBtcAddress === 'function' && !wwIsValidBtcAddress(a)) return 0;
   try {
-    var btcRes = await fetch('https://mempool.space/api/address/' + encodeURIComponent(btcAddr));
+    var btcRes = await fetch('https://mempool.space/api/address/' + encodeURIComponent(a));
+    if (!btcRes.ok) return 0;
     var btcData = await btcRes.json();
     var funded = (btcData.chain_stats && btcData.chain_stats.funded_txo_sum) || 0;
     var spent = (btcData.chain_stats && btcData.chain_stats.spent_txo_sum) || 0;
     return (funded - spent) / 1e8;
   } catch (e) {
-    console.log('BTC query skipped');
+    wwQuiet(e, 'wwFetchBtcBalanceForHome');
   }
   return 0;
 }
@@ -7333,6 +7435,11 @@ async function _resumeWalletAfterUnlock() {
     } catch (e) {
       console.error('[unlock decrypt]', e);
     }
+  }
+  try {
+    if (typeof wwUpgradeStoredBtcAddressIfLegacy === 'function') wwUpgradeStoredBtcAddressIfLegacy();
+  } catch (_ubtc) {
+    wwQuiet(_ubtc);
   }
   updateAddr();
   const tb = document.getElementById('tabBar');

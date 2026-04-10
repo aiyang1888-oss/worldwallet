@@ -101,11 +101,13 @@ function loadWalletPublic() {
     var d = localStorage.getItem('ww_wallet');
     if (d) {
       var parsed = JSON.parse(d);
+      // 与 eth/trx 一致使用 btcAddress；兼容旧键名 btcAddr
+      var btcPub = parsed.btcAddress || parsed.btcAddr || '';
       // 只加载公开信息，不加载敏感数据
       window.REAL_WALLET = {
         ethAddress: parsed.ethAddress,
         trxAddress: parsed.trxAddress,
-        btcAddress: parsed.btcAddress || '',
+        btcAddress: btcPub,
         createdAt: parsed.createdAt,
         backedUp: parsed.backedUp || false,
         hasEncrypted: !!parsed.encrypted
@@ -224,6 +226,9 @@ function wwClearSessionSecretState() {
 
 function loadWallet() {
   loadWalletPublic();
+  try {
+    if (typeof wwUpgradeStoredBtcAddressIfLegacy === 'function') wwUpgradeStoredBtcAddressIfLegacy();
+  } catch (_btcUp) { wwQuiet(_btcUp); }
   // 万语地址：先于其他 UI，统一从 localStorage 载入 ADDR_WORDS 并一次性刷新各展示位
   try {
     if (typeof ensureNativeAddrInitialized === 'function') ensureNativeAddrInitialized();
