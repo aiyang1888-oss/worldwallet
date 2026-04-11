@@ -4695,6 +4695,262 @@ function _wwNormalizeVerifyWord(s) {
   }
 }
 
+/**
+ * 随机抽 3 词填空验证；input id 为 verify_{idPrefix}{pos}（密钥页 idPrefix 为空，独立验证页为 mnem_）。
+ */
+function wwBuildRandomVerifyInputs(container, words, idPrefix, enterHandlerName) {
+  verifyAnswers = {};
+  if (!container || !words || !words.length) return;
+  idPrefix = idPrefix || '';
+  enterHandlerName = enterHandlerName || 'checkVerify';
+  var wc = words.length;
+  var positions = [];
+  while (positions.length < 3) {
+    var p = Math.floor(Math.random() * wc);
+    if (positions.indexOf(p) < 0) positions.push(p);
+  }
+  positions.sort(function (a, b) {
+    return a - b;
+  });
+  container.innerHTML = '';
+  for (var i = 0; i < positions.length; i++) {
+    var pos = positions[i];
+    verifyAnswers[pos] = words[pos];
+    var div = document.createElement('div');
+    div.style.cssText =
+      'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px';
+    var iid = 'verify_' + idPrefix + pos;
+    div.innerHTML =
+      '<div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ' +
+      (pos + 1) +
+      ' 词</div>' +
+      '<input type="text" id="' +
+      iid +
+      '" placeholder="请输入第 ' +
+      (pos + 1) +
+      ' 个词" autocomplete="off" autocorrect="off" autocapitalize="off" ' +
+      'style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit" ' +
+      'onkeydown="if(event.key===\'Enter\'&&typeof ' +
+      enterHandlerName +
+      '===\'function\')' +
+      enterHandlerName +
+      '()">';
+    container.appendChild(div);
+  }
+}
+
+/** Level 1 备份页：将 TEMP/REAL 助记词填入 #mnemonicGrid */
+function renderMnemonicDisplay() {
+  var grid = document.getElementById('mnemonicGrid');
+  if (!grid) return;
+  var wlKey = typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : 'en';
+  var tw = window.TEMP_WALLET;
+  var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+  var enMnemonic =
+    (tw && (tw.mnemonic || tw.enMnemonic)) || (rw && (rw.enMnemonic || rw.mnemonic));
+  if (!enMnemonic) {
+    if (typeof showToast === 'function') showToast('暂无助记词，请返回创建流程重试', 'error', 2800);
+    return;
+  }
+  var enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
+  if (!enWords.length) return;
+  var words =
+    wlKey === 'en'
+      ? enWords.slice()
+      : typeof enWordsToLangKeyTableWords === 'function'
+        ? enWordsToLangKeyTableWords(enWords, wlKey)
+        : enWords.slice();
+  grid.innerHTML = '';
+  for (var i = 0; i < words.length; i++) {
+    var d = document.createElement('div');
+    d.className = 'mnemonic-word';
+    d.textContent = i + 1 + '. ' + words[i];
+    grid.appendChild(d);
+  }
+  var cb = document.getElementById('mnemonicBackupConfirm');
+  var btn = document.getElementById('confirmMnemonicBtn');
+  if (cb && btn) {
+    btn.disabled = !cb.checked;
+    btn.style.opacity = cb.checked ? '1' : '0.5';
+    cb.onchange = function () {
+      btn.disabled = !cb.checked;
+      btn.style.opacity = cb.checked ? '1' : '0.5';
+    };
+  }
+}
+
+function copyMnemonicToClipboard() {
+  var tw = window.TEMP_WALLET;
+  var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+  var wlKey = typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : 'en';
+  var enMnemonic =
+    (tw && (tw.mnemonic || tw.enMnemonic)) || (rw && (rw.enMnemonic || rw.mnemonic));
+  if (!enMnemonic) {
+    if (typeof showToast === 'function') showToast('暂无可复制的助记词', 'error');
+    return;
+  }
+  var enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
+  var words =
+    wlKey === 'en'
+      ? enWords.slice()
+      : typeof enWordsToLangKeyTableWords === 'function'
+        ? enWordsToLangKeyTableWords(enWords, wlKey)
+        : enWords.slice();
+  var txt = words.join(' ');
+  function doneOk() {
+    if (typeof showToast === 'function') showToast('已复制（请及时清除剪贴板）', 'success');
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(doneOk).catch(function () {
+      wwFallbackCopyText(txt, doneOk);
+    });
+  } else {
+    wwFallbackCopyText(txt, doneOk);
+  }
+}
+
+function wwFallbackCopyText(text, onOk) {
+  try {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (typeof onOk === 'function') onOk();
+  } catch (_e) {
+    wwQuiet(_e);
+    if (typeof showToast === 'function') showToast('复制失败，请手动抄写', 'error');
+  }
+}
+
+function proceedToVerifyMnemonic() {
+  var cb = document.getElementById('mnemonicBackupConfirm');
+  if (!cb || !cb.checked) {
+    if (typeof showToast === 'function') showToast('请先勾选确认已抄写助记词', 'warning');
+    return;
+  }
+  if (typeof goTo === 'function') goTo('page-verify-mnemonic');
+}
+
+/** 独立验证页 #verifyInputs：由 goTo('page-verify-mnemonic') 触发 */
+function renderVerifyInputs() {
+  var tw = window.TEMP_WALLET;
+  var rw = typeof REAL_WALLET !== 'undefined' ? REAL_WALLET : null;
+  var enMnemonic =
+    (tw && (tw.mnemonic || tw.enMnemonic)) || (rw && (rw.enMnemonic || rw.mnemonic));
+  if (!enMnemonic) {
+    if (typeof showToast === 'function') {
+      showToast('无法读取有效助记词，请返回上一步', 'error', 3200);
+    }
+    return;
+  }
+  var enWords = enMnemonic.trim().split(/\s+/).filter(Boolean);
+  if (!enWords.length || [12, 15, 18, 21, 24].indexOf(enWords.length) < 0) {
+    if (typeof showToast === 'function') showToast('助记词词数无效', 'error');
+    return;
+  }
+  var wlKey = wwResolveMnemonicWordlistKey();
+  var words =
+    wlKey === 'en'
+      ? enWords.slice()
+      : typeof enWordsToLangKeyTableWords === 'function'
+        ? enWordsToLangKeyTableWords(enWords, wlKey)
+        : enWords.slice();
+  if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
+    wwEnsureRealWalletFromTempForVerify(window.TEMP_WALLET, enMnemonic, words);
+  }
+  var container = document.getElementById('verifyInputs');
+  if (!container) return;
+  wwBuildRandomVerifyInputs(container, words, 'mnem_', 'verifyAndCreateWallet');
+  var verr = document.getElementById('verifyErrorMnemonicFlow');
+  if (verr) verr.style.display = 'none';
+  setTimeout(function () {
+    var first = document.querySelector('#verifyInputs input');
+    if (first) first.focus();
+  }, 200);
+}
+
+function verifyAndCreateWallet() {
+  var allCorrect = true;
+  Object.keys(verifyAnswers).forEach(function (pos) {
+    var input = document.getElementById('verify_mnem_' + pos);
+    var val = _wwNormalizeVerifyWord(input ? input.value : '');
+    var correct = _wwNormalizeVerifyWord(verifyAnswers[pos]);
+    if (val !== correct) {
+      allCorrect = false;
+      if (input) input.style.color = '#ff6060';
+    } else if (input) input.style.color = '#4ac84a';
+  });
+  var errEl = document.getElementById('verifyErrorMnemonicFlow');
+  if (allCorrect) {
+    if (errEl) errEl.style.display = 'none';
+    var hasPin = false;
+    try {
+      hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
+    } catch (_p0) {
+      wwQuiet(_p0);
+    }
+    if (hasPin) {
+      try {
+        window._wwInFirstRun = false;
+      } catch (_frV) {
+        wwQuiet(_frV);
+      }
+    }
+    try {
+      if (
+        typeof wwWalletHasAnyChainAddress === 'function' &&
+        !wwWalletHasAnyChainAddress(REAL_WALLET) &&
+        window.TEMP_WALLET &&
+        window.TEMP_WALLET.mnemonic
+      ) {
+        var twF = window.TEMP_WALLET;
+        var enM = String(twF.mnemonic || twF.enMnemonic || '')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean);
+        if (enM.length && [12, 15, 18, 21, 24].indexOf(enM.length) >= 0) {
+          var wlKeyF = typeof wwResolveMnemonicWordlistKey === 'function' ? wwResolveMnemonicWordlistKey() : 'en';
+          var dispF =
+            wlKeyF === 'en'
+              ? enM.slice()
+              : typeof enWordsToLangKeyTableWords === 'function'
+                ? enWordsToLangKeyTableWords(enM.slice(), wlKeyF)
+                : enM.slice();
+          wwEnsureRealWalletFromTempForVerify(twF, enM.join(' '), dispF);
+        }
+      }
+    } catch (_fv) {
+      wwQuiet(_fv);
+    }
+    wwAfterMnemonicVerifiedNavigate('page-home');
+    setTimeout(function () {
+      if (typeof showToast === 'function') showToast('✅ 验证通过！钱包已安全创建', 'success');
+    }, 0);
+  } else {
+    if (errEl) errEl.style.display = 'block';
+    var vroot = document.getElementById('verifyShakeRootMnemonic');
+    if (vroot) {
+      vroot.classList.remove('wt-shake-wrong');
+      void vroot.offsetWidth;
+      vroot.classList.add('wt-shake-wrong');
+    }
+  }
+}
+
+/** 设置「PIN 快速转账」：跳转转账页（与 ww_mev_private / 转账授权相关 UI 同页） */
+function openPinStorageDialog() {
+  try {
+    if (typeof goTo === 'function') goTo('page-transfer');
+  } catch (e) {
+    wwQuiet(e);
+  }
+}
+
 function startVerify() {
   // 与 renderKeyGrid 同源：始终以英文 BIP39 为真源，再按 keyMnemonicLang 映射为展示词，避免 .words 与界面分叉时出现「屏上中文、校验按英文」
   var tw = window.TEMP_WALLET;
@@ -4726,38 +4982,16 @@ function startVerify() {
   if (window.TEMP_WALLET && window.TEMP_WALLET.mnemonic) {
     wwEnsureRealWalletFromTempForVerify(window.TEMP_WALLET, enMnemonic, words);
   }
-  verifyAnswers = {};
-  
-  // 随机选3个位置验证（词数与密钥页一致）
-  const wc = words.length;
-  const positions = [];
-  while(positions.length < 3) {
-    const p = Math.floor(Math.random() * wc);
-    if(!positions.includes(p)) positions.push(p);
-  }
-  positions.sort((a,b) => a-b);
-  
-  // 生成题目
-  const container = _safeEl('verifyQuestions');
-  container.innerHTML = '';
-  positions.forEach(pos => {
-    verifyAnswers[pos] = words[pos];
-    const div = document.createElement('div');
-    div.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:10px';
-    div.innerHTML = `
-      <div style="font-size:12px;color:var(--text-muted);width:28px;flex-shrink:0">第 ${pos+1} 词</div>
-      <input type="text" id="verify_${pos}" placeholder="请输入第 ${pos+1} 个词" autocomplete="off" autocorrect="off" autocapitalize="off"
-        style="flex:1;background:none;border:none;outline:none;font-size:14px;color:var(--text);font-family:inherit"
-        onkeydown="if(event.key==='Enter')checkVerify()">
-    `;
-    container.appendChild(div);
-  });
-  
-  _safeEl('verifyError').style.display = 'none';
+
+  var container = document.getElementById('verifyQuestions');
+  if (!container) return;
+  wwBuildRandomVerifyInputs(container, words, '', 'checkVerify');
+  var verr = document.getElementById('verifyErrorKeyVerify');
+  if (verr) verr.style.display = 'none';
   goTo('page-key-verify');
-  setTimeout(() => {
-    const first = document.querySelector('#verifyQuestions input');
-    if(first) first.focus();
+  setTimeout(function () {
+    var first = document.querySelector('#verifyQuestions input');
+    if (first) first.focus();
   }, 300);
 }
 
@@ -4776,7 +5010,8 @@ function checkVerify() {
   });
   
   if(allCorrect) {
-    _safeEl('verifyError').style.display = 'none';
+    var _errKv = document.getElementById('verifyErrorKeyVerify');
+    if (_errKv) _errKv.style.display = 'none';
     var hasPin = false;
     try {
       hasPin = !!(typeof Store !== 'undefined' && Store.getPin ? Store.getPin() : localStorage.getItem('ww_pin'));
@@ -4806,7 +5041,8 @@ function checkVerify() {
       if (typeof showToast === 'function') showToast('✅ 验证通过！钱包已安全创建', 'success');
     }, 0);
   } else {
-    _safeEl('verifyError').style.display = 'block';
+    var _errKv2 = document.getElementById('verifyErrorKeyVerify');
+    if (_errKv2) _errKv2.style.display = 'block';
     const vroot = document.getElementById('verifyShakeRoot');
     if(vroot) { vroot.classList.remove('wt-shake-wrong'); void vroot.offsetWidth; vroot.classList.add('wt-shake-wrong'); }
   }

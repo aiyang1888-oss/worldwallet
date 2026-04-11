@@ -10,7 +10,7 @@
 <meta http-equiv="Expires" content="0">
 <!-- 生产环境：在部署时写入 TronGrid API Key（https://www.trongrid.io/），勿将真实 Key 提交到仓库 -->
 <meta name="wt-tron-api-key" content="">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self' data: https:; font-src 'self'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <style id="ww-firstpaint-guard">
 /* ww-hide-welcome-until-ready 仅由 head boot 在「先进非欢迎页」时动态添加，避免无钱包首访先藏欢迎再放开造成闪屏 */
@@ -120,6 +120,8 @@ try {
       'page-import': 1,
       'page-key': 1,
       'page-key-verify': 1,
+      'page-show-mnemonic': 1,
+      'page-verify-mnemonic': 1,
       'page-password-restore': 1,
       'page-verify-success': 1,
       'page-recovery-test': 1,
@@ -555,6 +557,89 @@ try {
       </div>
     </div>
 
+    <!-- 显示助记词（创建钱包 Level 1：仅内存展示，验证通过后只落盘地址） -->
+    <div id="page-show-mnemonic" class="page" style="display:none">
+      <div class="nav-bar">
+        <div class="nav-leading">
+          <div class="nav-title">备份助记词</div>
+        </div>
+      </div>
+
+      <div class="u14" style="max-width:500px;margin:0 auto;padding:24px">
+        <div style="background:var(--red);color:white;padding:16px;border-radius:12px;margin-bottom:24px">
+          <div style="font-size:18px;font-weight:700;margin-bottom:8px">⚠️ 重要提示</div>
+          <div style="font-size:14px;line-height:1.6">
+            • 此钱包<strong>不存储私钥</strong>，请务必抄写助记词<br>
+            • 助记词是恢复钱包的<strong>唯一方式</strong><br>
+            • 关闭此页面后将无法再次查看<br>
+            • 不要截图或在线保存，使用纸笔抄写
+          </div>
+        </div>
+
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px">
+          <div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--text)">
+            请抄写以下 12 个单词（按顺序）
+          </div>
+          <div id="mnemonicGrid" class="mnemonic-grid"></div>
+          <button
+            type="button"
+            id="copyMnemonicBtn"
+            onclick="copyMnemonicToClipboard()"
+            style="width:100%;margin-top:16px;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);cursor:pointer;font-family:inherit">
+            📋 复制助记词（临时）
+          </button>
+        </div>
+
+        <div style="margin-bottom:24px">
+          <label style="display:flex;align-items:flex-start;cursor:pointer;gap:12px">
+            <input type="checkbox" id="mnemonicBackupConfirm" style="width:20px;height:20px;margin-top:2px;flex-shrink:0">
+            <span style="font-size:15px;color:var(--text);line-height:1.5">
+              我已抄写并妥善保管助记词，理解丢失后无法找回
+            </span>
+          </label>
+        </div>
+
+        <button
+          type="button"
+          id="confirmMnemonicBtn"
+          onclick="proceedToVerifyMnemonic()"
+          disabled
+          style="width:100%;padding:16px;background:var(--gold);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;opacity:0.5;font-family:inherit">
+          下一步：验证助记词
+        </button>
+      </div>
+    </div>
+
+    <!-- 验证助记词（创建流程） -->
+    <div id="page-verify-mnemonic" class="page" style="display:none">
+      <div class="nav-bar">
+        <div class="nav-leading">
+          <div class="nav-back" onclick="goTo('page-show-mnemonic')" role="button" tabindex="0" aria-label="返回" style="font-size:34px;font-weight:900;color:var(--gold);cursor:pointer;width:44px;line-height:1">‹</div>
+          <div class="nav-title">验证助记词</div>
+        </div>
+      </div>
+
+      <div class="u14" style="max-width:500px;margin:0 auto;padding:24px">
+        <div style="font-size:15px;color:var(--text-dim);margin-bottom:24px;line-height:1.6">
+          为确保您正确抄写了助记词，请按提示输入对应单词。
+        </div>
+
+        <div id="verifyShakeRootMnemonic">
+          <div id="verifyInputs" style="margin-bottom:24px"></div>
+
+          <button
+            type="button"
+            id="verifyMnemonicBtn"
+            onclick="verifyAndCreateWallet()"
+            style="width:100%;padding:16px;background:var(--gold);color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit">
+            确认并创建钱包
+          </button>
+
+          <div id="verifyErrorMnemonicFlow" style="display:none;margin-top:16px;text-align:center;font-size:13px;color:var(--red)">词序或拼写不正确，请重试</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ══ PIN 解锁（欢迎页「PIN 解锁钱包」） ══ -->
     <div class="page" id="page-password-restore">
       <div class="nav-bar">
@@ -639,7 +724,7 @@ try {
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:14px;line-height:1.6;text-align:center">请输入随机抽到的 3 个词，以确认你已抄写备份</div>
         <div id="verifyShakeRoot">
           <div id="verifyQuestions" style="display:flex;flex-direction:column;gap:10px"></div>
-          <div id="verifyError" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:var(--red)">词序或拼写不正确，请重试</div>
+          <div id="verifyErrorKeyVerify" style="display:none;margin-top:12px;text-align:center;font-size:13px;color:var(--red)">词序或拼写不正确，请重试</div>
           <button class="btn-primary" style="margin-top:18px;padding:14px 0;width:100%" onclick="checkVerify()">验证</button>
         </div>
       </div>
@@ -810,6 +895,67 @@ try {
           </div>
         </div>
       </div>
+
+      <!-- 转账助记词输入（无 PIN 加密存储时临时签名，签完即清） -->
+      <div id="transferMnemonicOverlay" class="overlay" aria-hidden="true" onclick="if(event.target===this &amp;&amp; typeof closeTransferMnemonicDialog==='function')closeTransferMnemonicDialog()">
+        <div class="overlay-sheet" onclick="event.stopPropagation()" style="max-width:500px;padding:0">
+          <div style="padding:20px;border-bottom:1px solid var(--border)">
+            <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:8px">
+              输入助记词以签名交易
+            </div>
+            <div style="font-size:14px;color:var(--text-dim);line-height:1.5">
+              此钱包不存储私钥。请输入您的12个助记词来签名这笔转账。
+            </div>
+          </div>
+          <div style="padding:20px">
+            <div style="margin-bottom:16px">
+              <label style="display:block;margin-bottom:8px;font-size:14px;color:var(--text-dim)">
+                请输入12个助记词（用空格分隔）：
+              </label>
+              <textarea
+                id="transferMnemonicInput"
+                placeholder="word1 word2 word3 ... word12"
+                rows="4"
+                autocomplete="off"
+                autocorrect="off"
+                spellcheck="false"
+                style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--bg2);color:var(--text);font-size:15px;font-family:monospace;resize:vertical"
+              ></textarea>
+              <div id="transferMnemonicError" style="color:var(--red);font-size:13px;margin-top:4px;display:none" role="alert"></div>
+            </div>
+            <div style="margin-bottom:20px" id="rememberMnemonicOption">
+              <label style="display:flex;align-items:center;cursor:pointer;padding:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">
+                <input type="checkbox" id="rememberMnemonicCheckbox" style="width:18px;height:18px;margin-right:10px;flex-shrink:0" />
+                <div>
+                  <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:4px">
+                    记住助记词（需设置PIN）
+                  </div>
+                  <div style="font-size:12px;color:var(--text-dim);line-height:1.4">
+                    ⚠️ 助记词将用PIN加密存储，方便下次转账。设备丢失+PIN泄露可能导致资产损失。
+                  </div>
+                </div>
+              </label>
+            </div>
+            <div style="display:flex;gap:12px">
+              <button
+                type="button"
+                onclick="if(typeof closeTransferMnemonicDialog==='function')closeTransferMnemonicDialog()"
+                style="flex:1;padding:14px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:15px;cursor:pointer;font-family:inherit"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                id="confirmTransferMnemonicBtn"
+                onclick="if(typeof confirmTransferWithMnemonic==='function')confirmTransferWithMnemonic()"
+                style="flex:1;padding:14px;background:var(--gold);border:none;border-radius:8px;color:white;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit"
+              >
+                确认签名
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
 
@@ -841,6 +987,13 @@ try {
             <span class="settings-icon">🔐</span>
             <span class="settings-label">PIN码</span>
             <span class="settings-value" id="settingsPinValue">未设置</span>
+            <span class="settings-arrow">›</span>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-row" id="settingsPinStorageRow" onclick="if(typeof openPinStorageDialog==='function')openPinStorageDialog()">
+            <span class="settings-icon">⚡</span>
+            <span class="settings-label">PIN快速转账</span>
+            <span class="settings-value" id="settingsPinStorageValue">已关闭</span>
             <span class="settings-arrow">›</span>
           </div>
           <div class="settings-divider"></div>
