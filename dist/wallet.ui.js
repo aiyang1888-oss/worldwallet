@@ -2549,6 +2549,16 @@ function wwStartEditAddressBookEntry(addr, nick) {
     var sc = document.querySelector('#page-address-book .u14');
     if (sc) sc.scrollTop = 0;
   } catch (e2) { wwQuiet(e2); }
+  try {
+    var ap = document.getElementById('addrBookAddPanel');
+    if (ap) ap.style.display = 'block';
+  } catch (e3) { wwQuiet(e3); }
+  try {
+    setTimeout(function () {
+      var ap2 = document.getElementById('addrBookAddPanel');
+      if (ap2) ap2.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  } catch (e4) { wwQuiet(e4); }
   if (typeof showToast === 'function') showToast('可修改备注或地址，完成后点「保存」', 'info', 2800);
 }
 
@@ -2561,10 +2571,41 @@ function wwClearAddressBookDraft() {
   if (origEl) origEl.value = '';
 }
 
+/** 地址簿页右上角「添加」：展开/收起下方表单并聚焦地址框 */
+function wwToggleAddressBookAddForm() {
+  var panel = document.getElementById('addrBookAddPanel');
+  if (!panel) return;
+  var hidden = panel.style.display === 'none' || !panel.style.display;
+  if (hidden) {
+    panel.style.display = 'block';
+    setTimeout(function () {
+      try {
+        var addr = document.getElementById('addrBookAddrInput');
+        if (addr) addr.focus();
+      } catch (e) {
+        wwQuiet(e);
+      }
+      try {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } catch (e2) {
+        wwQuiet(e2);
+      }
+    }, 80);
+  } else {
+    panel.style.display = 'none';
+  }
+}
+try {
+  window.wwToggleAddressBookAddForm = wwToggleAddressBookAddForm;
+} catch (_wt) {
+  wwQuiet(_wt);
+}
+
 function renderAddressBookSettingsList() {
   const box = document.getElementById('addrBookSettingsList');
   if (!box) return;
   const searchEl = document.getElementById('addrBookListSearch');
+  const metaEl = document.getElementById('addrBookListMeta');
   const q = searchEl ? String(searchEl.value || '').trim().toLowerCase() : '';
   const all = getTransferContacts();
   const total = all.length;
@@ -2576,6 +2617,8 @@ function renderAddressBookSettingsList() {
       return nick.indexOf(q) >= 0 || addr.indexOf(q) >= 0;
     });
   }
+  if (searchEl) searchEl.style.display = total ? 'block' : 'none';
+  if (metaEl) metaEl.style.display = total ? 'block' : 'none';
   const countEl = document.getElementById('addrBookListCount');
   if (countEl) {
     if (!total) countEl.textContent = '共 0 条';
@@ -2583,7 +2626,8 @@ function renderAddressBookSettingsList() {
     else countEl.textContent = '共 ' + total + ' 条';
   }
   if (!total) {
-    box.innerHTML = '<div class="addr-book-settings-empty">暂无条目，请在下方「添加或编辑」中保存</div>';
+    box.innerHTML =
+      '<div class="addr-book-settings-empty addr-book-settings-empty--center">暂无联系人，点「添加」保存常用地址</div>';
     return;
   }
   if (!list.length) {
@@ -2669,6 +2713,12 @@ function wwAddAddressBookFromSettings() {
   if (addrEl) addrEl.value = '';
   if (nickEl) nickEl.value = '';
   if (origEl) origEl.value = '';
+  try {
+    var ap = document.getElementById('addrBookAddPanel');
+    if (ap) ap.style.display = 'none';
+  } catch (_ap) {
+    wwQuiet(_ap);
+  }
   wwRefreshAddressBookLists();
   if (typeof showToast === 'function') {
     if (isEdit) {

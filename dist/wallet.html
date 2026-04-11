@@ -1058,27 +1058,36 @@ try {
         <div class="nav-right"></div>
       </div>
       <div class="u14">
-        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">与转账页共用同一地址列表，数据仅保存在本机。列表支持搜索；点击条目跳转转账；「编辑」在下方表单中修改。</p>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:14px">与转账页共用同一地址列表；数据仅保存在本机。点「添加」填写备注与地址；列表支持搜索，点击条目跳转转账。</p>
 
         <div class="addr-book-list-card">
           <div class="addr-book-list-head">
-            <span class="addr-book-list-title">地址簿列表</span>
+            <span class="addr-book-list-title">地址簿</span>
+            <span
+              class="addr-book-list-add"
+              role="button"
+              tabindex="0"
+              onclick="if(typeof wwToggleAddressBookAddForm==='function')wwToggleAddressBookAddForm();"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();if(typeof wwToggleAddressBookAddForm==='function')wwToggleAddressBookAddForm();}"
+              >添加</span>
+          </div>
+          <div id="addrBookListMeta" class="addr-book-list-meta" style="display:none;margin-bottom:8px">
             <span id="addrBookListCount" class="addr-book-list-count" aria-live="polite">共 0 条</span>
           </div>
-          <input id="addrBookListSearch" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜索备注或地址" class="addr-book-list-search" />
+          <input id="addrBookListSearch" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜索备注或地址" class="addr-book-list-search" style="display:none" />
           <div class="addr-book-list-scroll">
             <div id="addrBookSettingsList"></div>
           </div>
         </div>
 
-        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-top:16px">
+        <div id="addrBookAddPanel" style="display:none;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-top:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
             <span style="font-size:11px;color:var(--text-muted);letter-spacing:0.5px">添加或编辑</span>
             <button type="button" style="font-size:11px;color:var(--text-muted);background:transparent;border:none;padding:4px 6px;cursor:pointer;font-family:inherit;text-decoration:underline" onclick="if(typeof wwClearAddressBookDraft==='function')wwClearAddressBookDraft()">清空表单</button>
           </div>
           <input type="hidden" id="addrBookEditOriginal" value="" autocomplete="off" />
           <input id="addrBookNickInput" type="text" autocomplete="off" placeholder="备注名" style="width:100%;box-sizing:border-box;margin-bottom:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:14px;font-family:inherit" />
-          <textarea id="addrBookAddrInput" rows="2" autocomplete="off" placeholder="收款地址（可修改）" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
+          <textarea id="addrBookAddrInput" rows="2" autocomplete="off" placeholder="收款地址" style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;resize:vertical;line-height:1.5"></textarea>
           <button type="button" class="btn-primary" style="width:100%;margin-top:12px;padding:12px;border-radius:12px;cursor:pointer;font-family:inherit" onclick="if(typeof wwAddAddressBookFromSettings==='function')wwAddAddressBookFromSettings()">保存</button>
         </div>
       </div>

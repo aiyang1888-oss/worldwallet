@@ -975,6 +975,22 @@ body {
   color: var(--text);
   letter-spacing: 0.3px;
 }
+.addr-book-list-add {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  cursor: pointer;
+  user-select: none;
+}
+.addr-book-list-add:hover,
+.addr-book-list-add:focus-visible {
+  color: var(--gold-light);
+  outline: none;
+}
+.addr-book-list-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
 .addr-book-list-count {
   font-size: 11px;
   color: var(--text-muted);
@@ -1015,6 +1031,11 @@ body {
   gap: 8px;
 }
 .addr-book-settings-empty { font-size: 12px; color: var(--text-muted); padding: 8px 4px; }
+.addr-book-settings-empty--center {
+  text-align: center;
+  padding: 28px 16px 20px;
+  line-height: 1.65;
+}
 .addr-book-settings-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -1305,6 +1326,39 @@ body {
   display: none !important;
   pointer-events: none !important;
   visibility: hidden !important;
+}
+
+/* 转账助记词签名：全屏盖住底部导航与其它层 */
+#transferMnemonicOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+#transferMnemonicOverlay.show {
+  display: flex !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+#transferMnemonicOverlay:not(.show) {
+  display: none !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+#transferMnemonicOverlay .overlay-sheet {
+  background: var(--bg);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 500px;
 }
 
 .overlay-sheet {
@@ -1698,3 +1752,28 @@ body {
 
 .ww-tx-history-row { transition: opacity 0.2s; }
 .ww-tx-history-row:hover { opacity: 0.8; }
+
+/* 创建钱包：助记词网格（Level 1） */
+.mnemonic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.mnemonic-word {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+  word-break: break-word;
+}
+.mnemonic-word-number {
+  display: inline-block;
+  width: 24px;
+  color: var(--text-dim);
+  font-weight: 400;
+  font-size: 14px;
+}
